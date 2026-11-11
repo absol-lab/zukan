@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.12">
+<meta name="app-version" content="2.13">
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -305,13 +305,10 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
   <div class="setgroup">
     <h3>Google Drive 同期</h3>
     <div class="setbox">
-      <div class="setrow"><div class="setlabel">OAuth クライアントID</div>
-        <input class="textin" id="clientid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" onchange="saveClientId()">
-        <div class="note">日記アプリと同じクライアントIDを使います。データは Drive 内の「artists.json」「designers.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
-      </div>
       <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstat">未接続</div></div>
       <div class="setrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
       <div id="syncresults"></div>
+      <div class="note">データは Drive 内の「artists.json」「designers.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
       <div class="note">「今すぐ同期」は作家図鑑とデザイナー図鑑の両方を、Drive と相互に同期します（新しい方を取り込み、端末の内容を送ります）。</div>
     </div>
   </div>
@@ -8793,6 +8790,8 @@ async function wipeAll(){
 }
 
 /* ================= Google Drive sync（アプリ全体で1つ） ================= */
+/* OAuth クライアントID（公開識別子・日記アプリと共通）。端末に保存値があればそれを優先し、無ければこの既定値を使う。ホーム画面への再追加で localStorage が消えても、接続前に ID の再入力を求めないための内蔵（本人の作業は Google ログインだけ）。 */
+const DEFAULT_CLIENT_ID = '386087008053-de53ufnkvcnbjslkuhmq2l2pm9fj4c2t.apps.googleusercontent.com';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
@@ -8801,7 +8800,7 @@ let syncStatus = 'disconnected', syncMsg = '', lastSyncAt = 0;
 let appSyncRunning = false;
 let syncQueue = Promise.resolve();
 
-function getClientId(){ return (storeGet(CFG_ARTISTS.prefix+'clientId') || storeGet(CFG_DESIGNERS.prefix+'clientId') || '').trim(); }
+function getClientId(){ return (storeGet(CFG_ARTISTS.prefix+'clientId') || storeGet(CFG_DESIGNERS.prefix+'clientId') || DEFAULT_CLIENT_ID).trim(); }
 function tokenFrom(prefix){
   const tok = sessGet(prefix+'token'); const exp = +(storeGet(prefix+'tokenExp')||0);
   if(tok && exp && Date.now() < exp-15000) return tok;
@@ -8854,7 +8853,6 @@ function renderSyncStatus(){
   const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
-  const cid = $('clientid'); if(cid && document.activeElement!==cid) cid.value = getClientId();
 }
 function appendSyncLine(label, msg, isErr){
   const box = $('syncresults'); if(!box) return;
@@ -8873,12 +8871,8 @@ function scheduleSync(){
   if(autoSyncTimer) clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(()=>{ const k = autoSyncKind; autoSyncKind = null; if(k) queueSync(()=>syncDatasetFlow(k, 'auto')); }, 1500);
 }
-function saveClientId(){ const el = $('clientid'); if(!el) return; const v = el.value.trim(); storeSet(CFG_ARTISTS.prefix+'clientId', v); storeSet(CFG_DESIGNERS.prefix+'clientId', v); }
-
 function connectDrive(){
-  const cid = ($('clientid') ? $('clientid').value.trim() : getClientId());
-  if(!cid){ toast('先に OAuth クライアントID を入力してください'); showView('settings'); const ci=$('clientid'); if(ci) setTimeout(()=>{ ci.scrollIntoView({behavior:'smooth', block:'center'}); ci.focus({preventScroll:true}); }, 80); return; }
-  storeSet(CFG_ARTISTS.prefix+'clientId', cid); storeSet(CFG_DESIGNERS.prefix+'clientId', cid);
+  const cid = getClientId();
   if(!(window.google && google.accounts && google.accounts.oauth2)){
     toast('Googleのライブラリを読み込めませんでした。通信環境を確認してください', 4000); return;
   }
@@ -9222,7 +9216,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.12';
+const APP_VERSION = '2.13';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9363,7 +9357,7 @@ async function applyDataPack(){
     queueSync(()=>runAppSync('startup', false));
   } else {
     const ae = storeGet(CFG_ARTISTS.prefix+'authError') || storeGet(CFG_DESIGNERS.prefix+'authError');
-    if(ae && getClientId()) setCtxStatus(DS, 'error', ae);
+    if(ae) setCtxStatus(DS, 'error', ae);
   }
   pinNav();
 })();
