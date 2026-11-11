@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.23">
+<meta name="app-version" content="2.24">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -98,12 +98,21 @@ button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em
 #syncbar .err{color:var(--danger);}
 /* toolbar */
 main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:calc(100dvh + 1px);}
-.toolbar{padding:6px 0 2px;}
+/* v2.24: the list toolbar (search + facet bar + mode bar) is sticky,
+   docked directly under the app header via --hdrh (measured by
+   fitToolbarTop), so filters and display mode stay reachable while
+   scrolling. Sticky — not fixed — so no JS position bookkeeping is
+   involved (the v2.22 lesson); the header itself is sticky in normal
+   flow, and this element's containing block is the full-height main,
+   so it can stick for the whole page. Ancestors carry no transform or
+   overflow outside the brief transition states (scroll is locked
+   then), which SETUP v2.22 guarantees are cleaned up. */
+.toolbar{padding:2px 0 8px; position:sticky; top:var(--hdrh, 0px); z-index:28; background:var(--bg);}
 .seg{display:inline-flex; gap:8px; flex-wrap:wrap;}
 .seg button{background:var(--bg2); border:1px solid var(--line); color:var(--text); padding:8px 16px; font-size:13px; letter-spacing:.06em; border-radius:999px; font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center;}
 .seg button.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 .seg.mini button{padding:7px 12px; font-size:12.5px;}
-.searchrow{display:flex; gap:8px; margin-top:10px;}
+.searchrow{display:flex; gap:8px; margin-top:4px;}
 .searchrow input[type=search]{flex:1; background:var(--card); border:1px solid var(--lineStrong); border-radius:999px; padding:11px 16px; font-size:16px; min-height:48px; color:var(--text); outline:none; -webkit-appearance:none;}
 .tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
 .tagchip{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:7px 13px; font-size:12.5px; min-height:48px; display:inline-flex; align-items:center;}
@@ -123,10 +132,29 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .tagaccrow .tagcnt{font-size:13px; color:var(--muted);}
 .tagaccrow .tagchev{margin-left:auto; color:var(--muted); font-size:13px;}
 .tagacc .taggrouprow{margin-top:8px;}
-.modebar{display:flex; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.modebar{display:flex; margin-top:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans); min-height:48px;}
 .modebar button:first-child{border-left:none;}
 .modebar button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
+/* v2.24: facet bar — the four stacked facet accordions (4 x 56px pitch)
+   became one segmented row; the open facet's chips live in .facetpanel
+   below it. Buttons stay >=48px tall (the design-rule floor); the space
+   saving comes from sharing one row, not from shrinking targets. */
+.facetbar{display:flex; margin-top:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.facetbar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 2px; font-size:11.5px; letter-spacing:0; white-space:nowrap; color:var(--muted); font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:3px;}
+.facetbar button:first-child{border-left:none;}
+.facetbar button.open{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
+.facetbar button .fchev{font-size:10px; color:var(--muted);}
+.facetbar button .fsel{background:var(--accent); color:var(--bg); border-radius:999px; font-size:10.5px; font-weight:700; min-width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; padding:0 4px;}
+.facetpanel{margin-top:8px;}
+.facetpanel .taggrouprow{margin-top:0;}
+/* v2.24: exhibition poster plate. Fixed-height box so loading/failure
+   never shifts the card (the v2.18 geometry rule); the poster itself is
+   shown whole (contain), never cropped. */
+.exposter{height:230px; border-radius:10px; overflow:hidden; background:var(--bg2); margin-bottom:10px;}
+.exposter .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.exposter .imgholder img{width:100%; height:100%; object-fit:contain; display:block;}
+.exposter .imgholder .noimg{font-family:var(--serif); font-size:12px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center; line-height:1.7;}
 .syncline{font-size:13px; color:var(--muted); margin-top:8px;}
 .syncline.err{color:var(--danger);}
 /* list (diary .card / .monthhead) */
@@ -8059,7 +8087,15 @@ ind.animate([
 ], { duration:300, easing:'cubic-bezier(0.2,0,0,1)' });
 }
 }
-window.addEventListener('resize', ()=>{ moveNavInd(false); });
+/* v2.24: the list toolbar docks under the sticky app header; the
+   header's height (safe-area inset + title row + sync line) is measured
+   into --hdrh so the dock point is exact on any device. Re-measured on
+   resize and whenever the sync line re-renders (its text can wrap). */
+function fitToolbarTop(){
+const hdr = document.querySelector('header.top');
+if(hdr) document.documentElement.style.setProperty('--hdrh', hdr.offsetHeight+'px');
+}
+window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
    The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
    v2.22 after the pill/FAB double-draw recurred on the user's device
@@ -8145,6 +8181,10 @@ if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
 state.tagGroupsOpen[key] = !state.tagGroupsOpen[key];
 renderList();
 }
+function toggleFacet(f){
+state.facetOpen = (state.facetOpen===f)? null : f;
+renderList();
+}
 function filteredArtists(){
 let arr = DB.artists;
 const q = state.query.toLowerCase();
@@ -8199,14 +8239,31 @@ const accRow = (key, label, count, open)=>
 +'<span class="tagcnt">'+count+'件</span><span class="tagchev">'+(open?'▾':'▸')+'</span></button>';
 let tagHtml = '';
 if(CONFIG.facets){
+/* v2.24: one segmented facet bar + a single chip panel (see the CSS
+   note). A facet with selected tags is badged with the count, and
+   force-opens when no facet was explicitly opened — the old stacked
+   accordions' discoverability rule, kept. */
+const selIn = f=>tags.reduce((n,t)=>n+((tagFacet(t)===f && state.tags.has(t))?1:0),0);
+let openF = (state.facetOpen && TAG_FACET_ORDER.indexOf(state.facetOpen)>=0)? state.facetOpen : null;
+if(openF && !tags.some(t=>tagFacet(t)===openF)) openF = null;
+if(!openF){ for(const f of TAG_FACET_ORDER){ if(selIn(f)>0){ openF = f; break; } } }
+let bar = '<div class="facetbar" role="group" aria-label="タグの分類">';
 TAG_FACET_ORDER.forEach(f=>{
 const all = tags.filter(t=>tagFacet(t)===f);
 if(!all.length) return;
-const open = !!state.tagGroupsOpen[f] || all.some(t=>state.tags.has(t));
-tagHtml += '<div class="tagacc">'+accRow(f, TAG_FACET_LABELS[f], all.length, open);
-if(open){
+const sc = selIn(f);
+bar += '<button data-f="'+f+'" class="'+(openF===f?'open':'')+'" onclick="toggleFacet(\''+f+'\')">'
++esc(TAG_FACET_LABELS[f])
++(sc? '<span class="fsel">'+sc+'</span>':'')
++'<span class="fchev">'+(openF===f?'▾':'▸')+'</span></button>';
+});
+bar += '</div>';
+tagHtml = bar;
+if(openF){
+const all = tags.filter(t=>tagFacet(t)===openF);
+if(all.length){
 let gtags = all, toggleBtn = '';
-if(f==='theme' && all.length>TAG_LIMIT){
+if(openF==='theme' && all.length>TAG_LIMIT){
 if(!state.tagsOpen){
 gtags = all.slice(0,TAG_LIMIT);
 all.forEach(t=>{ if(state.tags.has(t) && gtags.indexOf(t)<0) gtags.push(t); });
@@ -8214,10 +8271,9 @@ all.forEach(t=>{ if(state.tags.has(t) && gtags.indexOf(t)<0) gtags.push(t); });
 toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'
 +(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
 }
-tagHtml += '<div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div>';
+tagHtml += '<div class="facetpanel"><div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div></div>';
 }
-tagHtml += '</div>';
-});
+}
 } else {
 const open = !!state.tagGroupsOpen.all || state.tags.size>0;
 tagHtml = '<div class="tagacc">'+accRow('all', 'タグ', tags.length, open);
@@ -8428,6 +8484,24 @@ if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
 })();
 
 /* ---------- exhibitions （作家：並び替え付き） ---------- */
+/* v2.24: exhibition posters have been in the data since the Space era
+   (img:{url}) but NO renderer ever emitted an image element for them —
+   both exhibition views built text-only cards, so every poster was
+   invisible on the device while the data itself was intact. Posters
+   now render through the same hydrateImg path as work images (the URL
+   branch with the v2.20 retry/backoff), at detail-plate size. */
+function exPosterHTML(e, idx){
+if(!(e && e.img && e.img.url)) return '';
+return '<div class="exposter" data-exi="'+idx+'">'+imgHTML({ caption: e.title||'', img: e.img }, IMG_SIZE.plate)+'</div>';
+}
+function hydrateExPosters(v, exs){
+v.querySelectorAll('.exposter').forEach(el=>{
+const e = exs[+el.getAttribute('data-exi')]; if(!e) return;
+const span = el.querySelector('.imgholder'); if(!span) return;
+span._work = { caption: e.title||'', img: e.img };
+if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
+});
+}
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
 let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied */
 function exCoords(e){
@@ -8492,7 +8566,7 @@ let dlabel = '';
 if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
 if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
 const dk = (effMode==='near')? exDistKm(e): null;
-return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
+return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+'</div>'+
 '<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
 '<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
@@ -8504,6 +8578,7 @@ return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html;
+hydrateExPosters(v, exs);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
@@ -8524,7 +8599,7 @@ let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
 let dlabel = '';
 if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
 if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
-return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
+return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+'</div>'+
 '<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
 '<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
@@ -8537,6 +8612,7 @@ let html = head;
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
+hydrateExPosters(v, exs);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -9029,6 +9105,7 @@ function renderSyncStatus(){
   const dv = $('driveval'); if(dv) dv.textContent = driveVal();
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
+  fitToolbarTop();
 }
 function appendSyncLine(label, msg, isErr){
   const box = $('syncresults'); if(!box) return;
@@ -9483,7 +9560,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.23';
+const APP_VERSION = '2.24';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9529,7 +9606,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 8;
+const DATA_PACK = 9;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
