@@ -8594,7 +8594,7 @@ function checkForUpdate(){
         try{ tried = sessionStorage.getItem(CONFIG.prefix+'updateTried'); }catch(e){}
         if(tried===latest) return; /* ループ防止：同じ版への再読み込みは1回だけ */
         try{ sessionStorage.setItem(CONFIG.prefix+'updateTried', latest); }catch(e){}
-        location.replace(location.pathname+'?u='+Date.now());
+        location.replace(location.pathname+'?u='+Date.now()+location.hash); /* hash（#designers等）を保持する */
       })
       .catch(()=>{});
   }catch(e){}
