@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.7">
+<meta name="app-version" content="2.8">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -7668,11 +7668,23 @@ if(!file) return [];
 if(/\.[a-zA-Z0-9]{2,5}$/.test(file)) return ['img/'+file];
 return ['img/'+file+'.webp', 'img/'+file+'.jpg', 'img/'+file+'.jpeg', 'img/'+file+'.png'];
 }
-function imgHTML(work, cls){
-/* returns placeholder span; actual src set by hydrateImg (lazy) */
+/* Size tiers for Drive thumbnails (v2.8): stored URLs are all sz=w1200, so
+   small placements used to download full-size files. Rewrite the sz param per
+   placement — list thumbnails w400 / detail plates w800 / viewer w1600. Only
+   drive.google.com/thumbnail URLs are touched; anything else passes through. */
+const IMG_SIZE = { thumb:400, plate:800, viewer:1600 };
+function sizedThumbUrl(url, w){
+const s = String(url||'');
+if(!w || !/^https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
+if(/([?&])sz=[^&]*/.test(s)) return s.replace(/([?&])sz=[^&]*/, '$1sz=w'+w);
+return s+'&sz=w'+w;
+}
+function imgHTML(work, size){
+/* returns placeholder span; actual src set by hydrateImg (lazy).
+   size rides on the span as data-size; hydrateImg reads it back. */
 const id = 'im'+(++imgSeq);
 const cap = work? (work.caption||''): '';
-return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"></span>';
+return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"></span>';
 }
 function hydrateImg(span, work){
 if(!span ||!work) return;
@@ -7707,7 +7719,8 @@ const uim = document.createElement('img');
 uim.loading = 'lazy'; uim.alt = cap;
 uim.onerror = ()=>{ tryLocal(); };
 span.innerHTML=''; span.appendChild(uim);
-uim.src = String(work.img.url);
+const wantSz = parseInt(span.getAttribute('data-size'), 10);
+uim.src = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
 return;
 }
 tryLocal();
@@ -7719,7 +7732,7 @@ const el = en.target; imgObserver.unobserve(el);
 hydrateImg(el, el._work);
 }
 });
-}, { rootMargin:'300px'}): null;
+}, { rootMargin:'800px'}): null; /* v2.8: start loading well before the image scrolls into view */
 function bindImages(scope){
 (scope||document).querySelectorAll('.imgholder').forEach(span=>{
 const holder = span.closest('[data-work]');
@@ -8005,7 +8018,7 @@ html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><spa
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{
 const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th):'<span class="noimg">図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, IMG_SIZE.thumb):'<span class="noimg">図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 });
@@ -8019,10 +8032,23 @@ const span = ph.querySelector('.imgholder'); if(span){ span._work = ph._work; if
 }
 
 /* ---------- detail ---------- */
+/* Warm the browser cache with this artist's first work at viewer size, so
+   opening the viewer shows it instantly. Cache-only (v2.6 lesson): a detached
+   eager Image() is fine for prefetching, but DOM insertion stays in
+   hydrateImg's insert-then-src flow. */
+function prefetchViewerImage(a){
+const ws = worksOf(a); if(!ws.length) return;
+const w = ws[0];
+if(w && w.img && w.img.url){
+const im = new Image();
+im.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
+}
+}
 function openDetail(id){
 const a = artistById(id); if(!a) return;
 state.detailId = a.id; state.tab = 'works';
 renderDetail(); showView('detail');
+prefetchViewerImage(a);
 }
 function setTab(t){ state.tab = t; renderDetail();}
 function renderDetail(){
@@ -8049,7 +8075,7 @@ if(!ws.length) html += '<div class="empty">作品画像はまだありません<
 else{
 html += '<div class="gallery">';
 ws.forEach((w,i)=>{
-html += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 }
@@ -8103,6 +8129,7 @@ function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
 const box = $('vimg'); box.innerHTML = '';
 const span = document.createElement('span');
+span.setAttribute('data-size', String(IMG_SIZE.viewer));
 box.appendChild(span); hydrateImg(span, w);
 /* hydrateImg writes <img> or noimg span; style it large */
 const fix = ()=>{ const im = span.querySelector('img'); if(im){ im.style.maxWidth='100%'; im.style.maxHeight='100%'; im.style.objectFit='contain';}};
@@ -9062,7 +9089,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
