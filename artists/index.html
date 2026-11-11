@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.17">
+<meta name="app-version" content="2.18">
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -102,8 +102,22 @@ figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--bg);}
 figure.work .ph.noplate .noimg{font-size:10.5px; letter-spacing:.08em; line-height:1.55; padding:4px 8px;}
 .grid.wide figure.work .ph.noplate{height:72px;}
 .grid.compact figure.work .ph.noplate{height:40px;}
-.grid.mini figure.work .ph.noplate{height:32px;}
 .gallery figure.work .ph.noplate{aspect-ratio:auto; height:88px;}
+/* v2.18: a plate whose image FAILED keeps the image box exactly. fail()
+   used to add .noplate, whose shorter fixed heights shrank tiles in waves
+   while scrolling (document height lurched by over 1,700px in testing) —
+   the layout-shift storm behind the garbled/overlapping mini grid.
+   Failure is now a visual state only, never a geometry change. */
+figure.work .ph.platefail{background:var(--bg);}
+/* v2.18: in mini, the no-image plate takes the same 4/3 box as image tiles
+   (uniform rows instead of ragged short cards) and carries a typographic
+   placeholder — the name's initial over 図版なし — so an image-less tile
+   reads as a deliberate plate, not a broken blank. The initial is only
+   shown in mini; other modes keep the plain 図版なし strip. */
+.grid.mini figure.work .ph.noplate{aspect-ratio:4/3; height:auto;}
+figure.work .ph.noplate .ini{display:none;}
+.grid.mini figure.work .ph.noplate .noimg{display:flex; flex-direction:column; align-items:center; gap:1px; padding:2px;}
+.grid.mini figure.work .ph.noplate .ini{display:block; font-size:17px; line-height:1.15; letter-spacing:0;}
 figure.work figcaption{padding:7px 4px 3px;}
 figure.work .nm{font-family:var(--serif); font-size:14.5px; line-height:1.35;}
 figure.work .sub{font-size:10.5px; color:var(--muted); line-height:1.4; margin-top:1px;}
@@ -7774,15 +7788,22 @@ return s+'&sz=w'+w;
 }
 function imgHTML(work, size){
 /* returns placeholder span; actual src set by hydrateImg (lazy).
-   size rides on the span as data-size; hydrateImg reads it back. */
+   size rides on the span as data-size; hydrateImg reads it back.
+   v2.18: the holder starts with a 図版 wordmark inside, so a plate whose
+   image has not arrived yet is never a featureless blank; hydrateImg
+   replaces the holder's content when the image (or the failure plate)
+   lands. */
 const id = 'im'+(++imgSeq);
 const cap = work? (work.caption||''): '';
-return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"></span>';
+return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"><span class="noimg">図版</span></span>';
 }
 function hydrateImg(span, work){
 if(!span ||!work) return;
 const cap = work.caption||'';
-const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('noplate'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
+/* v2.18: failure adds .platefail (same box), NOT .noplate (shorter box) —
+   see the CSS note. The tile keeps its exact geometry and shows the
+   typographic plate instead. */
+const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
 if(driveImgCache[fid]){ span.innerHTML = '<img loading="lazy" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
@@ -7853,13 +7874,19 @@ const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
    the viewer sheet and the nav indicator — not only by the opening. */
 const PRM_Q = (typeof window!=='undefined' && window.matchMedia)? window.matchMedia('(prefers-reduced-motion: reduce)'): null;
 function reducedMotion(){ try{ return !!(PRM_Q && PRM_Q.matches); }catch(e){ return false; } }
-let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null;
+let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null, vtForceDir = 0;
 function showView(v){
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
 if(vtBusy && vtFinish) vtFinish();
-const dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[v]-VIEW_DEPTH[prev]): 0;
-const wantAnim = !vtNoAnim && prev!==v && dir!==0 && !document.hidden && !reducedMotion();
+let dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[v]-VIEW_DEPTH[prev]): 0;
+/* v2.18: same-depth switches (detail<->ex<->timeline<->settings) used to be
+   instant cuts — the main source of the "バツッ" feel. They now slide too:
+   depth decides when it can, otherwise a forced direction (dataset switch)
+   or a plain forward slide. */
+if(!dir && prev!==v) dir = vtForceDir || 1;
+vtForceDir = 0;
+const wantAnim = !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
 $('fabAdd').classList.toggle('hidden', v!=='list');
@@ -7891,9 +7918,17 @@ newEl.classList.remove('hidden');
 document.body.classList.add('vt-run');
 let aIn, aOut;
 if(dir > 0){
+/* v2.18: the outgoing view is ALSO pinned at its scrolled offset (the
+   back branch already did this). It used to stay in flow while the code
+   scrolled to 0, so a deep-scrolled list visibly teleported to its top
+   in the first frame of the slide — a hard jolt inside the animation. */
+oldEl.classList.add('vt-fixed');
+oldEl.style.top = (H - y)+'px';
+oldEl.style.height = '100dvh';
 newEl.classList.add('vt-fixed');
 newEl.style.top = H+'px';
 newEl.style.height = 'calc(100dvh - '+H+'px)';
+newEl.style.zIndex = '26';
 aIn = newEl.animate([{ transform:'translateX(102%)' },{ transform:'translateX(0%)' }], { duration:330, easing:VT_EASE, fill:'both' });
 aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(-26%)' }], { duration:330, easing:VT_EASE, fill:'both' });
 window.scrollTo(0,0);
@@ -7909,7 +7944,7 @@ let done = false;
 const finish = ()=>{
 if(done) return; done = true;
 [aIn, aOut].forEach(a=>{ try{ a.cancel(); }catch(e){} });
-[oldEl, newEl].forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; });
+[oldEl, newEl].forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; el.style.zIndex=''; });
 oldEl.classList.add('hidden');
 document.body.classList.remove('vt-run');
 vtBusy = false; vtFinish = null;
@@ -7958,15 +7993,40 @@ d.remove();
 }catch(e){ _sabCache = 0; }
 return _sabCache;
 }
+/* v2.18 hardening: the compensation now covers the fab as well as the pill
+   (both ride the same fixed frame), and a measurement is only APPLIED when
+   it is plausible. Mid-scroll / mid-resize readings on iOS can be off by
+   hundreds of px; the old code persisted whatever it measured, which could
+   bake a huge bottom offset into the bar and leave it floating mid-screen
+   until the next clean measurement. Implausible readings are dropped and
+   re-measured once scrolling settles (scroll-end re-pin below, plus the
+   retry timer). Measurements are also skipped mid-transition — the
+   transition's own finish re-pins. */
+let pinRetryT = null;
 function pinNav(){
 const nav = $('pillnav'); if(!nav) return;
+if(document.body.classList.contains('vt-run')) return;
+const fab = $('fabAdd');
 nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 10px)';
+if(fab) fab.style.bottom = '';
 const gap = window.innerHeight - nav.getBoundingClientRect().bottom;
 const want = safeAreaBottom() + 10;
-if(Math.abs(gap - want) > 2){
-nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (10 + (want - gap)).toFixed(1) + 'px)';
+const delta = want - gap;
+if(Math.abs(delta) <= 2) return;
+if(Math.abs(delta) > 60){
+if(pinRetryT) clearTimeout(pinRetryT);
+pinRetryT = setTimeout(()=>{ pinRetryT = null; pinNav(); }, 350);
+return;
 }
+nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (10 + delta).toFixed(1) + 'px)';
+if(fab) fab.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (96 + delta).toFixed(1) + 'px)';
 }
+let pinScrollT = null;
+window.addEventListener('scroll', ()=>{
+if(pinScrollT) clearTimeout(pinScrollT);
+pinScrollT = setTimeout(()=>{ pinScrollT = null; pinNav(); }, 160);
+}, { passive:true });
+if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>pinNav());
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
 function updatePill(){
 $('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings');
@@ -7981,6 +8041,8 @@ function switchDataset(kind){
 if(kind===DS){ showView('list'); return; }
 /* 切替は常時自由：同期はデータセット文脈を掴んで走るため、表示側の切替と干渉しない */
 if(view==='list') CTX[DS].scrollY = window.scrollY;
+const prevV = view;
+const srcDest = (view==='settings')? 'settings': DS;
 stashCtx();
 DS = kind; bindCtx();
 editWorks = [];
@@ -7990,8 +8052,23 @@ if(v==='ex' && DS!=='artists') v = 'list';
 if((v==='timeline' || v==='quiz') && DS!=='artists') v = 'list';
 if(v==='detail' && !artistById(state.detailId)) v = 'list';
 if(v==='settings') v = 'list';
-vtNoAnim = true; showView(v); vtNoAnim = false;
+/* v2.18: dataset switches used to be forced instant (vtNoAnim) — another
+   hard cut. They now take the view slide, directed by the pill order.
+   When the target is the SAME view element (list->list, detail->detail:
+   both datasets share the <main>), no two-view slide is possible, so the
+   re-rendered content instead enters with a short directional drift —
+   a nudge in the travel direction rather than a teleport. */
+const DS_ORDER = ['artists','designers','settings'];
+const dsDir = Math.sign(DS_ORDER.indexOf(kind) - DS_ORDER.indexOf(srcDest)) || 1;
+vtForceDir = dsDir;
+showView(v);
 if(v==='detail') renderDetail();
+if(v===prevV && !reducedMotion()){
+const el = $(VIEW_EL[v]);
+if(el && el.animate){
+try{ el.animate([{ transform:'translateX('+(dsDir*22)+'px)', opacity:'0.3' },{ transform:'translateX(0px)', opacity:'1' }], { duration:260, easing:VT_EASE }); }catch(e){}
+}
+}
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 pinNav();
 }
@@ -8130,7 +8207,7 @@ html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><spa
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{
 const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, IMG_SIZE.thumb):'<span class="noimg">図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, IMG_SIZE.thumb):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 });
@@ -9116,6 +9193,72 @@ function sbMaxUpdated(data){
   nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
 })();
 
+/* ---------- segment drag-switch (v2.18) ----------
+   iOS segmented controls switch by dragging across them; ours only had
+   click handlers, so a drag did nothing at all — and where swipe-back is
+   armed (detail / ex / timeline / quiz) the page swipe stole the gesture
+   and navigated away instead. One delegated handler covers every segment
+   group, including the ones re-rendered into innerHTML (.dtabs, the ex
+   sort seg, the timeline / quiz region switches):
+   - during the drag nothing is activated yet — the .on highlight follows
+     the finger as a preview. Activating mid-drag would re-render the
+     group, and replacing the touch's target node kills the rest of the
+     touch stream (verified in Chromium: every move after the first went
+     silent), so the switch would only ever land halfway;
+   - on release, the button under the finger is activated once;
+   - the compatibility click after a claimed drag is suppressed, and the
+     swipe-back handler never arms from a segment (see its touchstart). */
+const SEG_SEL = '.seg, .modebar, .dtabs';
+let segDrag = null, segSuppressUntil = 0;
+function segBtnUnder(x, y){
+const el = document.elementFromPoint(x, y);
+if(!el || !el.closest) return null;
+const b = el.closest('button');
+if(!b) return null;
+return b.closest(SEG_SEL)? b: null;
+}
+function segPreview(box, btn){
+if(!box) return;
+box.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===btn));
+}
+document.addEventListener('touchstart', e=>{
+if(!e.touches || e.touches.length!==1) return;
+if(!e.target || !e.target.closest) return;
+const box = e.target.closest(SEG_SEL);
+if(!box) return;
+const t = e.touches[0];
+segDrag = { box:box, sx:t.clientX, sy:t.clientY, claimed:false, previewBtn:segBtnUnder(t.clientX, t.clientY), activeBtn:box.querySelector('button.on') };
+}, { passive:true });
+document.addEventListener('touchmove', e=>{
+const d = segDrag; if(!d) return;
+const t = e.touches && e.touches[0]; if(!t) return;
+const dx = t.clientX - d.sx, dy = t.clientY - d.sy;
+if(!d.claimed){
+if(Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)*1.15){ d.claimed = true; }
+else if(Math.abs(dy) > 12 && Math.abs(dy) >= Math.abs(dx)){ segDrag = null; return; }
+else return;
+}
+e.preventDefault();
+const b = segBtnUnder(t.clientX, t.clientY);
+if(!b) return;
+const box = b.closest(SEG_SEL);
+if(box) d.box = box;
+if(b !== d.previewBtn){ d.previewBtn = b; segPreview(box, b); }
+}, { passive:false });
+function segDragEnd(commit){
+const d = segDrag; segDrag = null;
+if(!d || !d.claimed) return;
+segSuppressUntil = Date.now() + 350;
+if(commit && d.previewBtn){ const b = d.previewBtn; d.previewBtn = null; b.click(); }
+/* cancelled drags put the .on highlight back where the state actually is */
+else if(!commit && d.box && d.box.isConnected){ segPreview(d.box, d.activeBtn); }
+}
+document.addEventListener('touchend', ()=>segDragEnd(true), { passive:true });
+document.addEventListener('touchcancel', ()=>segDragEnd(false), { passive:true });
+document.addEventListener('click', e=>{
+if(Date.now() < segSuppressUntil){ segSuppressUntil = 0; e.preventDefault(); e.stopPropagation(); }
+}, true);
+
 /* ---------- swipe back: the finger drives the transition itself ---------- */
 function backTarget(){
   if(view==='quiz') return 'timeline';
@@ -9191,6 +9334,7 @@ function teardownSwipe(st, commit){
     if(vtBusy) return; /* 遷移アニメーション中は触らない */
     if(!e.touches || e.touches.length!==1) return;
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
+    if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.18) */
     const vw = $('viewer'); if(vw && vw.classList.contains('open')) return;
     if(isEditing()) return; /* 編集フォーム表示中は無効 */
     const target = backTarget(); if(!target) return; /* 一覧では何もしない */
@@ -9229,7 +9373,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.17';
+const APP_VERSION = '2.18';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
