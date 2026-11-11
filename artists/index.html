@@ -6,12 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="作家図鑑">
+<meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="1.4">
+<meta name="app-version" content="2.0">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
-<title>作家図鑑</title>
+<title>図鑑</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" async defer></script>
 <style>
@@ -66,6 +66,7 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px;}
 .taggroup:first-child{margin-top:2px;}
 .taggrouphead{font-size:11px; color:var(--muted); letter-spacing:.14em; margin-bottom:6px;}
 .taggrouprow{display:flex; flex-wrap:wrap; gap:8px;}
+#tagrow .tagflat{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
 .modebar{display:flex; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans);}
 .modebar button:first-child{border-left:none;}
@@ -164,19 +165,19 @@ button.blockbtn:disabled{opacity:.4;}
 #toast{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 112px); transform:translateX(-50%); background:var(--text); color:var(--bg); border-radius:999px; padding:10px 20px; font-size:13px; z-index:200; display:none; max-width:88vw; text-align:center;}
 .fab{position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:40; width:60px; height:60px; border-radius:50%; background:var(--fab); color:var(--fabink); border:none; font-size:28px; line-height:1; box-shadow:0 6px 22px rgba(60,52,32,.35);}
 .fab:active{transform:scale(.96);}
-/* bottom pill navigation (diary #pillnav) */
-#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 16px); width:calc(100vw - 40px); max-width:560px; display:flex; gap:2px; padding:6px; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border-radius:999px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 8px 28px rgba(60,52,32,.25);}
-#pillnav button, #pillnav a{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 0 5px; border-radius:999px; font-size:10.5px; color:var(--muted); white-space:nowrap; text-decoration:none; font-family:inherit;}
-#pillnav svg{width:23px; height:23px;}
-#pillnav button.on, #pillnav a.on{background:var(--card2); color:var(--text); font-weight:600;}
+/* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
+#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:5px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); background:color-mix(in srgb, var(--nav) 55%, transparent); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; backdrop-filter:blur(18px) saturate(1.5); -webkit-backdrop-filter:blur(18px) saturate(1.5); box-shadow:0 10px 30px rgba(60,52,32,.35), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+#navind{position:absolute; top:5px; bottom:5px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(60,52,32,.20); will-change:transform;}
+#pillnav button{position:relative; z-index:1; flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; border-radius:999px; font-size:10px; font-weight:500; color:var(--muted); white-space:nowrap; font-family:inherit; transition:color .3s;}
+#pillnav svg{width:21px; height:21px;}
+#pillnav button.on{color:var(--text); font-weight:600;}
 .hidden{display:none !important;}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="toprow">
-    <a class="homelink" href="../">← 図鑑</a>
-    <h1 class="appname">作家図鑑</h1>
+    <h1 class="appname" id="appname">作家図鑑</h1>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
     <button class="txtbtn hidden" id="navEx" onclick="showView('ex')">展示</button>
@@ -210,38 +211,50 @@ button.blockbtn:disabled{opacity:.4;}
 <main id="viewEx" class="hidden"></main>
 
 <main id="viewSettings" class="hidden">
-  <div class="setgroup" id="syncgroup">
-    <h3>Google Drive 同期</h3>
+  <div class="setgroup">
+    <h3>Google Drive 接続</h3>
     <div class="setbox">
-      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstat">未接続</div></div>
-      <div class="setrow"><div class="setlabel">OAuth クライアントID</div>
+      <div class="setrow"><div class="setlabel">OAuth クライアントID（両図鑑で共通）</div>
         <input class="textin" id="clientid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" onchange="saveClientId()">
-        <div class="note">日記アプリと同じクライアントIDを使います。データは Drive 内の「artists.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
+        <div class="note">日記アプリと同じクライアントIDを使います。データは Drive 内の「artists.json」「designers.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
       </div>
-      <div class="setrow"><button class="btn primary" onclick="connectDrive()">Drive に接続</button><button class="btn" onclick="syncNow('manual')">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
       <div class="setrow"><button class="blockbtn" id="syncbothbtn" onclick="syncBoth()">両方の図鑑を同期</button>
       <div id="syncbothresults"></div>
       <div class="note">作家図鑑とデザイナー図鑑の両方を、この端末から Google Drive へ送ります（アップロード専用）。Drive 側に新しい変更がある図鑑は上書きせず、案内を表示します。</div></div>
     </div>
   </div>
   <div class="setgroup">
-    <h3>データの取り込み</h3>
+    <h3>作家図鑑の同期</h3>
     <div class="setbox">
-      <div class="small">ZIP（data.json＋images/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
-      <button class="blockbtn" onclick="document.getElementById('importfile').click()">ファイルを選んで取り込む</button>
-      <input type="file" id="importfile" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
+      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstatA">未接続</div></div>
+      <div class="setrow"><button class="btn primary" onclick="bindSettingsCtx('artists');connectDrive()">Drive に接続</button><button class="btn" onclick="bindSettingsCtx('artists');syncNow('manual')">今すぐ同期</button><button class="btn" onclick="bindSettingsCtx('artists');disconnectDrive()">接続を解除</button></div>
     </div>
   </div>
   <div class="setgroup">
-    <h3>データの書き出し</h3>
+    <h3>デザイナー図鑑の同期</h3>
     <div class="setbox">
-      <button class="blockbtn" onclick="exportJSON()">JSON を書き出す</button>
+      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstatD">未接続</div></div>
+      <div class="setrow"><button class="btn primary" onclick="bindSettingsCtx('designers');connectDrive()">Drive に接続</button><button class="btn" onclick="bindSettingsCtx('designers');syncNow('manual')">今すぐ同期</button><button class="btn" onclick="bindSettingsCtx('designers');disconnectDrive()">接続を解除</button></div>
     </div>
   </div>
   <div class="setgroup">
-    <h3>危険な操作</h3>
+    <h3>作家図鑑のデータ</h3>
     <div class="setbox">
-      <button class="blockbtn danger" onclick="wipeAll()">全データを削除</button>
+      <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
+      <button class="blockbtn" onclick="bindSettingsCtx('artists');document.getElementById('importfileA').click()">ファイルを選んで取り込む</button>
+      <input type="file" id="importfileA" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
+      <button class="blockbtn" onclick="bindSettingsCtx('artists');exportJSON()">JSON を書き出す</button>
+      <button class="blockbtn danger" onclick="bindSettingsCtx('artists');wipeAll()">全データを削除</button>
+    </div>
+  </div>
+  <div class="setgroup">
+    <h3>デザイナー図鑑のデータ</h3>
+    <div class="setbox">
+      <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
+      <button class="blockbtn" onclick="bindSettingsCtx('designers');document.getElementById('importfileD').click()">ファイルを選んで取り込む</button>
+      <input type="file" id="importfileD" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
+      <button class="blockbtn" onclick="bindSettingsCtx('designers');exportJSON()">JSON を書き出す</button>
+      <button class="blockbtn danger" onclick="bindSettingsCtx('designers');wipeAll()">全データを削除</button>
     </div>
   </div>
   <div class="setgroup">
@@ -253,8 +266,9 @@ button.blockbtn:disabled{opacity:.4;}
 <button class="fab" id="fabAdd" onclick="openEditor(null)">＋</button>
 
 <nav id="pillnav">
-  <button id="pnSelf" class="on" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
-  <a href="../designers/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></a>
+  <span id="navind"></span>
+  <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
+  <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg><span>設定</span></button>
 </nav>
 
@@ -273,7 +287,8 @@ button.blockbtn:disabled{opacity:.4;}
 
 <script>
 'use strict';
-const CONFIG = {"appName": "作家図鑑", "kind": "artists", "dataFile": "artists.json", "prefix": "zukanArtists."};
+const CFG_ARTISTS = {"appName": "作家図鑑", "kind": "artists", "dataFile": "artists.json", "prefix": "zukanArtists.", "facets": true, "exsort": true, "seedUrl": null};
+const CFG_DESIGNERS = {"appName": "デザイナー図鑑", "kind": "designers", "dataFile": "designers.json", "prefix": "zukanDesigners.", "facets": false, "exsort": false, "seedUrl": "../designers/seed.json"};
 const EMBEDDED_SEED = {
  "kind": "artists",
  "version": 1,
@@ -7476,18 +7491,38 @@ const t=$('toast'); t.textContent=msg; t.style.display='block';
 clearTimeout(toast._tm); toast._tm=setTimeout(()=>{ t.style.display='none';}, ms||2600);
 }
 
-const LS_DATA = CONFIG.prefix+'data';
-const LS_CID = CONFIG.prefix+'clientId';
-const LS_MODE = CONFIG.prefix+'mode';
-const LS_FILEID = CONFIG.prefix+'driveFileId';
-const LS_TOKEXP = CONFIG.prefix+'tokenExp';
-const LS_PENDING= CONFIG.prefix+'pendingAuth';
-const LS_AUTHERR= CONFIG.prefix+'authError';
-const SS_TOKEN = CONFIG.prefix+'token';
+let CONFIG = null;
+let LS_DATA, LS_CID, LS_MODE, LS_FILEID, LS_TOKEXP, LS_PENDING, LS_AUTHERR, SS_TOKEN;
+let view = 'list';
 
 /* ---------- data ---------- */
-let DB = { kind: CONFIG.kind, version: 1, sections: [], artists: [], exhibitions: []};
-let state = { view:'list', layer:'canon', mode: storeGet(LS_MODE)||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false};
+let DB = null;
+let state = null;
+let pendingImages = {};
+
+/* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
+function freshState(prefix){ return { layer:'canon', mode: storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false}; }
+function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
+const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
+let DS = (location.hash==='#designers')? 'designers': 'artists';
+function liveDB(kind){ return kind===DS? DB: CTX[kind].DB; }
+function stashCtx(){
+const c = CTX[DS]; if(!c) return;
+c.DB = DB; c.state = state;
+c.syncStatus = syncStatus; c.syncMsg = syncMsg; c.lastSyncAt = lastSyncAt;
+if(syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
+c.pendingImages = pendingImages;
+}
+function bindCtx(){
+const c = CTX[DS];
+CONFIG = c.cfg; DB = c.DB; state = c.state;
+LS_DATA = CONFIG.prefix+'data'; LS_CID = CONFIG.prefix+'clientId'; LS_MODE = CONFIG.prefix+'mode';
+LS_FILEID = CONFIG.prefix+'driveFileId'; LS_TOKEXP = CONFIG.prefix+'tokenExp';
+LS_PENDING = CONFIG.prefix+'pendingAuth'; LS_AUTHERR = CONFIG.prefix+'authError';
+SS_TOKEN = CONFIG.prefix+'token';
+syncStatus = c.syncStatus; syncMsg = c.syncMsg; lastSyncAt = c.lastSyncAt; syncTimer = null;
+pendingImages = c.pendingImages;
+}
 
 function emptyData(){ return { kind: CONFIG.kind, version: 1, sections: [], artists: [], exhibitions: []};}
 function normalizeData(d){
@@ -7519,11 +7554,17 @@ updated_at: String(a.updated_at||'')
 };
 }
 function saveDB(){ storeSet(LS_DATA, JSON.stringify(DB));}
-function loadDB(){
-const raw = storeGet(LS_DATA);
-if(raw){ try{ DB = normalizeData(JSON.parse(raw)); return;}catch(e){}}
-if(EMBEDDED_SEED){ DB = normalizeData(JSON.parse(JSON.stringify(EMBEDDED_SEED))); saveDB(); return;}
-DB = emptyData(); saveDB();
+function normalizeFor(kind, d){ const out = normalizeData(d); out.kind = kind; return out; }
+function loadCtxData(kind){
+const c = CTX[kind];
+const raw = storeGet(c.cfg.prefix+'data');
+if(raw){ try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; return; }catch(e){} }
+if(kind==='artists'){
+c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)));
+storeSet(c.cfg.prefix+'data', JSON.stringify(c.DB));
+return;
+}
+c.DB = { kind:kind, version:1, sections:[], artists:[], exhibitions:[] };
 }
 function artistById(id){
 if(id==null) return null;
@@ -7614,19 +7655,74 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 
 /* ---------- views ---------- */
 function showView(v){
-state.view = v;
+view = v;
+if(v!=='settings') CTX[DS].lastView = v;
 $('viewList').classList.toggle('hidden', v!=='list');
 $('viewDetail').classList.toggle('hidden', v!=='detail');
 $('viewEx').classList.toggle('hidden', v!=='ex');
 $('viewSettings').classList.toggle('hidden', v!=='settings');
 $('fabAdd').classList.toggle('hidden', v!=='list');
 $('navEx').classList.toggle('on', v==='ex');
-$('pnSelf').classList.toggle('on', v!=='settings');
-$('pnSet').classList.toggle('on', v==='settings');
+updatePill();
 if(v==='list') renderList();
 if(v==='ex') renderEx();
-if(v==='settings') renderSyncStatus();
+if(v==='settings'){ renderSyncStatus(); renderAbout(); }
+moveNavInd(true);
 window.scrollTo(0,0);
+}
+/* ---------- pill nav indicator (diary moveNavInd) ---------- */
+let lastNavX = null;
+function moveNavInd(animate){
+const ind = $('navind'); if(!ind) return;
+const b = document.querySelector('#pillnav button.on'); if(!b) return;
+const x = b.offsetLeft, w = b.offsetWidth;
+if(!w) return;
+ind.style.width = w+'px';
+const from = lastNavX, to = x;
+ind.style.transform = 'translateX('+to+'px)';
+lastNavX = to;
+if(animate && from!==null && from!==to && ind.animate){
+ind.animate([
+{ transform:'translateX('+from+'px)' },
+{ transform:'translateX('+to+'px)' }
+], { duration:430, easing:'cubic-bezier(.30,1.25,.35,1)' });
+}
+}
+window.addEventListener('resize', ()=>moveNavInd(false));
+function updatePill(){
+$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings');
+$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings');
+$('pnSet').classList.toggle('on', view==='settings');
+}
+function updateHeader(){
+$('appname').textContent = CONFIG.appName;
+}
+/* ---------- dataset switching （ページ遷移なし・文脈はデータセット毎に保持） ---------- */
+function switchDataset(kind){
+if(kind===DS){ showView('list'); return; }
+if(syncRunning || bothBusy){ toast('同期中は切り替えできません'); return; }
+if(view==='list') CTX[DS].scrollY = window.scrollY;
+stashCtx();
+DS = kind; bindCtx();
+editWorks = [];
+updateHeader(); updatePill();
+let v = (view==='settings')? 'list': (CTX[DS].lastView || 'list');
+if(v==='ex' && DS!=='artists') v = 'list';
+if(v==='detail' && !artistById(state.detailId)) v = 'list';
+if(v==='settings') v = 'list';
+showView(v);
+if(v==='detail') renderDetail();
+if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
+startCtxIfNeeded();
+}
+/* 設定画面から、表示中データセットを切り替えて操作するための束縛 */
+function bindSettingsCtx(kind){
+if(kind===DS) return;
+if(syncRunning || bothBusy){ toast('同期中は切り替えできません'); return; }
+stashCtx();
+DS = kind; bindCtx();
+editWorks = [];
+updateHeader(); updatePill(); renderSyncStatus();
 }
 function setLayer(l){ state.layer = l; state.tags = new Set(); renderList();}
 function setMode(m){ state.mode = m; storeSet(LS_MODE, m); renderList();}
@@ -7659,12 +7755,19 @@ const TAG_FACETS = {};
 const TAG_FACET_ORDER = ['bunrui','gihou','jidaikuni','theme'];
 const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', jidaikuni:'年代・国', theme:'テーマ・概念'};
 function tagFacet(t){ return TAG_FACETS[t]||'theme'; }
+function renderAbout(){
+const el = $('aboutbox'); if(!el) return;
+const cnt = k=>liveDB(k).artists.length;
+const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
+el.textContent = '図鑑（独立版・統合）。作家図鑑：登録 '+cnt('artists')+' 名／作品画像参照 '+wrk('artists')+' 点（artists.json）。デザイナー図鑑：登録 '+cnt('designers')+' 名／作品画像参照 '+wrk('designers')+' 点（designers.json）。バージョン v'+APP_VERSION;
+}
 function renderList(){
 $('segCanon').classList.toggle('on', state.layer==='canon');
 $('segCand').classList.toggle('on', state.layer==='candidate');
 document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
-$('navEx').classList.toggle('hidden',!(DB.exhibitions && DB.exhibitions.length));
+$('searchbox').value = state.query;
+$('navEx').classList.toggle('hidden',!(DS==='artists' && DB.exhibitions && DB.exhibitions.length));
 /* tag chips from current layer, grouped by facet */
 const counts = {};
 layerArtists().forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
@@ -7673,6 +7776,7 @@ const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
 +esc(t)+' '+counts[t]+'</button>';
 let tagHtml = '';
+if(CONFIG.facets){
 TAG_FACET_ORDER.forEach(f=>{
 const all = tags.filter(t=>tagFacet(t)===f);
 if(!all.length) return;
@@ -7688,10 +7792,14 @@ toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'
 tagHtml += '<div class="taggroup"><div class="taggrouphead">'+TAG_FACET_LABELS[f]+'</div>'
 +'<div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div></div>';
 });
+} else {
+let shownTags = state.tagsOpen? tags.slice() : tags.slice(0,TAG_LIMIT);
+tags.forEach(t=>{ if(state.tags.has(t) && shownTags.indexOf(t)<0) shownTags.push(t); });
+tagHtml = '<div class="tagflat">'+shownTags.map(tagChip).join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'')+'</div>';
+}
 $('tagrow').innerHTML = tagHtml;
 renderListBody();
-$('aboutbox').textContent = CONFIG.appName+'（独立版）。登録 '+DB.artists.length+' 名／作品画像参照 '+
-DB.artists.reduce((n,a)=>n+worksOf(a).length,0)+' 点。データファイル：'+CONFIG.dataFile+'。バージョン v'+APP_VERSION;
+renderAbout();
 }
 function renderListBody(){
 const arr = filteredArtists();
@@ -7811,8 +7919,7 @@ if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
 }, { passive:true});
 })();
 
-/* ---------- exhibitions ---------- */
-/* ---------- exhibitions ---------- */
+/* ---------- exhibitions （作家：並び替え付き） ---------- */
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
 let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied */
 function exCoords(e){
@@ -7848,7 +7955,7 @@ function setExSort(m){
   }
   renderEx();
 }
-function renderEx(){
+function renderExArtists(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
@@ -7887,6 +7994,40 @@ if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="c
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html;
 }
+
+/* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
+function renderExDesigners(){
+const exs = (DB.exhibitions||[]).slice();
+const v = $('viewEx');
+if(!exs.length){ v.innerHTML = '<div class="empty">展示データはまだありません</div>'; return;}
+const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
+const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
+.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
+const up = exs.filter(e=>!(cur.indexOf(e)>=0))
+.sort((a,b)=>(a.start_date||'')<(b.start_date||'')?-1:1);
+const item = (e)=>{
+let meta = [e.venue, e.city].filter(Boolean).join('／');
+let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+let dlabel = '';
+if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
+if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
+return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
+'<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
+'<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+'</div>'+
+(e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
+'<div style="margin-top:4px; display:flex; gap:16px;">'+
+(e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
+(e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
+'</div></div>';
+};
+let html = '';
+if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
+if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
+v.innerHTML = html || '<div class="empty">展示データはまだありません</div>';
+}
+
+function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
 
 /* ---------- editor ---------- */
 let editWorks = [];
@@ -7929,7 +8070,7 @@ box.innerHTML = editWorks.map((w,i)=>
 }
 function addEditWork(){ editWorks.push({ caption:'', file:'', img:null}); renderEditWorks();}
 /* images picked in the editor are kept in memory + best-effort localStorage as pending uploads */
-const pendingImages = {}; /* baseName -> { name, type, dataUrl} */
+/* pendingImages はアクティブなデータセットの保留画像オブジェクト（bindCtx で束縛） */
 function fileBase(name){ return String(name||'').replace(/^.*[\\/]/,'').replace(/\.[a-zA-Z0-9]{2,5}$/,'');}
 function attachEditImage(input, i){
 const f = input.files && input.files[0]; if(!f) return;
@@ -8083,7 +8224,7 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 let syncStatus = 'disconnected', syncMsg = '', lastSyncAt = 0, syncTimer = null, syncRunning = false;
 
-function getClientId(){ return (storeGet(LS_CID)||'').trim(); }
+function getClientId(){ return (storeGet(LS_CID) || storeGet((DS==='artists'? CFG_DESIGNERS.prefix: CFG_ARTISTS.prefix)+'clientId') || '').trim(); }
 function getValidToken(){
   const tok = sessGet(SS_TOKEN); const exp = +(storeGet(LS_TOKEXP)||0);
   if(tok && exp && Date.now() < exp-15000) return tok;
@@ -8100,14 +8241,23 @@ function setSyncStatus(st, msg){
   syncStatus = st; if(typeof msg==='string') syncMsg = msg;
   renderSyncStatus();
 }
-function renderSyncStatus(){
+function statusLabelFor(st, msg, at){
   let label, cls = '';
-  if(syncStatus==='synced') label = '同期済み'+(lastSyncAt ? '（'+String(new Date(lastSyncAt).getHours()).padStart(2,'0')+':'+String(new Date(lastSyncAt).getMinutes()).padStart(2,'0')+'）' : '');
-  else if(syncStatus==='syncing') label = '同期中…';
-  else if(syncStatus==='error'){ label = '同期エラー'+(syncMsg ? '：'+syncMsg : ''); cls = 'err'; }
+  if(st==='synced') label = '同期済み'+(at ? '（'+String(new Date(at).getHours()).padStart(2,'0')+':'+String(new Date(at).getMinutes()).padStart(2,'0')+'）' : '');
+  else if(st==='syncing') label = '同期中…';
+  else if(st==='error'){ label = '同期エラー'+(msg ? '：'+msg : ''); cls = 'err'; }
   else label = 'Drive未接続（端末内に保存中）';
-  const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cls+'">'+esc(label)+'</span>';
-  const st = $('syncstat'); if(st) st.innerHTML = '<span class="'+cls+'">'+esc(label)+'</span>';
+  return { label:label, cls:cls };
+}
+function ctxStatus(kind){
+  if(kind===DS) return statusLabelFor(syncStatus, syncMsg, lastSyncAt);
+  const c = CTX[kind]; return statusLabelFor(c.syncStatus, c.syncMsg, c.lastSyncAt);
+}
+function renderSyncStatus(){
+  const cur = statusLabelFor(syncStatus, syncMsg, lastSyncAt);
+  const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>';
+  const sa = $('syncstatA'); if(sa){ const s = ctxStatus('artists'); sa.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
+  const sd = $('syncstatD'); if(sd){ const s = ctxStatus('designers'); sd.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
   const cid = $('clientid'); if(cid && document.activeElement!==cid) cid.value = getClientId();
 }
 function scheduleSync(){
@@ -8115,12 +8265,12 @@ function scheduleSync(){
   if(syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(()=>syncNow('auto'), 1500);
 }
-function saveClientId(){ const el = $('clientid'); if(el) storeSet(LS_CID, el.value.trim()); }
+function saveClientId(){ const el = $('clientid'); if(!el) return; const v = el.value.trim(); storeSet(CFG_ARTISTS.prefix+'clientId', v); storeSet(CFG_DESIGNERS.prefix+'clientId', v); }
 
 function connectDrive(){
   const cid = ($('clientid') ? $('clientid').value.trim() : getClientId());
-  if(!cid){ toast('先に OAuth クライアントID を入力してください'); showView('settings'); const g=$('syncgroup'); if(g) setTimeout(()=>{ g.scrollIntoView({behavior:'smooth', block:'center'}); const ci=$('clientid'); if(ci) ci.focus({preventScroll:true}); }, 80); return; }
-  storeSet(LS_CID, cid);
+  if(!cid){ toast('先に OAuth クライアントID を入力してください'); showView('settings'); const ci=$('clientid'); if(ci) setTimeout(()=>{ ci.scrollIntoView({behavior:'smooth', block:'center'}); ci.focus({preventScroll:true}); }, 80); return; }
+  storeSet(CFG_ARTISTS.prefix+'clientId', cid); storeSet(CFG_DESIGNERS.prefix+'clientId', cid);
   if(!(window.google && google.accounts && google.accounts.oauth2)){
     toast('Googleのライブラリを読み込めませんでした。通信環境を確認してください', 4000); return;
   }
@@ -8258,9 +8408,9 @@ async function syncNow(reason){
     }
     lastSyncAt = Date.now();
     setSyncStatus('synced');
-    if(state.view==='list') renderList();
-    if(state.view==='detail' && state.detailId!=null) renderDetail();
-    if(state.view==='ex') renderEx();
+    if(view==='list') renderList();
+    if(view==='detail' && state.detailId!=null) renderDetail();
+    if(view==='ex') renderEx();
   }catch(e){
     setSyncStatus('error', (e && e.message) ? e.message : String(e));
   }finally{ syncRunning = false; }
@@ -8270,11 +8420,10 @@ async function syncNow(reason){
 (function(){
   const nav = $('pillnav'); if(!nav) return;
   const order = ['artists','designers','settings'];
-  function currentDest(){ return state.view==='settings'? 'settings': CONFIG.kind; }
+  function currentDest(){ return view==='settings'? 'settings': DS; }
   function goDest(dest){
     if(dest==='settings'){ showView('settings'); return; }
-    if(dest===CONFIG.kind){ showView('list'); return; }
-    location.href = (dest==='artists')? '../artists/': '../designers/';
+    switchDataset(dest);
   }
   let sx = null, sy = null, suppressClick = false;
   nav.addEventListener('touchstart', e=>{ const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive:true });
@@ -8351,6 +8500,12 @@ function sbMarkSynced(app){
   storeSet(app.prefix+'tokenExp', String(Date.now()+bothTokenExpSec*1000));
   storeDel(app.prefix+'authError');
 }
+function sbMarkCtxSynced(app){
+  const kind = (app.prefix===CFG_ARTISTS.prefix)? 'artists': 'designers';
+  const now = Date.now();
+  if(kind===DS){ lastSyncAt = now; setSyncStatus('synced'); }
+  else { CTX[kind].syncStatus = 'synced'; CTX[kind].lastSyncAt = now; CTX[kind].syncMsg = ''; renderSyncStatus(); }
+}
 async function sbSyncOne(app){
   const raw = storeGet(app.prefix+'data');
   if(!raw) return '端末にデータがありません（対象外）';
@@ -8366,7 +8521,7 @@ async function sbSyncOne(app){
     if(created && created.id){
       storeSet(app.prefix+'driveFileId', created.id);
       sbMarkSynced(app);
-      if(app.prefix===CONFIG.prefix){ lastSyncAt = Date.now(); setSyncStatus('synced'); }
+      sbMarkCtxSynced(app);
       return '同期済み '+sbHhmm(new Date())+'（ファイルを作成）';
     }
     throw new Error('ファイルを作成できませんでした');
@@ -8378,7 +8533,7 @@ async function sbSyncOne(app){
   if(remoteMax > localMax) return '新しい変更がDrive側にあります。アプリを開いて取り込んでください';
   await sbUploadUpdate(file.id, raw);
   sbMarkSynced(app);
-  if(app.prefix===CONFIG.prefix){ lastSyncAt = Date.now(); setSyncStatus('synced'); }
+  sbMarkCtxSynced(app);
   return '同期済み '+sbHhmm(new Date());
 }
 async function sbRun(){
@@ -8423,7 +8578,7 @@ function syncBoth(){
 }
 
 /* ================= self update ================= */
-const APP_VERSION = '1.4';
+const APP_VERSION = '2.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -8452,21 +8607,36 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 /* ================= init ================= */
+function startCtxIfNeeded(){
+  const c = CTX[DS]; if(!c || c.started) return; c.started = true;
+  if(isDriveConnected()) setTimeout(()=>syncNow('startup'), 300);
+  else if(getClientId() && storeGet(LS_AUTHERR)) setSyncStatus('error', storeGet(LS_AUTHERR));
+  else if(getClientId()) setTimeout(trySilentRefresh, 900);
+}
+function loadDesignersSeed(){
+  fetch(CFG_DESIGNERS.seedUrl).then(r=>{ if(!r.ok) throw new Error('no seed'); return r.json(); })
+    .then(j=>{
+      const c = CTX.designers;
+      if(c.loadedFromStore || c.DB.artists.length) return; /* 実データがあれば種で上書きしない */
+      if(storeGet(CFG_DESIGNERS.prefix+'data')) return;
+      c.DB = normalizeFor('designers', j);
+      storeSet(CFG_DESIGNERS.prefix+'data', JSON.stringify(c.DB));
+      if(DS==='designers'){ DB = c.DB; if(view==='list') renderList(); }
+      renderAbout();
+    })
+    .catch(()=>{});
+}
 (function init(){
-  loadPendingImages();
-  /* optional external seed.json placed next to index.html (used when no embedded seed) */
-  const boot = ()=>{
-    renderList(); renderSyncStatus();
-    checkForUpdate();
-    if(isDriveConnected()) setTimeout(()=>syncNow('startup'), 300);
-    else if(getClientId() && storeGet(LS_AUTHERR)) setSyncStatus('error', storeGet(LS_AUTHERR));
-    else if(getClientId()) setTimeout(trySilentRefresh, 900);
-  };
-  if(!storeGet(LS_DATA) && !EMBEDDED_SEED){
-    fetch('seed.json').then(r=>{ if(!r.ok) throw new Error('no seed'); return r.json(); })
-      .then(j=>{ DB = normalizeData(j); saveDB(); boot(); })
-      .catch(()=>{ loadDB(); boot(); });
-  } else { loadDB(); boot(); }
+  const startDS = (location.hash==='#designers')? 'designers': 'artists';
+  ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
+  DS = startDS; bindCtx();
+  if(!CTX.designers.loadedFromStore && !storeGet(CFG_DESIGNERS.prefix+'data')) loadDesignersSeed();
+  updateHeader(); updatePill();
+  renderList(); renderSyncStatus(); renderAbout();
+  requestAnimationFrame(()=>moveNavInd(false));
+  window.addEventListener('load', ()=>moveNavInd(false));
+  checkForUpdate();
+  startCtxIfNeeded();
 })();
 </script>
 </body>
