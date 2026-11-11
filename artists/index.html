@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.13">
+<meta name="app-version" content="2.14">
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -192,8 +192,15 @@ button.blockbtn{display:flex; align-items:center; justify-content:center; width:
 button.blockbtn.primary{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 button.blockbtn.danger{border-color:var(--danger); color:var(--danger); background:transparent;}
 button.blockbtn:disabled{opacity:.4;}
-.syncstat{font-size:14px; color:var(--muted);}
+.syncstat{font-size:14px; color:var(--muted); display:flex; flex-wrap:wrap; column-gap:10px; align-items:baseline;}
 .syncstat .err{color:var(--danger);}
+/* settings compaction (v2.14): one-row sync buttons, collapsible data mgmt */
+.btnrow{display:flex; gap:8px;}
+.btnrow .btn{flex:1 1 0; margin:0; padding-left:6px; padding-right:6px; white-space:nowrap;}
+.setacc{border-radius:16px; padding:12px 16px;}
+.setacc .tagnm{font-size:14px;}
+#dmBody{margin-top:10px;}
+.dmlabel{font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em; margin:16px 0 0;}
 .note{font-size:14px; color:var(--muted); margin-top:8px; line-height:1.7;}
 .workedit{border:1px solid var(--line); border-radius:14px; padding:12px; margin-top:10px; background:var(--bg2);}
 .workedit .wr{display:flex; gap:6px; margin-top:6px;}
@@ -305,24 +312,22 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
   <div class="setgroup">
     <h3>Google Drive 同期</h3>
     <div class="setbox">
-      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstat">未接続</div></div>
-      <div class="setrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
+      <div class="syncstat" id="syncstat">未接続</div>
+      <div class="setrow btnrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
       <div id="syncresults"></div>
-      <div class="note">データは Drive 内の「artists.json」「designers.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
-      <div class="note">「今すぐ同期」は作家図鑑とデザイナー図鑑の両方を、Drive と相互に同期します（新しい方を取り込み、端末の内容を送ります）。</div>
+      <div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>
     </div>
   </div>
   <div class="setgroup">
-    <h3>データ管理</h3>
-    <div class="setbox">
-      <div class="setlabel" style="font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em;">作家図鑑</div>
-      <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
+    <button class="tagaccrow setacc" id="dmHead" aria-expanded="false" onclick="toggleDataMgmt()"><span class="tagnm">データ管理</span><span class="tagcnt">取り込み・書き出し・削除</span><span class="tagchev" id="dmChev">▸</span></button>
+    <div class="setbox hidden" id="dmBody">
+      <div class="small">ZIP（data.json＋img/）または JSON を選ぶと、同じ項目・同じ作品は自動でマージされます。</div>
+      <div class="dmlabel">作家図鑑</div>
       <button class="blockbtn" onclick="bindSettingsCtx('artists');document.getElementById('importfileA').click()">ファイルを選んで取り込む</button>
       <input type="file" id="importfileA" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
       <button class="blockbtn" onclick="bindSettingsCtx('artists');exportJSON()">JSON を書き出す</button>
       <button class="blockbtn danger" onclick="bindSettingsCtx('artists');wipeAll()">全データを削除</button>
-      <div class="setrow"><div class="setlabel" style="font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em;">デザイナー図鑑</div></div>
-      <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
+      <div class="dmlabel">デザイナー図鑑</div>
       <button class="blockbtn" onclick="bindSettingsCtx('designers');document.getElementById('importfileD').click()">ファイルを選んで取り込む</button>
       <input type="file" id="importfileD" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
       <button class="blockbtn" onclick="bindSettingsCtx('designers');exportJSON()">JSON を書き出す</button>
@@ -7990,6 +7995,14 @@ if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 pinNav();
 }
+/* データ管理セクションの折りたたみ（初期状態は閉） */
+let dmOpen = false;
+function toggleDataMgmt(){
+dmOpen = !dmOpen;
+const b = $('dmBody'); if(b) b.classList.toggle('hidden', !dmOpen);
+const c = $('dmChev'); if(c) c.textContent = dmOpen ? '▾' : '▸';
+const h = $('dmHead'); if(h) h.setAttribute('aria-expanded', dmOpen ? 'true' : 'false');
+}
 /* 設定画面から、表示中データセットを切り替えて操作するための束縛 */
 function bindSettingsCtx(kind){
 if(kind===DS) return;
@@ -8044,7 +8057,7 @@ function renderAbout(){
 const el = $('aboutbox'); if(!el) return;
 const cnt = k=>liveDB(k).artists.length;
 const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
-el.textContent = '図鑑（独立版・統合）。作家図鑑：登録 '+cnt('artists')+' 名／作品画像参照 '+wrk('artists')+' 点（artists.json）。デザイナー図鑑：登録 '+cnt('designers')+' 名／作品画像参照 '+wrk('designers')+' 点（designers.json）。バージョン v'+APP_VERSION;
+el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+wrk('artists')+'点 ・ デザイナー '+cnt('designers')+'名／'+wrk('designers')+'点';
 }
 function renderList(){
 $('segCanon').classList.toggle('on', state.layer==='canon');
@@ -8850,7 +8863,7 @@ function appStatusInfo(){
 function renderSyncStatus(){
   const cur = ctxStatus(DS);
   const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>';
-  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
+  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>'; }
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
 }
@@ -9216,7 +9229,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.13';
+const APP_VERSION = '2.14';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
