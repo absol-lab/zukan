@@ -25,9 +25,10 @@
 html,body{margin:0;padding:0;}
 body{background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.65;
   padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);}
-button{font-family:inherit; cursor:pointer;}
+button{font-family:inherit; cursor:pointer; color:inherit; background:none; -webkit-appearance:none; appearance:none;}
 input,select,textarea{font-family:inherit; font-size:15px; color:var(--ink);}
 a{color:var(--shu);}
+.homelink{font-size:12.5px; color:var(--ink60); text-decoration:none; letter-spacing:.08em; white-space:nowrap; padding:6px 0;}
 /* header */
 header.top{position:sticky; top:0; z-index:40; background:var(--paper); border-bottom:1px solid var(--ink);}
 .toprow{display:flex; align-items:baseline; gap:10px; padding:10px 14px 6px;}
@@ -41,14 +42,15 @@ button.txtbtn.on{color:var(--shu); border-bottom:2px solid var(--shu);}
 /* toolbar */
 .toolbar{padding:8px 14px 4px; border-bottom:1px solid var(--lineSoft);}
 .seg{display:inline-flex; border:1px solid var(--ink);}
-.seg button{background:var(--paper); border:none; padding:5px 16px; font-size:13px; letter-spacing:.1em; font-family:var(--serif);}
+.seg button{background:var(--paper); border:none; color:var(--ink); padding:5px 16px; font-size:13px; letter-spacing:.1em; font-family:var(--serif);}
 .seg button.on{background:var(--ink); color:var(--paper);}
 .seg.mini button{padding:5px 9px; font-size:12px;}
 .searchrow{display:flex; gap:8px; margin-top:8px;}
 .searchrow input[type=search]{flex:1; background:var(--card); border:1px solid var(--line); padding:8px 10px; font-size:15px; border-radius:0; -webkit-appearance:none;}
 .tagrow{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
-.tagchip{border:1px solid var(--line); background:none; padding:2px 10px; font-size:12px; border-radius:0;}
-.tagchip.on{background:var(--shu); border-color:var(--shu); color:#fff;}
+.tagchip{border:1px solid var(--line); background:none; color:var(--ink); padding:2px 10px; font-size:12px; border-radius:0;}
+.tagchip.on{background:var(--ink); border-color:var(--ink); color:var(--paper);}
+.tagmore{border:1px solid var(--lineSoft); background:none; color:var(--ink60); padding:2px 10px; font-size:12px; letter-spacing:.06em; border-radius:0;}
 /* list */
 main{padding:0 14px 90px;}
 h2.sechead{font-family:var(--serif); font-size:16px; letter-spacing:.12em; margin:26px 0 4px; padding-bottom:4px; border-bottom:1px solid var(--ink); display:flex; justify-content:space-between; align-items:baseline;}
@@ -62,6 +64,12 @@ figure.work{margin:0; background:var(--card); border:1px solid var(--line); padd
 figure.work .ph{aspect-ratio:4/3; background:var(--paper2); display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--lineSoft);}
 figure.work .ph img{width:100%; height:100%; object-fit:cover; display:block;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
+figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--paper);}
+figure.work .ph.noplate .noimg{font-size:10.5px; letter-spacing:.08em; line-height:1.55; padding:4px 8px;}
+.grid.wide figure.work .ph.noplate{height:72px;}
+.grid.compact figure.work .ph.noplate{height:40px;}
+.grid.mini figure.work .ph.noplate{height:32px;}
+.gallery figure.work .ph.noplate{aspect-ratio:auto; height:88px;}
 figure.work figcaption{padding:5px 2px 2px;}
 figure.work .nm{font-family:var(--serif); font-size:14.5px; line-height:1.35;}
 figure.work .sub{font-size:10.5px; color:var(--ink60); line-height:1.4; margin-top:1px;}
@@ -75,12 +83,12 @@ figure.work .sub{font-size:10.5px; color:var(--ink60); line-height:1.4; margin-t
 .empty{padding:40px 0; text-align:center; color:var(--ink60); font-family:var(--serif); letter-spacing:.1em;}
 /* detail */
 .detailhead{padding:16px 0 0;}
-button.backbtn{background:none; border:none; font-size:14px; padding:6px 0; letter-spacing:.06em;}
+button.backbtn{background:none; border:none; color:var(--ink); font-size:14px; padding:6px 0; letter-spacing:.06em;}
 .dname{font-family:var(--serif); font-size:26px; line-height:1.3; margin:6px 0 0; letter-spacing:.05em;}
 .dlatin{font-size:14px; color:var(--ink60); margin-top:2px;}
 .dmeta{font-size:12.5px; color:var(--ink60); margin-top:6px; border-top:1px solid var(--lineSoft); border-bottom:1px solid var(--lineSoft); padding:6px 0; display:flex; flex-wrap:wrap; gap:4px 14px;}
 .dtabs{display:flex; gap:0; margin-top:14px; border-bottom:1px solid var(--ink);}
-.dtabs button{flex:1; background:none; border:none; border-right:1px solid var(--lineSoft); font-family:var(--serif); font-size:15px; letter-spacing:.2em; padding:9px 0;}
+.dtabs button{flex:1; background:none; border:none; color:var(--ink); border-right:1px solid var(--lineSoft); font-family:var(--serif); font-size:15px; letter-spacing:.2em; padding:9px 0;}
 .dtabs button:last-child{border-right:none;}
 .dtabs button.on{border-bottom:3px solid var(--shu); color:var(--shu);}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
@@ -108,20 +116,20 @@ h3.subhead:first-child{margin-top:6px;}
 .exitem .days{color:var(--shu); font-family:var(--serif);}
 button.linkbtn{background:none; border:none; color:var(--shu); font-size:13px; padding:0; text-decoration:underline;}
 /* forms / settings */
-.setgroup{border-top:1px solid var(--ink); margin-top:22px; padding-top:10px;}
-.setgroup h3{font-family:var(--serif); font-size:15px; letter-spacing:.12em; margin:0 0 8px;}
-.setrow{padding:8px 0; border-bottom:1px solid var(--lineSoft);}
+.setgroup{border-top:1px solid var(--ink); margin-top:26px; padding-top:12px;}
+.setgroup h3{font-family:var(--serif); font-size:14px; letter-spacing:.12em; margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--lineSoft);}
+.setrow{padding:6px 0; border-bottom:1px solid var(--lineSoft);}
 .setlabel{font-size:12px; color:var(--ink60); letter-spacing:.06em; margin-bottom:4px;}
 input.textin, select.textin, textarea.textin{width:100%; background:var(--card); border:1px solid var(--line); padding:9px 10px; border-radius:0; -webkit-appearance:none;}
 textarea.textin{min-height:110px; line-height:1.7;}
-button.blockbtn{display:block; width:100%; background:var(--paper); border:1px solid var(--ink); padding:11px; font-size:14px; letter-spacing:.1em; margin-top:10px; border-radius:0; font-family:var(--serif);}
+button.blockbtn{display:block; width:100%; height:46px; background:var(--paper); border:1px solid var(--ink); color:var(--ink); padding:0 11px; font-size:13.5px; letter-spacing:.1em; margin-top:10px; border-radius:0; font-family:var(--serif);}
 button.blockbtn.primary{background:var(--ink); color:var(--paper);}
 button.blockbtn.danger{border-color:var(--shu); color:var(--shu);}
 button.blockbtn:disabled{opacity:.4;}
 .workedit{border:1px solid var(--lineSoft); padding:8px; margin-top:8px; background:var(--card);}
 .workedit .wr{display:flex; gap:6px; margin-top:6px;}
 .workedit input{flex:1; min-width:0;}
-.small{font-size:12px; color:var(--ink60);}
+.small{font-size:11.5px; line-height:1.75; color:var(--ink60);}
 #toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:9px 18px; font-size:13px; z-index:200; display:none; max-width:88vw; text-align:center;}
 .fab{position:fixed; right:16px; bottom:calc(18px + env(safe-area-inset-bottom)); z-index:50; width:54px; height:54px; border-radius:50%; background:var(--ink); color:var(--paper); border:none; font-size:26px; line-height:1; box-shadow:0 2px 8px rgba(0,0,0,.25);}
 .hidden{display:none !important;}
@@ -130,6 +138,7 @@ button.blockbtn:disabled{opacity:.4;}
 <body>
 <header class="top">
   <div class="toprow">
+    <a class="homelink" href="../">← 図鑑</a>
     <h1 class="appname">作家図鑑</h1>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
@@ -7428,7 +7437,7 @@ const SS_TOKEN = CONFIG.prefix+'token';
 
 /* ---------- data ---------- */
 let DB = { kind: CONFIG.kind, version: 1, sections: [], artists: [], exhibitions: []};
-let state = { view:'list', layer:'canon', mode: storeGet(LS_MODE)||'def', query:'', tags:new Set(), detailId:null, tab:'works'};
+let state = { view:'list', layer:'canon', mode: storeGet(LS_MODE)||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false};
 
 function emptyData(){ return { kind: CONFIG.kind, version: 1, sections: [], artists: [], exhibitions: []};}
 function normalizeData(d){
@@ -7519,7 +7528,7 @@ return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"></span>';
 function hydrateImg(span, work){
 if(!span ||!work) return;
 const cap = work.caption||'';
-const fail = ()=>{ span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
+const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('noplate'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
 if(driveImgCache[fid]){ span.innerHTML = '<img src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
@@ -7578,6 +7587,7 @@ function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
 renderList();
 }
+function toggleTagsOpen(){ state.tagsOpen = !state.tagsOpen; renderList(); }
 function layerArtists(){ return DB.artists.filter(a=>(a.layer||'canon')===state.layer);}
 function filteredArtists(){
 let arr = layerArtists();
@@ -7603,7 +7613,10 @@ $('navEx').classList.toggle('hidden',!(DB.exhibitions && DB.exhibitions.length))
 const counts = {};
 layerArtists().forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
 const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
-$('tagrow').innerHTML = tags.map(t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'+esc(t)+' '+counts[t]+'</button>').join('');
+const TAG_LIMIT = 12;
+let shownTags = state.tagsOpen? tags.slice() : tags.slice(0,TAG_LIMIT);
+tags.forEach(t=>{ if(state.tags.has(t) && shownTags.indexOf(t)<0) shownTags.push(t); });
+$('tagrow').innerHTML = shownTags.map(t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'+esc(t)+' '+counts[t]+'</button>').join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'');
 renderListBody();
 $('aboutbox').textContent = CONFIG.appName+'（独立版）。登録 '+DB.artists.length+' 名／作品画像参照 '+
 DB.artists.reduce((n,a)=>n+worksOf(a).length,0)+' 点。データファイル：'+CONFIG.dataFile;
@@ -7624,7 +7637,7 @@ html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><spa
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{
 const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph" data-work="'+escA(a.id)+'">'+(th?imgHTML(th):'<span class="noimg">図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th):'<span class="noimg">図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 });
