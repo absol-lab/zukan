@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="sumi" data-fontsize="standard" data-fontfamily="mincho" data-lineheight="standard">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,32 +7,76 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
-<meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.21">
+<meta name="theme-color" content="#000000">
+<meta name="app-version" content="2.22">
 <link rel="apple-touch-icon" href="IMG_2278.png">
-<link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" async defer></script>
 <style>
 :root{
-  /* diary (kinari) design tokens */
-  --bg:#f1ebda; --bg2:#eae2cd; --card:#faf6ea; --card2:#f3eddb;
-  /* v2.11: --muted / --danger darkened within the sumi x kinari world so that
-     secondary text clears WCAG 4.5:1 on every ground (muted min 5.02:1 on
-     --bg2, danger min 4.51:1 on --bg2). --lineStrong gives input boundaries
-     the required 3:1 against adjacent grounds; --line stays a hairline. */
-  --text:#211d14; --muted:#675d49; --accent:#57503e; --line:#ddd2b8; --lineStrong:#8a7a54;
-  --danger:#b93527; --nav:rgba(250,246,234,.95); --sheet:rgba(60,52,32,.35);
-  --fab:#57503e; --fabink:#f1ebda;
+  /* appearance system (v2.22, ported from the diary app): four themes keyed
+     off <html data-theme>, the content font rides on --bodyfont (UI stays
+     --sans, per the diary rule), and --fs / --lh carry the text-size and
+     line-height settings. The markup default is sumi; the pre-paint script
+     restores the saved choice before first paint. */
+  --fs:16px; --lh:1.7;
+  --bodyfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --serif:var(--bodyfont);
+  --sans:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
   /* legacy aliases (older class names / inline styles) */
   --paper:var(--bg); --paper2:var(--bg2); --ink:var(--text);
-  --ink60:var(--muted); --ink35:rgba(33,29,20,.65);
+  --ink60:var(--muted);
   --lineSoft:var(--line); --shu:var(--danger);
-  --serif:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
-  --sans:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
 }
+/* sumi (default): the diary sumi palette. Two audit-driven micro-adjustments
+   vs the diary's raw values: --danger #ff453a -> #ff5247 so danger text on
+   --card clears 4.5:1 (4.67 measured; #ff453a gives 4.42), and --fabink is
+   black rather than the diary's white because this app's FAB glyph is a
+   text "+" (white on #a9a9b0 is 2.35:1, black is 8.99:1). --lineStrong is a
+   zukan-only token (input boundaries, 3:1+) with no diary counterpart. */
+:root[data-theme="sumi"]{
+  --bg:#000000; --bg2:#101012; --card:#26262b; --card2:#33333a;
+  --text:#f4f4f6; --muted:#9c9ca4; --accent:#d9d9e0; --line:#33333a; --lineStrong:#7a7a84;
+  --danger:#ff5247; --nav:rgba(26,26,30,.92); --sheet:rgba(0,0,0,.55);
+  --fab:#a9a9b0; --fabink:#000000; --ink35:rgba(244,244,246,.65);
+}
+:root[data-theme="ocher"]{
+  --bg:#16110b; --bg2:#1d1610; --card:#251c12; --card2:#2f2416;
+  --text:#f4ecdc; --muted:#b3a58c; --accent:#d9a441; --line:#3a2d1c; --lineStrong:#97835e;
+  --danger:#ff5a47; --nav:rgba(33,25,16,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#d9a441; --fabink:#16110b; --ink35:rgba(244,236,220,.65);
+}
+:root[data-theme="spandrel"]{
+  --bg:#0e100e; --bg2:#141713; --card:#191d18; --card2:#22271f;
+  --text:#eef0e4; --muted:#a3ab97; --accent:#c9cfae; --line:#2c332a; --lineStrong:#828a76;
+  --danger:#ff5a47; --nav:rgba(22,26,21,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#c9cfae; --fabink:#0e100e; --ink35:rgba(238,240,228,.65);
+}
+/* kinari: the pre-v2.22 light palette, kept as a theme with its v2.11-audited
+   values (--muted #675d49 / --danger #b93527 / --lineStrong #8a7a54). */
+:root[data-theme="kinari"]{
+  --bg:#f1ebda; --bg2:#eae2cd; --card:#faf6ea; --card2:#f3eddb;
+  --text:#211d14; --muted:#675d49; --accent:#57503e; --line:#ddd2b8; --lineStrong:#8a7a54;
+  --danger:#b93527; --nav:rgba(250,246,234,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#57503e; --fabink:#f1ebda; --ink35:rgba(33,29,20,.65);
+}
+/* text size (diary --fs steps) */
+:root[data-fontsize="small"]{--fs:14px;}
+:root[data-fontsize="standard"]{--fs:16px;}
+:root[data-fontsize="large"]{--fs:18px;}
+:root[data-fontsize="xlarge"]{--fs:20px;}
+/* line height (diary steps) */
+:root[data-lineheight="narrow"]{--lh:1.5;}
+:root[data-lineheight="standard"]{--lh:1.7;}
+:root[data-lineheight="wide"]{--lh:1.9;}
+:root[data-lineheight="xwide"]{--lh:2.1;}
+/* device content fonts resolve pre-paint via the attribute; web fonts are
+   applied by applyAppearance() as an inline --bodyfont once chosen. */
+:root[data-fontfamily="mincho"]{--bodyfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;}
+:root[data-fontfamily="gothic"]{--bodyfont:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.65;
@@ -140,21 +184,21 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .dtabs button.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
-.bodytext{white-space:pre-wrap; font-size:16px; line-height:1.85; padding:12px 0; font-family:var(--serif);}
+.bodytext{white-space:pre-wrap; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 .tagline span{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:3px 11px; font-size:12.5px;}
 /* viewer */
-#viewer{position:fixed; inset:0; background:#111; z-index:100; display:none; flex-direction:column;}
+#viewer{position:fixed; inset:0; background:var(--bg); z-index:100; display:none; flex-direction:column;}
 #viewer.open{display:flex;}
 #viewer .vimg{flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;}
 #viewer .vimg img{max-width:100%; max-height:100%; object-fit:contain;}
-#viewer .vimg .noimg{color:#888; font-family:var(--serif); letter-spacing:.2em;}
-#viewer .vcap{color:#eee; font-size:14px; padding:10px 16px; line-height:1.6; font-family:var(--serif);}
+#viewer .vimg .noimg{color:var(--muted); font-family:var(--serif); letter-spacing:.2em;}
+#viewer .vcap{color:var(--text); font-size:14px; padding:10px 16px; line-height:1.6; font-family:var(--serif);}
 #viewer .vbar{display:flex; justify-content:space-between; align-items:center; padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
-#viewer .vbar button{background:none; border:1px solid #555; color:#eee; padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
-#viewer .vcount{color:#999; font-size:13px;}
+#viewer .vbar button{background:none; border:1px solid var(--lineStrong); color:var(--text); padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
+#viewer .vcount{color:var(--muted); font-size:13px;}
 /* exhibitions */
 .exitem{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:12px;}
 .exitem .et{font-family:var(--serif); font-size:16px; line-height:1.45;}
@@ -169,20 +213,20 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .tlbig{font-family:var(--serif); font-size:32px; line-height:1.1; letter-spacing:.02em;}
 .tlyears{font-size:13px; color:var(--muted); letter-spacing:.06em; margin-top:2px;}
 .tltitle{font-family:var(--serif); font-size:16.5px; margin-top:5px; line-height:1.5;}
-.tlsum{font-size:15px; line-height:1.8; margin-top:8px; white-space:pre-wrap;}
-.tlbg{font-size:14.5px; line-height:1.85; margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+.tlsum{font-size:calc(var(--fs) * .9375); line-height:var(--lh); margin-top:8px; white-space:pre-wrap;}
+.tlbg{font-size:calc(var(--fs) * .90625); line-height:var(--lh); margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
 .tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
 .tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
 button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
 .qcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 16px; margin-top:14px;}
-.qq{font-family:var(--serif); font-size:17px; line-height:1.7; margin-top:6px;}
+.qq{font-family:var(--serif); font-size:calc(var(--fs) * 1.0625); line-height:var(--lh); margin-top:6px;}
 .qchoice{display:block; width:100%; text-align:left; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:13px 15px; font-size:14.5px; border-radius:12px; margin-top:10px; font-family:var(--sans); min-height:56px;}
 .qchoice.correct{border-color:var(--accent); background:var(--accent); color:var(--bg); font-weight:600;}
 .qchoice.wrong{border-color:var(--danger); color:var(--danger);}
 .qfeedback{font-size:14px; margin-top:14px; line-height:1.7;}
 .qanswer{font-family:var(--serif); font-size:25px; line-height:1.4; margin-top:14px; letter-spacing:.03em;}
 .qyears{font-size:13px; color:var(--muted); letter-spacing:.06em; margin-top:4px;}
-.qbg{font-size:14.5px; line-height:1.85; margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+.qbg{font-size:calc(var(--fs) * .90625); line-height:var(--lh); margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
 .qmarkrow{display:flex; gap:8px; margin-top:16px;}
 .qmarkrow button{flex:1; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:13px 0; font-size:14px; border-radius:12px; font-family:var(--sans); letter-spacing:.06em; min-height:56px;}
 .qmarkrow button.known{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
@@ -211,9 +255,6 @@ button.blockbtn:disabled{opacity:.4;}
 /* settings compaction (v2.14): one-row sync buttons, collapsible data mgmt */
 .btnrow{display:flex; gap:8px;}
 .btnrow .btn{flex:1 1 0; margin:0; padding-left:6px; padding-right:6px; white-space:nowrap;}
-.setacc{border-radius:16px; padding:12px 16px;}
-.setacc .tagnm{font-size:14px;}
-#dmBody{margin-top:10px;}
 .dmlabel{font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em; margin:16px 0 0;}
 .note{font-size:14px; color:var(--muted); margin-top:8px; line-height:1.7;}
 .workedit{border:1px solid var(--line); border-radius:14px; padding:12px; margin-top:10px; background:var(--bg2);}
@@ -223,11 +264,11 @@ button.blockbtn:disabled{opacity:.4;}
 #toast{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 112px); transform:translateX(-50%); background:var(--text); color:var(--bg); border-radius:999px; padding:10px 20px; font-size:13.5px; z-index:200; display:none; max-width:88vw; text-align:center;}
 #toast.on{display:flex; align-items:center; gap:12px; text-align:left;}
 #toastact{flex:none; min-height:48px; padding:0 18px; border:1px solid var(--bg); border-radius:999px; color:var(--bg); background:transparent; font-size:13.5px; font-weight:600; font-family:var(--sans);}
-.fab{position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:40; width:60px; height:60px; border-radius:50%; background:var(--fab); color:var(--fabink); border:none; font-size:28px; line-height:1; box-shadow:0 6px 22px rgba(60,52,32,.35);}
+.fab{position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:40; width:60px; height:60px; border-radius:50%; background:var(--fab); color:var(--fabink); border:none; font-size:28px; line-height:1; box-shadow:0 6px 22px rgba(0,0,0,.45);}
 .fab:active{transform:scale(.96);}
 /* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
-#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); background:color-mix(in srgb, var(--nav) 55%, transparent); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; backdrop-filter:blur(18px) saturate(1.5); -webkit-backdrop-filter:blur(18px) saturate(1.5); box-shadow:0 10px 30px rgba(60,52,32,.35), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
-#navind{position:absolute; top:3px; bottom:3px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(60,52,32,.20); will-change:transform;}
+#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+#navind{position:absolute; top:3px; bottom:3px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
 #pillnav button{position:relative; z-index:1; flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; border-radius:999px; font-size:12px; font-weight:500; color:var(--muted); white-space:nowrap; font-family:inherit; transition:color .3s;}
 #pillnav svg{width:21px; height:21px;}
 #pillnav button.on{color:var(--text); font-weight:600;}
@@ -239,9 +280,9 @@ body.vt-run{overflow:hidden;}
 /* ---------- opening (v2.11, replaces the v2.9 mist splash) ----------
    The user's final call on launch screens: a plain veil in the app's own
    ground colour that simply fades and reveals the UI — nothing else.
-   No gradient/wash (tried and rejected), no logo, no fog, and no black:
-   on this light-ground app a black veil would flicker light/dark, so the
-   veil is --bg itself and the start reads as the screen quietly appearing.
+   No gradient/wash (tried and rejected), no logo, no fog: the veil is
+   --bg itself (v2.22: the active theme's ground, black by default) and
+   the start reads as the screen quietly appearing.
    Fade .45s, the same value the diary app settled on. */
 #veil{position:fixed; inset:0; z-index:300; background:var(--bg); animation:veilOut .45s cubic-bezier(0.2,0,0,1) .1s both;}
 @keyframes veilOut{from{opacity:1;} to{opacity:0;}}
@@ -260,7 +301,7 @@ button.txtbtn::after{content:''; position:absolute; left:0; right:0; top:-9px; b
 .exitem a{display:inline-flex; align-items:center; min-height:48px;}
 /* focus visibility + input boundaries (3:1) */
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-input.textin:focus, select.textin:focus, textarea.textin:focus, .searchrow input[type=search]:focus{border-color:var(--accent); box-shadow:0 0 0 2px rgba(87,80,62,.28);}
+input.textin:focus, select.textin:focus, textarea.textin:focus, .searchrow input[type=search]:focus{border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);}
 input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 /* ---------- confirm dialog (v2.11): verb-labelled, undo-first policy ----------
    Destructive actions that cannot be undone ask here — never a bare
@@ -274,15 +315,50 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 #confirmdlg .cd-title{font-size:17px; font-weight:700; letter-spacing:.03em; padding-right:48px;}
 #confirmdlg .cd-body{font-size:14.5px; line-height:1.75; margin-top:8px;}
 #confirmdlg .cd-ok{display:flex; align-items:center; justify-content:center; width:100%; min-height:56px; margin-top:18px; border-radius:999px; background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:15px; font-weight:600; font-family:var(--sans);}
-#confirmdlg .cd-ok.danger{background:var(--danger); border-color:var(--danger); color:#fff;}
+#confirmdlg .cd-ok.danger{background:var(--danger); background:color-mix(in srgb, var(--danger) 74%, #000); border-color:var(--danger); border-color:color-mix(in srgb, var(--danger) 74%, #000); color:#fff;}
 #confirmdlg .cd-cancel{display:flex; align-items:center; justify-content:center; width:100%; min-height:56px; margin-top:16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:var(--sans);}
 @media (prefers-reduced-motion: reduce){
   #confirmdlg .cd-sheet{animation:none;}
 }
+/* ---------- settings (v2.22, diary layout ported) ----------
+   Row list + per-row panels, exactly the diary app's composition:
+   Drive pill row, then a group card (theme / text / font / leading),
+   then a group card (data / about). */
+.setttl{text-align:center; font-size:18px; font-weight:700; letter-spacing:.08em; margin:6px 0 20px; font-family:var(--sans);}
+.pillrow{display:flex; align-items:center; gap:15px; width:100%; text-align:left; background:var(--card); border-radius:999px; padding:18px 22px; margin-bottom:26px; font-family:var(--sans); color:var(--text); min-height:48px;}
+.pillrow:active{background:var(--card2);}
+.groupcard{background:var(--card); border-radius:26px; padding:4px 20px; margin-bottom:26px;}
+.srow{display:flex; align-items:center; gap:15px; width:100%; text-align:left; padding:16px 0; border-bottom:1px solid var(--line); font-family:var(--sans); color:var(--text); min-height:48px;}
+.groupcard .srow:last-child{border-bottom:none;}
+button.srow:active{opacity:.6;}
+.srow .ic{flex:none; width:26px; height:26px; color:var(--muted); display:inline-flex; align-items:center; justify-content:center;}
+.srow .ic svg{width:25px; height:25px;}
+.pillrow .ic{flex:none; width:26px; height:26px; color:var(--muted); display:inline-flex; align-items:center; justify-content:center;}
+.pillrow .ic svg{width:25px; height:25px;}
+.srow .lb, .pillrow .lb{flex:1; font-size:calc(var(--fs) * 1.02); min-width:0;}
+.srow .val{color:var(--muted); font-size:calc(var(--fs) * .95);}
+.srow .chev, .pillrow .chev{color:var(--muted); font-size:22px; line-height:1;}
+.srow.danger .lb{color:var(--danger);}
+#driveval{color:var(--muted); font-size:calc(var(--fs) * .95);}
+.panelnav{display:flex; align-items:center; gap:6px; margin:2px 0 16px; font-family:var(--sans);}
+.panelnav .back{min-width:44px; min-height:48px; display:inline-flex; align-items:center; font-size:calc(var(--fs) * .95); color:var(--muted); font-family:var(--sans);}
+.panelnav .pttl{flex:1; text-align:center; font-weight:700; font-size:calc(var(--fs) * 1.05);}
+.panelnav .psp{width:44px; flex:none;}
+.swatches{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;}
+.swatch{border:2px solid transparent; border-radius:14px; padding:6px 4px 8px; text-align:center; font-size:calc(var(--fs) * .78); color:var(--text); font-family:var(--sans); min-height:48px;}
+.swatch .chip{height:40px; border-radius:9px; border:1px solid rgba(128,128,128,.35); margin-bottom:6px; position:relative; overflow:hidden;}
+.swatch.on{border-color:var(--accent);}
+.segrow{display:flex; gap:8px; flex-wrap:wrap;}
+button.zseg{padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg2); color:var(--text); font-size:calc(var(--fs) * .88); font-family:var(--sans); min-height:48px;}
+button.zseg.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
+.catlabel{color:var(--muted); font-size:calc(var(--fs) * .8); margin:18px 4px 8px; letter-spacing:.1em; font-family:var(--sans);}
 .hidden{display:none !important;}
 </style>
 </head>
 <body>
+<script>/* pre-paint (v2.22, diary pattern): restore saved appearance before
+   first paint so a returning user never sees the default theme flash. */
+try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h=document.documentElement;if(z){if(z.theme)h.dataset.theme=z.theme;if(z.fontSize)h.dataset.fontsize=z.fontSize;if(z.fontFamily)h.dataset.fontfamily=z.fontFamily;if(z.lineHeight)h.dataset.lineheight=z.lineHeight;}}}catch(e){}</script>
 <div id="veil" aria-hidden="true"></div>
 <header class="top">
   <div class="toprow">
@@ -323,35 +399,8 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 <main id="viewQuiz" class="hidden"></main>
 
 <main id="viewSettings" class="hidden">
-  <div class="setgroup">
-    <h3>Google Drive 同期</h3>
-    <div class="setbox">
-      <div class="syncstat" id="syncstat">未接続</div>
-      <div class="setrow btnrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
-      <div id="syncresults"></div>
-      <div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>
-    </div>
-  </div>
-  <div class="setgroup">
-    <button class="tagaccrow setacc" id="dmHead" aria-expanded="false" onclick="toggleDataMgmt()"><span class="tagnm">データ管理</span><span class="tagcnt">取り込み・書き出し・削除</span><span class="tagchev" id="dmChev">▸</span></button>
-    <div class="setbox hidden" id="dmBody">
-      <div class="small">ZIP（data.json＋img/）または JSON を選ぶと、同じ項目・同じ作品は自動でマージされます。</div>
-      <div class="dmlabel">作家図鑑</div>
-      <button class="blockbtn" onclick="bindSettingsCtx('artists');document.getElementById('importfileA').click()">ファイルを選んで取り込む</button>
-      <input type="file" id="importfileA" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
-      <button class="blockbtn" onclick="bindSettingsCtx('artists');exportJSON()">JSON を書き出す</button>
-      <button class="blockbtn danger" onclick="bindSettingsCtx('artists');wipeAll()">全データを削除</button>
-      <div class="dmlabel">デザイナー図鑑</div>
-      <button class="blockbtn" onclick="bindSettingsCtx('designers');document.getElementById('importfileD').click()">ファイルを選んで取り込む</button>
-      <input type="file" id="importfileD" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
-      <button class="blockbtn" onclick="bindSettingsCtx('designers');exportJSON()">JSON を書き出す</button>
-      <button class="blockbtn danger" onclick="bindSettingsCtx('designers');wipeAll()">全データを削除</button>
-    </div>
-  </div>
-  <div class="setgroup">
-    <h3>このアプリについて</h3>
-    <div class="setbox"><div class="small" id="aboutbox"></div></div>
-  </div>
+  <div id="settingsmain"></div>
+  <div id="settingspanel" style="display:none"></div>
 </main>
 
 <button class="fab" id="fabAdd" onclick="openEditor(null)">＋</button>
@@ -360,7 +409,7 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
   <span id="navind"></span>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
   <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
-  <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg><span>設定</span></button>
+  <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
 </nav>
 
 <div id="viewer">
@@ -7918,7 +7967,7 @@ if(v==='list') renderList();
 if(v==='ex') renderEx();
 if(v==='timeline') renderTimeline();
 if(v==='quiz') renderQuiz();
-if(v==='settings'){ renderSyncStatus(); renderAbout(); }
+if(v==='settings'){ renderSettings(); }
 moveNavInd(true);
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(wantAnim && oldEl && newEl && oldEl!==newEl){
@@ -7927,7 +7976,6 @@ vtSlide(oldEl, newEl, dir);
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 window.scrollTo(0,0);
 }
-pinNav(); setTimeout(pinNav, 350);
 }
 function vtSlide(oldEl, newEl, dir){
 vtBusy = true;
@@ -7965,10 +8013,10 @@ const finish = ()=>{
 if(done) return; done = true;
 [aIn, aOut].forEach(a=>{ try{ a.cancel(); }catch(e){} });
 [oldEl, newEl].forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; el.style.zIndex=''; });
+document.querySelectorAll('main.vt-fixed').forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; el.style.zIndex=''; });
 oldEl.classList.add('hidden');
 document.body.classList.remove('vt-run');
 vtBusy = false; vtFinish = null;
-pinNav();
 };
 vtFinish = finish;
 Promise.all([aIn.finished.catch(()=>{}), aOut.finished.catch(()=>{})]).then(finish);
@@ -7995,58 +8043,27 @@ ind.animate([
 ], { duration:300, easing:'cubic-bezier(0.2,0,0,1)' });
 }
 }
-window.addEventListener('resize', ()=>{ moveNavInd(false); _sabCache = null; pinNav(); });
-/* ---------- pill nav position pinning (diary v1.15 port) ----------
-   iOS standalone shrinks the fixed-position frame on non-scrollable (short)
-   pages, floating the bar up. Views are min-height:100dvh+1px so the page is
-   always a hair scrollable; pinNav additionally measures the real gap to the
-   screen bottom and compensates the bottom offset. */
-let _sabCache = null;
-function safeAreaBottom(){
-if(_sabCache!=null) return _sabCache;
-try{
-const d = document.createElement('div');
-d.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:0;padding-bottom:env(safe-area-inset-bottom, 0px);visibility:hidden;pointer-events:none;';
-document.body.appendChild(d);
-_sabCache = d.getBoundingClientRect().height || 0;
-d.remove();
-}catch(e){ _sabCache = 0; }
-return _sabCache;
-}
-/* v2.18 hardening: the compensation now covers the fab as well as the pill
-   (both ride the same fixed frame), and a measurement is only APPLIED when
-   it is plausible. Mid-scroll / mid-resize readings on iOS can be off by
-   hundreds of px; the old code persisted whatever it measured, which could
-   bake a huge bottom offset into the bar and leave it floating mid-screen
-   until the next clean measurement. Implausible readings are dropped and
-   re-measured once scrolling settles (scroll-end re-pin below, plus the
-   retry timer). Measurements are also skipped mid-transition — the
-   transition's own finish re-pins. */
-let pinRetryT = null;
-function pinNav(){
-const nav = $('pillnav'); if(!nav) return;
-if(document.body.classList.contains('vt-run')) return;
-const fab = $('fabAdd');
-nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 10px)';
-if(fab) fab.style.bottom = '';
-const gap = window.innerHeight - nav.getBoundingClientRect().bottom;
-const want = safeAreaBottom() + 10;
-const delta = want - gap;
-if(Math.abs(delta) <= 2) return;
-if(Math.abs(delta) > 60){
-if(pinRetryT) clearTimeout(pinRetryT);
-pinRetryT = setTimeout(()=>{ pinRetryT = null; pinNav(); }, 350);
-return;
-}
-nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (10 + delta).toFixed(1) + 'px)';
-if(fab) fab.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (96 + delta).toFixed(1) + 'px)';
-}
-let pinScrollT = null;
-window.addEventListener('scroll', ()=>{
-if(pinScrollT) clearTimeout(pinScrollT);
-pinScrollT = setTimeout(()=>{ pinScrollT = null; pinNav(); }, 160);
-}, { passive:true });
-if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>pinNav());
+window.addEventListener('resize', ()=>{ moveNavInd(false); });
+/* ---------- pill nav positioning (v2.22): plain position:fixed ----------
+   The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
+   v2.22 after the pill/FAB double-draw recurred on the user's device
+   (v2.18's plausibility hardening did not hold on real hardware). pinNav
+   rewrote the fixed bar's `bottom` from JS on scroll-end / resize /
+   visualViewport / every view change; on iOS each rewrite re-composites
+   the bar, and with the bar's backdrop-filter sampling the page behind
+   it, the compositor could keep painting the bar at its previous spot as
+   a translucent ghost while also painting it at the new one — the pill
+   (and the FAB, which shared the correction delta) appearing doubled and
+   floating mid-screen during scroll. Nothing in JS touches the bar's or
+   the FAB's position any more: both are plain position:fixed with the
+   CSS calc(env(safe-area-inset-bottom) + Npx) bottom, full stop. The
+   short-page frame-shrink the diary was compensating for is still
+   covered passively: every main keeps min-height:calc(100dvh + 1px), so
+   the page is always a hair scrollable and the fixed frame never
+   shrinks. The bar's backdrop-filter and translucent color-mix
+   background went with it (the bar is now its near-opaque --nav colour):
+   a backdrop-sampling layer is exactly what made the stale copy visible
+   as a ghost instead of failing silently. */
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
 function updatePill(){
 $('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings');
@@ -8086,19 +8103,11 @@ if(v==='detail') renderDetail();
 if(v===prevV && !reducedMotion()){
 const el = $(VIEW_EL[v]);
 if(el && el.animate){
-try{ el.animate([{ transform:'translateX('+(dsDir*22)+'px)', opacity:'0.3' },{ transform:'translateX(0px)', opacity:'1' }], { duration:260, easing:VT_EASE }); }catch(e){}
+try{ const dr = el.animate([{ transform:'translateX('+(dsDir*22)+'px)', opacity:'0.3' },{ transform:'translateX(0px)', opacity:'1' }], { duration:260, easing:VT_EASE });
+if(dr && dr.finished) dr.finished.then(()=>{ try{ dr.cancel(); }catch(e){} }); }catch(e){}
 }
 }
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
-pinNav();
-}
-/* データ管理セクションの折りたたみ（初期状態は閉） */
-let dmOpen = false;
-function toggleDataMgmt(){
-dmOpen = !dmOpen;
-const b = $('dmBody'); if(b) b.classList.toggle('hidden', !dmOpen);
-const c = $('dmChev'); if(c) c.textContent = dmOpen ? '▾' : '▸';
-const h = $('dmHead'); if(h) h.setAttribute('aria-expanded', dmOpen ? 'true' : 'false');
 }
 /* 設定画面から、表示中データセットを切り替えて操作するための束縛 */
 function bindSettingsCtx(kind){
@@ -8961,6 +8970,7 @@ function renderSyncStatus(){
   const cur = ctxStatus(DS);
   const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>';
   const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>'; }
+  const dv = $('driveval'); if(dv) dv.textContent = driveVal();
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
 }
@@ -9346,7 +9356,6 @@ function teardownSwipe(st, commit){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
   }
-  pinNav();
 }
 (function(){
   document.addEventListener('touchstart', e=>{
@@ -9393,7 +9402,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.21';
+const APP_VERSION = '2.22';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9500,6 +9509,236 @@ async function applyDataPack(){
   return true;
 }
 
+
+/* ================= appearance & settings (v2.22, diary port) =================
+   The settings screen mirrors the diary app's: a Drive pill row plus two
+   group cards of icon rows, each row opening an in-view panel. Appearance
+   settings are this app's own (localStorage 'zukan.settings', device-local
+   only — the Drive data files stay purely the encyclopedia datasets) and
+   are restored pre-paint by the inline script at the top of <body>. */
+const THEMES=[
+  { id:'sumi', name:'墨', chip:'linear-gradient(135deg,#000,#26262b)' },
+  { id:'ocher', name:'オーカー', chip:'linear-gradient(135deg,#16110b,#d9a441)' },
+  { id:'spandrel', name:'スパンドレル', chip:'linear-gradient(135deg,#0e100e,#c9cfae)' },
+  { id:'kinari', name:'生成り', chip:'linear-gradient(135deg,#f1ebda,#faf6ea)' }
+];
+const FONTFAMS=[
+  { id:'mincho', name:'明朝', cat:'端末フォント', stack:'"Hiragino Mincho ProN","Hiragino Mincho Pro","YuMincho","Yu Mincho","Noto Serif JP",serif' },
+  { id:'gothic', name:'ゴシック', cat:'端末フォント', stack:'-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif' },
+  { id:'maru', name:'丸ゴシック', cat:'端末フォント', stack:'"Hiragino Maru Gothic ProN","TsukuARdGothic","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif' },
+  { id:'shippori', name:'しっぽり明朝', cat:'明朝', gf:'Shippori Mincho', w:'400;600', stack:'"Shippori Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporib1', name:'しっぽり明朝B1', cat:'明朝', gf:'Shippori Mincho B1', w:'400;600', stack:'"Shippori Mincho B1","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'zenmincho', name:'Zen明朝', cat:'明朝', gf:'Zen Old Mincho', w:'400;700', stack:'"Zen Old Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'notoserif', name:'Noto明朝', cat:'明朝', gf:'Noto Serif JP', w:'400;600', stack:'"Noto Serif JP","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'sawarabimincho', name:'さわらび明朝', cat:'明朝', gf:'Sawarabi Mincho', w:'400', stack:'"Sawarabi Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'hina', name:'ひな明朝', cat:'明朝', gf:'Hina Mincho', w:'400', stack:'"Hina Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'bizmincho', name:'BIZ UD明朝', cat:'明朝', gf:'BIZ UDMincho', w:'400', stack:'"BIZ UDMincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'bizpmincho', name:'BIZ UDP明朝', cat:'明朝', gf:'BIZ UDPMincho', w:'400', stack:'"BIZ UDPMincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseitokumin', name:'解星 特ミン', cat:'明朝', gf:'Kaisei Tokumin', w:'400;800', stack:'"Kaisei Tokumin","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseiopti', name:'解星 オプティ', cat:'明朝', gf:'Kaisei Opti', w:'400;700', stack:'"Kaisei Opti","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseiharuno', name:'解星 春の海', cat:'明朝', gf:'Kaisei HarunoUmi', w:'400;700', stack:'"Kaisei HarunoUmi","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseidecol', name:'解星 デコール', cat:'明朝', gf:'Kaisei Decol', w:'400;700', stack:'"Kaisei Decol","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporiantique', name:'しっぽりアンティーク', cat:'明朝', gf:'Shippori Antique', w:'400', stack:'"Shippori Antique","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporiantiqueb1', name:'しっぽりアンティークB1', cat:'明朝', gf:'Shippori Antique B1', w:'400', stack:'"Shippori Antique B1","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'notosans', name:'Notoゴシック', cat:'ゴシック', gf:'Noto Sans JP', w:'400;700', stack:'"Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenkaku', name:'Zen角ゴシック', cat:'ゴシック', gf:'Zen Kaku Gothic New', w:'400;700', stack:'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenkakuantique', name:'Zen角ゴ アンティーク', cat:'ゴシック', gf:'Zen Kaku Gothic Antique', w:'400;700', stack:'"Zen Kaku Gothic Antique","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mplus1p', name:'M PLUS 1p', cat:'ゴシック', gf:'M PLUS 1p', w:'400;700', stack:'"M PLUS 1p","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mplus2', name:'M PLUS 2', cat:'ゴシック', gf:'M PLUS 2', w:'400;600', stack:'"M PLUS 2","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'ibmplex', name:'IBM Plex Sans JP', cat:'ゴシック', gf:'IBM Plex Sans JP', w:'400;600', stack:'"IBM Plex Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kosugi', name:'小杉ゴシック', cat:'ゴシック', gf:'Kosugi', w:'400', stack:'"Kosugi","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'sawarabigothic', name:'さわらびゴシック', cat:'ゴシック', gf:'Sawarabi Gothic', w:'400', stack:'"Sawarabi Gothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'bizgothic', name:'BIZ UDゴシック', cat:'ゴシック', gf:'BIZ UDGothic', w:'400;700', stack:'"BIZ UDGothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'bizpgothic', name:'BIZ UDPゴシック', cat:'ゴシック', gf:'BIZ UDPGothic', w:'400;700', stack:'"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mpluscode', name:'M PLUS Code（等幅）', cat:'ゴシック', gf:'M PLUS 1 Code', w:'400;500', stack:'"M PLUS 1 Code","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rounded', name:'M PLUS Rounded', cat:'丸ゴシック', gf:'M PLUS Rounded 1c', w:'400;500', stack:'"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenmaru', name:'Zen丸ゴシック', cat:'丸ゴシック', gf:'Zen Maru Gothic', w:'400;700', stack:'"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kosugimaru', name:'小杉丸ゴシック', cat:'丸ゴシック', gf:'Kosugi Maru', w:'400', stack:'"Kosugi Maru","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kiwi', name:'キウイ丸', cat:'丸ゴシック', gf:'Kiwi Maru', w:'400;500', stack:'"Kiwi Maru","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'klee', name:'クレー', cat:'丸ゴシック', gf:'Klee One', w:'400;600', stack:'"Klee One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kurenaido', name:'手書き（Zen紅）', cat:'手書き・デザイン', gf:'Zen Kurenaido', w:'400', stack:'"Zen Kurenaido","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'yomogi', name:'よもぎ', cat:'手書き・デザイン', gf:'Yomogi', w:'400', stack:'"Yomogi","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'yujisyuku', name:'佑字・肅', cat:'手書き・デザイン', gf:'Yuji Syuku', w:'400', stack:'"Yuji Syuku","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yujiboku', name:'佑字・朴', cat:'手書き・デザイン', gf:'Yuji Boku', w:'400', stack:'"Yuji Boku","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yujimai', name:'佑字・舞', cat:'手書き・デザイン', gf:'Yuji Mai', w:'400', stack:'"Yuji Mai","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'tegomin', name:'ニューてごみん', cat:'手書き・デザイン', gf:'New Tegomin', w:'400', stack:'"New Tegomin","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yusei', name:'ゆせいマジック', cat:'手書き・デザイン', gf:'Yusei Magic', w:'400', stack:'"Yusei Magic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'dot', name:'ドットゴシック', cat:'手書き・デザイン', gf:'DotGothic16', w:'400', stack:'"DotGothic16","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'dela', name:'デラゴシック', cat:'手書き・デザイン', gf:'Dela Gothic One', w:'400', stack:'"Dela Gothic One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'reggae', name:'レゲエ', cat:'手書き・デザイン', gf:'Reggae One', w:'400', stack:'"Reggae One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rock', name:'ロックンロール', cat:'手書き・デザイン', gf:'RocknRoll One', w:'400', stack:'"RocknRoll One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'train', name:'トレイン', cat:'手書き・デザイン', gf:'Train One', w:'400', stack:'"Train One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mochiy', name:'もちポップ', cat:'手書き・デザイン', gf:'Mochiy Pop One', w:'400', stack:'"Mochiy Pop One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mochiyp', name:'もちポップP', cat:'手書き・デザイン', gf:'Mochiy Pop P One', w:'400', stack:'"Mochiy Pop P One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rampart', name:'ランパート', cat:'手書き・デザイン', gf:'Rampart One', w:'400', stack:'"Rampart One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'hachi', name:'ハチ丸ポップ', cat:'手書き・デザイン', gf:'Hachi Maru Pop', w:'400', stack:'"Hachi Maru Pop","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'daruma', name:'だるまドロップ', cat:'手書き・デザイン', gf:'Darumadrop One', w:'400', stack:'"Darumadrop One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'slack', name:'スラックサイド', cat:'手書き・デザイン', gf:'Slackside One', w:'400', stack:'"Slackside One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'aoboshi', name:'あおぼし', cat:'手書き・デザイン', gf:'Aoboshi One', w:'400', stack:'"Aoboshi One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'cherry', name:'チェリーボム', cat:'手書き・デザイン', gf:'Cherry Bomb One', w:'400', stack:'"Cherry Bomb One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'monomaniac', name:'モノマニアック', cat:'手書き・デザイン', gf:'Monomaniac One', w:'400', stack:'"Monomaniac One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+];
+const LINEHEIGHTS=[
+  { id:'narrow', name:'狭い', val:1.5 },
+  { id:'standard', name:'標準', val:1.7 },
+  { id:'wide', name:'広い', val:1.9 },
+  { id:'xwide', name:'とても広い', val:2.1 }
+];
+function fontFamById(id){ return FONTFAMS.find(f=>f.id===id) || FONTFAMS[0]; }
+const loadedFonts={};
+function ensureFontLoaded(f){
+  if(!f || !f.gf || loadedFonts[f.id]) return;
+  loadedFonts[f.id]=true;
+  const l=document.createElement('link');
+  l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(f.gf).replace(/%20/g,'+')+':wght@'+f.w+'&display=swap';
+  document.head.appendChild(l);
+}
+function ensureAllFontsLoaded(){ FONTFAMS.forEach(ensureFontLoaded); }
+function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHTS[1]; }
+
+const LS_ZSETTINGS = 'zukan.settings';
+let ZSET = (function(){
+  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard' };
+  try{ const z = JSON.parse(storeGet(LS_ZSETTINGS)||'null');
+    if(z && typeof z==='object'){
+      if(THEMES.some(t=>t.id===z.theme)) d.theme=z.theme;
+      if(['small','standard','large','xlarge'].includes(z.fontSize)) d.fontSize=z.fontSize;
+      if(FONTFAMS.some(f=>f.id===z.fontFamily)) d.fontFamily=z.fontFamily;
+      if(LINEHEIGHTS.some(l=>l.id===z.lineHeight)) d.lineHeight=z.lineHeight;
+    } }catch(e){}
+  return d;
+})();
+function saveZSettings(){ storeSet(LS_ZSETTINGS, JSON.stringify(ZSET)); }
+function applyAppearance(){
+  const h = document.documentElement;
+  h.dataset.theme = ZSET.theme;
+  h.dataset.fontsize = ZSET.fontSize;
+  h.dataset.fontfamily = ZSET.fontFamily;
+  h.dataset.lineheight = ZSET.lineHeight;
+  /* content font: the chosen stack drives --bodyfont (every var(--serif)
+     consumer); UI chrome keeps --sans, the diary rule. --fs / --lh are
+     attribute-driven in CSS, like the diary's data-fontsize steps. */
+  h.style.setProperty('--bodyfont', fontFamById(ZSET.fontFamily).stack);
+  ensureFontLoaded(fontFamById(ZSET.fontFamily));
+  const tc = document.querySelector('meta[name="theme-color"]');
+  if(tc) tc.setAttribute('content', ZSET.theme==='kinari' ? '#f1ebda' : '#000000');
+}
+const SICON = {
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
+  palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
+  db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
+  aaBig: '<span style="font-weight:600; line-height:1"><span style="font-size:14px">A</span><span style="font-size:21px">A</span></span>',
+  aa: '<span style="font-size:19px; line-height:1">Aa</span>',
+  leading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="9.5" y1="6" x2="21" y2="6"/><line x1="9.5" y1="12" x2="21" y2="12"/><line x1="9.5" y1="18" x2="21" y2="18"/><line x1="4" y1="3.5" x2="4" y2="20.5"/><polyline points="1.9,6.2 4,3.8 6.1,6.2"/><polyline points="1.9,17.8 4,20.2 6.1,17.8"/></svg>'
+};
+let settingsPanel = null;
+function themeName(){ const t = THEMES.find(t=>t.id===ZSET.theme); return t ? t.name : ''; }
+function sizeName(){ return ({small:'小', standard:'標準', large:'大', xlarge:'特大'})[ZSET.fontSize] || '標準'; }
+function famName(){ return fontFamById(ZSET.fontFamily).name; }
+function lhName(){ return lineHeightById(ZSET.lineHeight).name; }
+function driveVal(){
+  const s = appStatusInfo();
+  if(s.cls==='err') return '同期エラー';
+  if(s.label.indexOf('同期中')===0) return '同期中…';
+  if(s.label.indexOf('同期済み')===0) return '同期済み';
+  if(s.label.indexOf('接続済み')===0) return '接続済み';
+  return '未接続';
+}
+function srow(icon, label, val, onclick, danger){
+  return '<button class="srow'+(danger?' danger':'')+'" onclick="'+onclick+'"><span class="ic">'+icon+'</span><span class="lb">'+esc(label)+'</span>'+(val?'<span class="val">'+esc(val)+'</span>':'')+'<span class="chev">›</span></button>';
+}
+function renderSettings(){
+  renderSettingsMain();
+  if(settingsPanel) renderSettingsPanel();
+  else { const p = $('settingspanel'); if(p) p.style.display='none'; const m = $('settingsmain'); if(m) m.style.display='block'; }
+  renderSyncStatus();
+}
+function renderSettingsMain(){
+  const m = $('settingsmain'); if(!m) return;
+  m.innerHTML =
+    '<div class="setttl">設定</div>'+
+    '<button class="pillrow" onclick="openSettingsPanel(\'drive\')"><span class="ic">'+SICON.cloud+'</span><span class="lb">Google Drive 同期</span><span id="driveval">'+esc(driveVal())+'</span><span class="chev">›</span></button>'+
+    '<div class="groupcard">'+
+      srow(SICON.palette, 'テーマカラー', themeName(), "openSettingsPanel('theme')")+
+      srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
+      srow(SICON.aa, 'フォントスタイル', famName(), "openSettingsPanel('font')")+
+      srow(SICON.leading, '行間', lhName(), "openSettingsPanel('leading')")+
+    '</div>'+
+    '<div class="groupcard">'+
+      srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
+      srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
+    '</div>';
+}
+function openSettingsPanel(name){ settingsPanel = name; renderSettingsPanel(); window.scrollTo(0,0); }
+function closeSettingsPanel(){ settingsPanel = null; renderSettings(); window.scrollTo(0,0); }
+function panelShell(title, inner){
+  return '<div class="panelnav"><button class="back" onclick="closeSettingsPanel()">‹ 戻る</button><div class="pttl">'+esc(title)+'</div><div class="psp"></div></div>'+inner;
+}
+function renderSettingsPanel(){
+  const m = $('settingsmain'); if(m) m.style.display='none';
+  const p = $('settingspanel'); if(!p) return;
+  p.style.display = 'block';
+  if(settingsPanel==='theme'){
+    p.innerHTML = panelShell('テーマカラー', '<div class="setbox"><div class="swatches" id="themeswatches"></div></div>');
+    $('themeswatches').innerHTML = THEMES.map(t=>'<button class="swatch'+(ZSET.theme===t.id?' on':'')+'" onclick="setTheme(\''+t.id+'\')"><div class="chip" style="background:'+t.chip+'"></div>'+t.name+'</button>').join('');
+  }
+  else if(settingsPanel==='text'){
+    p.innerHTML = panelShell('文字設定', '<div class="setbox"><div class="setlabel">大きさ</div><div class="segrow" id="fontsizeseg"></div></div>');
+    const sizes = [['small','小'],['standard','標準'],['large','大'],['xlarge','特大']];
+    $('fontsizeseg').innerHTML = sizes.map(sz=>'<button class="zseg'+(ZSET.fontSize===sz[0]?' on':'')+'" onclick="setFontSize(\''+sz[0]+'\')">'+sz[1]+'</button>').join('');
+  }
+  else if(settingsPanel==='font'){
+    const cats = []; FONTFAMS.forEach(f=>{ if(!cats.includes(f.cat)) cats.push(f.cat); });
+    let fhtml = '';
+    cats.forEach(c=>{
+      fhtml += '<div class="catlabel">'+esc(c)+'</div><div class="groupcard" style="margin-bottom:6px">'+
+        FONTFAMS.filter(f=>f.cat===c).map(f=>'<button class="srow" onclick="setFontFamily(\''+f.id+'\')"><span class="lb" style="font-family:'+f.stack.replace(/"/g,'&quot;')+'">'+esc(f.name)+'</span>'+(ZSET.fontFamily===f.id?'<span style="color:var(--accent); font-size:19px">✓</span>':'')+'</button>').join('')+'</div>';
+    });
+    p.innerHTML = panelShell('フォントスタイル', fhtml+'<div class="note">Webフォントはネット接続時に読み込まれます。一覧を開くとプレビューが順に読み込まれます。オフラインでは端末の明朝／ゴシックで表示されます（壊れはしません）。</div>');
+    ensureAllFontsLoaded();
+  }
+  else if(settingsPanel==='leading'){
+    p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">作家の説明文・年表・クイズなどの本文に適用されます。</div></div>');
+    $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="zseg'+(ZSET.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
+  }
+  else if(settingsPanel==='drive'){
+    p.innerHTML = panelShell('Google Drive 同期',
+      '<div class="setbox">'+
+      '<div class="syncstat" id="syncstat">未接続</div>'+
+      '<div class="setrow btnrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>'+
+      '<div id="syncresults"></div>'+
+      '<div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>'+
+      '</div>');
+    renderSyncStatus();
+  }
+  else if(settingsPanel==='data'){
+    p.innerHTML = panelShell('データ',
+      '<div class="setbox">'+
+      '<div class="small">ZIP（data.json＋img/）または JSON を選ぶと、同じ項目・同じ作品は自動でマージされます。</div>'+
+      '<div class="dmlabel">作家図鑑</div>'+
+      '<button class="blockbtn" onclick="bindSettingsCtx(\'artists\');document.getElementById(\'importfileA\').click()">ファイルを選んで取り込む</button>'+
+      '<input type="file" id="importfileA" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">'+
+      '<button class="blockbtn" onclick="bindSettingsCtx(\'artists\');exportJSON()">JSON を書き出す</button>'+
+      '<button class="blockbtn danger" onclick="bindSettingsCtx(\'artists\');wipeAll()">全データを削除</button>'+
+      '<div class="dmlabel">デザイナー図鑑</div>'+
+      '<button class="blockbtn" onclick="bindSettingsCtx(\'designers\');document.getElementById(\'importfileD\').click()">ファイルを選んで取り込む</button>'+
+      '<input type="file" id="importfileD" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">'+
+      '<button class="blockbtn" onclick="bindSettingsCtx(\'designers\');exportJSON()">JSON を書き出す</button>'+
+      '<button class="blockbtn danger" onclick="bindSettingsCtx(\'designers\');wipeAll()">全データを削除</button>'+
+      '</div>');
+  }
+  else if(settingsPanel==='about'){
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="small" id="aboutbox"></div></div>');
+    renderAbout();
+  }
+}
+function setTheme(id){ ZSET.theme = id; saveZSettings(); applyAppearance(); renderSettings(); }
+function setFontSize(id){ ZSET.fontSize = id; saveZSettings(); applyAppearance(); renderSettings(); }
+function setFontFamily(id){ ZSET.fontFamily = id; saveZSettings(); applyAppearance(); renderSettings(); }
+function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearance(); renderSettings(); }
+
 /* ================= opening veil (v2.11) =================
    実体は静的HTML＋CSS（真っ黒なベールがフェードしてUIを現すだけ）。
    ここはスキップとノード除去だけを行う。被せるだけで起動フロー
@@ -9521,6 +9760,7 @@ async function applyDataPack(){
   const startDS = (location.hash==='#designers')? 'designers': 'artists';
   ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
   DS = startDS; bindCtx();
+  applyAppearance();
   /* 表示モードのアプリ共通化：共通キーが無ければ開始データセットの既存値を初期値として移行し、両データセットへ統一する */
   const uniMode = storeGet(LS_APP_MODE) || storeGet(CTX[startDS].cfg.prefix+'mode') || storeGet(CTX[startDS==='artists'?'designers':'artists'].cfg.prefix+'mode') || 'def';
   Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = uniMode; });
@@ -9541,7 +9781,6 @@ async function applyDataPack(){
     const ae = storeGet(CFG_ARTISTS.prefix+'authError') || storeGet(CFG_DESIGNERS.prefix+'authError');
     if(ae) setCtxStatus(DS, 'error', ae);
   }
-  pinNav();
 })();
 </script>
 </body>
