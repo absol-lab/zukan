@@ -7,21 +7,246 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
-<meta name="theme-color" content="#f3efe4">
+<meta name="theme-color" content="#f1ebda">
 <title>図鑑</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-body{background:#f3efe4;color:#22201b;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;margin:0;padding:56px 24px}
-h1{font-size:30px;border-bottom:1px solid #22201b;padding-bottom:14px;letter-spacing:.1em}
-a{display:block;color:#22201b;text-decoration:none;font-size:22px;padding:22px 4px;border-bottom:1px solid #c9c2ae}
-a:active{background:#e9e3d0}
-small{color:#6d675a;font-size:15px}
-p.note{color:#6d675a;font-size:13px;margin-top:28px;line-height:1.8}
+:root{
+  /* diary (kinari) design tokens */
+  --bg:#f1ebda; --bg2:#eae2cd; --card:#faf6ea; --card2:#f3eddb;
+  --text:#211d14; --muted:#7a7261; --accent:#57503e; --line:#ddd2b8;
+  --danger:#c23b2e; --nav:rgba(250,246,234,.95);
+  --sans:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+  --serif:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.65;
+  padding-bottom:108px; -webkit-text-size-adjust:100%;}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0;}
+a{color:var(--accent);}
+/* top bar (diary .topbar) */
+.topbar{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:6px;
+  padding:calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px; background:var(--bg); max-width:720px; margin:0 auto;}
+.topbar .ttl{flex:1; text-align:center; font-size:18px; letter-spacing:.08em; font-weight:700;}
+.topbar .sp{width:44px; flex:none;}
+main{max-width:720px; margin:0 auto; padding:0 14px;}
+.sub{text-align:center; font-size:11.5px; color:var(--muted); padding:0 16px 6px; min-height:1.2em;}
+/* encyclopedia cards (diary .card / .srow) */
+a.card{display:flex; align-items:center; gap:15px; width:100%; text-align:left; text-decoration:none;
+  background:var(--card); border-radius:14px; padding:18px 20px; margin-bottom:12px; color:var(--text);}
+a.card:active{background:var(--card2);}
+a.card .tx{flex:1; min-width:0;}
+a.card .nm{font-family:var(--serif); font-size:20px; font-weight:600; letter-spacing:.06em; line-height:1.4;}
+a.card .ds{font-size:12.5px; color:var(--muted); margin-top:2px;}
+a.card .chev{color:var(--muted); font-size:22px; line-height:1; flex:none;}
+/* settings / sync (diary .setgroup/.setbox/.btn) */
+.setgroup{margin:24px 0;}
+.setgroup > h2{font-size:13px; color:var(--muted); letter-spacing:.14em; font-weight:600; margin:0 4px 10px;}
+.setbox{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;}
+.setrow{margin-top:14px;}
+.setrow:first-child{margin-top:0;}
+.btn{display:inline-block; padding:11px 20px; border-radius:999px; border:1px solid var(--line);
+  background:var(--card2); color:var(--text); font-size:13.5px; margin:4px 6px 4px 0; font-family:var(--sans); cursor:pointer;}
+.btn.primary{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
+.btn:active{opacity:.75;}
+.btn:disabled{opacity:.4;}
+.syncstat{font-size:13px; color:var(--muted);}
+.syncstat .err{color:var(--danger);}
+.syncline{font-size:13px; color:var(--muted); margin-top:8px;}
+.syncline.err{color:var(--danger);}
+.note{font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.7;}
+/* bottom pill navigation (diary #pillnav) */
+#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 16px); width:calc(100vw - 40px); max-width:560px; display:flex; gap:2px; padding:6px; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border-radius:999px; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 8px 28px rgba(60,52,32,.25);}
+#pillnav a{flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 0 5px; border-radius:999px; font-size:10.5px; color:var(--muted); white-space:nowrap; text-decoration:none;}
+#pillnav svg{width:23px; height:23px;}
 </style>
 </head>
 <body>
-<h1>図鑑</h1>
-<a href="./artists/">作家図鑑 <small>— Artists</small></a>
-<a href="./designers/">デザイナー図鑑 <small>— Designers</small></a>
-<p class="note">それぞれの図鑑は独立したアプリです。このページは入口です。</p>
+  <div class="topbar"><div class="sp"></div><div class="ttl">図鑑</div><div class="sp"></div></div>
+  <div class="sub">作家図鑑とデザイナー図鑑の入口</div>
+  <main>
+    <a class="card" href="./artists/">
+      <span class="tx"><span class="nm">作家図鑑</span><div class="ds">画家・美術家の図鑑<span id="cnt0"></span></div></span>
+      <span class="chev">›</span>
+    </a>
+    <a class="card" href="./designers/">
+      <span class="tx"><span class="nm">デザイナー図鑑</span><div class="ds">デザイナーの図鑑<span id="cnt1"></span></div></span>
+      <span class="chev">›</span>
+    </a>
+
+    <div class="setgroup" id="settings">
+      <h2>設定・同期</h2>
+      <div class="setbox">
+        <div class="syncstat" id="topsyncstat">作家図鑑とデザイナー図鑑のデータを、この端末から Google Drive へ送ります。</div>
+        <div class="setrow"><button class="btn primary" id="syncboth" onclick="syncBoth()">作家とデザイナーを同期</button></div>
+        <div id="syncresults"></div>
+        <div class="note">このページからの同期はアップロード専用です。Drive 側に新しい変更がある場合は上書きせず、アプリを開いて取り込むよう案内します。各アプリの接続設定（クライアントID）は、それぞれのアプリの一覧下部にある同期パネルで行います。</div>
+      </div>
+    </div>
+
+    <p class="note">それぞれの図鑑は独立したアプリです。このページは入口です。</p>
+  </main>
+
+  <nav id="pillnav">
+    <a href="./artists/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></a>
+    <a href="./designers/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></a>
+    <a href="#settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg><span>設定</span></a>
+  </nav>
+
+<script>
+'use strict';
+/* ===== 図鑑トップ：両図鑑の一括アップロード同期 =====
+   方式は各アプリと同じ（GIS ポップアップ / drive.file / アプリが作ったファイルのみ）。
+   このページはアップロード専用。Drive 側に新しい変更があれば上書きしない。 */
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
+const APPS = [
+  { label:'作家', file:'artists.json', prefix:'zukanArtists.' },
+  { label:'デザイナー', file:'designers.json', prefix:'zukanDesigners.' }
+];
+function $(id){ return document.getElementById(id); }
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+function hhmm(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function setStat(s, isErr){ const el=$('topsyncstat'); el.innerHTML=''; const sp=document.createElement('span'); if(isErr) sp.className='err'; sp.textContent=s; el.appendChild(sp); }
+function line(app, msg, isErr){
+  const d=document.createElement('div');
+  d.className='syncline'+(isErr?' err':'');
+  d.textContent=app.label+'：'+msg;
+  $('syncresults').appendChild(d);
+}
+function maxUpdated(data){
+  let m=0;
+  const arr=(data && Array.isArray(data.artists))? data.artists: [];
+  arr.forEach(a=>{ const t=Date.parse((a && a.updated_at) || ''); if(!isNaN(t) && t>m) m=t; });
+  return m;
+}
+function getClientId(){
+  return (lsGet('zukanArtists.clientId')||'').trim() || (lsGet('zukanDesigners.clientId')||'').trim();
+}
+
+let accessToken=null, tokenExpSec=3600, syncBusy=false;
+function finish(){ syncBusy=false; const b=$('syncboth'); if(b) b.disabled=false; }
+
+function syncBoth(){
+  if(syncBusy) return;
+  const cid=getClientId();
+  $('syncresults').innerHTML='';
+  if(!cid){ setStat('クライアントIDが未設定です。各アプリを開いて Drive 接続を済ませてください。', true); return; }
+  if(!(window.google && google.accounts && google.accounts.oauth2)){
+    setStat('Google のライブラリを読み込めませんでした。通信環境を確認してください。', true); return;
+  }
+  syncBusy=true; $('syncboth').disabled=true; setStat('認証中…');
+  try{
+    const tc=google.accounts.oauth2.initTokenClient({
+      client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
+      callback: function(resp){
+        if(resp && resp.access_token){
+          accessToken=resp.access_token;
+          tokenExpSec=parseInt(resp.expires_in||'3600',10);
+          runSync();
+        } else { setStat('トークンを取得できませんでした', true); finish(); }
+      },
+      error_callback: function(err){
+        setStat('認証エラー：'+((err && (err.type||err.message)) || 'unknown'), true); finish();
+      }
+    });
+    tc.requestAccessToken();
+  }catch(e){ setStat('接続を開始できませんでした：'+(e && e.message ? e.message : e), true); finish(); }
+}
+
+async function dfetch(path, opts){
+  return fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+accessToken }, (opts && opts.headers)||{}) }));
+}
+async function findFile(name){
+  const q=encodeURIComponent("name='"+name+"' and trashed=false");
+  const r=await dfetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+  if(!r.ok) throw new Error('files.list HTTP '+r.status);
+  const j=await r.json();
+  const f=(j.files||[]).filter(x=>x.name===name);
+  return f.length? f[0]: null;
+}
+async function downloadText(id){
+  const r=await dfetch('/files/'+encodeURIComponent(id)+'?alt=media');
+  if(!r.ok) throw new Error('download HTTP '+r.status);
+  return r.text();
+}
+async function uploadUpdate(id, text){
+  const r=await fetch(UPLOAD_API+'/files/'+encodeURIComponent(id)+'?uploadType=media', {
+    method:'PATCH', headers:{ Authorization:'Bearer '+accessToken, 'Content-Type':'application/json' }, body: text
+  });
+  if(!r.ok) throw new Error('update HTTP '+r.status);
+}
+async function createFile(name, text){
+  const form=new FormData();
+  form.append('metadata', new Blob([JSON.stringify({ name:name, mimeType:'application/json' })], { type:'application/json' }));
+  form.append('file', new Blob([text], { type:'application/json' }), name);
+  const r=await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', {
+    method:'POST', headers:{ Authorization:'Bearer '+accessToken }, body: form
+  });
+  if(!r.ok) throw new Error('create HTTP '+r.status);
+  return r.json();
+}
+/* アプリ側の storeToken と同じキーに書き、各アプリを開いたとき「同期済み」と整合させる */
+function markSynced(app){
+  ssSet(app.prefix+'token', accessToken);
+  lsSet(app.prefix+'tokenExp', String(Date.now()+tokenExpSec*1000));
+  lsDel(app.prefix+'authError');
+}
+async function syncOne(app){
+  const raw=lsGet(app.prefix+'data');
+  if(!raw) return '端末にデータがありません（対象外）';
+  let data=null;
+  try{ data=JSON.parse(raw); }catch(e){ return '端末データの読み取りに失敗しました（対象外）'; }
+  const count=(data && Array.isArray(data.artists))? data.artists.length: 0;
+  const localMax=maxUpdated(data);
+  const file=await findFile(app.file);
+  if(!file){
+    const everConnected=lsGet(app.prefix+'clientId') || lsGet(app.prefix+'driveFileId');
+    if(!count && !everConnected) return '未接続のため対象外';
+    const created=await createFile(app.file, raw);
+    if(created && created.id){
+      lsSet(app.prefix+'driveFileId', created.id);
+      markSynced(app);
+      return '同期済み '+hhmm(new Date())+'（ファイルを作成）';
+    }
+    throw new Error('ファイルを作成できませんでした');
+  }
+  lsSet(app.prefix+'driveFileId', file.id);
+  const remoteText=await downloadText(file.id);
+  let remoteMax=0;
+  try{ remoteMax=maxUpdated(JSON.parse(remoteText)); }catch(e){}
+  if(remoteMax>localMax) return '新しい変更がDrive側にあります。アプリを開いて取り込んでください';
+  await uploadUpdate(file.id, raw);
+  markSynced(app);
+  return '同期済み '+hhmm(new Date());
+}
+async function runSync(){
+  setStat('同期中…');
+  for(const app of APPS){
+    try{ line(app, await syncOne(app)); }
+    catch(e){ line(app, '同期に失敗しました（'+(e && e.message ? e.message : e)+'）', true); }
+  }
+  setStat('完了しました。各アプリを開くと状態が反映されます。');
+  finish();
+}
+
+/* 入口カードに登録数を出す（端末内データがある場合のみ） */
+(function(){
+  APPS.forEach((app,i)=>{
+    try{
+      const raw=lsGet(app.prefix+'data'); if(!raw) return;
+      const d=JSON.parse(raw);
+      const n=(d && Array.isArray(d.artists))? d.artists.length: 0;
+      const el=$('cnt'+i);
+      if(el && n) el.textContent='（登録 '+n+' 名）';
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
