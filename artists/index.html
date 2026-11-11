@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="作家図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="1.3">
+<meta name="app-version" content="1.4">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>作家図鑑</title>
@@ -61,6 +61,11 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px;}
 .tagchip:active{background:var(--card2);}
 .tagchip.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 .tagmore{border:1px solid var(--line); background:none; color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12.5px; letter-spacing:.04em;}
+#tagrow{display:block;}
+.taggroup{margin-top:14px;}
+.taggroup:first-child{margin-top:2px;}
+.taggrouphead{font-size:11px; color:var(--muted); letter-spacing:.14em; margin-bottom:6px;}
+.taggrouprow{display:flex; flex-wrap:wrap; gap:8px;}
 .modebar{display:flex; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans);}
 .modebar button:first-child{border-left:none;}
@@ -7646,20 +7651,44 @@ arr = arr.filter(a=>{ const ts = new Set(a.tags||[]); for(const t of state.tags)
 }
 return arr;
 }
+/* tag facets: classification / technique-material / era-country / theme (default) */
+const TAG_FACETS = {};
+['絵画','彫刻','ドローイング','写真','映像','インスタレーション','版画','日本画','パフォーマンス','水彩','木彫','陶','コラージュ','アニメーション','ランドアート','社会彫刻','彫刻家の素描','半立体','レリーフ','ネガティブ彫刻','写真ベース','イラストレーション','コンピュータ絵画','ライブペインティング','マルチメディア'].forEach(t=>TAG_FACETS[t]='bunrui');
+['油彩','アクリル','薄塗り','厚塗り','滲み','染み','エアブラシ','スフマート','ステイニング','グレーズ','ドリッピング','スプレー','木炭','パステル','エンコスティック','転写','デコラージュ','自作絵の具','古典技法','拭う','拭き取り','消去','削る','切る','流す','引きずり','手で塗る','素手','指で描く','工業素材','大理石粉','蝋','紙','布','鉄','ガラス','石','綿布','モスリン','平塗り','鋳造','切断','粉','筆触','筆致','速い筆','ジェスチャー','ぼかし','ブラー','素材の混入','素材','金地','枡目描き','アレブレボケ','タイル','織物','投影','最小素材','古いキャンバス','白亜地','支持体','水','釘','積層','刺繍'].forEach(t=>TAG_FACETS[t]='gihou');
+['現代','現代日本','日本','江戸','近代','ルネサンス','日本の戦後','戦後日本','ポーランド','ドイツ','ドイツ戦後','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','九州派','琳派','具体','もの派','ハイレッド・センター','印象派','キュビスム','シュプレマティスム','空間主義','カラーフィールド','アクション・ペインティング','抽象表現主義への橋','スーパーフラット','ミニマリズム','ポップアート','ネオ・ジオ','ZERO','アール・ブリュット','アウトサイダー','YBA','ライプツィヒ','浮世絵','バンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
+const TAG_FACET_ORDER = ['bunrui','gihou','jidaikuni','theme'];
+const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', jidaikuni:'年代・国', theme:'テーマ・概念'};
+function tagFacet(t){ return TAG_FACETS[t]||'theme'; }
 function renderList(){
 $('segCanon').classList.toggle('on', state.layer==='canon');
 $('segCand').classList.toggle('on', state.layer==='candidate');
 document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('navEx').classList.toggle('hidden',!(DB.exhibitions && DB.exhibitions.length));
-/* tag chips from current layer */
+/* tag chips from current layer, grouped by facet */
 const counts = {};
 layerArtists().forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
 const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
-let shownTags = state.tagsOpen? tags.slice() : tags.slice(0,TAG_LIMIT);
-tags.forEach(t=>{ if(state.tags.has(t) && shownTags.indexOf(t)<0) shownTags.push(t); });
-$('tagrow').innerHTML = shownTags.map(t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'+esc(t)+' '+counts[t]+'</button>').join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'');
+const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
++esc(t)+' '+counts[t]+'</button>';
+let tagHtml = '';
+TAG_FACET_ORDER.forEach(f=>{
+const all = tags.filter(t=>tagFacet(t)===f);
+if(!all.length) return;
+let gtags = all, toggleBtn = '';
+if(f==='theme' && all.length>TAG_LIMIT){
+if(!state.tagsOpen){
+gtags = all.slice(0,TAG_LIMIT);
+all.forEach(t=>{ if(state.tags.has(t) && gtags.indexOf(t)<0) gtags.push(t); });
+}
+toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'
++(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
+}
+tagHtml += '<div class="taggroup"><div class="taggrouphead">'+TAG_FACET_LABELS[f]+'</div>'
++'<div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div></div>';
+});
+$('tagrow').innerHTML = tagHtml;
 renderListBody();
 $('aboutbox').textContent = CONFIG.appName+'（独立版）。登録 '+DB.artists.length+' 名／作品画像参照 '+
 DB.artists.reduce((n,a)=>n+worksOf(a).length,0)+' 点。データファイル：'+CONFIG.dataFile+'。バージョン v'+APP_VERSION;
@@ -8394,7 +8423,7 @@ function syncBoth(){
 }
 
 /* ================= self update ================= */
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
