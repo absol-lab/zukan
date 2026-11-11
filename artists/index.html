@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.24">
+<meta name="app-version" content="2.25">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -107,14 +107,14 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
    so it can stick for the whole page. Ancestors carry no transform or
    overflow outside the brief transition states (scroll is locked
    then), which SETUP v2.22 guarantees are cleaned up. */
-.toolbar{padding:2px 0 8px; position:sticky; top:var(--hdrh, 0px); z-index:28; background:var(--bg);}
+.toolbar{padding:0 0 5px; position:sticky; top:var(--hdrh, 0px); z-index:28; background:var(--bg);}
 .seg{display:inline-flex; gap:8px; flex-wrap:wrap;}
 .seg button{background:var(--bg2); border:1px solid var(--line); color:var(--text); padding:8px 16px; font-size:13px; letter-spacing:.06em; border-radius:999px; font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center;}
 .seg button.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 .seg.mini button{padding:7px 12px; font-size:12.5px;}
-.searchrow{display:flex; gap:8px; margin-top:4px;}
-.searchrow input[type=search]{flex:1; background:var(--card); border:1px solid var(--lineStrong); border-radius:999px; padding:11px 16px; font-size:16px; min-height:48px; color:var(--text); outline:none; -webkit-appearance:none;}
-.tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+.searchrow{display:flex; gap:8px; margin-top:0; align-items:center;}
+.searchrow input[type=search]{flex:1; background:var(--card); border:1px solid var(--lineStrong); border-radius:999px; padding:11px 16px; font-size:16px; line-height:1.3; min-height:48px; color:var(--text); outline:none; -webkit-appearance:none;}
+.tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:0;}
 .tagchip{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:7px 13px; font-size:12.5px; min-height:48px; display:inline-flex; align-items:center;}
 .tagchip:active{background:var(--card2);}
 .tagchip.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
@@ -132,7 +132,7 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .tagaccrow .tagcnt{font-size:13px; color:var(--muted);}
 .tagaccrow .tagchev{margin-left:auto; color:var(--muted); font-size:13px;}
 .tagacc .taggrouprow{margin-top:8px;}
-.modebar{display:flex; margin-top:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.modebar{display:flex; margin-top:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans); min-height:48px;}
 .modebar button:first-child{border-left:none;}
 .modebar button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
@@ -140,14 +140,44 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
    became one segmented row; the open facet's chips live in .facetpanel
    below it. Buttons stay >=48px tall (the design-rule floor); the space
    saving comes from sharing one row, not from shrinking targets. */
-.facetbar{display:flex; margin-top:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.facetbar{display:flex; margin-top:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .facetbar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 2px; font-size:11.5px; letter-spacing:0; white-space:nowrap; color:var(--muted); font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:3px;}
 .facetbar button:first-child{border-left:none;}
 .facetbar button.open{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
 .facetbar button .fchev{font-size:10px; color:var(--muted);}
 .facetbar button .fsel{background:var(--accent); color:var(--bg); border-radius:999px; font-size:10.5px; font-weight:700; min-width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; padding:0 4px;}
-.facetpanel{margin-top:8px; max-height:34vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+.facetpanel{margin-top:6px; max-height:34vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
 .facetpanel .taggrouprow{margin-top:0;}
+/* v2.25: two-stage toolbar compaction. At rest the rows keep their 48pt
+   targets and only the gaps/padding were tightened (182.4 -> ~161px).
+   Once the list is scrolled (the toolbar is docked), the search row and
+   the facet row fold away — grid-template-rows 1fr -> 0fr, so the fold
+   is a smooth height flow, never a jump, and no transform is left
+   behind (the v2.22 rule). What remains is one slim row: the mode bar
+   plus search / filter icon buttons (the filter carries the selected-
+   tag count). Tapping either icon expands the full toolbar again
+   (expandToolbar); it stays expanded while the user works and folds
+   back via the collapse button or by returning to the top of the list.
+   All targets stay >=48pt in every state. */
+.tbwrap{display:grid; grid-template-rows:1fr; transition:grid-template-rows .26s cubic-bezier(0.2,0,0,1), opacity .26s cubic-bezier(0.2,0,0,1), visibility 0s 0s; visibility:visible;}
+.tbwrap > .tbin{overflow:hidden; min-height:0;}
+.tbw-tags{margin-top:4px;}
+.toolbar.slim .tbwrap{grid-template-rows:0fr; opacity:0; visibility:hidden; transition:grid-template-rows .26s cubic-bezier(0.2,0,0,1), opacity .26s cubic-bezier(0.2,0,0,1), visibility 0s .26s;}
+.toolbar.slim .tbw-tags{margin-top:0;}
+.moderow{display:flex; gap:8px; align-items:stretch; margin-top:4px;}
+.moderow .modebar{flex:1; min-width:0;}
+.slimtools{display:none; gap:8px;}
+.toolbar.slim .slimtools{display:flex;}
+.slimtools button{width:48px; min-height:48px; border-radius:12px; background:var(--card); border:1px solid var(--line); color:var(--text); display:inline-flex; align-items:center; justify-content:center; position:relative; padding:0; font-family:var(--sans);}
+.slimtools button svg{width:21px; height:21px;}
+.slimtools .fcount{position:absolute; top:-6px; right:-6px; background:var(--accent); color:var(--bg); border-radius:999px; font-size:10.5px; font-weight:700; min-width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; padding:0 5px;}
+.slimtools .qdot{position:absolute; top:7px; right:7px; width:8px; height:8px; border-radius:50%; background:var(--accent);}
+.tbcollapse{flex:none; width:48px; height:48px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0;}
+.tbcollapse svg{width:20px; height:20px;}
+@media (prefers-reduced-motion: reduce){
+  .tbwrap{transition:none;}
+  .toolbar.slim .tbwrap{transition:none;}
+}
 /* v2.24: exhibition poster plate. Fixed-height box so loading/failure
    never shifts the card (the v2.18 geometry rule); the poster itself is
    shown whole (contain), never cropped. */
@@ -304,8 +334,9 @@ button.blockbtn:disabled{opacity:.4;}
 #toast{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 112px); transform:translateX(-50%); background:var(--text); color:var(--bg); border-radius:999px; padding:10px 20px; font-size:13.5px; z-index:200; display:none; max-width:88vw; text-align:center;}
 #toast.on{display:flex; align-items:center; gap:12px; text-align:left;}
 #toastact{flex:none; min-height:48px; padding:0 18px; border:1px solid var(--bg); border-radius:999px; color:var(--bg); background:transparent; font-size:13.5px; font-weight:600; font-family:var(--sans);}
-.fab{position:fixed; right:18px; bottom:calc(env(safe-area-inset-bottom, 0px) + 96px); z-index:40; width:60px; height:60px; border-radius:50%; background:var(--fab); color:var(--fabink); border:none; font-size:28px; line-height:1; box-shadow:0 6px 22px rgba(0,0,0,.45);}
-.fab:active{transform:scale(.96);}
+/* (v2.25: the + FAB was removed at the user's direction — new entries
+   arrive via the harvest/registration flow, not manual adds. The editor
+   itself stays, reachable from a detail view's 編集 button.) */
 /* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
 #pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
 #navind{position:absolute; top:3px; bottom:3px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
@@ -412,16 +443,27 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 </header>
 
 <main id="viewList">
-  <div class="toolbar">
-    <div class="searchrow">
-      <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
-    </div>
-    <div class="tagrow" id="tagrow"></div>
-    <div class="modebar" id="modeseg">
-      <button data-m="wide" onclick="setMode('wide')">ワイド</button>
-      <button data-m="def" onclick="setMode('def')">標準</button>
-      <button data-m="compact" onclick="setMode('compact')">小</button>
-      <button data-m="mini" onclick="setMode('mini')">ミニ</button>
+  <div class="toolbar" id="toolbar">
+    <div class="tbwrap" id="tbwSearch"><div class="tbin">
+      <div class="searchrow">
+        <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
+        <button class="tbcollapse hidden" id="tbCollapse" onclick="collapseToolbar()" aria-label="ツールバーを畳む"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14.5l7-7 7 7"/></svg></button>
+      </div>
+    </div></div>
+    <div class="tbwrap tbw-tags" id="tbwTags"><div class="tbin">
+      <div class="tagrow" id="tagrow"></div>
+    </div></div>
+    <div class="moderow">
+      <div class="modebar" id="modeseg">
+        <button data-m="wide" onclick="setMode('wide')">ワイド</button>
+        <button data-m="def" onclick="setMode('def')">標準</button>
+        <button data-m="compact" onclick="setMode('compact')">小</button>
+        <button data-m="mini" onclick="setMode('mini')">ミニ</button>
+      </div>
+      <div class="slimtools" id="slimtools">
+        <button id="slimSearch" onclick="expandToolbar('search')" aria-label="検索を開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg><span class="qdot hidden" id="slimQDot"></span></button>
+        <button id="slimFilter" onclick="expandToolbar('filter')" aria-label="タグ絞り込みを開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.1 7.1v5.4l-3.8 2v-7.4L4 5z"/></svg><span class="fcount hidden" id="slimFilterCount"></span></button>
+      </div>
     </div>
   </div>
   <div id="listbody"></div>
@@ -436,8 +478,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div id="settingsmain"></div>
   <div id="settingspanel" style="display:none"></div>
 </main>
-
-<button class="fab" id="fabAdd" onclick="openEditor(null)">＋</button>
 
 <nav id="pillnav">
   <span id="navind"></span>
@@ -7992,12 +8032,12 @@ vtForceDir = 0;
 const wantAnim = !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
-$('fabAdd').classList.toggle('hidden', v!=='list');
 $('navEx').classList.toggle('on', v==='ex');
 $('navTimeline').classList.toggle('hidden', DS!=='artists');
 $('navTimeline').classList.toggle('on', v==='timeline');
 updatePill();
 if(v==='list') renderList();
+updateToolbarSlim();
 if(v==='ex') renderEx();
 if(v==='timeline') renderTimeline();
 if(v==='quiz') renderQuiz();
@@ -8095,6 +8135,67 @@ function fitToolbarTop(){
 const hdr = document.querySelector('header.top');
 if(hdr) document.documentElement.style.setProperty('--hdrh', hdr.offsetHeight+'px');
 }
+/* ---------- v2.25: slim toolbar while scrolling ----------
+   Once the list is scrolled past a small threshold (the toolbar is
+   docked under the header), the search and facet rows fold away and
+   only the slim row stays: the mode bar + search/filter icon buttons.
+   The fold is a class toggle only — no JS ever writes a position, the
+   toolbar stays plain sticky in normal flow (the v2.22 rule). The
+   fold/expand itself animates via grid-template-rows (see .tbwrap).
+   Hysteresis: slim engages at scrollY >= 40 and releases below 8,
+   where the expanded flag also resets, so returning to the top of the
+   list always restores the full toolbar. While the user has the
+   toolbar expanded (tbExpanded) or is typing in the search box, no
+   folding happens. */
+var tbExpanded = false, tbRafPending = false;
+function toolbarIsSlimWanted(){
+if(view!=='list' || tbExpanded) return false;
+const ae = document.activeElement;
+if(ae && ae.id==='searchbox') return false;
+const y = window.scrollY || 0;
+const tb = $('toolbar');
+const slimNow = !!(tb && tb.classList.contains('slim'));
+if(y >= 40) return true;
+if(y < 8) return false;
+return slimNow;
+}
+function updateToolbarSlim(){
+const tb = $('toolbar'); if(!tb) return;
+if((window.scrollY || 0) < 8) tbExpanded = false;
+tb.classList.toggle('slim', toolbarIsSlimWanted());
+updateSlimTools();
+}
+function updateSlimTools(){
+const fc = $('slimFilterCount');
+if(fc){ const n = state.tags? state.tags.size: 0; fc.textContent = n? String(n): ''; fc.classList.toggle('hidden', !n); }
+const qd = $('slimQDot');
+if(qd) qd.classList.toggle('hidden', !(state.query && state.query.length));
+const cb = $('tbCollapse');
+if(cb) cb.classList.toggle('hidden', !(tbExpanded && (window.scrollY || 0) >= 40));
+}
+function expandToolbar(which){
+tbExpanded = true;
+if(which==='filter' && CONFIG.facets && !state.facetOpen){
+state.facetOpen = 'bunrui';
+renderList();
+}
+updateToolbarSlim();
+if(which==='search'){
+const sb = $('searchbox');
+if(sb){ try{ sb.focus({ preventScroll:true }); }catch(e){ try{ sb.focus(); }catch(_){} } }
+}
+}
+function collapseToolbar(){
+tbExpanded = false;
+const sb = $('searchbox');
+if(sb && document.activeElement===sb){ try{ sb.blur(); }catch(e){} }
+updateToolbarSlim();
+}
+window.addEventListener('scroll', ()=>{
+if(tbRafPending) return;
+tbRafPending = true;
+requestAnimationFrame(()=>{ tbRafPending = false; updateToolbarSlim(); });
+}, { passive:true });
 window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
    The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
@@ -8132,6 +8233,7 @@ if(kind===DS){ showView('list'); return; }
 if(view==='list') CTX[DS].scrollY = window.scrollY;
 const prevV = view;
 const srcDest = (view==='settings')? 'settings': DS;
+tbExpanded = false;
 stashCtx();
 DS = kind; bindCtx();
 editWorks = [];
@@ -8170,7 +8272,7 @@ editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
 function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList(); driftIn($('listbody'), dir);}
-function onSearch(q){ state.query = q.trim(); renderListBody();}
+function onSearch(q){ state.query = q.trim(); renderListBody(); updateSlimTools();}
 function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
 renderList();
@@ -8288,6 +8390,7 @@ $('tagrow').innerHTML = tagHtml;
 fitToolbarTop();
 renderListBody();
 renderAbout();
+updateSlimTools();
 }
 function renderListBody(){
 const arr = filteredArtists();
@@ -9495,7 +9598,6 @@ function teardownSwipe(st, commit){
     st.oldEl.classList.add('hidden');
     view = st.target;
     if(view!=='settings') CTX[DS].lastView = view;
-    $('fabAdd').classList.toggle('hidden', view!=='list');
     $('navEx').classList.toggle('on', view==='ex');
     $('navTimeline').classList.toggle('hidden', DS!=='artists');
     $('navTimeline').classList.toggle('on', view==='timeline');
@@ -9561,7 +9663,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.24';
+const APP_VERSION = '2.25';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
