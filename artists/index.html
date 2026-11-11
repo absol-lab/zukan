@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.14">
+<meta name="app-version" content="2.15">
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9229,7 +9229,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.14';
+const APP_VERSION = '2.15';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9275,7 +9275,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 3;
+const DATA_PACK = 4;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
@@ -9317,8 +9317,13 @@ async function applyDataPack(){
       if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
       if(!data) data = c.DB;
       data = mergeDataInto(data, packGuardNewerLocal(data, incoming));
-      /* 年表・クイズがローカルに無い場合はパックから補う（鮮度判定で漏れた場合の保険） */
       const incN = normalizeData(incoming);
+      /* ルートの sections はパック側を正とする。mergeDataInto は sections を
+         和集合でしか増やさないため、再分類（pack 4）の配信では旧区分が残って
+         しまう。パックは正本のスナップショットなので配列ごと置き換える
+         （各人の section 自体はマージで置換済み。表示順もこの配列に追随する） */
+      if(Array.isArray(incN.sections) && incN.sections.length) data.sections = incN.sections.slice();
+      /* 年表・クイズがローカルに無い場合はパックから補う（鮮度判定で漏れた場合の保険） */
       if(data.timeline==null && incN.timeline) data.timeline = incN.timeline;
       if(!quizHasData(data.quiz) && quizHasData(incN.quiz)) data.quiz = incN.quiz;
       data.kind = kind;
