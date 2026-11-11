@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.22">
-<link rel="apple-touch-icon" href="IMG_2278.png">
+<meta name="app-version" content="2.23">
+<link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -182,6 +182,18 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .dtabs{display:flex; gap:8px; margin-top:14px;}
 .dtabs button{flex:1; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:13.5px; letter-spacing:.14em; padding:9px 0; min-height:48px;}
 .dtabs button.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
+/* v2.23: segment-shaped controls keep horizontal drags for JS: pan-y lets
+   vertical page scrolls through, but the browser must not claim a
+   horizontal drag as a scroll and cancel the pointer stream (the v2.18
+   touch handler died exactly there on device). */
+.seg, .modebar, .dtabs, .segrow, .swatches{touch-action:pan-y;}
+/* v2.23: the detail tabs are a real scroll-snap pager (the diary v1.42
+   pattern that works on device): the three panels sit side by side in one
+   horizontal scroller and each panel is a full-width snap page, while
+   vertical scrolling stays with the page itself. */
+.dpager{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
+.dpager::-webkit-scrollbar{display:none;}
+.dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always;}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
 .bodytext{white-space:pre-wrap; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
@@ -373,12 +385,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <main id="viewList">
   <div class="toolbar">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <span class="seg" id="layerseg">
-        <button id="segCanon" onclick="setLayer('canon')">正典</button>
-        <button id="segCand" onclick="setLayer('candidate')">候補</button>
-      </span>
-    </div>
     <div class="searchrow">
       <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
     </div>
@@ -7681,7 +7687,7 @@ let state = null;
 let pendingImages = {};
 
 /* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
-function freshState(prefix){ return { layer:'canon', mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
+function freshState(prefix){ return { mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
 function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
 const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
 let DS = (location.hash==='#designers')? 'designers': 'artists';
@@ -8022,6 +8028,16 @@ vtFinish = finish;
 Promise.all([aIn.finished.catch(()=>{}), aOut.finished.catch(()=>{})]).then(finish);
 setTimeout(finish, 480);
 }
+/* v2.23: content-level segment switches (mode / ex sort /
+   timeline / quiz region) re-render in place; the new content drifts in
+   from the switch direction so the change reads as a slide, not a cut.
+   (Instant-appropriate switches — theme, font, size, line height — get
+   no motion on purpose.) */
+function driftIn(el, dir){
+if(!el || !dir || reducedMotion() || !el.animate) return;
+try{ const a = el.animate([{ transform:'translateX('+(dir*22)+'px)', opacity:.3 }, { transform:'translateX(0px)', opacity:1 }], { duration:260, easing:VT_EASE }); if(a && a.finished) a.finished.catch(()=>{}); }catch(e){}
+}
+function segDir(order, from, to){ const d = Math.sign(order.indexOf(to) - order.indexOf(from)); return d || 1; }
 /* ---------- pill nav indicator (diary moveNavInd) ---------- */
 let lastNavX = null;
 function moveNavInd(animate){
@@ -8117,8 +8133,7 @@ DS = kind; bindCtx();
 editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
-function setLayer(l){ state.layer = l; state.tags = new Set(); renderList();}
-function setMode(m){ state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList();}
+function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList(); driftIn($('listbody'), dir);}
 function onSearch(q){ state.query = q.trim(); renderListBody();}
 function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
@@ -8130,9 +8145,8 @@ if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
 state.tagGroupsOpen[key] = !state.tagGroupsOpen[key];
 renderList();
 }
-function layerArtists(){ return DB.artists.filter(a=>(a.layer||'canon')===state.layer);}
 function filteredArtists(){
-let arr = layerArtists();
+let arr = DB.artists;
 const q = state.query.toLowerCase();
 if(q){
 arr = arr.filter(a=>{
@@ -8166,15 +8180,13 @@ const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
 el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+wrk('artists')+'点 ・ デザイナー '+cnt('designers')+'名／'+wrk('designers')+'点';
 }
 function renderList(){
-$('segCanon').classList.toggle('on', state.layer==='canon');
-$('segCand').classList.toggle('on', state.layer==='candidate');
 document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 $('navEx').classList.toggle('hidden',!(DS==='artists' && DB.exhibitions && DB.exhibitions.length));
-/* tag chips from current layer, grouped by facet */
+/* tag chips from all artists, grouped by facet */
 const counts = {};
-layerArtists().forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
+DB.artists.forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
 const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
@@ -8268,7 +8280,46 @@ state.detailId = a.id; state.tab = 'works';
 renderDetail(); showView('detail');
 prefetchViewerImage(a);
 }
-function setTab(t){ state.tab = t; renderDetail();}
+/* v2.23: the detail tabs are a scroll-snap pager, not a re-render switch.
+   All three panels are always in the DOM side by side; setTab smooth-
+   scrolls the pager and the pager's own scroll position is the single
+   source of truth for which tab is active (wireDPager keeps state.tab
+   and the .on highlight in sync with it). */
+const DTABS = ['works','bio','feat'];
+function setTab(t){
+state.tab = t;
+const pg = $('dpager');
+if(!pg){ renderDetail(); return; }
+const idx = Math.max(0, DTABS.indexOf(t));
+pg.scrollTo({ left: idx * (pg.clientWidth || 1), behavior: reducedMotion()? 'auto': 'smooth' });
+dtabHighlight(t);
+}
+function dtabHighlight(t){
+const bar = document.querySelector('#viewDetail .dtabs'); if(!bar) return;
+[...bar.querySelectorAll('button')].forEach((b, i)=>b.classList.toggle('on', DTABS[i]===t));
+}
+/* the diary v1.43 pager-track: rAF-throttled on scroll, the highlight
+   flips the moment the incoming panel crosses the midpoint — during the
+   scroll, not after it settles. */
+let dpagerRAF = 0;
+function wireDPager(v){
+const pg = v.querySelector('#dpager'); if(!pg) return;
+const place = ()=>{ pg.scrollLeft = Math.max(0, DTABS.indexOf(state.tab)) * (pg.clientWidth || 0); };
+place();
+/* renderDetail can run while the view is still hidden (openDetail);
+   a 0-width pager cannot be positioned yet, so retry next frame. */
+if(!pg.clientWidth) requestAnimationFrame(()=>{ if(pg.isConnected) place(); });
+pg.addEventListener('scroll', ()=>{
+if(dpagerRAF) return;
+dpagerRAF = requestAnimationFrame(()=>{
+dpagerRAF = 0;
+if(!pg.isConnected) return;
+const i = Math.max(0, Math.min(DTABS.length-1, Math.round(pg.scrollLeft / Math.max(1, pg.clientWidth))));
+const t = DTABS[i];
+if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); }
+});
+}, { passive:true });
+}
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = worksOf(a);
@@ -8281,35 +8332,37 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 (a.years?'<span>'+esc(a.years)+'</span>':'')+
 (a.field?'<span>'+esc(a.field)+'</span>':'')+
 (a.section?'<span>'+esc(a.section)+'</span>':'')+
-'<span>'+(a.layer==='candidate'?'候補':'正典')+'</span>'+
 '</div>'+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '</div>';
-if(state.tab==='works'){
-if(!ws.length) html += '<div class="empty">作品画像はまだありません</div>';
+let worksHTML = '', bioHTML = '', featHTML = '';
+if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
-html += '<div class="gallery">';
+worksHTML = '<div class="gallery">';
 ws.forEach((w,i)=>{
-html += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
-html += '</div>';
+worksHTML += '</div>';
 }
-} else if(state.tab==='bio'){
-html += '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
-if(a.key_works) html += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
-} else {
-if(a.relation) html += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
-if(sp.tech) html += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+esc(sp.tech)+'</div>';
-if(sp.rest) html += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+esc(sp.rest)+'</div>';
-if(a.key_works) html += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
-if(!a.relation &&!sp.tech &&!sp.rest &&!a.key_works) html += '<div class="empty">特徴の記載はまだありません</div>';
-}
+bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
+if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
+if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
+if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+esc(sp.tech)+'</div>';
+if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+esc(sp.rest)+'</div>';
+if(a.key_works) featHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
+if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
+html += '<div class="dpager" id="dpager">'
++'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
++'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
++'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
++'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
 html += '</div>';
 const v = $('viewDetail'); v.innerHTML = html;
+wireDPager(v);
 v.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
@@ -8398,6 +8451,7 @@ function exSortCmp(mode){
   return (a,b)=>{ const sa = a.start_date||'9999-99-99', sb = b.start_date||'9999-99-99'; return sa<sb? -1: (sa>sb? 1: 0); };
 }
 function setExSort(m){
+  const dir = segDir(['start','end','near'], exSortMode, m);
   exSortMode = m;
   if(m==='near' && !exUserPos && exGeoState!=='denied'){
     if(navigator.geolocation){
@@ -8409,6 +8463,7 @@ function setExSort(m){
     } else exGeoState = 'denied';
   }
   renderEx();
+  driftIn($('viewEx'), dir);
 }
 function renderExArtists(){
 const exs = (DB.exhibitions||[]).slice();
@@ -8497,7 +8552,7 @@ const japan = Array.isArray(t.japan)? t.japan: [];
 if(!west.length && !japan.length) return null;
 return { west:west, japan:japan };
 }
-function setTlRegion(r){ tlRegion = r; renderTimeline(); }
+function setTlRegion(r){ const dir = segDir(['west','japan'], tlRegion, r); tlRegion = r; renderTimeline(); driftIn($('viewTimeline'), dir); }
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
@@ -8609,10 +8664,12 @@ if(items){ quizState = { mode:'choice', items:items, idx:0, score:0, picked:-1, 
 toast('クイズデータはまだありません');
 }
 function setQuizRegion(r){
+const dir = segDir(['west','japan'], qzRegion, r);
 qzRegion = r;
 const cards = quizCardItems(r);
 quizState = { mode:'cards', items:cards||[], idx:0, known:0, revealed:false };
 renderQuiz();
+driftIn($('viewQuiz'), dir);
 }
 function revealCard(){ if(quizState && quizState.mode==='cards') quizState.revealed = true; renderQuiz(); }
 function markCard(known){
@@ -8709,7 +8766,6 @@ F('母国語表記', I('ef_native', a?a.name_native:''))+
 F('生没年', I('ef_years', a?a.years:'', '例：1908–2003'))+
 F('分野', I('ef_field', a?a.field:'', '例：日本、絵画'))+
 F('分類（section）', I('ef_section', a?a.section:'') + '<div class="small">既存の分類：'+esc(DB.sections.join('／'))+'</div>')+
-F('層', '<select class="textin" id="ef_layer"><option value="canon"'+(a&&a.layer!=='candidate'?' selected':'')+'>正典（canon）</option><option value="candidate"'+(a&&a.layer==='candidate'?' selected':'')+'>候補（candidate）</option></select>')+
 F('タグ（カンマ区切り）', I('ef_tags', a?(a.tags||[]).join(', '):''))+
 F('代表作ファイル名', I('ef_wimg', a?a.work_image:''))+
 F('代表作キャプション', I('ef_wcap', a?a.work_caption:''))+
@@ -8764,7 +8820,7 @@ id: id!=null? id: nextId(),
 name: name,
 name_latin: $('ef_latin').value.trim(), name_native: $('ef_native').value.trim(),
 years: $('ef_years').value.trim(), field: $('ef_field').value.trim(),
-section: $('ef_section').value.trim(), layer: $('ef_layer').value,
+section: $('ef_section').value.trim(), layer: 'canon',
 tags: $('ef_tags').value.split(/[,、]/).map(s=>s.trim()).filter(Boolean),
 work_image: $('ef_wimg').value.trim(), work_caption: $('ef_wcap').value.trim(),
 relation: $('ef_relation').value, key_works: $('ef_keyworks').value, notes: $('ef_notes').value,
@@ -9223,22 +9279,30 @@ function sbMaxUpdated(data){
   nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
 })();
 
-/* ---------- segment drag-switch (v2.18) ----------
-   iOS segmented controls switch by dragging across them; ours only had
-   click handlers, so a drag did nothing at all — and where swipe-back is
-   armed (detail / ex / timeline / quiz) the page swipe stole the gesture
-   and navigated away instead. One delegated handler covers every segment
-   group, including the ones re-rendered into innerHTML (.dtabs, the ex
-   sort seg, the timeline / quiz region switches):
-   - during the drag nothing is activated yet — the .on highlight follows
-     the finger as a preview. Activating mid-drag would re-render the
-     group, and replacing the touch's target node kills the rest of the
-     touch stream (verified in Chromium: every move after the first went
-     silent), so the switch would only ever land halfway;
-   - on release, the button under the finger is activated once;
-   - the compatibility click after a claimed drag is suppressed, and the
-     swipe-back handler never arms from a segment (see its touchstart). */
-const SEG_SEL = '.seg, .modebar, .dtabs';
+/* ---------- segment drag-switch (v2.23: Pointer Events) ----------
+   v2.18's delegated TOUCH handler passed in Chromium yet never worked on
+   the user's iPhone. Every segment bar lives inside the vertically
+   scrolling page, so iOS claimed horizontal drags as scrolls and killed
+   the touch stream (touchcancel) before the drag could claim; nothing
+   constrained the gesture arbitration (no touch-action anywhere), so the
+   handler only ever saw the stream the browser chose to deliver.
+   v2.23 rebuilds the delivery structurally instead of re-tuning it:
+   - CSS gives every segment group `touch-action: pan-y` — vertical drags
+     still become page scrolls (and end the gesture via pointercancel),
+     but a horizontal drag is never claimed by the scroller;
+   - the handler runs on Pointer Events and takes setPointerCapture on
+     pointerdown, so the stream cannot be retargeted or dropped mid-drag.
+   The semantics are v2.18's, unchanged: during the drag only the .on
+   preview follows the finger (activating mid-drag would re-render the
+   group and destroy the gesture's own nodes); on release the button
+   under the finger is activated exactly once; the browser's own click
+   for that release is swallowed; a cancelled drag restores the preview.
+   Groups covered (SEG_SEL): .seg (ex sort / timeline / quiz
+   region), .modebar (display mode), .dtabs (detail tabs — activation
+   smooth-scrolls the pager), .segrow (settings font size / line height)
+   and .swatches (settings theme). The settings font-family panel is a
+   vertical list of rows, not a segment shape, and stays tap-only. */
+const SEG_SEL = '.seg, .modebar, .dtabs, .segrow, .swatches';
 let segDrag = null, segSuppressUntil = 0;
 function segBtnUnder(x, y){
 const el = document.elementFromPoint(x, y);
@@ -9251,42 +9315,49 @@ function segPreview(box, btn){
 if(!box) return;
 box.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===btn));
 }
-document.addEventListener('touchstart', e=>{
-if(!e.touches || e.touches.length!==1) return;
+document.addEventListener('pointerdown', e=>{
+if(!e.isPrimary) return;
+if(e.pointerType==='mouse' && e.button!==0) return;
 if(!e.target || !e.target.closest) return;
 const box = e.target.closest(SEG_SEL);
 if(!box) return;
-const t = e.touches[0];
-segDrag = { box:box, sx:t.clientX, sy:t.clientY, claimed:false, previewBtn:segBtnUnder(t.clientX, t.clientY), activeBtn:box.querySelector('button.on') };
+segDrag = { box:box, sx:e.clientX, sy:e.clientY, claimed:false, pid:e.pointerId,
+            previewBtn:segBtnUnder(e.clientX, e.clientY), activeBtn:box.querySelector('button.on') };
+try{ e.target.setPointerCapture(e.pointerId); }catch(err){}
 }, { passive:true });
-document.addEventListener('touchmove', e=>{
-const d = segDrag; if(!d) return;
-const t = e.touches && e.touches[0]; if(!t) return;
-const dx = t.clientX - d.sx, dy = t.clientY - d.sy;
+document.addEventListener('pointermove', e=>{
+const d = segDrag; if(!d || e.pointerId!==d.pid) return;
+const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
 if(!d.claimed){
 if(Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)*1.15){ d.claimed = true; }
 else if(Math.abs(dy) > 12 && Math.abs(dy) >= Math.abs(dx)){ segDrag = null; return; }
 else return;
 }
-e.preventDefault();
-const b = segBtnUnder(t.clientX, t.clientY);
+const b = segBtnUnder(e.clientX, e.clientY);
 if(!b) return;
 const box = b.closest(SEG_SEL);
 if(box) d.box = box;
 if(b !== d.previewBtn){ d.previewBtn = b; segPreview(box, b); }
-}, { passive:false });
+});
 function segDragEnd(commit){
 const d = segDrag; segDrag = null;
 if(!d || !d.claimed) return;
+if(commit && d.previewBtn){
+const b = d.previewBtn; d.previewBtn = null;
+/* activate BEFORE arming the suppressor: the programmatic click must
+   reach its handler; the browser's own click for this release (which
+   targets the capture element or the release point) is the one to eat —
+   exactly one activation either way. */
+if(b !== d.activeBtn) b.click();
 segSuppressUntil = Date.now() + 350;
-if(commit && d.previewBtn){ const b = d.previewBtn; d.previewBtn = null; b.click(); }
+}
 /* cancelled drags put the .on highlight back where the state actually is */
 else if(!commit && d.box && d.box.isConnected){ segPreview(d.box, d.activeBtn); }
 }
-document.addEventListener('touchend', ()=>segDragEnd(true), { passive:true });
-document.addEventListener('touchcancel', ()=>segDragEnd(false), { passive:true });
+document.addEventListener('pointerup', e=>{ if(segDrag && e.pointerId===segDrag.pid) segDragEnd(true); });
+document.addEventListener('pointercancel', e=>{ if(segDrag && e.pointerId===segDrag.pid) segDragEnd(false); });
 document.addEventListener('click', e=>{
-if(Date.now() < segSuppressUntil){ segSuppressUntil = 0; e.preventDefault(); e.stopPropagation(); }
+if(Date.now() < segSuppressUntil){ segSuppressUntil = 0; e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
 }, true);
 
 /* ---------- swipe back: the finger drives the transition itself ---------- */
@@ -9363,7 +9434,17 @@ function teardownSwipe(st, commit){
     if(vtBusy) return; /* 遷移アニメーション中は触らない */
     if(!e.touches || e.touches.length!==1) return;
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
-    if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.18) */
+    if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
+    /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
+       the detail pager belongs to the pager whenever a later tab is
+       showing — the native scroller moves between tabs and this handler
+       never arms, so a tab move and a back navigation can never fire
+       together. On the FIRST tab （作品） the pager cannot scroll right,
+       so the gesture falls through to here: rightward drags arm the
+       swipe-back below, while leftward drags never engage it (dx>12 is
+       required) and scroll the pager natively instead. */
+    const pg = e.target && e.target.closest && e.target.closest('.dpager');
+    if(pg && Math.round(pg.scrollLeft / Math.max(1, pg.clientWidth)) > 0) return;
     const vw = $('viewer'); if(vw && vw.classList.contains('open')) return;
     if(isEditing()) return; /* 編集フォーム表示中は無効 */
     const target = backTarget(); if(!target) return; /* 一覧では何もしない */
@@ -9402,7 +9483,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.22';
+const APP_VERSION = '2.23';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9448,7 +9529,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 7;
+const DATA_PACK = 8;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
@@ -9496,6 +9577,18 @@ async function applyDataPack(){
          しまう。パックは正本のスナップショットなので配列ごと置き換える
          （各人の section 自体はマージで置換済み。表示順もこの配列に追随する） */
       if(Array.isArray(incN.sections) && incN.sections.length) data.sections = incN.sections.slice();
+      /* v2.23: the canon/candidate split was withdrawn by the user and the
+         candidate records were deleted from the canonical data, so this
+         pack contains none. mergeDataInto only ever unions, which would
+         leave a device's local candidates alive forever — prune exactly
+         those (layer==='candidate' and absent from the pack). Canon
+         records are never pruned: a locally added artist keeps surviving
+         pack applications exactly as before. */
+      if(Array.isArray(data.artists)){
+        const packIds = new Set();
+        (incoming.artists||[]).forEach(p=>{ if(p && p.id!=null) packIds.add(String(p.id)); });
+        data.artists = data.artists.filter(p=>!p || p.layer!=='candidate' || packIds.has(String(p.id)));
+      }
       /* 年表・クイズがローカルに無い場合はパックから補う（鮮度判定で漏れた場合の保険） */
       if(data.timeline==null && incN.timeline) data.timeline = incN.timeline;
       if(!quizHasData(data.quiz) && quizHasData(incN.quiz)) data.quiz = incN.quiz;
