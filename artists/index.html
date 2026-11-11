@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.18">
+<meta name="app-version" content="2.20">
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="apple-touch-startup-image" href="IMG_2389.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -7829,12 +7829,32 @@ span.innerHTML=''; span.appendChild(im);
 im.src = cands[0];
 };
 if(work.img && work.img.url){
+/* v2.20: retry the Drive URL with backoff before giving up on it.
+   A single transient failure (burst throttling when a whole grid loads at
+   once, an HTTP/2 reset, a momentary network drop) used to be permanent:
+   onerror fell straight through to the local file candidates — which do
+   not exist in the standalone app — and then to the failure plate, so one
+   bad moment could plate every tile on screen (the "all photos gone"
+   outage). The local fallback now runs only after the retries are
+   exhausted, and fail() only after that. */
+const wantSz = parseInt(span.getAttribute('data-size'), 10);
+const fullUrl = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
+const RETRY_WAITS = [350, 1000, 2200];
+let attemptNo = 0;
+const tryUrl = ()=>{
+attemptNo++;
 const uim = document.createElement('img');
 uim.loading = 'lazy'; uim.alt = cap;
-uim.onerror = ()=>{ tryLocal(); };
+uim.onerror = ()=>{
+if(attemptNo <= RETRY_WAITS.length && span.isConnected){
+span.innerHTML = '<span class="noimg">図版</span>';
+setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
+} else tryLocal();
+};
 span.innerHTML=''; span.appendChild(uim);
-const wantSz = parseInt(span.getAttribute('data-size'), 10);
-uim.src = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
+uim.src = fullUrl;
+};
+tryUrl();
 return;
 }
 tryLocal();
@@ -9373,7 +9393,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.18';
+const APP_VERSION = '2.20';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
