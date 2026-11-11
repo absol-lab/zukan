@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.3">
+<meta name="app-version" content="2.4">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -8057,7 +8057,8 @@ const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getM
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
-let html = '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
+let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
++'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
 +'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
 +'<button class="'+(exSortMode==='near'?'on':'')+'" onclick="setExSort(\'near\')">近い順</button>'
@@ -8094,7 +8095,8 @@ v.innerHTML = html;
 function renderExDesigners(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
-if(!exs.length){ v.innerHTML = '<div class="empty">展示データはまだありません</div>'; return;}
+const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
+if(!exs.length){ v.innerHTML = head + '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
@@ -8116,10 +8118,10 @@ return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
 (e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
 '</div></div>';
 };
-let html = '';
+let html = head;
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
-v.innerHTML = html || '<div class="empty">展示データはまだありません</div>';
+v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -8140,6 +8142,7 @@ function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
 let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></span>'
++'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>'
 +'<div style="margin-top:12px;"><span class="seg">'
@@ -8272,10 +8275,11 @@ renderQuiz();
 function renderQuiz(){
 const v = $('viewQuiz'); if(!v) return;
 const s = quizState;
-if(!s){ v.innerHTML = '<div class="empty">クイズデータはまだありません</div>'; return; }
+if(!s){ v.innerHTML = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button></div><div class="empty">クイズデータはまだありません</div>'; return; }
 if(s.mode==='cards'){
 const total = s.items.length;
 let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span>'
++'<button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button>'
 +'<span class="seg"><button class="'+(qzRegion==='west'?'on':'')+'" onclick="setQuizRegion(\'west\')">西洋</button>'
 +'<button class="'+(qzRegion==='japan'?'on':'')+'" onclick="setQuizRegion(\'japan\')">日本</button></span></div>';
 if(!total){ v.innerHTML = html + '<div class="empty">この地域のクイズはまだありません</div>'; return; }
@@ -8305,7 +8309,7 @@ return;
 /* multiple-choice mode (v2.1 shapes) */
 const total = s.items.length;
 if(s.idx >= total){
-v.innerHTML = '<div class="tlhead"><h2>クイズ</h2></div>'
+v.innerHTML = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button></div>'
 +'<div class="qcard"><div class="qq">'+total+'問中 '+s.score+'問 正解</div>'
 +'<div class="qfeedback">'+(s.score===total? '全問正解です。': (s.score*2>=total? 'よくできました。': 'おつかれさまでした。'))+'</div>'
 +'<button class="blockbtn primary" onclick="startQuiz()">もう一度</button>'
@@ -8313,7 +8317,7 @@ v.innerHTML = '<div class="tlhead"><h2>クイズ</h2></div>'
 return;
 }
 const it = s.items[s.idx];
-let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
+let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
 html += '<div class="qcard"><div class="qq">'+esc(it.q)+'</div>';
 it.choices.forEach((c,i)=>{
 let cls = 'qchoice';
@@ -8440,17 +8444,19 @@ function mergeDataInto(local, incoming){
       if(ia[k]) merged[k] = ia[k];
     });
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
-    /* works merged by file key / fileId / caption */
+    /* works merged by file key / fileId / url / caption — a work is registered
+       under every key it has, so the same work dedupes across sources whose
+       representations differ (e.g. local file key vs. remote img.url) */
     const wm = new Map();
-    (la.works||[]).forEach(w=>wm.set((w.img&&w.img.fileId)||(w.img&&w.img.url)||w.file||('cap:'+w.caption), w));
+    const wkeys = w=>[ (w.img&&w.img.fileId), w.file, (w.img&&w.img.url), ('cap:'+w.caption) ].filter(Boolean);
+    (la.works||[]).forEach(w=>{ wkeys(w).forEach(k=>{ if(!wm.has(k)) wm.set(k, w); }); });
     (ia.works||[]).forEach(w=>{
-      const key = (w.img&&w.img.fileId)||(w.img&&w.img.url)||w.file||('cap:'+w.caption);
-      const ex = wm.get(key);
-      if(ex){ if(w.caption) ex.caption = w.caption; if(w.img) ex.img = w.img; }
-      else wm.set(key, w);
+      let ex = null;
+      wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
+      if(ex){ if(w.caption) ex.caption = w.caption; if(w.img) ex.img = w.img; wkeys(w).forEach(k=>wm.set(k, ex)); }
+      else wkeys(w).forEach(k=>wm.set(k, w));
     });
-    /* also preserve fileId assignments already made locally, matched by file name */
-    merged.works = Array.from(wm.values());
+    merged.works = Array.from(new Set(wm.values()));
     local.artists[ix] = normalizeArtist(merged);
   });
   if(inc.exhibitions && inc.exhibitions.length){
@@ -8839,8 +8845,34 @@ function sbMaxUpdated(data){
   nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
 })();
 
+/* ---------- swipe back (main content right-swipe) ---------- */
+function goBack(){
+  if(view==='quiz'){ showView('timeline'); return; }
+  if(view==='detail' || view==='timeline' || view==='ex' || view==='settings'){ showView('list'); }
+}
+(function(){
+  let sx = null, sy = null, startInNav = false;
+  document.addEventListener('touchstart', e=>{
+    if(!e.touches || e.touches.length!==1){ sx = null; return; }
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    startInNav = !!(e.target && e.target.closest && e.target.closest('#pillnav'));
+  }, { passive:true });
+  document.addEventListener('touchend', e=>{
+    if(sx==null) return;
+    const t = (e.changedTouches && e.changedTouches[0])? e.changedTouches[0]: null;
+    const dx = t? t.clientX - sx: 0, dy = t? t.clientY - sy: 0;
+    const wasNav = startInNav; sx = null; sy = null; startInNav = false;
+    if(wasNav) return; /* ピルナビ上は独自のスワイプ切替がある */
+    if(view==='list') return; /* 一覧では何もしない */
+    if(isEditing()) return; /* 編集フォーム表示中は無効 */
+    const vw = $('viewer'); if(vw && vw.classList.contains('open')) return; /* フルスクリーン画像表示中は無効 */
+    if(dx < 60 || Math.abs(dx) <= Math.abs(dy)) return; /* 右方向・横 dominant のみ */
+    goBack();
+  }, { passive:true });
+})();
+
 /* ================= self update ================= */
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -8882,10 +8914,71 @@ function loadDesignersSeed(){
     })
     .catch(()=>{});
 }
-(function init(){
+/* ================= bundled data pack =================
+   アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
+   既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
+   失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
+const DATA_PACK = 1;
+const LS_PACK_APPLIED = 'zukanDataPack.applied';
+/* パック側より新しいローカル編集がある作家は、パックで上書きしない */
+function packGuardNewerLocal(local, packData){
+  if(!local || !Array.isArray(local.artists) || !packData || !Array.isArray(packData.artists)) return packData;
+  const ts = s=>{ const t = Date.parse(s||''); return isNaN(t)? 0: t; };
+  const drop = new Set();
+  local.artists.forEach(la=>{
+    if(!la || !la.name || !la.updated_at) return;
+    const ia = packData.artists.find(p=>p && ((p.id!=null && la.id!=null && String(p.id)===String(la.id) && p.name===la.name) || p.name===la.name));
+    if(ia && ts(la.updated_at) > ts(ia.updated_at)) drop.add(ia);
+  });
+  if(!drop.size) return packData;
+  const copy = Object.assign({}, packData);
+  copy.artists = packData.artists.filter(a=>!drop.has(a));
+  return copy;
+}
+async function applyDataPack(){
+  let applied = 0;
+  try{ applied = parseInt(storeGet(LS_PACK_APPLIED)||'0', 10) || 0; }catch(e){}
+  if(applied >= DATA_PACK) return false;
+  let pack = null;
+  try{
+    let ctl = null, timer = null;
+    if(typeof AbortController!=='undefined'){ ctl = new AbortController(); timer = setTimeout(()=>{ try{ ctl.abort(); }catch(e){} }, 20000); }
+    const res = await fetch('datapack.json', ctl? { cache:'no-store', signal:ctl.signal }: { cache:'no-store' });
+    if(timer) clearTimeout(timer);
+    if(!res || !res.ok) return false;
+    pack = await res.json();
+  }catch(e){ return false; }
+  if(!pack || typeof pack!=='object') return false;
+  try{
+    for(const kind of ['artists','designers']){
+      const incoming = pack[kind];
+      if(!incoming || typeof incoming!=='object' || !Array.isArray(incoming.artists)) continue;
+      const c = CTX[kind]; if(!c) continue;
+      const prefix = c.cfg.prefix;
+      let data = null;
+      const raw = storeGet(prefix+'data');
+      if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
+      if(!data) data = c.DB;
+      data = mergeDataInto(data, packGuardNewerLocal(data, incoming));
+      /* 年表・クイズがローカルに無い場合はパックから補う（鮮度判定で漏れた場合の保険） */
+      const incN = normalizeData(incoming);
+      if(data.timeline==null && incN.timeline) data.timeline = incN.timeline;
+      if(!quizHasData(data.quiz) && quizHasData(incN.quiz)) data.quiz = incN.quiz;
+      data.kind = kind;
+      storeSet(prefix+'data', JSON.stringify(data));
+      c.DB = data;
+      if(kind===DS) DB = data;
+    }
+  }catch(e){ return false; }
+  storeSet(LS_PACK_APPLIED, String(DATA_PACK));
+  return true;
+}
+
+(async function init(){
   const startDS = (location.hash==='#designers')? 'designers': 'artists';
   ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
   DS = startDS; bindCtx();
+  await applyDataPack();
   if(!CTX.designers.loadedFromStore && !storeGet(CFG_DESIGNERS.prefix+'data')) loadDesignersSeed();
   updateHeader(); updatePill();
   renderList(); renderSyncStatus(); renderAbout();
