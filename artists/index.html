@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.1">
+<meta name="app-version" content="2.3">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -48,7 +48,7 @@ button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em
 #syncbar{text-align:center; font-size:11.5px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em;}
 #syncbar .err{color:var(--danger);}
 /* toolbar */
-main{display:block; max-width:720px; margin:0 auto; padding:0 14px;}
+main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:calc(100dvh + 1px);}
 .toolbar{padding:6px 0 2px;}
 .seg{display:inline-flex; gap:8px; flex-wrap:wrap;}
 .seg button{background:var(--bg2); border:1px solid var(--line); color:var(--text); padding:8px 16px; font-size:13px; letter-spacing:.06em; border-radius:999px; font-family:var(--sans);}
@@ -67,6 +67,13 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px;}
 .taggrouphead{font-size:11px; color:var(--muted); letter-spacing:.14em; margin-bottom:6px;}
 .taggrouprow{display:flex; flex-wrap:wrap; gap:8px;}
 #tagrow .tagflat{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+/* tag accordions (file-like collapsible group rows) */
+.tagacc{margin-top:8px;}
+.tagaccrow{display:flex; align-items:center; gap:8px; width:100%; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 14px; font-family:var(--sans); text-align:left; color:var(--text);}
+.tagaccrow .tagnm{font-size:13px; font-weight:600; letter-spacing:.1em;}
+.tagaccrow .tagcnt{font-size:11.5px; color:var(--muted);}
+.tagaccrow .tagchev{margin-left:auto; color:var(--muted); font-size:12px;}
+.tagacc .taggrouprow{margin-top:8px;}
 .modebar{display:flex; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
 .modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans);}
 .modebar button:first-child{border-left:none;}
@@ -154,6 +161,12 @@ button.tlchip{color:var(--accent); font-weight:600;}
 .qchoice.correct{border-color:var(--accent); background:var(--accent); color:var(--bg); font-weight:600;}
 .qchoice.wrong{border-color:var(--danger); color:var(--danger);}
 .qfeedback{font-size:14px; margin-top:14px; line-height:1.7;}
+.qanswer{font-family:var(--serif); font-size:25px; line-height:1.4; margin-top:14px; letter-spacing:.03em;}
+.qyears{font-size:12.5px; color:var(--muted); letter-spacing:.06em; margin-top:4px;}
+.qbg{font-size:13.5px; line-height:1.85; margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+.qmarkrow{display:flex; gap:8px; margin-top:16px;}
+.qmarkrow button{flex:1; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:13px 0; font-size:14px; border-radius:12px; font-family:var(--sans); letter-spacing:.06em;}
+.qmarkrow button.known{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 /* forms / settings (diary .setgroup/.setbox/.btn) */
 .setgroup{margin:24px 0;}
 .setgroup > h3{font-family:var(--sans); font-size:13px; color:var(--muted); letter-spacing:.14em; font-weight:600; margin:0 4px 10px;}
@@ -189,6 +202,8 @@ button.blockbtn:disabled{opacity:.4;}
 #pillnav button{position:relative; z-index:1; flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; border-radius:999px; font-size:10px; font-weight:500; color:var(--muted); white-space:nowrap; font-family:inherit; transition:color .3s;}
 #pillnav svg{width:21px; height:21px;}
 #pillnav button.on{color:var(--text); font-weight:600;}
+/* press feedback (diary v1.16 style): subtle brightness shift only while pressed, no layout shift */
+button:active:not(:disabled){filter:brightness(1.07);}
 .hidden{display:none !important;}
 </style>
 </head>
@@ -233,44 +248,28 @@ button.blockbtn:disabled{opacity:.4;}
 
 <main id="viewSettings" class="hidden">
   <div class="setgroup">
-    <h3>Google Drive 接続</h3>
+    <h3>Google Drive 同期</h3>
     <div class="setbox">
-      <div class="setrow"><div class="setlabel">OAuth クライアントID（両図鑑で共通）</div>
+      <div class="setrow"><div class="setlabel">OAuth クライアントID</div>
         <input class="textin" id="clientid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" onchange="saveClientId()">
         <div class="note">日記アプリと同じクライアントIDを使います。データは Drive 内の「artists.json」「designers.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
       </div>
-      <div class="setrow"><button class="blockbtn" id="syncbothbtn" onclick="syncBoth()">両方の図鑑を同期</button>
-      <div id="syncbothresults"></div>
-      <div class="note">作家図鑑とデザイナー図鑑の両方を、この端末から Google Drive へ送ります（アップロード専用）。Drive 側に新しい変更がある図鑑は上書きせず、案内を表示します。</div></div>
+      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstat">未接続</div></div>
+      <div class="setrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
+      <div id="syncresults"></div>
+      <div class="note">「今すぐ同期」は作家図鑑とデザイナー図鑑の両方を、Drive と相互に同期します（新しい方を取り込み、端末の内容を送ります）。</div>
     </div>
   </div>
   <div class="setgroup">
-    <h3>作家図鑑の同期</h3>
+    <h3>データ管理</h3>
     <div class="setbox">
-      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstatA">未接続</div></div>
-      <div class="setrow"><button class="btn primary" onclick="bindSettingsCtx('artists');connectDrive()">Drive に接続</button><button class="btn" onclick="bindSettingsCtx('artists');syncNow('manual')">今すぐ同期</button><button class="btn" onclick="bindSettingsCtx('artists');disconnectDrive()">接続を解除</button></div>
-    </div>
-  </div>
-  <div class="setgroup">
-    <h3>デザイナー図鑑の同期</h3>
-    <div class="setbox">
-      <div class="setrow"><div class="setlabel">状態</div><div class="syncstat" id="syncstatD">未接続</div></div>
-      <div class="setrow"><button class="btn primary" onclick="bindSettingsCtx('designers');connectDrive()">Drive に接続</button><button class="btn" onclick="bindSettingsCtx('designers');syncNow('manual')">今すぐ同期</button><button class="btn" onclick="bindSettingsCtx('designers');disconnectDrive()">接続を解除</button></div>
-    </div>
-  </div>
-  <div class="setgroup">
-    <h3>作家図鑑のデータ</h3>
-    <div class="setbox">
+      <div class="setlabel" style="font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em;">作家図鑑</div>
       <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
       <button class="blockbtn" onclick="bindSettingsCtx('artists');document.getElementById('importfileA').click()">ファイルを選んで取り込む</button>
       <input type="file" id="importfileA" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
       <button class="blockbtn" onclick="bindSettingsCtx('artists');exportJSON()">JSON を書き出す</button>
       <button class="blockbtn danger" onclick="bindSettingsCtx('artists');wipeAll()">全データを削除</button>
-    </div>
-  </div>
-  <div class="setgroup">
-    <h3>デザイナー図鑑のデータ</h3>
-    <div class="setbox">
+      <div class="setrow"><div class="setlabel" style="font-size:13px; font-weight:600; color:var(--text); letter-spacing:.08em;">デザイナー図鑑</div></div>
       <div class="small">ZIP（data.json＋img/）または JSON ファイルを選んで取り込みます。分割ZIPを複数回取り込んでも、同じ項目・同じ作品は自動でマージされます。取り込んだ画像は、Drive 接続時に自動でアップロードされ、JSON に fileId が書き込まれます。</div>
       <button class="blockbtn" onclick="bindSettingsCtx('designers');document.getElementById('importfileD').click()">ファイルを選んで取り込む</button>
       <input type="file" id="importfileD" accept=".zip,.json,application/zip,application/json" class="hidden" onchange="importFile(this)">
@@ -7522,7 +7521,7 @@ let state = null;
 let pendingImages = {};
 
 /* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
-function freshState(prefix){ return { layer:'canon', mode: storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false}; }
+function freshState(prefix){ return { layer:'canon', mode: storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
 function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
 const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
 let DS = (location.hash==='#designers')? 'designers': 'artists';
@@ -7531,7 +7530,6 @@ function stashCtx(){
 const c = CTX[DS]; if(!c) return;
 c.DB = DB; c.state = state;
 c.syncStatus = syncStatus; c.syncMsg = syncMsg; c.lastSyncAt = lastSyncAt;
-if(syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
 c.pendingImages = pendingImages;
 }
 function bindCtx(){
@@ -7541,7 +7539,7 @@ LS_DATA = CONFIG.prefix+'data'; LS_CID = CONFIG.prefix+'clientId'; LS_MODE = CON
 LS_FILEID = CONFIG.prefix+'driveFileId'; LS_TOKEXP = CONFIG.prefix+'tokenExp';
 LS_PENDING = CONFIG.prefix+'pendingAuth'; LS_AUTHERR = CONFIG.prefix+'authError';
 SS_TOKEN = CONFIG.prefix+'token';
-syncStatus = c.syncStatus; syncMsg = c.syncMsg; lastSyncAt = c.lastSyncAt; syncTimer = null;
+syncStatus = c.syncStatus; syncMsg = c.syncMsg; lastSyncAt = c.lastSyncAt;
 pendingImages = c.pendingImages;
 }
 
@@ -7553,6 +7551,7 @@ if(Array.isArray(d.sections)) out.sections = d.sections.filter(x=>typeof x==='st
 if(Array.isArray(d.exhibitions)) out.exhibitions = d.exhibitions;
 if(d.timeline && typeof d.timeline==='object' && !Array.isArray(d.timeline)) out.timeline = d.timeline;
 if(Array.isArray(d.quiz)) out.quiz = d.quiz;
+else if(d.quiz && typeof d.quiz==='object') out.quiz = d.quiz; /* {note, western[], japanese[]} flashcard shape */
 const arr = Array.isArray(d.artists)? d.artists: (Array.isArray(d.items)? d.items: []);
 out.artists = arr.map(normalizeArtist).filter(a=>a.name);
 return out;
@@ -7717,6 +7716,7 @@ if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSyncStatus(); renderAbout(); }
 moveNavInd(true);
 window.scrollTo(0,0);
+pinNav(); setTimeout(pinNav, 350);
 }
 /* ---------- pill nav indicator (diary moveNavInd) ---------- */
 let lastNavX = null;
@@ -7736,7 +7736,34 @@ ind.animate([
 ], { duration:430, easing:'cubic-bezier(.30,1.25,.35,1)' });
 }
 }
-window.addEventListener('resize', ()=>moveNavInd(false));
+window.addEventListener('resize', ()=>{ moveNavInd(false); _sabCache = null; pinNav(); });
+/* ---------- pill nav position pinning (diary v1.15 port) ----------
+   iOS standalone shrinks the fixed-position frame on non-scrollable (short)
+   pages, floating the bar up. Views are min-height:100dvh+1px so the page is
+   always a hair scrollable; pinNav additionally measures the real gap to the
+   screen bottom and compensates the bottom offset. */
+let _sabCache = null;
+function safeAreaBottom(){
+if(_sabCache!=null) return _sabCache;
+try{
+const d = document.createElement('div');
+d.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:0;padding-bottom:env(safe-area-inset-bottom, 0px);visibility:hidden;pointer-events:none;';
+document.body.appendChild(d);
+_sabCache = d.getBoundingClientRect().height || 0;
+d.remove();
+}catch(e){ _sabCache = 0; }
+return _sabCache;
+}
+function pinNav(){
+const nav = $('pillnav'); if(!nav) return;
+nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + 10px)';
+const gap = window.innerHeight - nav.getBoundingClientRect().bottom;
+const want = safeAreaBottom() + 10;
+if(Math.abs(gap - want) > 2){
+nav.style.bottom = 'calc(env(safe-area-inset-bottom, 0px) + ' + (10 + (want - gap)).toFixed(1) + 'px)';
+}
+}
+document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
 function updatePill(){
 $('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings');
 $('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings');
@@ -7748,7 +7775,7 @@ $('appname').textContent = CONFIG.appName;
 /* ---------- dataset switching （ページ遷移なし・文脈はデータセット毎に保持） ---------- */
 function switchDataset(kind){
 if(kind===DS){ showView('list'); return; }
-if(syncRunning || bothBusy){ toast('同期中は切り替えできません'); return; }
+/* 切替は常時自由：同期はデータセット文脈を掴んで走るため、表示側の切替と干渉しない */
 if(view==='list') CTX[DS].scrollY = window.scrollY;
 stashCtx();
 DS = kind; bindCtx();
@@ -7762,12 +7789,11 @@ if(v==='settings') v = 'list';
 showView(v);
 if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
-startCtxIfNeeded();
+pinNav();
 }
 /* 設定画面から、表示中データセットを切り替えて操作するための束縛 */
 function bindSettingsCtx(kind){
 if(kind===DS) return;
-if(syncRunning || bothBusy){ toast('同期中は切り替えできません'); return; }
 stashCtx();
 DS = kind; bindCtx();
 editWorks = [];
@@ -7781,6 +7807,11 @@ if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
 renderList();
 }
 function toggleTagsOpen(){ state.tagsOpen = !state.tagsOpen; renderList(); }
+function toggleTagGroup(key){
+if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
+state.tagGroupsOpen[key] = !state.tagGroupsOpen[key];
+renderList();
+}
 function layerArtists(){ return DB.artists.filter(a=>(a.layer||'canon')===state.layer);}
 function filteredArtists(){
 let arr = layerArtists();
@@ -7824,11 +7855,20 @@ const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
 +esc(t)+' '+counts[t]+'</button>';
+/* accordion groups: one row per group; chips render only when the group is
+   open (explicitly opened, or force-opened because a selected tag lives in it) */
+if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
+const accRow = (key, label, count, open)=>
+'<button class="tagaccrow" onclick="toggleTagGroup(\''+key+'\')"><span class="tagnm">'+esc(label)+'</span>'
++'<span class="tagcnt">'+count+'件</span><span class="tagchev">'+(open?'▾':'▸')+'</span></button>';
 let tagHtml = '';
 if(CONFIG.facets){
 TAG_FACET_ORDER.forEach(f=>{
 const all = tags.filter(t=>tagFacet(t)===f);
 if(!all.length) return;
+const open = !!state.tagGroupsOpen[f] || all.some(t=>state.tags.has(t));
+tagHtml += '<div class="tagacc">'+accRow(f, TAG_FACET_LABELS[f], all.length, open);
+if(open){
 let gtags = all, toggleBtn = '';
 if(f==='theme' && all.length>TAG_LIMIT){
 if(!state.tagsOpen){
@@ -7838,13 +7878,19 @@ all.forEach(t=>{ if(state.tags.has(t) && gtags.indexOf(t)<0) gtags.push(t); });
 toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'
 +(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
 }
-tagHtml += '<div class="taggroup"><div class="taggrouphead">'+TAG_FACET_LABELS[f]+'</div>'
-+'<div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div></div>';
+tagHtml += '<div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div>';
+}
+tagHtml += '</div>';
 });
 } else {
+const open = !!state.tagGroupsOpen.all || state.tags.size>0;
+tagHtml = '<div class="tagacc">'+accRow('all', 'タグ', tags.length, open);
+if(open){
 let shownTags = state.tagsOpen? tags.slice() : tags.slice(0,TAG_LIMIT);
 tags.forEach(t=>{ if(state.tags.has(t) && shownTags.indexOf(t)<0) shownTags.push(t); });
-tagHtml = '<div class="tagflat">'+shownTags.map(tagChip).join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'')+'</div>';
+tagHtml += '<div class="taggrouprow">'+shownTags.map(tagChip).join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'')+'</div>';
+}
+tagHtml += '</div>';
 }
 $('tagrow').innerHTML = tagHtml;
 renderListBody();
@@ -8094,7 +8140,7 @@ function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
 let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></span>'
-+(quizItems()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
++(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>'
 +'<div style="margin-top:12px;"><span class="seg">'
 +'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">西洋</button>'
@@ -8133,10 +8179,18 @@ html += '</div>';
 v.innerHTML = html;
 }
 
-/* ---------- quiz （DB.quiz・2つのスキーマ形状に対応） ---------- */
-/* accepted per item: {q, choices[], answer} or {question, options[], correct_index};
-   answer may be a numeric index, or a string equal to one of the choices */
-function quizItems(){
+/* ---------- quiz （DB.quiz・2 系統の形状に対応） ----------
+   A) flashcard shape (migration の実データ): quiz = { note, western:[{question, answer, years, background}], japanese:[...] }
+      question = 説明文、answer = 様式名（文字列）。選択肢はないので単語カード式にする。
+   B) multiple-choice shape: quiz = [ {q, choices[], answer} | {question, options[], correct_index} ]（v2.1 互換） */
+function quizHasData(q){
+if(Array.isArray(q)) return q.length>0;
+if(q && typeof q==='object'){
+return ['western','japanese'].some(k=>Array.isArray(q[k]) && q[k].some(it=>it && typeof it.question==='string' && it.question && typeof it.answer==='string' && it.answer));
+}
+return false;
+}
+function quizChoiceItems(){
 const q = DB && DB.quiz;
 if(!Array.isArray(q) || !q.length) return null;
 const out = [];
@@ -8158,21 +8212,60 @@ out.push({ q:text, choices:choices.map(String), answer:ans });
 });
 return out.length? out: null;
 }
-let quizState = null; /* { items, idx, score, picked, answered } */
+let qzRegion = 'west'; /* 'west' | 'japan' （quiz.western / quiz.japanese に対応） */
+function quizCardItems(region){
+const q = DB && DB.quiz;
+if(!q || Array.isArray(q) || typeof q!=='object') return null;
+const arr = q[(region||qzRegion)==='west'? 'western': 'japanese'];
+if(!Array.isArray(arr)) return null;
+const out = [];
+arr.forEach(it=>{
+if(!it || typeof it!=='object') return;
+if(typeof it.question!=='string' || !it.question) return;
+if(typeof it.answer!=='string' || !it.answer) return;
+out.push({ question:it.question, answer:it.answer, years:String(it.years||''), background:String(it.background||'') });
+});
+return out.length? out: null;
+}
+function quizHasCards(){
+const q = DB && DB.quiz;
+if(!q || Array.isArray(q) || typeof q!=='object') return false;
+return !!quizCardItems('west') || !!quizCardItems('japan');
+}
+function quizAvailable(){ return !!quizChoiceItems() || quizHasCards(); }
+let quizState = null; /* cards: {mode:'cards', items, idx, known, revealed} / choice: {mode:'choice', items, idx, score, picked, answered} */
 function startQuiz(){
-const items = quizItems();
-if(!items){ toast('クイズデータはまだありません'); return; }
-quizState = { items:items, idx:0, score:0, picked:-1, answered:false };
-showView('quiz');
+const cards = quizCardItems(qzRegion);
+if(cards){ quizState = { mode:'cards', items:cards, idx:0, known:0, revealed:false }; showView('quiz'); return; }
+if(quizHasCards()){ /* 選択中の地域にカードが無ければ、ある方の地域で始める */
+qzRegion = quizCardItems('west')? 'west': 'japan';
+quizState = { mode:'cards', items:quizCardItems(qzRegion), idx:0, known:0, revealed:false }; showView('quiz'); return;
+}
+const items = quizChoiceItems();
+if(items){ quizState = { mode:'choice', items:items, idx:0, score:0, picked:-1, answered:false }; showView('quiz'); return; }
+toast('クイズデータはまだありません');
+}
+function setQuizRegion(r){
+qzRegion = r;
+const cards = quizCardItems(r);
+quizState = { mode:'cards', items:cards||[], idx:0, known:0, revealed:false };
+renderQuiz();
+}
+function revealCard(){ if(quizState && quizState.mode==='cards') quizState.revealed = true; renderQuiz(); }
+function markCard(known){
+if(!quizState || quizState.mode!=='cards' || !quizState.revealed) return;
+if(known) quizState.known++;
+quizState.idx++; quizState.revealed = false;
+renderQuiz();
 }
 function answerQuiz(i){
-if(!quizState || quizState.answered) return;
+if(!quizState || quizState.mode!=='choice' || quizState.answered) return;
 quizState.picked = i; quizState.answered = true;
 if(i === quizState.items[quizState.idx].answer) quizState.score++;
 renderQuiz();
 }
 function nextQuiz(){
-if(!quizState) return;
+if(!quizState || quizState.mode!=='choice') return;
 quizState.idx++; quizState.picked = -1; quizState.answered = false;
 renderQuiz();
 }
@@ -8180,6 +8273,36 @@ function renderQuiz(){
 const v = $('viewQuiz'); if(!v) return;
 const s = quizState;
 if(!s){ v.innerHTML = '<div class="empty">クイズデータはまだありません</div>'; return; }
+if(s.mode==='cards'){
+const total = s.items.length;
+let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span>'
++'<span class="seg"><button class="'+(qzRegion==='west'?'on':'')+'" onclick="setQuizRegion(\'west\')">西洋</button>'
++'<button class="'+(qzRegion==='japan'?'on':'')+'" onclick="setQuizRegion(\'japan\')">日本</button></span></div>';
+if(!total){ v.innerHTML = html + '<div class="empty">この地域のクイズはまだありません</div>'; return; }
+if(s.idx >= total){
+v.innerHTML = html + '<div class="qcard"><div class="qq">わかった '+s.known+'問 ／ 全'+total+'問</div>'
++'<div class="qfeedback">'+(s.known===total? '全問わかりました。': (s.known*2>=total? 'よくできました。': 'おつかれさまでした。'))+'</div>'
++'<button class="blockbtn primary" onclick="startQuiz()">もう一度</button>'
++'<button class="blockbtn" onclick="showView(\'timeline\')">年表へ戻る</button></div>';
+return;
+}
+const it = s.items[s.idx];
+html += '<div style="margin-top:10px;"><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
+html += '<div class="qcard"><div class="qq">'+esc(it.question)+'</div>';
+if(!s.revealed){
+html += '<button class="blockbtn primary" onclick="revealCard()">答えを見る</button>';
+} else {
+html += '<div class="qanswer">'+esc(it.answer)+'</div>'
++(it.years? '<div class="qyears">'+esc(it.years)+'</div>': '')
++(it.background? '<div class="qbg">'+esc(it.background)+'</div>': '')
++'<div class="qmarkrow"><button class="known" onclick="markCard(true)">わかった</button>'
++'<button onclick="markCard(false)">わからなかった</button></div>';
+}
+html += '</div>';
+v.innerHTML = html;
+return;
+}
+/* multiple-choice mode (v2.1 shapes) */
 const total = s.items.length;
 if(s.idx >= total){
 v.innerHTML = '<div class="tlhead"><h2>クイズ</h2></div>'
@@ -8338,7 +8461,7 @@ function mergeDataInto(local, incoming){
   }
   /* timeline / quiz: root-level dataset parts; prefer the incoming copy when its data is at least as new */
   if(inc.timeline && (local.timeline==null || incMax >= localMax)) local.timeline = inc.timeline;
-  if(inc.quiz && inc.quiz.length && (local.quiz==null || incMax >= localMax)) local.quiz = inc.quiz;
+  if(quizHasData(inc.quiz) && (!quizHasData(local.quiz) || incMax >= localMax)) local.quiz = inc.quiz;
   return local;
 }
 async function importFile(input){
@@ -8399,28 +8522,32 @@ function wipeAll(){
   if(isDriveConnected()) syncNow('wipe');
 }
 
-/* ================= Google Drive sync ================= */
+/* ================= Google Drive sync（アプリ全体で1つ） ================= */
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
-let syncStatus = 'disconnected', syncMsg = '', lastSyncAt = 0, syncTimer = null, syncRunning = false;
+/* syncStatus/syncMsg/lastSyncAt は「表示中のデータセット」の鏡。実体は CTX[kind] に置く */
+let syncStatus = 'disconnected', syncMsg = '', lastSyncAt = 0;
+let appSyncRunning = false;
+let syncQueue = Promise.resolve();
 
-function getClientId(){ return (storeGet(LS_CID) || storeGet((DS==='artists'? CFG_DESIGNERS.prefix: CFG_ARTISTS.prefix)+'clientId') || '').trim(); }
-function getValidToken(){
-  const tok = sessGet(SS_TOKEN); const exp = +(storeGet(LS_TOKEXP)||0);
+function getClientId(){ return (storeGet(CFG_ARTISTS.prefix+'clientId') || storeGet(CFG_DESIGNERS.prefix+'clientId') || '').trim(); }
+function tokenFrom(prefix){
+  const tok = sessGet(prefix+'token'); const exp = +(storeGet(prefix+'tokenExp')||0);
   if(tok && exp && Date.now() < exp-15000) return tok;
   return null;
 }
+function getValidToken(){ return tokenFrom(CFG_ARTISTS.prefix) || tokenFrom(CFG_DESIGNERS.prefix); }
 function isDriveConnected(){ return !!getValidToken(); }
 function storeToken(tok, expiresInSec){
-  sessSet(SS_TOKEN, tok);
-  storeSet(LS_TOKEXP, String(Date.now() + (expiresInSec||3600)*1000));
-  storeDel(LS_AUTHERR);
+  [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>{
+    sessSet(p+'token', tok);
+    storeSet(p+'tokenExp', String(Date.now() + (expiresInSec||3600)*1000));
+    storeDel(p+'authError');
+  });
 }
-function clearToken(){ sessDel(SS_TOKEN); storeDel(LS_TOKEXP); }
-function setSyncStatus(st, msg){
-  syncStatus = st; if(typeof msg==='string') syncMsg = msg;
-  renderSyncStatus();
+function clearToken(){
+  [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>{ sessDel(p+'token'); storeDel(p+'tokenExp'); });
 }
 function statusLabelFor(st, msg, at){
   let label, cls = '';
@@ -8431,20 +8558,50 @@ function statusLabelFor(st, msg, at){
   return { label:label, cls:cls };
 }
 function ctxStatus(kind){
-  if(kind===DS) return statusLabelFor(syncStatus, syncMsg, lastSyncAt);
   const c = CTX[kind]; return statusLabelFor(c.syncStatus, c.syncMsg, c.lastSyncAt);
 }
+function setCtxStatus(kind, st, msg){
+  const c = CTX[kind]; if(!c) return;
+  c.syncStatus = st; if(typeof msg==='string') c.syncMsg = msg;
+  if(kind===DS){ syncStatus = c.syncStatus; syncMsg = c.syncMsg; lastSyncAt = c.lastSyncAt; }
+  renderSyncStatus();
+}
+function setSyncStatus(st, msg){ setCtxStatus(DS, st, msg); }
+function hhmm(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function appStatusInfo(){
+  const a = CTX.artists, d = CTX.designers;
+  if(appSyncRunning || a.syncStatus==='syncing' || d.syncStatus==='syncing') return { label:'同期中…', cls:'' };
+  const errs = [a, d].filter(c=>c.syncStatus==='error');
+  if(errs.length) return { label:'同期エラー：'+(errs[0].syncMsg||''), cls:'err' };
+  const at = Math.max(a.lastSyncAt||0, d.lastSyncAt||0);
+  if(at) return { label:'同期済み（'+hhmm(new Date(at))+'）', cls:'' };
+  if(getValidToken()) return { label:'接続済み（未同期）', cls:'' };
+  return { label:'Drive未接続（端末内に保存中）', cls:'' };
+}
 function renderSyncStatus(){
-  const cur = statusLabelFor(syncStatus, syncMsg, lastSyncAt);
+  const cur = ctxStatus(DS);
   const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>';
-  const sa = $('syncstatA'); if(sa){ const s = ctxStatus('artists'); sa.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
-  const sd = $('syncstatD'); if(sd){ const s = ctxStatus('designers'); sd.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
+  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span>'; }
+  const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
+  const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
   const cid = $('clientid'); if(cid && document.activeElement!==cid) cid.value = getClientId();
 }
+function appendSyncLine(label, msg, isErr){
+  const box = $('syncresults'); if(!box) return;
+  const d = document.createElement('div');
+  d.className = 'syncline'+(isErr?' err':'');
+  d.textContent = label+'：'+msg;
+  box.appendChild(d);
+}
+function clearSyncLines(){ const box = $('syncresults'); if(box) box.innerHTML = ''; }
+
+/* 編集後の自動同期：編集したデータセットだけを、トークンのみで静かに同期する（ポップアップなし） */
+let autoSyncTimer = null, autoSyncKind = null;
 function scheduleSync(){
-  if(!isDriveConnected()) return;
-  if(syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(()=>syncNow('auto'), 1500);
+  if(!getValidToken()) return;
+  autoSyncKind = DS;
+  if(autoSyncTimer) clearTimeout(autoSyncTimer);
+  autoSyncTimer = setTimeout(()=>{ const k = autoSyncKind; autoSyncKind = null; if(k) queueSync(()=>syncDatasetFlow(k, 'auto')); }, 1500);
 }
 function saveClientId(){ const el = $('clientid'); if(!el) return; const v = el.value.trim(); storeSet(CFG_ARTISTS.prefix+'clientId', v); storeSet(CFG_DESIGNERS.prefix+'clientId', v); }
 
@@ -8461,15 +8618,18 @@ function connectDrive(){
       callback: function(resp){
         if(resp && resp.access_token){
           storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
-          storeDel(LS_PENDING); setSyncStatus('syncing'); syncNow('connect');
-        } else setSyncStatus('error', 'トークンを取得できませんでした');
+          [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeDel(p+'pendingAuth'));
+          clearSyncLines();
+          queueSync(()=>runAppSync('connect', true));
+        } else { setCtxStatus('artists', 'error', 'トークンを取得できませんでした'); setCtxStatus('designers', 'error', 'トークンを取得できませんでした'); }
       },
       error_callback: function(err){
         const t = '認証エラー：'+((err && (err.type||err.message)) || 'unknown');
-        storeSet(LS_AUTHERR, t); setSyncStatus('error', t); storeDel(LS_PENDING);
+        [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeSet(p+'authError', t));
+        setCtxStatus('artists', 'error', t); setCtxStatus('designers', 'error', t);
       }
     });
-    storeSet(LS_PENDING, String(Date.now()));
+    [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeSet(p+'pendingAuth', String(Date.now())));
     tc.requestAccessToken();
   }catch(e){ toast('接続を開始できませんでした：'+(e && e.message ? e.message : e), 4000); }
 }
@@ -8478,21 +8638,9 @@ function disconnectDrive(){
   if(tok && window.google && google.accounts && google.accounts.oauth2){
     try{ google.accounts.oauth2.revoke(tok, function(){}); }catch(e){}
   }
-  clearToken(); setSyncStatus('disconnected');
-}
-function trySilentRefresh(){
-  const cid = getClientId(); if(!cid) return;
-  if(!(window.google && google.accounts && google.accounts.oauth2)) return;
-  try{
-    const tc = google.accounts.oauth2.initTokenClient({
-      client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
-      callback: function(resp){
-        if(resp && resp.access_token){ storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10)); setSyncStatus('synced'); syncNow('startup'); }
-      },
-      error_callback: function(){ if(syncStatus!=='error') setSyncStatus('disconnected'); }
-    });
-    tc.requestAccessToken({ prompt: '' });
-  }catch(e){ setSyncStatus('disconnected'); }
+  clearToken();
+  setCtxStatus('artists', 'disconnected'); setCtxStatus('designers', 'disconnected');
+  toast('Drive との接続を解除しました');
 }
 async function driveFetch(path, opts){
   const tok = getValidToken(); if(!tok) throw new Error('no token');
@@ -8513,88 +8661,157 @@ function dataURLtoBlob(dataUrl){
   if(m[2]){ const bin = atob(m[3]); const arr = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return new Blob([arr], { type:m[1]||'image/jpeg' }); }
   return new Blob([decodeURIComponent(m[3])], { type:m[1]||'image/jpeg' });
 }
-/* upload pending images, then write their fileIds into matching works */
-async function uploadPendingImages(){
-  const tok = getValidToken(); if(!tok) return;
-  const bases = Object.keys(pendingImages);
+
+/* ---------- 同期ランナー ----------
+   各データセットの文脈（CTX[kind] とその保存キー）を掴んで走るため、実行中に
+   ユーザーが表示データセットを切り替えても、書き込み先を取り違えない。
+   すべての同期は queueSync で直列化する。切替は一切ブロックしない。 */
+function fetchT(url, opts, ms){
+  return new Promise((resolve, reject)=>{
+    let ctl = null;
+    try{ ctl = new AbortController(); }catch(e){}
+    const to = setTimeout(()=>{ try{ if(ctl) ctl.abort(); }catch(e){} reject(new Error('通信がタイムアウトしました')); }, ms||30000);
+    const o = Object.assign({}, opts||{}); if(ctl) o.signal = ctl.signal;
+    fetch(url, o).then(r=>{ clearTimeout(to); resolve(r); }, e=>{ clearTimeout(to); reject(e); });
+  });
+}
+async function driveReq(tok, path, opts, ms){
+  return fetchT(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }), ms||30000);
+}
+async function findDataFileFor(tok, dataFile){
+  const q = encodeURIComponent("name='"+dataFile+"' and trashed=false");
+  const res = await driveReq(tok, '/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+  if(!res.ok) throw new Error('files.list HTTP '+res.status);
+  const j = await res.json();
+  const files = (j.files||[]).filter(f=>f.name===dataFile);
+  return files.length ? files[0] : null;
+}
+async function createDataFileFor(tok, dataFile, data){
+  const meta = { name: dataFile, mimeType:'application/json' };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
+  form.append('file', new Blob([JSON.stringify(data)], { type:'application/json' }), dataFile);
+  const res = await fetchT(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form }, 60000);
+  if(!res.ok) throw new Error('create HTTP '+res.status);
+  return res.json();
+}
+async function uploadDataUpdateFor(tok, fileId, data){
+  const res = await fetchT(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', {
+    method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(data)
+  }, 60000);
+  if(!res.ok) throw new Error('update HTTP '+res.status);
+}
+/* そのデータセットの保留画像をアップロードし、fileId を data 内の作品へ書き込む */
+async function uploadPendingImagesFor(prefix, data, tok){
+  let pend = {};
+  try{ pend = JSON.parse(storeGet(prefix+'pendingImages')||'{}'); }catch(e){}
+  if(!pend || typeof pend!=='object') pend = {};
+  const bases = Object.keys(pend);
+  if(!bases.length) return data;
   for(const base of bases){
-    const p = pendingImages[base]; if(!p) continue;
+    const p = pend[base]; if(!p) continue;
     try{
       const meta = { name: p.name || (base+'.jpg'), mimeType: p.type || 'image/jpeg' };
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
       form.append('file', dataURLtoBlob(p.dataUrl), meta.name);
-      const res = await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+      const res = await fetchT(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form }, 60000);
       if(!res.ok) throw new Error('photo upload HTTP '+res.status);
       const j = await res.json();
       if(j && j.id){
-        DB.artists.forEach(a=>{
-          (a.works||[]).forEach(w=>{ if(w.file===base) w.img = { fileId: j.id }; });
-          if(a.work_image===base){ /* representative handled through works[0] as well */ }
-        });
-        delete pendingImages[base];
+        data.artists.forEach(a=>{ (a.works||[]).forEach(w=>{ if(w.file===base) w.img = { fileId: j.id }; }); });
+        delete pend[base];
       }
-    }catch(e){ /* keep pending, retry next sync */ }
+    }catch(e){ /* 保留のまま次回再試行 */ }
   }
-  savePendingImages(); saveDB();
+  try{ storeSet(prefix+'pendingImages', JSON.stringify(pend)); }catch(e){}
+  return data;
 }
-async function findDataFile(){
-  const q = encodeURIComponent("name='"+CONFIG.dataFile+"' and trashed=false");
-  const res = await driveFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime,headRevisionId)')+'&orderBy=createdTime');
-  if(!res.ok) throw new Error('files.list HTTP '+res.status);
-  const j = await res.json();
-  const files = (j.files||[]).filter(f=>f.name===CONFIG.dataFile);
-  return files.length ? files[0] : null;
+function refreshAfterSync(kind){
+  if(kind!==DS || isEditing()) return;
+  if(view==='list') renderList();
+  else if(view==='detail' && state.detailId!=null) renderDetail();
+  else if(view==='ex') renderEx();
+  else if(view==='timeline') renderTimeline();
+  renderAbout();
 }
-async function downloadData(fileId){
-  const res = await driveFetch('/files/'+encodeURIComponent(fileId)+'?alt=media');
-  if(!res.ok) throw new Error('download HTTP '+res.status);
-  return normalizeData(JSON.parse(await res.text()));
-}
-async function uploadDataUpdate(fileId, data){
-  const tok = getValidToken(); if(!tok) throw new Error('no token');
-  const res = await fetch(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', {
-    method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(data)
-  });
-  if(!res.ok) throw new Error('update HTTP '+res.status);
-}
-async function createDataFile(data){
-  const tok = getValidToken(); if(!tok) throw new Error('no token');
-  const meta = { name: CONFIG.dataFile, mimeType:'application/json' };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
-  form.append('file', new Blob([JSON.stringify(data)], { type:'application/json' }), CONFIG.dataFile);
-  const res = await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
-  if(!res.ok) throw new Error('create HTTP '+res.status);
-  return res.json();
-}
-async function syncNow(reason){
-  if(syncRunning) return;
-  if(!getValidToken()){ setSyncStatus('disconnected'); if(reason==='manual') toast('Drive未接続です。設定の同期パネルから接続してください'); return; }
-  syncRunning = true; setSyncStatus('syncing');
+/* 1データセット分の同期。ストレージを正として読み書きし、結果を CTX[kind] に残す。
+   成功・失敗どちらでも必ず状態が確定する（同期中のまま残らない）。 */
+async function syncDatasetFlow(kind, reason){
+  const c = CTX[kind]; if(!c) return { ok:false, msg:'対象がありません' };
+  const cfg = c.cfg, prefix = cfg.prefix;
+  const tok = getValidToken();
+  if(!tok){ setCtxStatus(kind, 'disconnected'); return { ok:false, msg:'Drive未接続' }; }
+  setCtxStatus(kind, 'syncing');
   try{
-    await uploadPendingImages();
-    let file = await findDataFile();
+    let data = null;
+    const raw = storeGet(prefix+'data');
+    if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
+    if(!data) data = c.DB;
+    data = await uploadPendingImagesFor(prefix, data, tok);
+    const file = await findDataFileFor(tok, cfg.dataFile);
     if(!file){
-      const created = await createDataFile(DB);
-      if(created && created.id) storeSet(LS_FILEID, created.id);
+      const created = await createDataFileFor(tok, cfg.dataFile, data);
+      if(created && created.id) storeSet(prefix+'driveFileId', created.id);
     } else {
-      storeSet(LS_FILEID, file.id);
+      storeSet(prefix+'driveFileId', file.id);
       if(reason!=='wipe'){
-        const remote = await downloadData(file.id);
-        DB = mergeDataInto(DB, remote);
-        saveDB();
+        const res = await driveReq(tok, '/files/'+encodeURIComponent(file.id)+'?alt=media', null, 60000);
+        if(!res.ok) throw new Error('download HTTP '+res.status);
+        const remote = normalizeFor(kind, JSON.parse(await res.text()));
+        data = mergeDataInto(data, remote);
       }
-      await uploadDataUpdate(file.id, DB);
+      await uploadDataUpdateFor(tok, file.id, data);
     }
-    lastSyncAt = Date.now();
-    setSyncStatus('synced');
-    if(view==='list') renderList();
-    if(view==='detail' && state.detailId!=null) renderDetail();
-    if(view==='ex') renderEx();
+    storeSet(prefix+'data', JSON.stringify(data));
+    c.DB = data;
+    if(kind===DS) DB = data;
+    c.lastSyncAt = Date.now();
+    setCtxStatus(kind, 'synced');
+    refreshAfterSync(kind);
+    return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）' };
   }catch(e){
-    setSyncStatus('error', (e && e.message) ? e.message : String(e));
-  }finally{ syncRunning = false; }
+    const m = (e && e.message) ? e.message : String(e);
+    setCtxStatus(kind, 'error', m);
+    return { ok:false, msg:'同期に失敗しました（'+m+'）' };
+  }
+}
+function queueSync(task){
+  const run = ()=>task();
+  const p = syncQueue.then(run, run);
+  syncQueue = p.then(()=>{}, ()=>{});
+  return p;
+}
+async function runAppSync(reason, showResults){
+  appSyncRunning = true; renderSyncStatus();
+  try{
+    for(const kind of ['artists','designers']){
+      const r = await syncDatasetFlow(kind, reason);
+      if(showResults) appendSyncLine(CTX[kind].cfg.appName, r.msg, !r.ok);
+    }
+  }finally{
+    appSyncRunning = false; renderSyncStatus();
+  }
+}
+function appSyncBtn(){
+  if(appSyncRunning) return;
+  if(!getValidToken()){ toast('Drive未接続です。先に「Drive に接続」を押してください', 3200); return; }
+  clearSyncLines();
+  queueSync(()=>runAppSync('manual', true));
+}
+/* 旧来の呼び出し（全削除時の即時同期など）の受け口：表示中データセットのみ同期する */
+function syncNow(reason){
+  if(reason==='manual'){ appSyncBtn(); return; }
+  if(reason==='connect'){ queueSync(()=>runAppSync('connect', true)); return; }
+  const kind = DS;
+  queueSync(()=>syncDatasetFlow(kind, reason));
+}
+/* mergeDataInto から使う、データ内の最大 updated_at */
+function sbMaxUpdated(data){
+  let m = 0;
+  const arr = (data && Array.isArray(data.artists))? data.artists: [];
+  arr.forEach(a=>{ const t = Date.parse((a && a.updated_at) || ''); if(!isNaN(t) && t>m) m = t; });
+  return m;
 }
 
 /* ---------- pill nav swipe ---------- */
@@ -8622,144 +8839,8 @@ async function syncNow(reason){
   nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
 })();
 
-/* ================= 両方の図鑑を同期（アップロード専用） ================= */
-const ZUKAN_APPS = [
-  { label:'作家', file:'artists.json', prefix:'zukanArtists.' },
-  { label:'デザイナー', file:'designers.json', prefix:'zukanDesigners.' }
-];
-let bothBusy = false, bothToken = null, bothTokenExpSec = 3600;
-function sbLine(label, msg, isErr){
-  const box = $('syncbothresults'); if(!box) return;
-  const d = document.createElement('div');
-  d.className = 'syncline'+(isErr?' err':'');
-  d.textContent = label+'：'+msg;
-  box.appendChild(d);
-}
-function sbMaxUpdated(data){
-  let m = 0;
-  const arr = (data && Array.isArray(data.artists))? data.artists: [];
-  arr.forEach(a=>{ const t = Date.parse((a && a.updated_at) || ''); if(!isNaN(t) && t>m) m = t; });
-  return m;
-}
-function sbHhmm(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function sbDone(){ bothBusy = false; const b = $('syncbothbtn'); if(b) b.disabled = false; }
-async function sbFetch(path, opts){
-  return fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+bothToken }, (opts&&opts.headers)||{}) }));
-}
-async function sbFindFile(name){
-  const q = encodeURIComponent("name='"+name+"' and trashed=false");
-  const r = await sbFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
-  if(!r.ok) throw new Error('files.list HTTP '+r.status);
-  const j = await r.json();
-  const f = (j.files||[]).filter(x=>x.name===name);
-  return f.length? f[0]: null;
-}
-async function sbDownloadText(id){
-  const r = await sbFetch('/files/'+encodeURIComponent(id)+'?alt=media');
-  if(!r.ok) throw new Error('download HTTP '+r.status);
-  return r.text();
-}
-async function sbUploadUpdate(id, text){
-  const r = await fetch(UPLOAD_API+'/files/'+encodeURIComponent(id)+'?uploadType=media', {
-    method:'PATCH', headers:{ Authorization:'Bearer '+bothToken, 'Content-Type':'application/json' }, body: text
-  });
-  if(!r.ok) throw new Error('update HTTP '+r.status);
-}
-async function sbCreateFile(name, text){
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify({ name:name, mimeType:'application/json' })], { type:'application/json' }));
-  form.append('file', new Blob([text], { type:'application/json' }), name);
-  const r = await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', {
-    method:'POST', headers:{ Authorization:'Bearer '+bothToken }, body: form
-  });
-  if(!r.ok) throw new Error('create HTTP '+r.status);
-  return r.json();
-}
-/* アプリ側の storeToken と同じキーに書き、各アプリを開いたときの状態表示と整合させる */
-function sbMarkSynced(app){
-  sessSet(app.prefix+'token', bothToken);
-  storeSet(app.prefix+'tokenExp', String(Date.now()+bothTokenExpSec*1000));
-  storeDel(app.prefix+'authError');
-}
-function sbMarkCtxSynced(app){
-  const kind = (app.prefix===CFG_ARTISTS.prefix)? 'artists': 'designers';
-  const now = Date.now();
-  if(kind===DS){ lastSyncAt = now; setSyncStatus('synced'); }
-  else { CTX[kind].syncStatus = 'synced'; CTX[kind].lastSyncAt = now; CTX[kind].syncMsg = ''; renderSyncStatus(); }
-}
-async function sbSyncOne(app){
-  const raw = storeGet(app.prefix+'data');
-  if(!raw) return '端末にデータがありません（対象外）';
-  let data = null;
-  try{ data = JSON.parse(raw); }catch(e){ return '端末データの読み取りに失敗しました（対象外）'; }
-  const count = (data && Array.isArray(data.artists))? data.artists.length: 0;
-  const localMax = sbMaxUpdated(data);
-  const file = await sbFindFile(app.file);
-  if(!file){
-    const everConnected = storeGet(app.prefix+'clientId') || storeGet(app.prefix+'driveFileId');
-    if(!count && !everConnected) return '未接続のため対象外';
-    const created = await sbCreateFile(app.file, raw);
-    if(created && created.id){
-      storeSet(app.prefix+'driveFileId', created.id);
-      sbMarkSynced(app);
-      sbMarkCtxSynced(app);
-      return '同期済み '+sbHhmm(new Date())+'（ファイルを作成）';
-    }
-    throw new Error('ファイルを作成できませんでした');
-  }
-  storeSet(app.prefix+'driveFileId', file.id);
-  const remoteText = await sbDownloadText(file.id);
-  let remoteMax = 0;
-  try{ remoteMax = sbMaxUpdated(JSON.parse(remoteText)); }catch(e){}
-  if(remoteMax > localMax) return '新しい変更がDrive側にあります。アプリを開いて取り込んでください';
-  await sbUploadUpdate(file.id, raw);
-  sbMarkSynced(app);
-  sbMarkCtxSynced(app);
-  return '同期済み '+sbHhmm(new Date());
-}
-async function sbRun(){
-  for(const app of ZUKAN_APPS){
-    try{ sbLine(app.label, await sbSyncOne(app)); }
-    catch(e){ sbLine(app.label, '同期に失敗しました（'+(e && e.message ? e.message : e)+'）', true); }
-  }
-  sbDone();
-}
-function syncBoth(){
-  if(bothBusy) return;
-  const box = $('syncbothresults'); if(box) box.innerHTML = '';
-  const cid = getClientId() || (storeGet('zukanArtists.clientId')||'').trim() || (storeGet('zukanDesigners.clientId')||'').trim();
-  if(!cid){ sbLine('同期', 'クライアントIDが未設定です。このアプリの設定で Drive 接続を済ませてください。', true); return; }
-  const vt = getValidToken();
-  if(vt){ bothToken = vt; bothTokenExpSec = 3600; bothBusy = true; const b = $('syncbothbtn'); if(b) b.disabled = true; sbRun(); return; }
-  if(!(window.google && google.accounts && google.accounts.oauth2)){
-    sbLine('同期', 'Google のライブラリを読み込めませんでした。通信環境を確認してください。', true); return;
-  }
-  bothBusy = true; const b0 = $('syncbothbtn'); if(b0) b0.disabled = true;
-  try{
-    const tc = google.accounts.oauth2.initTokenClient({
-      client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
-      callback: function(resp){
-        if(resp && resp.access_token){
-          bothToken = resp.access_token;
-          bothTokenExpSec = parseInt(resp.expires_in||'3600',10);
-          storeToken(bothToken, bothTokenExpSec);
-          sbRun();
-        } else { sbLine('同期', 'トークンを取得できませんでした', true); sbDone(); }
-      },
-      error_callback: function(err){
-        sbLine('同期', '認証エラー：'+((err && (err.type||err.message)) || 'unknown'), true);
-        sbDone();
-      }
-    });
-    tc.requestAccessToken();
-  }catch(e){
-    sbLine('同期', '接続を開始できませんでした：'+(e && e.message ? e.message : e), true);
-    sbDone();
-  }
-}
-
 /* ================= self update ================= */
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -8788,12 +8869,6 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 /* ================= init ================= */
-function startCtxIfNeeded(){
-  const c = CTX[DS]; if(!c || c.started) return; c.started = true;
-  if(isDriveConnected()) setTimeout(()=>syncNow('startup'), 300);
-  else if(getClientId() && storeGet(LS_AUTHERR)) setSyncStatus('error', storeGet(LS_AUTHERR));
-  else if(getClientId()) setTimeout(trySilentRefresh, 900);
-}
 function loadDesignersSeed(){
   fetch(CFG_DESIGNERS.seedUrl).then(r=>{ if(!r.ok) throw new Error('no seed'); return r.json(); })
     .then(j=>{
@@ -8817,7 +8892,15 @@ function loadDesignersSeed(){
   requestAnimationFrame(()=>moveNavInd(false));
   window.addEventListener('load', ()=>moveNavInd(false));
   checkForUpdate();
-  startCtxIfNeeded();
+  /* 起動時自動同期：有効な（期限内の）トークンがある時だけ、ポップアップなしで
+     静かにアプリ全体を同期する。トークンが無ければ何もしない。 */
+  if(getValidToken()){
+    queueSync(()=>runAppSync('startup', false));
+  } else {
+    const ae = storeGet(CFG_ARTISTS.prefix+'authError') || storeGet(CFG_DESIGNERS.prefix+'authError');
+    if(ae && getClientId()) setCtxStatus(DS, 'error', ae);
+  }
+  pinNav();
 })();
 </script>
 </body>
