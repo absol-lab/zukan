@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.5">
+<meta name="app-version" content="2.6">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -7511,6 +7511,7 @@ const t=$('toast'); t.textContent=msg; t.style.display='block';
 clearTimeout(toast._tm); toast._tm=setTimeout(()=>{ t.style.display='none';}, ms||2600);
 }
 
+const LS_APP_MODE = 'zukan.mode'; /* 表示モードはデータセット別ではなくアプリ全体で1つ（共通キー） */
 let CONFIG = null;
 let LS_DATA, LS_CID, LS_MODE, LS_FILEID, LS_TOKEXP, LS_PENDING, LS_AUTHERR, SS_TOKEN;
 let view = 'list';
@@ -7521,7 +7522,7 @@ let state = null;
 let pendingImages = {};
 
 /* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
-function freshState(prefix){ return { layer:'canon', mode: storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
+function freshState(prefix){ return { layer:'canon', mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
 function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
 const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
 let DS = (location.hash==='#designers')? 'designers': 'artists';
@@ -7535,7 +7536,7 @@ c.pendingImages = pendingImages;
 function bindCtx(){
 const c = CTX[DS];
 CONFIG = c.cfg; DB = c.DB; state = c.state;
-LS_DATA = CONFIG.prefix+'data'; LS_CID = CONFIG.prefix+'clientId'; LS_MODE = CONFIG.prefix+'mode';
+LS_DATA = CONFIG.prefix+'data'; LS_CID = CONFIG.prefix+'clientId'; LS_MODE = LS_APP_MODE;
 LS_FILEID = CONFIG.prefix+'driveFileId'; LS_TOKEXP = CONFIG.prefix+'tokenExp';
 LS_PENDING = CONFIG.prefix+'pendingAuth'; LS_AUTHERR = CONFIG.prefix+'authError';
 SS_TOKEN = CONFIG.prefix+'token';
@@ -7686,18 +7687,23 @@ return;
 const tryLocal = ()=>{
 const cands = localCandidates(work.file);
 if(!cands.length){ fail(); return;}
-const im = new Image();
-im.loading = 'lazy';
+/* NOTE: the <img> must be inserted into the document BEFORE setting src.
+   A detached Image() with loading="lazy" never starts loading in Chrome/
+   WebKit (lazy defers until the element is in the document near the
+   viewport), so preload-then-append-on-load deadlocks: no request, no
+   onload, no onerror — the plate stays empty forever. */
+const im = document.createElement('img');
+im.loading = 'lazy'; im.alt = cap;
 let i = 0;
-im.onload = ()=>{ im.alt = cap; span.innerHTML=''; span.appendChild(im);};
 im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
+span.innerHTML=''; span.appendChild(im);
 im.src = cands[0];
 };
 if(work.img && work.img.url){
-const uim = new Image();
+const uim = document.createElement('img');
 uim.loading = 'lazy'; uim.alt = cap;
-uim.onload = ()=>{ span.innerHTML=''; span.appendChild(uim);};
 uim.onerror = ()=>{ tryLocal(); };
+span.innerHTML=''; span.appendChild(uim);
 uim.src = String(work.img.url);
 return;
 }
@@ -7827,7 +7833,7 @@ editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
 function setLayer(l){ state.layer = l; state.tags = new Set(); renderList();}
-function setMode(m){ state.mode = m; storeSet(LS_MODE, m); renderList();}
+function setMode(m){ state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList();}
 function onSearch(q){ state.query = q.trim(); renderListBody();}
 function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
@@ -8899,7 +8905,7 @@ function goBack(){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9005,6 +9011,11 @@ async function applyDataPack(){
   const startDS = (location.hash==='#designers')? 'designers': 'artists';
   ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
   DS = startDS; bindCtx();
+  /* 表示モードのアプリ共通化：共通キーが無ければ開始データセットの既存値を初期値として移行し、両データセットへ統一する */
+  const uniMode = storeGet(LS_APP_MODE) || storeGet(CTX[startDS].cfg.prefix+'mode') || storeGet(CTX[startDS==='artists'?'designers':'artists'].cfg.prefix+'mode') || 'def';
+  Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = uniMode; });
+  state.mode = uniMode;
+  storeSet(LS_APP_MODE, uniMode);
   await applyDataPack();
   if(!CTX.designers.loadedFromStore && !storeGet(CFG_DESIGNERS.prefix+'data')) loadDesignersSeed();
   updateHeader(); updatePill();
