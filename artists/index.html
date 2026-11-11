@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.8">
+<meta name="app-version" content="2.9">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -207,10 +207,63 @@ button:active:not(:disabled){filter:brightness(1.07);}
 /* view transitions (v2.7): a view taken out of flow while it slides */
 main.vt-fixed{position:fixed; left:0; right:0; width:100%; z-index:25; background:var(--bg); overflow:hidden; pointer-events:none; min-height:0;}
 body.vt-run{overflow:hidden;}
+/* ---------- splash (opening, v2.9): mist over a dark ink ground, then it clears ---------- */
+#splash{position:fixed; inset:0; z-index:300; overflow:hidden; animation:spVanish .01s linear 1.72s both;}
+#splash.sp-off{display:none !important;}
+#splash.sp-hide{opacity:0; pointer-events:none; transition:opacity .3s ease;}
+#splash .sp-haze{position:absolute; inset:0; background:linear-gradient(168deg,#262019 0%,#171410 55%,#100e0a 100%); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); animation:spHaze 1.7s cubic-bezier(.32,.72,.24,1) both;}
+#splash .sp-fog{position:absolute; inset:0; overflow:hidden;}
+#splash .sp-fog i{position:absolute; display:block; border-radius:50%; filter:blur(28px); -webkit-filter:blur(28px); background:radial-gradient(circle, rgba(241,235,218,.55) 0%, rgba(241,235,218,0) 65%); animation:spFog 1.7s cubic-bezier(.32,.72,.24,1) both;}
+#splash .sp-fog i:nth-child(1){width:78vw; height:78vw; left:-18vw; top:-14vh; --dx:9vw; --dy:3vh; --fo:.75;}
+#splash .sp-fog i:nth-child(2){width:92vw; height:92vw; right:-26vw; top:6vh; --dx:-8vw; --dy:5vh; --fo:.6;}
+#splash .sp-fog i:nth-child(3){width:70vw; height:70vw; left:6vw; bottom:-24vh; --dx:6vw; --dy:-4vh; --fo:.7;}
+#splash .sp-fog i:nth-child(4){width:54vw; height:54vw; right:2vw; bottom:-8vh; --dx:-6vw; --dy:-3vh; --fo:.5;}
+#splash .sp-fog i:nth-child(5){width:120vw; height:120vw; left:-10vw; top:22vh; --dx:4vw; --dy:2vh; --fo:.35;}
+@keyframes spFog{
+  0%{opacity:0; transform:translate(0,0) scale(1);}
+  18%{opacity:var(--fo,.6);}
+  55%{opacity:var(--fo,.6); transform:translate(var(--dx,4vw),var(--dy,2vh)) scale(1.06);}
+  100%{opacity:0; transform:translate(calc(var(--dx,4vw)*2.4),calc(var(--dy,2vh)*2.4)) scale(1.4);}
+}
+@keyframes spHaze{
+  0%,55%{opacity:1; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);}
+  100%{opacity:0; backdrop-filter:blur(0px); -webkit-backdrop-filter:blur(0px);}
+}
+#splash .sp-core{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; animation:spCore 1.7s cubic-bezier(.32,.72,.24,1) both;}
+#splash .sp-icon{width:92px; height:92px; border-radius:22px; box-shadow:0 10px 34px rgba(0,0,0,.5), 0 0 0 1px rgba(241,235,218,.16), 0 0 64px rgba(241,235,218,.10);}
+#splash .sp-ttl{font-size:26px; letter-spacing:.4em; text-indent:.4em; color:#f1ebda; font-family:var(--sans);}
+@keyframes spCore{
+  0%{opacity:0; transform:scale(.92);}
+  30%{opacity:1; transform:scale(1);}
+  62%{opacity:1; transform:scale(1);}
+  100%{opacity:0; transform:scale(1.05) translateY(-6px);}
+}
+@keyframes spVanish{from{visibility:visible;} to{visibility:hidden;}}
+@media (prefers-reduced-motion: reduce){
+  #splash, #splash .sp-haze, #splash .sp-fog i, #splash .sp-core{animation:none !important;}
+  #splash .sp-haze{backdrop-filter:none; -webkit-backdrop-filter:none;}
+}
 .hidden{display:none !important;}
 </style>
 </head>
 <body>
+<div id="splash" role="presentation">
+  <div class="sp-haze"><div class="sp-fog"><i></i><i></i><i></i><i></i><i></i></div></div>
+  <div class="sp-core"><img class="sp-icon" src="icon.png" alt=""><div class="sp-ttl">図鑑</div></div>
+</div>
+<script>
+/* スプラッシュ表示ゲート（v2.9）：コールドスタート時のみ出す。自己更新リロード・
+   同一セッション内の再読み込みでは sessionStorage フラグで表示自体を止める。
+   認証戻り（access_token 付き）でも触らない。 */
+(function(){ try{
+  var skip = (location.hash||'').indexOf('access_token')>=0;
+  if(!skip){
+    skip = sessionStorage.getItem('zukan.splashShown')==='1';
+    if(!skip) sessionStorage.setItem('zukan.splashShown','1');
+  }
+  if(skip){ window.__spSkip = true; var sp = document.getElementById('splash'); if(sp) sp.className += ' sp-off'; }
+}catch(e){} })();
+</script>
 <header class="top">
   <div class="toprow">
     <h1 class="appname" id="appname">作家図鑑</h1>
@@ -9089,7 +9142,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.8';
+const APP_VERSION = '2.9';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9190,6 +9243,29 @@ async function applyDataPack(){
   storeSet(LS_PACK_APPLIED, String(DATA_PACK));
   return true;
 }
+
+/* ================= splash (v2.9) =================
+   実体は静的HTML＋CSSアニメーション（霧が晴れる演出）。ここはスキップ・
+   ノード除去・prefers-reduced-motion の制御だけを行う。被せるだけで
+   起動フロー（データパック適用・自動同期・初期描画）は止めない。 */
+(function(){
+  var sp = document.getElementById('splash');
+  if(!sp) return;
+  if(window.__spSkip){ sp.remove(); return; }
+  var done = false;
+  function hideSplash(){
+    if(done) return; done = true;
+    sp.classList.add('sp-hide');
+    setTimeout(function(){ try{ sp.remove(); }catch(e){} }, 340);
+  }
+  sp.addEventListener('click', hideSplash);
+  sp.addEventListener('touchend', function(e){ e.preventDefault(); hideSplash(); }, { passive:false });
+  var reduced = false;
+  try{ reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  if(reduced){ setTimeout(hideSplash, 120); return; }
+  setTimeout(function(){ try{ sp.remove(); }catch(e){} }, 1850); /* CSSアニメ（1.7s）完了直後に除去 */
+  setTimeout(hideSplash, 2600); /* 保険：何があっても必ず消す */
+})();
 
 (async function init(){
   const startDS = (location.hash==='#designers')? 'designers': 'artists';
