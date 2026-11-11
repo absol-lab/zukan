@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.0">
+<meta name="app-version" content="2.1">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -43,8 +43,8 @@ h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spac
 .topcount{font-size:12px; color:var(--muted);}
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
-#navEx{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
-#navEx.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
+#navEx, #navTimeline{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
+#navEx.on, #navTimeline.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 #syncbar{text-align:center; font-size:11.5px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em;}
 #syncbar .err{color:var(--danger);}
 /* toolbar */
@@ -136,6 +136,24 @@ h3.subhead:first-child{margin-top:8px;}
 .exitem .edates{font-size:12.5px; margin-top:2px;}
 .exitem .days{color:var(--accent); font-weight:600;}
 button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; padding:0;}
+/* timeline / quiz */
+.tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
+.tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
+.tlcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:12px;}
+.tlbig{font-family:var(--serif); font-size:32px; line-height:1.1; letter-spacing:.02em;}
+.tlyears{font-size:12.5px; color:var(--muted); letter-spacing:.06em; margin-top:2px;}
+.tltitle{font-family:var(--serif); font-size:16.5px; margin-top:5px; line-height:1.5;}
+.tlsum{font-size:13.5px; line-height:1.8; margin-top:8px; white-space:pre-wrap;}
+.tlbg{font-size:13px; line-height:1.85; margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+.tlchips{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;}
+.tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
+button.tlchip{color:var(--accent); font-weight:600;}
+.qcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 16px; margin-top:14px;}
+.qq{font-family:var(--serif); font-size:17px; line-height:1.7; margin-top:6px;}
+.qchoice{display:block; width:100%; text-align:left; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:13px 15px; font-size:14.5px; border-radius:12px; margin-top:10px; font-family:var(--sans);}
+.qchoice.correct{border-color:var(--accent); background:var(--accent); color:var(--bg); font-weight:600;}
+.qchoice.wrong{border-color:var(--danger); color:var(--danger);}
+.qfeedback{font-size:14px; margin-top:14px; line-height:1.7;}
 /* forms / settings (diary .setgroup/.setbox/.btn) */
 .setgroup{margin:24px 0;}
 .setgroup > h3{font-family:var(--sans); font-size:13px; color:var(--muted); letter-spacing:.14em; font-weight:600; margin:0 4px 10px;}
@@ -181,6 +199,7 @@ button.blockbtn:disabled{opacity:.4;}
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
     <button class="txtbtn hidden" id="navEx" onclick="showView('ex')">展示</button>
+    <button class="txtbtn hidden" id="navTimeline" onclick="showView('timeline')">年表</button>
   </div>
   <div id="syncbar"><span>読み込み中…</span></div>
 </header>
@@ -209,6 +228,8 @@ button.blockbtn:disabled{opacity:.4;}
 
 <main id="viewDetail" class="hidden"></main>
 <main id="viewEx" class="hidden"></main>
+<main id="viewTimeline" class="hidden"></main>
+<main id="viewQuiz" class="hidden"></main>
 
 <main id="viewSettings" class="hidden">
   <div class="setgroup">
@@ -7530,16 +7551,25 @@ const out = emptyData();
 if(!d || typeof d!=='object') return out;
 if(Array.isArray(d.sections)) out.sections = d.sections.filter(x=>typeof x==='string');
 if(Array.isArray(d.exhibitions)) out.exhibitions = d.exhibitions;
+if(d.timeline && typeof d.timeline==='object' && !Array.isArray(d.timeline)) out.timeline = d.timeline;
+if(Array.isArray(d.quiz)) out.quiz = d.quiz;
 const arr = Array.isArray(d.artists)? d.artists: (Array.isArray(d.items)? d.items: []);
 out.artists = arr.map(normalizeArtist).filter(a=>a.name);
 return out;
+}
+function normalizeImg(im){
+if(!im || typeof im!=='object') return null;
+const o = {};
+if(im.fileId) o.fileId = String(im.fileId);
+if(im.url) o.url = String(im.url);
+return (o.fileId || o.url)? o: null;
 }
 function normalizeArtist(a){
 a = a || {};
 const works = (Array.isArray(a.works)?a.works:[]).map(w=>({
 caption: String(w && w.caption || ''),
 file: String(w && w.file || ''),
-img: (w && w.img && w.img.fileId)? { fileId: String(w.img.fileId)}: null
+img: normalizeImg(w && w.img)
 })).filter(w=>w.file || w.caption || w.img);
 return {
 id: (a.id!=null? a.id: null),
@@ -7577,7 +7607,7 @@ return m+1;
 /* works of an artist, representative first, deduped by file/fileId/caption */
 function worksOf(a){
 const out = []; const seen = new Set();
-const push = (w)=>{ const key = (w.img&&w.img.fileId) || w.file || ('cap:'+w.caption); if(!key || seen.has(key)) return; seen.add(key); out.push(w);};
+const push = (w)=>{ const key = (w.img&&w.img.fileId) || (w.img&&w.img.url) || w.file || ('cap:'+w.caption); if(!key || seen.has(key)) return; seen.add(key); out.push(w);};
 if(a.work_image || a.work_caption) push({ caption:a.work_caption||'', file:a.work_image||'', img:null});
 (a.works||[]).forEach(push);
 return out;
@@ -7620,20 +7650,32 @@ const cap = work.caption||'';
 const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('noplate'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
-if(driveImgCache[fid]){ span.innerHTML = '<img src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
+if(driveImgCache[fid]){ span.innerHTML = '<img loading="lazy" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
 span.innerHTML = '<span class="noimg">図版 読込中</span>';
 loadDriveImage(fid).then(url=>{
-if(url){ span.innerHTML = '<img src="'+url+'" alt="'+escA(cap)+'">';} else fail();
+if(url){ span.innerHTML = '<img loading="lazy" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
 }).catch(fail);
 return;
 }
+const tryLocal = ()=>{
 const cands = localCandidates(work.file);
 if(!cands.length){ fail(); return;}
 const im = new Image();
+im.loading = 'lazy';
 let i = 0;
 im.onload = ()=>{ im.alt = cap; span.innerHTML=''; span.appendChild(im);};
 im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
 im.src = cands[0];
+};
+if(work.img && work.img.url){
+const uim = new Image();
+uim.loading = 'lazy'; uim.alt = cap;
+uim.onload = ()=>{ span.innerHTML=''; span.appendChild(uim);};
+uim.onerror = ()=>{ tryLocal(); };
+uim.src = String(work.img.url);
+return;
+}
+tryLocal();
 }
 const imgObserver = ('IntersectionObserver' in window)? new IntersectionObserver(entries=>{
 entries.forEach(en=>{
@@ -7660,12 +7702,18 @@ if(v!=='settings') CTX[DS].lastView = v;
 $('viewList').classList.toggle('hidden', v!=='list');
 $('viewDetail').classList.toggle('hidden', v!=='detail');
 $('viewEx').classList.toggle('hidden', v!=='ex');
+$('viewTimeline').classList.toggle('hidden', v!=='timeline');
+$('viewQuiz').classList.toggle('hidden', v!=='quiz');
 $('viewSettings').classList.toggle('hidden', v!=='settings');
 $('fabAdd').classList.toggle('hidden', v!=='list');
 $('navEx').classList.toggle('on', v==='ex');
+$('navTimeline').classList.toggle('hidden', DS!=='artists');
+$('navTimeline').classList.toggle('on', v==='timeline');
 updatePill();
 if(v==='list') renderList();
 if(v==='ex') renderEx();
+if(v==='timeline') renderTimeline();
+if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSyncStatus(); renderAbout(); }
 moveNavInd(true);
 window.scrollTo(0,0);
@@ -7708,6 +7756,7 @@ editWorks = [];
 updateHeader(); updatePill();
 let v = (view==='settings')? 'list': (CTX[DS].lastView || 'list');
 if(v==='ex' && DS!=='artists') v = 'list';
+if((v==='timeline' || v==='quiz') && DS!=='artists') v = 'list';
 if(v==='detail' && !artistById(state.detailId)) v = 'list';
 if(v==='settings') v = 'list';
 showView(v);
@@ -8029,6 +8078,134 @@ v.innerHTML = html || '<div class="empty">展示データはまだありませ�
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
 
+/* ---------- timeline （作家のみ・データはDB.timeline） ---------- */
+let tlRegion = 'west'; /* 'west' | 'japan' */
+const tlOpenBg = {}; /* key: region+':'+index -> true */
+function timelineOf(){
+const t = DB && DB.timeline;
+if(!t || typeof t!=='object') return null;
+const west = Array.isArray(t.west)? t.west: [];
+const japan = Array.isArray(t.japan)? t.japan: [];
+if(!west.length && !japan.length) return null;
+return { west:west, japan:japan };
+}
+function setTlRegion(r){ tlRegion = r; renderTimeline(); }
+function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
+function renderTimeline(){
+const v = $('viewTimeline'); if(!v) return;
+let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></span>'
++(quizItems()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
++'</div>'
++'<div style="margin-top:12px;"><span class="seg">'
++'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">西洋</button>'
++'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
++'</span></div>';
+const t = timelineOf();
+if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
+const entries = t[tlRegion] || [];
+if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
+entries.forEach((e,i)=>{
+if(!e || typeof e!=='object') return;
+const key = tlRegion+':'+i;
+html += '<div class="tlcard">'
++(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
++'<div class="tlyears">'+esc(e.years||'')+'</div>'
++(e.title? '<div class="tltitle">'+esc(e.title)+'</div>': '')
++(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
+if(e.background){
+if(tlOpenBg[key]) html += '<div class="tlbg">'+esc(e.background)+'</div>'
++'<div style="margin-top:8px;"><button class="linkbtn" onclick="toggleTlBg(\''+key+'\')">閉じる</button></div>';
+else html += '<div style="margin-top:8px;"><button class="linkbtn" onclick="toggleTlBg(\''+key+'\')">背景を読む</button></div>';
+}
+const arts = Array.isArray(e.artists)? e.artists: [];
+const chips = [];
+arts.forEach(x=>{
+const label = (x && typeof x==='object')? String(x.label||''): String(x||'');
+const link = (x && typeof x==='object')? x.link: null;
+if(!label) return;
+const target = link? (DB.artists.find(a=>a.name===link) || null): null;
+if(target) chips.push('<button class="tlchip" onclick="openDetail(\''+escA(target.id)+'\')">'+esc(label)+'</button>');
+else chips.push('<span class="tlchip">'+esc(label)+'</span>');
+});
+if(chips.length) html += '<div class="tlchips">'+chips.join('')+'</div>';
+html += '</div>';
+});
+v.innerHTML = html;
+}
+
+/* ---------- quiz （DB.quiz・2つのスキーマ形状に対応） ---------- */
+/* accepted per item: {q, choices[], answer} or {question, options[], correct_index};
+   answer may be a numeric index, or a string equal to one of the choices */
+function quizItems(){
+const q = DB && DB.quiz;
+if(!Array.isArray(q) || !q.length) return null;
+const out = [];
+q.forEach(it=>{
+if(!it || typeof it!=='object') return;
+const text = (typeof it.q==='string' && it.q)? it.q: ((typeof it.question==='string' && it.question)? it.question: '');
+const choices = Array.isArray(it.choices)? it.choices: (Array.isArray(it.options)? it.options: null);
+if(!text || !choices || choices.length<2) return;
+let ans = -1;
+if(typeof it.correct_index==='number') ans = it.correct_index;
+else if(typeof it.answer==='number') ans = it.answer;
+else if(typeof it.answer==='string'){
+const ix = choices.indexOf(it.answer);
+if(ix>=0) ans = ix;
+else { const n = parseInt(it.answer,10); if(!isNaN(n)) ans = n; }
+}
+if(ans<0 || ans>=choices.length) return;
+out.push({ q:text, choices:choices.map(String), answer:ans });
+});
+return out.length? out: null;
+}
+let quizState = null; /* { items, idx, score, picked, answered } */
+function startQuiz(){
+const items = quizItems();
+if(!items){ toast('クイズデータはまだありません'); return; }
+quizState = { items:items, idx:0, score:0, picked:-1, answered:false };
+showView('quiz');
+}
+function answerQuiz(i){
+if(!quizState || quizState.answered) return;
+quizState.picked = i; quizState.answered = true;
+if(i === quizState.items[quizState.idx].answer) quizState.score++;
+renderQuiz();
+}
+function nextQuiz(){
+if(!quizState) return;
+quizState.idx++; quizState.picked = -1; quizState.answered = false;
+renderQuiz();
+}
+function renderQuiz(){
+const v = $('viewQuiz'); if(!v) return;
+const s = quizState;
+if(!s){ v.innerHTML = '<div class="empty">クイズデータはまだありません</div>'; return; }
+const total = s.items.length;
+if(s.idx >= total){
+v.innerHTML = '<div class="tlhead"><h2>クイズ</h2></div>'
++'<div class="qcard"><div class="qq">'+total+'問中 '+s.score+'問 正解</div>'
++'<div class="qfeedback">'+(s.score===total? '全問正解です。': (s.score*2>=total? 'よくできました。': 'おつかれさまでした。'))+'</div>'
++'<button class="blockbtn primary" onclick="startQuiz()">もう一度</button>'
++'<button class="blockbtn" onclick="showView(\'timeline\')">年表へ戻る</button></div>';
+return;
+}
+const it = s.items[s.idx];
+let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
+html += '<div class="qcard"><div class="qq">'+esc(it.q)+'</div>';
+it.choices.forEach((c,i)=>{
+let cls = 'qchoice';
+if(s.answered){ if(i===it.answer) cls += ' correct'; else if(i===s.picked) cls += ' wrong'; }
+html += '<button class="'+cls+'"'+(s.answered?' disabled':'')+' onclick="answerQuiz('+i+')">'+esc(c)+'</button>';
+});
+if(s.answered){
+const ok = s.picked === it.answer;
+html += '<div class="qfeedback">'+(ok? '正解！': '不正解。正解は「'+esc(it.choices[it.answer])+'」です。')+'</div>'
++'<button class="blockbtn primary" onclick="nextQuiz()">'+(s.idx+1>=total? '結果を見る': '次へ')+'</button>';
+}
+html += '</div>';
+v.innerHTML = html;
+}
+
 /* ---------- editor ---------- */
 let editWorks = [];
 function openEditor(id){
@@ -8127,6 +8304,7 @@ saveDB(); scheduleSync(); toast('削除しました'); showView('list');
 /* ================= import / export ================= */
 function mergeDataInto(local, incoming){
   const inc = normalizeData(incoming);
+  const localMax = sbMaxUpdated(local), incMax = sbMaxUpdated(inc);
   inc.sections.forEach(s=>{ if(local.sections.indexOf(s)<0) local.sections.push(s); });
   inc.artists.forEach(ia=>{
     let ix = -1;
@@ -8141,9 +8319,9 @@ function mergeDataInto(local, incoming){
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
     /* works merged by file key / fileId / caption */
     const wm = new Map();
-    (la.works||[]).forEach(w=>wm.set((w.img&&w.img.fileId)||w.file||('cap:'+w.caption), w));
+    (la.works||[]).forEach(w=>wm.set((w.img&&w.img.fileId)||(w.img&&w.img.url)||w.file||('cap:'+w.caption), w));
     (ia.works||[]).forEach(w=>{
-      const key = (w.img&&w.img.fileId)||w.file||('cap:'+w.caption);
+      const key = (w.img&&w.img.fileId)||(w.img&&w.img.url)||w.file||('cap:'+w.caption);
       const ex = wm.get(key);
       if(ex){ if(w.caption) ex.caption = w.caption; if(w.img) ex.img = w.img; }
       else wm.set(key, w);
@@ -8158,6 +8336,9 @@ function mergeDataInto(local, incoming){
     inc.exhibitions.forEach(e=>em.set((e.title||'')+'|'+(e.start_date||''), e));
     local.exhibitions = Array.from(em.values());
   }
+  /* timeline / quiz: root-level dataset parts; prefer the incoming copy when its data is at least as new */
+  if(inc.timeline && (local.timeline==null || incMax >= localMax)) local.timeline = inc.timeline;
+  if(inc.quiz && inc.quiz.length && (local.quiz==null || incMax >= localMax)) local.quiz = inc.quiz;
   return local;
 }
 async function importFile(input){
@@ -8578,7 +8759,7 @@ function syncBoth(){
 }
 
 /* ================= self update ================= */
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
