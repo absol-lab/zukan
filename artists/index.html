@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.6">
+<meta name="app-version" content="2.7">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -204,6 +204,9 @@ button.blockbtn:disabled{opacity:.4;}
 #pillnav button.on{color:var(--text); font-weight:600;}
 /* press feedback (diary v1.16 style): subtle brightness shift only while pressed, no layout shift */
 button:active:not(:disabled){filter:brightness(1.07);}
+/* view transitions (v2.7): a view taken out of flow while it slides */
+main.vt-fixed{position:fixed; left:0; right:0; width:100%; z-index:25; background:var(--bg); overflow:hidden; pointer-events:none; min-height:0;}
+body.vt-run{overflow:hidden;}
 .hidden{display:none !important;}
 </style>
 </head>
@@ -308,7 +311,7 @@ button:active:not(:disabled){filter:brightness(1.07);}
 <script>
 'use strict';
 const CFG_ARTISTS = {"appName": "作家図鑑", "kind": "artists", "dataFile": "artists.json", "prefix": "zukanArtists.", "facets": true, "exsort": true, "seedUrl": null};
-const CFG_DESIGNERS = {"appName": "デザイナー図鑑", "kind": "designers", "dataFile": "designers.json", "prefix": "zukanDesigners.", "facets": false, "exsort": false, "seedUrl": "../designers/seed.json"};
+const CFG_DESIGNERS = {"appName": "デザイナー図鑑", "kind": "designers", "dataFile": "designers.json", "prefix": "zukanDesigners.", "facets": true, "exsort": false, "seedUrl": "../designers/seed.json"};
 const EMBEDDED_SEED = {
  "kind": "artists",
  "version": 1,
@@ -7728,15 +7731,23 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 }
 
 /* ---------- views ---------- */
+/* ---------- view transitions (v2.7) ----------
+   Screen changes slide: forward = the new view slides in from the right while
+   the old one parallaxes left; back = the reverse. Header and pill nav are
+   shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
+   finishes the running transition instantly so state can never wedge. */
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2 };
+const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
+let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null;
 function showView(v){
+if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
+const prev = view;
+if(vtBusy && vtFinish) vtFinish();
+const dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[v]-VIEW_DEPTH[prev]): 0;
+const wantAnim = !vtNoAnim && prev!==v && dir!==0 && !document.hidden;
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
-$('viewList').classList.toggle('hidden', v!=='list');
-$('viewDetail').classList.toggle('hidden', v!=='detail');
-$('viewEx').classList.toggle('hidden', v!=='ex');
-$('viewTimeline').classList.toggle('hidden', v!=='timeline');
-$('viewQuiz').classList.toggle('hidden', v!=='quiz');
-$('viewSettings').classList.toggle('hidden', v!=='settings');
 $('fabAdd').classList.toggle('hidden', v!=='list');
 $('navEx').classList.toggle('on', v==='ex');
 $('navTimeline').classList.toggle('hidden', DS!=='artists');
@@ -7748,8 +7759,51 @@ if(v==='timeline') renderTimeline();
 if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSyncStatus(); renderAbout(); }
 moveNavInd(true);
+const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
+if(wantAnim && oldEl && newEl && oldEl!==newEl){
+vtSlide(oldEl, newEl, dir);
+} else {
+Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 window.scrollTo(0,0);
+}
 pinNav(); setTimeout(pinNav, 350);
+}
+function vtSlide(oldEl, newEl, dir){
+vtBusy = true;
+const hdr = document.querySelector('header.top');
+const H = hdr? hdr.offsetHeight: 0;
+const y = window.scrollY || 0;
+newEl.classList.remove('hidden');
+document.body.classList.add('vt-run');
+let aIn, aOut;
+if(dir > 0){
+newEl.classList.add('vt-fixed');
+newEl.style.top = H+'px';
+newEl.style.height = 'calc(100dvh - '+H+'px)';
+aIn = newEl.animate([{ transform:'translateX(102%)' },{ transform:'translateX(0%)' }], { duration:330, easing:VT_EASE, fill:'both' });
+aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(-26%)' }], { duration:330, easing:VT_EASE, fill:'both' });
+window.scrollTo(0,0);
+} else {
+oldEl.classList.add('vt-fixed');
+oldEl.style.top = (H - y)+'px';
+oldEl.style.height = '100dvh';
+window.scrollTo(0,0);
+aIn = newEl.animate([{ transform:'translateX(-26%)' },{ transform:'translateX(0%)' }], { duration:310, easing:VT_EASE, fill:'both' });
+aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(102%)' }], { duration:310, easing:VT_EASE, fill:'both' });
+}
+let done = false;
+const finish = ()=>{
+if(done) return; done = true;
+[aIn, aOut].forEach(a=>{ try{ a.cancel(); }catch(e){} });
+[oldEl, newEl].forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; });
+oldEl.classList.add('hidden');
+document.body.classList.remove('vt-run');
+vtBusy = false; vtFinish = null;
+pinNav();
+};
+vtFinish = finish;
+Promise.all([aIn.finished.catch(()=>{}), aOut.finished.catch(()=>{})]).then(finish);
+setTimeout(finish, 480);
 }
 /* ---------- pill nav indicator (diary moveNavInd) ---------- */
 let lastNavX = null;
@@ -7819,7 +7873,7 @@ if(v==='ex' && DS!=='artists') v = 'list';
 if((v==='timeline' || v==='quiz') && DS!=='artists') v = 'list';
 if(v==='detail' && !artistById(state.detailId)) v = 'list';
 if(v==='settings') v = 'list';
-showView(v);
+vtNoAnim = true; showView(v); vtNoAnim = false;
 if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 pinNav();
@@ -7867,7 +7921,13 @@ const TAG_FACETS = {};
 ['現代','現代日本','日本','江戸','近代','ルネサンス','日本の戦後','戦後日本','ポーランド','ドイツ','ドイツ戦後','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','九州派','琳派','具体','もの派','ハイレッド・センター','印象派','キュビスム','シュプレマティスム','空間主義','カラーフィールド','アクション・ペインティング','抽象表現主義への橋','スーパーフラット','ミニマリズム','ポップアート','ネオ・ジオ','ZERO','アール・ブリュット','アウトサイダー','YBA','ライプツィヒ','浮世絵','バンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
 const TAG_FACET_ORDER = ['bunrui','gihou','jidaikuni','theme'];
 const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', jidaikuni:'年代・国', theme:'テーマ・概念'};
-function tagFacet(t){ return TAG_FACETS[t]||'theme'; }
+/* designers tag facets (curated 2026-11-11 to mirror the artists system) */
+const TAG_FACETS_D = {};
+["ポスター", "ファッション", "家具", "工業デザイン", "エディトリアル", "ロゴ", "タイポグラフィ", "テキスタイル", "情報デザイン", "CI", "タイプデザイン", "インテリア", "パッケージ", "ピクトグラム", "プロダクト", "モーション", "ランドスケープ", "舞台美術", "Webデザイン", "展示デザイン", "雑誌", "UI", "グラフィック", "サイン", "映画タイトル", "アートディレクション", "統計", "UX", "イラストレーション", "オートクチュール", "ブランディング", "写真", "広告", "店舗", "庭", "彫刻", "環境", "絵本", "美術館", "サイン計画", "データ可視化", "ブックデザイン", "ホテル", "レコードジャケット", "地図", "抽象映像", "アイコン", "インタラクションデザイン", "インフォグラフィックス", "インフォメーション・アーキテクチャ", "カメラ", "データジャーナリズム", "プレタポルテ", "マウス", "ミニスカート", "ラップトップ", "ランプ", "公園", "博物館", "地図学", "売り場", "庭園", "日本庭園", "日用品", "映像", "椅子", "絵画", "自動車", "舞台", "表紙", "視覚音楽", "道路標識", "雑誌表紙", "電話機", "駅舎"].forEach(t=>TAG_FACETS_D[t]='bunrui');
+["素材", "型", "Flash", "ISOTYPE", "カリグラフィ", "手書き文字", "書体", "水", "CMYK", "FF Meta", "Georgia", "Gill Sans", "Helvetica", "Mrs Eaves", "Optima", "Palatino", "Processing", "Times New Roman", "Transport書体", "Verdana", "ウニッコ", "ガラス", "グラデーション", "グラフ", "コラージュ", "コンクリート", "サンセリフ", "シェル", "スチール", "ドレープ", "ナイロン", "バイアスカット", "フォトモンタージュ", "フロー図", "プラスチック", "プリーツ", "リトグラフ", "一体成形", "一本脚", "一枚の布", "作庭", "借景", "円グラフ", "印刷実験", "吊る展示", "型染", "型絵染", "実験書体", "宿根草", "復刻", "手描き", "手書き", "投影", "折れ線", "接合", "改刻", "新聞書体", "曲木", "書体実験", "木工", "木版", "板金", "枯山水", "染織", "植栽", "植物染料", "極座標", "欧文書体", "活版", "画面分割", "紙", "紬", "組版", "織り", "舗装", "遠近法", "鋼管"].forEach(t=>TAG_FACETS_D[t]='gihou');
+["日本", "イギリス", "フランス", "アメリカ", "イタリア", "デンマーク", "オランダ", "ドイツ", "ロシア", "構成主義", "近代", "スイス・スタイル", "バウハウス", "モダニズム", "五輪", "東京五輪", "民藝", "アングラ", "アーツ・アンド・クラフツ", "アール・デコ", "グランジ", "シュルレアリスム", "スイス", "スペイン", "チェコ", "デ・ステイル", "ニュールック", "バロック", "パリ", "パンク", "フィンランド", "ブラジル", "ベルギー", "ポストモダン", "ミニマリズム", "メンフィス", "具体芸術", "北欧", "反機能主義", "古典", "合理主義", "同時主義", "戦後", "新劇", "機能主義", "流線型", "現代"].forEach(t=>TAG_FACETS_D[t]='jidaikuni');
+["幾何", "引き算", "システム", "平面", "光", "反復", "色彩", "記号", "起源", "シルエット", "余白", "先駆者", "制約", "建築", "抽象", "方法", "理論", "色面", "アップル", "グリッド", "可読性", "概念", "構造", "標準化", "浮遊", "物語", "白", "量産", "黒", "IDEO", "デジタル", "ネガティブスペース", "ブラウン", "ペンタグラム", "不穏", "制度", "図と地", "大柄", "教育", "時間", "民主化", "編集", "規律", "解放", "身体", "道具", "都市", "非対称", "007", "A List Apart", "AEG", "AIGA", "B&O", "Colors", "Dynabook", "Emigre", "FedEx", "FontShop", "GKデザイン", "GUI", "Habitat", "ISO", "LATCH", "MITメディアラボ", "Macintosh", "NN/g", "PARCO", "TED", "Time", "Vogue", "Wonderwall", "Xerox PARC", "YMO", "frog", "nendo", "tha", "くまモン", "アイデア", "インタラクティブ", "インターフェース", "ウルフ・オリンス", "ウルム", "オペラ", "オープンソース", "キューブリック", "クリエイティブコーディング", "グリッドの破壊", "コンサート", "コンピュータ", "シノグラフィ", "ショー", "ジェネラティブ", "スクリーン", "スケッチ", "スター・ウォーズ", "スーパーノーマル", "スーパーポテト", "タフテ", "ダリ", "チャートジャンク論争", "テクノポップ", "ディレクション", "デザイン思考", "デザイン統括", "デザイン言語", "デモ", "トリック", "ドット", "ノイズ", "ノイラートの相方", "ハイコントラスト", "ハイパーテキスト", "バランス", "パターン", "ヒューメイン", "ブランド体験", "ブレヒト", "プロトタイピング", "マリメッコ", "メモリアル", "モノタイプ", "モンドリアン", "ユーザビリティ", "ユーモア", "ランドー・アソシエイツ", "レイアウト", "レスポンシブ", "レディメイド", "ロンドン地下鉄", "不在", "世界観", "中立", "二重の意味", "人間中心", "人間国宝", "人間工学", "仕掛け", "伝統の翻訳", "似顔絵", "作画", "使いやすさ", "俳優座", "公共", "公共空間", "分布", "医療", "匿名", "原則", "台座", "商業", "図像編集", "図形", "図解", "国家ブランド", "基準", "基準の組み替え", "多変量", "媒体", "宇宙観", "実務", "実験", "対比", "居心地", "張力", "彫刻性", "情報整理", "感覚", "戦略", "手の痕跡", "技術", "抽象マーク", "抽象空間", "持続", "推理", "操作系", "文字の図形化", "文字の塊", "文字の彫刻", "日本との関係", "日本デザインセンター", "曲面", "有機形", "柄", "検証", "概念設計", "構築", "機構", "欠け", "正方形と斜線", "演出", "無印良品", "無意識", "物質性", "現役", "生命", "生活提案", "用の美", "画家転向", "画面", "異物", "疫学", "白黒", "破壊", "社会性", "社会改革", "空間", "立体", "素材の組み替え", "素材感", "組み替え", "経年変化", "絞り込み", "絵画性", "総合演出", "総合芸術", "線", "耽美", "職人", "職業の成立", "脱構築", "航空", "花椿", "若者文化", "蜷川幸雄", "蝶", "規則", "視覚の遊び", "視覚変数", "観察", "記号学", "記号性", "記号言語", "記憶", "評論", "試作", "認知", "誠実さ", "説得", "資生堂", "赤と黒", "転用", "軸線", "軽さ", "透明", "遊び", "量", "静けさ", "非常口", "風景"].forEach(t=>TAG_FACETS_D[t]='theme');
+function tagFacet(t){ return DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme'); }
 function renderAbout(){
 const el = $('aboutbox'); if(!el) return;
 const cnt = k=>liveDB(k).artists.length;
@@ -8016,11 +8076,24 @@ const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObs
 
 /* ---------- fullscreen viewer ---------- */
 let viewerWorks = [], viewerIdx = 0;
+let viewerAnim = null;
 function openViewer(ws, idx){
 viewerWorks = ws; viewerIdx = idx||0;
-$('viewer').classList.add('open'); renderViewer();
+const vw = $('viewer');
+vw.classList.add('open'); renderViewer();
+/* シートとして下からせり上がる */
+if(viewerAnim){ try{ viewerAnim.cancel(); }catch(e){} viewerAnim = null; }
+try{ viewerAnim = vw.animate([{ transform:'translateY(100%)' },{ transform:'translateY(0%)' }], { duration:300, easing:VT_EASE, fill:'both' }); }catch(e){}
 }
-function closeViewer(){ $('viewer').classList.remove('open');}
+function closeViewer(){
+const vw = $('viewer');
+if(!vw.classList.contains('open')) return;
+if(viewerAnim){ try{ viewerAnim.cancel(); }catch(e){} viewerAnim = null; }
+let a = null;
+try{ a = vw.animate([{ transform:'translateY(0%)' },{ transform:'translateY(100%)' }], { duration:250, easing:VT_EASE, fill:'both' }); }catch(e){}
+const done = ()=>{ vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } };
+if(a && a.finished){ a.finished.then(done).catch(done); setTimeout(done, 340); } else { done(); }
+}
 function viewerMove(d){
 if(!viewerWorks.length) return;
 viewerIdx = (viewerIdx + d + viewerWorks.length) % viewerWorks.length;
@@ -8878,34 +8951,118 @@ function sbMaxUpdated(data){
   nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
 })();
 
-/* ---------- swipe back (main content right-swipe) ---------- */
-function goBack(){
-  if(view==='quiz'){ showView('timeline'); return; }
-  if(view==='detail' || view==='timeline' || view==='ex' || view==='settings'){ showView('list'); }
+/* ---------- swipe back: the finger drives the transition itself ---------- */
+function backTarget(){
+  if(view==='quiz') return 'timeline';
+  if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
+  return null;
+}
+function goBack(){ const t = backTarget(); if(t) showView(t); }
+function engageSwipe(st){
+  if(st.target==='list') renderList();
+  if(st.target==='timeline') renderTimeline();
+  const oldEl = $(VIEW_EL[view]), newEl = $(VIEW_EL[st.target]);
+  if(!oldEl || !newEl){ st.engaged = false; return; }
+  st.oldEl = oldEl; st.newEl = newEl;
+  const hdr = document.querySelector('header.top');
+  st.H = hdr? hdr.offsetHeight: 0;
+  st.y = window.scrollY || 0;
+  newEl.classList.remove('hidden');
+  oldEl.classList.add('vt-fixed');
+  oldEl.style.top = (st.H - st.y)+'px';
+  oldEl.style.height = '100dvh';
+  document.body.classList.add('vt-run');
+  window.scrollTo(0,0);
+  st.engaged = true;
+  paintSwipe(st);
+}
+function paintSwipe(st){
+  const W = window.innerWidth || 1;
+  const pr = Math.min(1, st.dx / W);
+  st.oldEl.style.transform = 'translateX('+st.dx+'px)';
+  st.newEl.style.transform = 'translateX('+(-26*(1-pr)).toFixed(2)+'%)';
+}
+function finishSwipe(st, commit){
+  const W = window.innerWidth || 1;
+  const pr = Math.min(1, st.dx / W);
+  const dur = commit? 240: 200;
+  const aOut = st.oldEl.animate(
+    [{ transform:'translateX('+st.dx+'px)' },{ transform:'translateX('+(commit? W+8: 0)+'px)' }],
+    { duration:dur, easing:VT_EASE, fill:'both' });
+  const aIn = st.newEl.animate(
+    [{ transform:'translateX('+(-26*(1-pr)).toFixed(2)+'%)' },{ transform:'translateX('+(commit? 0: -26)+'%)' }],
+    { duration:dur, easing:VT_EASE, fill:'both' });
+  st.anims = [aOut, aIn];
+  Promise.all(st.anims.map(a=>a.finished.catch(()=>{}))).then(()=>teardownSwipe(st, commit));
+  setTimeout(()=>teardownSwipe(st, commit), dur+100);
+}
+function teardownSwipe(st, commit){
+  if(st.done) return; st.done = true;
+  if(st.anims) st.anims.forEach(a=>{ try{ a.cancel(); }catch(e){} });
+  [st.oldEl, st.newEl].forEach(el=>{ if(!el) return; el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; });
+  document.body.classList.remove('vt-run');
+  if(swipeSt===st) swipeSt = null;
+  if(commit){
+    st.oldEl.classList.add('hidden');
+    view = st.target;
+    if(view!=='settings') CTX[DS].lastView = view;
+    $('fabAdd').classList.toggle('hidden', view!=='list');
+    $('navEx').classList.toggle('on', view==='ex');
+    $('navTimeline').classList.toggle('hidden', DS!=='artists');
+    $('navTimeline').classList.toggle('on', view==='timeline');
+    updatePill(); moveNavInd(true);
+    window.scrollTo(0,0);
+  } else if(st.newEl){
+    st.newEl.classList.add('hidden');
+    window.scrollTo(0, st.y||0);
+  }
+  pinNav();
 }
 (function(){
-  let sx = null, sy = null, startInNav = false;
   document.addEventListener('touchstart', e=>{
-    if(!e.touches || e.touches.length!==1){ sx = null; return; }
-    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
-    startInNav = !!(e.target && e.target.closest && e.target.closest('#pillnav'));
-  }, { passive:true });
-  document.addEventListener('touchend', e=>{
-    if(sx==null) return;
-    const t = (e.changedTouches && e.changedTouches[0])? e.changedTouches[0]: null;
-    const dx = t? t.clientX - sx: 0, dy = t? t.clientY - sy: 0;
-    const wasNav = startInNav; sx = null; sy = null; startInNav = false;
-    if(wasNav) return; /* ピルナビ上は独自のスワイプ切替がある */
-    if(view==='list') return; /* 一覧では何もしない */
+    if(swipeSt) return;
+    if(vtBusy) return; /* 遷移アニメーション中は触らない */
+    if(!e.touches || e.touches.length!==1) return;
+    if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
+    const vw = $('viewer'); if(vw && vw.classList.contains('open')) return;
     if(isEditing()) return; /* 編集フォーム表示中は無効 */
-    const vw = $('viewer'); if(vw && vw.classList.contains('open')) return; /* フルスクリーン画像表示中は無効 */
-    if(dx < 60 || Math.abs(dx) <= Math.abs(dy)) return; /* 右方向・横 dominant のみ */
-    goBack();
+    const target = backTarget(); if(!target) return; /* 一覧では何もしない */
+    const t = e.touches[0];
+    swipeSt = { sx:t.clientX, sy:t.clientY, dx:0, target:target, engaged:false, done:false,
+                px:t.clientX, pt:Date.now(), vx:0 };
+  }, { passive:true });
+  document.addEventListener('touchmove', e=>{
+    const st = swipeSt; if(!st || st.done) return;
+    const t = e.touches && e.touches[0]; if(!t) return;
+    const dx = t.clientX - st.sx, dy = t.clientY - st.sy;
+    const now = Date.now();
+    if(now > st.pt){ const v = (t.clientX - st.px) / Math.max(1, now - st.pt); st.vx = 0.7*st.vx + 0.3*v; }
+    st.px = t.clientX; st.pt = now;
+    if(!st.engaged){
+      if(dx > 12 && Math.abs(dx) > Math.abs(dy)*1.25){ st.dx = Math.max(0, dx); engageSwipe(st); }
+      else if(Math.abs(dy) > 14 && Math.abs(dy) >= Math.abs(dx)){ swipeSt = null; }
+      return;
+    }
+    e.preventDefault(); /* 横スワイプ確定後は縦スクロールを止める */
+    st.dx = Math.max(0, dx);
+    paintSwipe(st);
+  }, { passive:false });
+  document.addEventListener('touchend', e=>{
+    const st = swipeSt; if(!st) return;
+    swipeSt = null;
+    if(!st.engaged || st.done) return;
+    const W = window.innerWidth || 1;
+    const commit = st.dx > W*0.35 || (st.dx > 56 && st.vx > 0.3);
+    finishSwipe(st, commit);
+  }, { passive:true });
+  document.addEventListener('touchcancel', ()=>{
+    const st = swipeSt; swipeSt = null;
+    if(st && st.engaged && !st.done) finishSwipe(st, false);
   }, { passive:true });
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -8951,7 +9108,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 2;
+const DATA_PACK = 3;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
