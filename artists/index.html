@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#f4eedd">
-<meta name="app-version" content="2.4">
+<meta name="app-version" content="2.5">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>図鑑</title>
@@ -7603,10 +7603,37 @@ function nextId(){
 let m = 0; DB.artists.forEach(a=>{ const n=parseInt(a.id,10); if(!isNaN(n) && n>m) m=n;});
 return m+1;
 }
-/* works of an artist, representative first, deduped by file/fileId/caption */
+/* works of an artist, representative first, deduped by union keys (fileId/url/file).
+   The representative pseudo-work (work_image) must ABSORB the real work that
+   carries the same file, adopting its img — otherwise an img-less representative
+   shadows the image-carrying work as thumbnail / first plate / first viewer item. */
 function worksOf(a){
-const out = []; const seen = new Set();
-const push = (w)=>{ const key = (w.img&&w.img.fileId) || (w.img&&w.img.url) || w.file || ('cap:'+w.caption); if(!key || seen.has(key)) return; seen.add(key); out.push(w);};
+const out = []; const seen = new Map();
+const keysOf = (w)=>{
+const ks = [ (w.img&&w.img.fileId), (w.img&&w.img.url), w.file ].filter(Boolean);
+if(!ks.length && w.caption) ks.push('cap:'+w.caption);
+return ks;
+};
+const push = (w)=>{
+let ex = null;
+keysOf(w).some(k=>{ if(seen.has(k)){ ex = seen.get(k); return true; } return false; });
+if(ex){
+/* same work in another representation: upgrade the kept entry in place */
+if(!ex.img && w.img) ex.img = w.img;
+else if(ex.img && w.img){
+const m = Object.assign({}, w.img, ex.img);
+if(!m.url && w.img.url) m.url = w.img.url;
+if(!m.fileId && w.img.fileId) m.fileId = w.img.fileId;
+ex.img = normalizeImg(m) || ex.img;
+}
+if(!ex.caption && w.caption) ex.caption = w.caption;
+if(!ex.file && w.file) ex.file = w.file;
+keysOf(w).forEach(k=>seen.set(k, ex));
+return;
+}
+keysOf(w).forEach(k=>seen.set(k, w));
+out.push(w);
+};
 if(a.work_image || a.work_caption) push({ caption:a.work_caption||'', file:a.work_image||'', img:null});
 (a.works||[]).forEach(push);
 return out;
@@ -8453,7 +8480,7 @@ function mergeDataInto(local, incoming){
     (ia.works||[]).forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption) ex.caption = w.caption; if(w.img) ex.img = w.img; wkeys(w).forEach(k=>wm.set(k, ex)); }
+      if(ex){ if(w.caption) ex.caption = w.caption; if(w.img){ /* img upgrade: union of both sides (keep local fileId, adopt incoming url, etc.) */ ex.img = normalizeImg(Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
       else wkeys(w).forEach(k=>wm.set(k, w));
     });
     merged.works = Array.from(new Set(wm.values()));
@@ -8872,7 +8899,7 @@ function goBack(){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.4';
+const APP_VERSION = '2.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -8918,7 +8945,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 1;
+const DATA_PACK = 2;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
