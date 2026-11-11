@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="作家図鑑">
 <meta name="theme-color" content="#f4eedd">
+<meta name="app-version" content="1.3">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>作家図鑑</title>
@@ -60,6 +61,12 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px;}
 .tagchip:active{background:var(--card2);}
 .tagchip.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 .tagmore{border:1px solid var(--line); background:none; color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12.5px; letter-spacing:.04em;}
+.modebar{display:flex; margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.modebar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 0; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans);}
+.modebar button:first-child{border-left:none;}
+.modebar button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
+.syncline{font-size:13px; color:var(--muted); margin-top:8px;}
+.syncline.err{color:var(--danger);}
 /* list (diary .card / .monthhead) */
 h2.sechead{font-family:var(--sans); font-size:16.5px; font-weight:700; letter-spacing:.04em; margin:22px 2px 4px; display:flex; justify-content:space-between; align-items:baseline;}
 h2.sechead .cnt{font-size:12px; color:var(--muted); font-weight:400; letter-spacing:.05em;}
@@ -179,19 +186,25 @@ button.blockbtn:disabled{opacity:.4;}
         <button id="segCanon" onclick="setLayer('canon')">正典</button>
         <button id="segCand" onclick="setLayer('candidate')">候補</button>
       </span>
-      <span class="seg mini" id="modeseg">
-        <button data-m="wide" onclick="setMode('wide')">ワイド</button>
-        <button data-m="def" onclick="setMode('def')">標準</button>
-        <button data-m="compact" onclick="setMode('compact')">小</button>
-        <button data-m="mini" onclick="setMode('mini')">ミニ</button>
-      </span>
     </div>
     <div class="searchrow">
       <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
     </div>
     <div class="tagrow" id="tagrow"></div>
+    <div class="modebar" id="modeseg">
+      <button data-m="wide" onclick="setMode('wide')">ワイド</button>
+      <button data-m="def" onclick="setMode('def')">標準</button>
+      <button data-m="compact" onclick="setMode('compact')">小</button>
+      <button data-m="mini" onclick="setMode('mini')">ミニ</button>
+    </div>
   </div>
   <div id="listbody"></div>
+</main>
+
+<main id="viewDetail" class="hidden"></main>
+<main id="viewEx" class="hidden"></main>
+
+<main id="viewSettings" class="hidden">
   <div class="setgroup" id="syncgroup">
     <h3>Google Drive 同期</h3>
     <div class="setbox">
@@ -201,14 +214,11 @@ button.blockbtn:disabled{opacity:.4;}
         <div class="note">日記アプリと同じクライアントIDを使います。データは Drive 内の「artists.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>
       </div>
       <div class="setrow"><button class="btn primary" onclick="connectDrive()">Drive に接続</button><button class="btn" onclick="syncNow('manual')">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>
+      <div class="setrow"><button class="blockbtn" id="syncbothbtn" onclick="syncBoth()">両方の図鑑を同期</button>
+      <div id="syncbothresults"></div>
+      <div class="note">作家図鑑とデザイナー図鑑の両方を、この端末から Google Drive へ送ります（アップロード専用）。Drive 側に新しい変更がある図鑑は上書きせず、案内を表示します。</div></div>
     </div>
   </div>
-</main>
-
-<main id="viewDetail" class="hidden"></main>
-<main id="viewEx" class="hidden"></main>
-
-<main id="viewSettings" class="hidden">
   <div class="setgroup">
     <h3>データの取り込み</h3>
     <div class="setbox">
@@ -7652,7 +7662,7 @@ tags.forEach(t=>{ if(state.tags.has(t) && shownTags.indexOf(t)<0) shownTags.push
 $('tagrow').innerHTML = shownTags.map(t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'+esc(t)+' '+counts[t]+'</button>').join('')+(tags.length>TAG_LIMIT? '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+tags.length+'）')+'</button>':'');
 renderListBody();
 $('aboutbox').textContent = CONFIG.appName+'（独立版）。登録 '+DB.artists.length+' 名／作品画像参照 '+
-DB.artists.reduce((n,a)=>n+worksOf(a).length,0)+' 点。データファイル：'+CONFIG.dataFile;
+DB.artists.reduce((n,a)=>n+worksOf(a).length,0)+' 点。データファイル：'+CONFIG.dataFile+'。バージョン v'+APP_VERSION;
 }
 function renderListBody(){
 const arr = filteredArtists();
@@ -7773,35 +7783,80 @@ if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
 })();
 
 /* ---------- exhibitions ---------- */
+/* ---------- exhibitions ---------- */
+let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
+let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied */
+function exCoords(e){
+  const lat = (e.lat!=null && e.lat!=='')? e.lat: e.latitude;
+  const lng = (e.lng!=null && e.lng!=='')? e.lng: e.longitude;
+  if(lat==null || lng==null) return null;
+  const la = parseFloat(lat), ln = parseFloat(lng);
+  if(isNaN(la) || isNaN(ln)) return null;
+  return { lat: la, lng: ln };
+}
+function exDistKm(e){
+  if(!exUserPos) return null;
+  const c = exCoords(e); if(!c) return null;
+  const R = 6371, dLa = (c.lat-exUserPos.lat)*Math.PI/180, dLn = (c.lng-exUserPos.lng)*Math.PI/180;
+  const h = Math.sin(dLa/2)*Math.sin(dLa/2) + Math.cos(exUserPos.lat*Math.PI/180)*Math.cos(c.lat*Math.PI/180)*Math.sin(dLn/2)*Math.sin(dLn/2);
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function exSortCmp(mode){
+  if(mode==='end') return (a,b)=>{ const ea = a.end_date||'9999-99-99', eb = b.end_date||'9999-99-99'; return ea<eb? -1: (ea>eb? 1: 0); };
+  if(mode==='near') return (a,b)=>{ const da = exDistKm(a), db = exDistKm(b); if(da==null && db==null) return 0; if(da==null) return 1; if(db==null) return -1; return da-db; };
+  return (a,b)=>{ const sa = a.start_date||'9999-99-99', sb = b.start_date||'9999-99-99'; return sa<sb? -1: (sa>sb? 1: 0); };
+}
+function setExSort(m){
+  exSortMode = m;
+  if(m==='near' && !exUserPos && exGeoState!=='denied'){
+    if(navigator.geolocation){
+      exGeoState = 'asking';
+      navigator.geolocation.getCurrentPosition(
+        function(p){ exUserPos = { lat: p.coords.latitude, lng: p.coords.longitude }; exGeoState = 'ok'; renderEx(); },
+        function(){ exGeoState = 'denied'; renderEx(); },
+        { timeout: 10000, maximumAge: 600000 });
+    } else exGeoState = 'denied';
+  }
+  renderEx();
+}
 function renderEx(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
-if(!exs.length){ v.innerHTML = '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
-const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
-.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
-const up = exs.filter(e=>!(cur.indexOf(e)>=0))
-.sort((a,b)=>(a.start_date||'')<(b.start_date||'')?-1:1);
+const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
+const cmp = exSortCmp(effMode);
+let html = '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
++'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
++'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
++'<button class="'+(exSortMode==='near'?'on':'')+'" onclick="setExSort(\'near\')">近い順</button>'
++'</span></div>';
+if(exSortMode==='near'){
+  if(exGeoState==='denied') html += '<div class="note">現在地を取得できなかったため、開始日順で表示しています。</div>';
+  else if(!exUserPos) html += '<div class="note">現在地を取得しています…</div>';
+}
+if(!exs.length){ v.innerHTML = html + '<div class="empty">展示データはまだありません</div>'; return;}
+const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr))).sort(cmp);
+const up = exs.filter(e=>!(cur.indexOf(e)>=0)).sort(cmp);
 const item = (e)=>{
 let meta = [e.venue, e.city].filter(Boolean).join('／');
 let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
 let dlabel = '';
 if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
 if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
+const dk = (effMode==='near')? exDistKm(e): null;
 return '<div class="exitem"><div class="et">'+esc(e.title||'')+'</div>'+
 '<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
-'<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+'</div>'+
+'<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
 (e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
 (e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
 '</div></div>';
 };
-let html = '';
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
-v.innerHTML = html || '<div class="empty">展示データはまだありません</div>';
+v.innerHTML = html;
 }
 
 /* ---------- editor ---------- */
@@ -8035,7 +8090,7 @@ function saveClientId(){ const el = $('clientid'); if(el) storeSet(LS_CID, el.va
 
 function connectDrive(){
   const cid = ($('clientid') ? $('clientid').value.trim() : getClientId());
-  if(!cid){ toast('先に OAuth クライアントID を入力してください'); showView('list'); const g=$('syncgroup'); if(g) setTimeout(()=>{ g.scrollIntoView({behavior:'smooth', block:'center'}); const ci=$('clientid'); if(ci) ci.focus({preventScroll:true}); }, 80); return; }
+  if(!cid){ toast('先に OAuth クライアントID を入力してください'); showView('settings'); const g=$('syncgroup'); if(g) setTimeout(()=>{ g.scrollIntoView({behavior:'smooth', block:'center'}); const ci=$('clientid'); if(ci) ci.focus({preventScroll:true}); }, 80); return; }
   storeSet(LS_CID, cid);
   if(!(window.google && google.accounts && google.accounts.oauth2)){
     toast('Googleのライブラリを読み込めませんでした。通信環境を確認してください', 4000); return;
@@ -8155,7 +8210,7 @@ async function createDataFile(data){
 }
 async function syncNow(reason){
   if(syncRunning) return;
-  if(!getValidToken()){ setSyncStatus('disconnected'); if(reason==='manual') toast('Drive未接続です。一覧下部の同期パネルから接続してください'); return; }
+  if(!getValidToken()){ setSyncStatus('disconnected'); if(reason==='manual') toast('Drive未接続です。設定の同期パネルから接続してください'); return; }
   syncRunning = true; setSyncStatus('syncing');
   try{
     await uploadPendingImages();
@@ -8182,12 +8237,198 @@ async function syncNow(reason){
   }finally{ syncRunning = false; }
 }
 
+/* ---------- pill nav swipe ---------- */
+(function(){
+  const nav = $('pillnav'); if(!nav) return;
+  const order = ['artists','designers','settings'];
+  function currentDest(){ return state.view==='settings'? 'settings': CONFIG.kind; }
+  function goDest(dest){
+    if(dest==='settings'){ showView('settings'); return; }
+    if(dest===CONFIG.kind){ showView('list'); return; }
+    location.href = (dest==='artists')? '../artists/': '../designers/';
+  }
+  let sx = null, sy = null, suppressClick = false;
+  nav.addEventListener('touchstart', e=>{ const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive:true });
+  nav.addEventListener('touchend', e=>{
+    if(sx==null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    sx = null; sy = null;
+    if(Math.abs(dx) < 40 || Math.abs(dx) <= Math.abs(dy)) return; /* 横方向が dominant な時だけ */
+    suppressClick = true;
+    const cur = order.indexOf(currentDest());
+    const next = order[(cur + (dx<0? 1: order.length-1)) % order.length];
+    goDest(next);
+  }, { passive:true });
+  nav.addEventListener('click', e=>{ if(suppressClick){ suppressClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
+})();
+
+/* ================= 両方の図鑑を同期（アップロード専用） ================= */
+const ZUKAN_APPS = [
+  { label:'作家', file:'artists.json', prefix:'zukanArtists.' },
+  { label:'デザイナー', file:'designers.json', prefix:'zukanDesigners.' }
+];
+let bothBusy = false, bothToken = null, bothTokenExpSec = 3600;
+function sbLine(label, msg, isErr){
+  const box = $('syncbothresults'); if(!box) return;
+  const d = document.createElement('div');
+  d.className = 'syncline'+(isErr?' err':'');
+  d.textContent = label+'：'+msg;
+  box.appendChild(d);
+}
+function sbMaxUpdated(data){
+  let m = 0;
+  const arr = (data && Array.isArray(data.artists))? data.artists: [];
+  arr.forEach(a=>{ const t = Date.parse((a && a.updated_at) || ''); if(!isNaN(t) && t>m) m = t; });
+  return m;
+}
+function sbHhmm(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function sbDone(){ bothBusy = false; const b = $('syncbothbtn'); if(b) b.disabled = false; }
+async function sbFetch(path, opts){
+  return fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+bothToken }, (opts&&opts.headers)||{}) }));
+}
+async function sbFindFile(name){
+  const q = encodeURIComponent("name='"+name+"' and trashed=false");
+  const r = await sbFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+  if(!r.ok) throw new Error('files.list HTTP '+r.status);
+  const j = await r.json();
+  const f = (j.files||[]).filter(x=>x.name===name);
+  return f.length? f[0]: null;
+}
+async function sbDownloadText(id){
+  const r = await sbFetch('/files/'+encodeURIComponent(id)+'?alt=media');
+  if(!r.ok) throw new Error('download HTTP '+r.status);
+  return r.text();
+}
+async function sbUploadUpdate(id, text){
+  const r = await fetch(UPLOAD_API+'/files/'+encodeURIComponent(id)+'?uploadType=media', {
+    method:'PATCH', headers:{ Authorization:'Bearer '+bothToken, 'Content-Type':'application/json' }, body: text
+  });
+  if(!r.ok) throw new Error('update HTTP '+r.status);
+}
+async function sbCreateFile(name, text){
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify({ name:name, mimeType:'application/json' })], { type:'application/json' }));
+  form.append('file', new Blob([text], { type:'application/json' }), name);
+  const r = await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', {
+    method:'POST', headers:{ Authorization:'Bearer '+bothToken }, body: form
+  });
+  if(!r.ok) throw new Error('create HTTP '+r.status);
+  return r.json();
+}
+/* アプリ側の storeToken と同じキーに書き、各アプリを開いたときの状態表示と整合させる */
+function sbMarkSynced(app){
+  sessSet(app.prefix+'token', bothToken);
+  storeSet(app.prefix+'tokenExp', String(Date.now()+bothTokenExpSec*1000));
+  storeDel(app.prefix+'authError');
+}
+async function sbSyncOne(app){
+  const raw = storeGet(app.prefix+'data');
+  if(!raw) return '端末にデータがありません（対象外）';
+  let data = null;
+  try{ data = JSON.parse(raw); }catch(e){ return '端末データの読み取りに失敗しました（対象外）'; }
+  const count = (data && Array.isArray(data.artists))? data.artists.length: 0;
+  const localMax = sbMaxUpdated(data);
+  const file = await sbFindFile(app.file);
+  if(!file){
+    const everConnected = storeGet(app.prefix+'clientId') || storeGet(app.prefix+'driveFileId');
+    if(!count && !everConnected) return '未接続のため対象外';
+    const created = await sbCreateFile(app.file, raw);
+    if(created && created.id){
+      storeSet(app.prefix+'driveFileId', created.id);
+      sbMarkSynced(app);
+      if(app.prefix===CONFIG.prefix){ lastSyncAt = Date.now(); setSyncStatus('synced'); }
+      return '同期済み '+sbHhmm(new Date())+'（ファイルを作成）';
+    }
+    throw new Error('ファイルを作成できませんでした');
+  }
+  storeSet(app.prefix+'driveFileId', file.id);
+  const remoteText = await sbDownloadText(file.id);
+  let remoteMax = 0;
+  try{ remoteMax = sbMaxUpdated(JSON.parse(remoteText)); }catch(e){}
+  if(remoteMax > localMax) return '新しい変更がDrive側にあります。アプリを開いて取り込んでください';
+  await sbUploadUpdate(file.id, raw);
+  sbMarkSynced(app);
+  if(app.prefix===CONFIG.prefix){ lastSyncAt = Date.now(); setSyncStatus('synced'); }
+  return '同期済み '+sbHhmm(new Date());
+}
+async function sbRun(){
+  for(const app of ZUKAN_APPS){
+    try{ sbLine(app.label, await sbSyncOne(app)); }
+    catch(e){ sbLine(app.label, '同期に失敗しました（'+(e && e.message ? e.message : e)+'）', true); }
+  }
+  sbDone();
+}
+function syncBoth(){
+  if(bothBusy) return;
+  const box = $('syncbothresults'); if(box) box.innerHTML = '';
+  const cid = getClientId() || (storeGet('zukanArtists.clientId')||'').trim() || (storeGet('zukanDesigners.clientId')||'').trim();
+  if(!cid){ sbLine('同期', 'クライアントIDが未設定です。このアプリの設定で Drive 接続を済ませてください。', true); return; }
+  const vt = getValidToken();
+  if(vt){ bothToken = vt; bothTokenExpSec = 3600; bothBusy = true; const b = $('syncbothbtn'); if(b) b.disabled = true; sbRun(); return; }
+  if(!(window.google && google.accounts && google.accounts.oauth2)){
+    sbLine('同期', 'Google のライブラリを読み込めませんでした。通信環境を確認してください。', true); return;
+  }
+  bothBusy = true; const b0 = $('syncbothbtn'); if(b0) b0.disabled = true;
+  try{
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
+      callback: function(resp){
+        if(resp && resp.access_token){
+          bothToken = resp.access_token;
+          bothTokenExpSec = parseInt(resp.expires_in||'3600',10);
+          storeToken(bothToken, bothTokenExpSec);
+          sbRun();
+        } else { sbLine('同期', 'トークンを取得できませんでした', true); sbDone(); }
+      },
+      error_callback: function(err){
+        sbLine('同期', '認証エラー：'+((err && (err.type||err.message)) || 'unknown'), true);
+        sbDone();
+      }
+    });
+    tc.requestAccessToken();
+  }catch(e){
+    sbLine('同期', '接続を開始できませんでした：'+(e && e.message ? e.message : e), true);
+    sbDone();
+  }
+}
+
+/* ================= self update ================= */
+const APP_VERSION = '1.3';
+function isEditing(){ return !!document.getElementById('ef_name'); }
+function checkForUpdate(){
+  if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
+  try{
+    fetch(location.pathname+'?cv='+Date.now(), { cache:'no-store' })
+      .then(r=>r.text())
+      .then(t=>{
+        const m = t.match(/name="app-version" content="([0-9.]+)"/);
+        if(!m) return;
+        const latest = m[1];
+        if(latest===APP_VERSION){ try{ sessionStorage.removeItem(CONFIG.prefix+'updateTried'); }catch(e){} return; }
+        let tried = null;
+        try{ tried = sessionStorage.getItem(CONFIG.prefix+'updateTried'); }catch(e){}
+        if(tried===latest) return; /* ループ防止：同じ版への再読み込みは1回だけ */
+        try{ sessionStorage.setItem(CONFIG.prefix+'updateTried', latest); }catch(e){}
+        location.replace(location.pathname+'?u='+Date.now());
+      })
+      .catch(()=>{});
+  }catch(e){}
+}
+let updHiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ updHiddenAt = Date.now(); return; }
+  /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
+  if(updHiddenAt && Date.now()-updHiddenAt>=60000 && !isEditing()) checkForUpdate();
+});
+
 /* ================= init ================= */
 (function init(){
   loadPendingImages();
   /* optional external seed.json placed next to index.html (used when no embedded seed) */
   const boot = ()=>{
     renderList(); renderSyncStatus();
+    checkForUpdate();
     if(isDriveConnected()) setTimeout(()=>syncNow('startup'), 300);
     else if(getClientId() && storeGet(LS_AUTHERR)) setSyncStatus('error', storeGet(LS_AUTHERR));
     else if(getClientId()) setTimeout(trySilentRefresh, 900);
