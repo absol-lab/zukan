@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="3.3">
+<meta name="app-version" content="4.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -513,6 +513,27 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .erahero .imgholder{display:flex; align-items:center; justify-content:center; width:100%; aspect-ratio:4/3;}
 .erahero .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .erahero .imgholder .noimg{color:var(--muted); letter-spacing:.2em;}
+/* v4.0: 年代スライダー (feature #9) — a filter block inside the
+   timeline view, under the region segment. Nothing else in the
+   view changes; unselected, the block is nearly invisible. */
+.ysblock{margin-top:14px; border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:var(--card);}
+.yshead{display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14px; min-height:24px;}
+#ysYear{margin-top:6px;}
+.ysbig{font-size:30px; font-weight:800; letter-spacing:.02em;}
+.yschip{display:inline-block; margin-left:8px; padding:2px 10px; border-radius:999px; color:#fff; font-size:12px; font-weight:700; vertical-align:middle;}
+.ysslider{width:100%; margin-top:10px; accent-color:var(--tag);}
+.ysbtns{display:flex; gap:8px; margin-top:8px;}
+.ysbtns button{flex:1; min-height:44px; border-radius:10px; border:1px solid var(--line); background:var(--card2); color:var(--text); font-family:var(--sans); font-size:13px;}
+.yssum{margin-top:10px; font-size:13px; color:var(--muted);}
+.ysrows{margin-top:6px; display:flex; flex-direction:column;}
+.ysrow{display:flex; align-items:center; gap:10px; width:100%; padding:6px 0; background:none; border:none; border-bottom:1px solid var(--line); text-align:left; font-family:var(--sans); color:var(--text);}
+.ysthumb{flex:none; width:44px; height:44px; border-radius:8px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
+.ysthumb .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.ysthumb .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.ysthumb .imgholder .noimg{font-size:9px; color:var(--muted);}
+.ysmeta{flex:1; min-width:0; display:flex; flex-direction:column;}
+.ysname{font-weight:700; font-size:14.5px;}
+.ysage{flex:none; font-size:12.5px; color:var(--tag); font-weight:700;}
 .tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
 .tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
 button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
@@ -10370,6 +10391,19 @@ let html = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表'
 +'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">'+(DS==='designers'? '世界': '西洋')+'</button>'
 +'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
 +'</span></div>';
+/* v4.0: the year-slider block (artists only — the approved
+   design scopes it to the art timeline; designers are a later,
+   separate item). Skeleton only: renderYsResults fills it. */
+if(DS==='artists'){
+html += '<div class="ysblock" id="ysblock">'
++'<div class="yshead"><span>年代で絞る</span><span id="ysClear"></span></div>'
++'<div id="ysYear"></div>'
++'<input type="range" class="ysslider" id="ysSlider" min="1450" max="2026" step="1" value="'+(tlYear==null? 1900: tlYear)+'" oninput="onYsSlide(this.value)" aria-label="年">'
++'<div class="ysbtns"><button onclick="bumpTlYear(-10)">−10年</button><button onclick="bumpTlYear(-1)">−1年</button><button onclick="bumpTlYear(1)">＋1年</button><button onclick="bumpTlYear(10)">＋10年</button></div>'
++'<div id="ysSummary"></div>'
++'<div id="ysResult"></div>'
++'</div>';
+}
 const t = timelineOf();
 if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
@@ -10417,7 +10451,86 @@ html += '</div>';
 html += '</div>';
 v.innerHTML = html;
 v.querySelectorAll('.tlthumb .imgholder').forEach((span, k)=>{ const w = stripWiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+if(DS==='artists') renderYsResults();
 requestAnimationFrame(layoutTlSpine);
+}
+/* v4.0: 年代スライダー (feature #9, approved 2026-11-12).
+   Pick a year: only artists alive that year (with their age at
+   the time) and works made that year remain. A temporary filter
+   — memory only, never persisted. Artists whose years cannot be
+   parsed are NOT counted (the encyclopedia does not present the
+   unknown as known). Region follows the timeline's segment:
+   japan = section starts with 日本：, everything else = west. */
+let tlYear = null;
+function parseLife(a){
+  const nums = String(a.years || '').match(/(\d{4})/g);
+  if(!nums) return null;
+  const birth = parseInt(nums[0], 10);
+  const death = nums.length >= 2? parseInt(nums[nums.length - 1], 10): new Date().getFullYear();
+  return { birth: birth, death: death };
+}
+function ysData(Y){
+  const alive = [], works = [];
+  DB.artists.forEach(a=>{
+    const reg = String(a.section || '').startsWith('日本：')? 'japan': 'west';
+    if(reg !== tlRegion) return;
+    const life = parseLife(a);
+    if(life && life.birth <= Y && Y <= life.death) alive.push({ a: a, age: Y - life.birth, birth: life.birth });
+    displayWorks(a).forEach((w, wi)=>{ if(workYearOf(w) === Y) works.push({ a: a, w: w, wi: wi }); });
+  });
+  alive.sort((p, q)=> p.birth - q.birth);
+  works.sort((p, q)=> p.a.name.localeCompare(q.a.name));
+  return { alive: alive, works: works };
+}
+function onYsSlide(v){ tlYear = parseInt(v, 10); renderYsResults(); }
+function bumpTlYear(d){
+  const cur = (tlYear == null? 1900: tlYear);
+  tlYear = Math.max(1450, Math.min(2026, cur + d));
+  const s = $('ysSlider'); if(s) s.value = tlYear;
+  renderYsResults();
+}
+function clearTlYear(){
+  tlYear = null;
+  const s = $('ysSlider'); if(s) s.value = 1900;
+  renderYsResults();
+}
+function renderYsResults(){
+  const yv = $('ysYear'), sm = $('ysSummary'), rs = $('ysResult'), cl = $('ysClear');
+  if(!yv || !rs) return;
+  if(tlYear == null){
+    yv.innerHTML = ''; if(sm) sm.innerHTML = ''; if(cl) cl.innerHTML = '';
+    rs.innerHTML = '<div class="small" style="margin-top:8px;">年を選ぶと、その年に生きていた作家と、その年の作品だけが残ります。</div>';
+    return;
+  }
+  const Y = tlYear;
+  if(cl) cl.innerHTML = '<button class="linkbtn" onclick="clearTlYear()">解除</button>';
+  const t = timelineOf();
+  const entries = t? (t[tlRegion] || []): [];
+  const ei = tlEraOfYear(entries, Y);
+  const chip = (ei >= 0 && entries[ei])? ' <span class="yschip" style="background:'+eraColor(ei, entries.length)+'">'+esc(entries[ei].title || '')+'</span>': '';
+  yv.innerHTML = '<span class="ysbig">'+Y+'年</span>'+chip;
+  const d = ysData(Y);
+  if(sm) sm.innerHTML = '<div class="yssum">この年に生きていた作家 '+d.alive.length+'人 ・ この年の作品 '+d.works.length+'点</div>';
+  let h = '';
+  if(d.alive.length){
+    h += '<div class="ysrows">'+d.alive.map(x=>{
+      const th = thumbOf(x.a);
+      return '<button class="ysrow" onclick="openDetail(\''+escA(x.a.id)+'\')"><span class="ysthumb">'+(th? imgHTML(th, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">図版</span></span>')+'</span><span class="ysmeta"><span class="ysname">'+esc(x.a.name)+'</span><span class="small">'+esc(x.a.years || '')+'</span></span><span class="ysage">当時'+x.age+'歳</span></button>';
+    }).join('')+'</div>';
+  }
+  if(d.works.length){
+    h += '<h3 class="subhead">'+Y+'年の作品</h3><div class="gallery">'
+      + d.works.slice(0, 60).map(c=> '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'</div><div class="sub">'+esc(c.w.caption || '')+'</div></figcaption></figure>').join('')
+      + '</div>'
+      + (d.works.length > 60? '<div class="small">全'+d.works.length+'点のうち60点まで表示しています</div>': '');
+  } else {
+    h += '<div class="small" style="margin-top:10px;">この年の作品は登録がありません</div>';
+  }
+  rs.innerHTML = h;
+  const wiring = [];
+  d.alive.forEach(x=> wiring.push(thumbOf(x.a) || null));
+  d.works.slice(0, 60).forEach(c=> wiring.push(c.w));
+  rs.querySelectorAll('.imgholder').forEach((span, k)=>{ const w = wiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 }
 /* v3.3: era detail — the timeline stops being a list of labels.
    Each era card carries photos (the encyclopedia's own verified
@@ -11829,7 +11942,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '3.3';
+const APP_VERSION = '4.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
