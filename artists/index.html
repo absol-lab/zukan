@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.46">
+<meta name="app-version" content="2.47">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8415,12 +8415,16 @@ $('topcount').textContent = '全'+DB.artists.length+'名';
 /* ---------- dataset switching （ページ遷移なし・文脈はデータセット毎に保持） ---------- */
 function switchDataset(kind){
 if(kind===DS){
-/* v2.46: re-tapping the ACTIVE pill tab returns to the top of its
-   list (the iOS tab re-tap convention, user's request) — from a
-   detail/exhibition/timeline view it goes back to the list AND to
-   the top, and the saved scroll position resets so a later dataset
-   round-trip does not resurrect the old spot. The 展示/設定 tabs do
-   not come through here and are unchanged. */
+/* v2.46/v2.47: re-tapping the ACTIVE pill tab returns to that tab's
+   INITIAL screen (the user's words: 最初の画面) — not just scroll
+   top: the list state is rebuilt fresh (search query cleared, tag
+   filters reset, facet panels closed, detail tab back to works),
+   the saved scroll position resets, and the list scrolls to the
+   top. Exactly the state the tab shows at app launch. From a
+   detail/exhibition/timeline view it lands on that fresh list.
+   The 展示/設定 tabs do not come through here and are unchanged. */
+state = freshState(CONFIG.prefix);
+CTX[DS].state = state;
 showView('list');
 CTX[DS].scrollY = 0;
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -10222,7 +10226,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.46';
+const APP_VERSION = '2.47';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
