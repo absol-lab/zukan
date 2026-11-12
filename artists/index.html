@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.48">
+<meta name="app-version" content="2.49">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -89,6 +89,11 @@ a{color:var(--accent);}
 header.top{position:sticky; top:0; z-index:30; background:var(--bg);}
 .toprow{display:flex; align-items:center; gap:8px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 14px 4px; max-width:720px; margin:0 auto;}
 h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spacing:.08em; margin:0;}
+/* v2.49: sync status dot, the diary app's exact pattern (8px circle
+   beside the title; green #46a758 = connected & no error, red
+   #e5484d = disconnected or error) — always visible in the header
+   so an unnoticed disconnect cannot happen again. */
+#syncdot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:7px; background:#e5484d; vertical-align:2px; flex:none;}
 .topcount{font-size:13px; color:var(--muted);}
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
@@ -480,7 +485,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="veil" aria-hidden="true"></div>
 <header class="top">
   <div class="toprow">
-    <h1 class="appname" id="appname">作家図鑑</h1>
+    <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
     <button class="txtbtn" id="navTimeline" onclick="openTimeline()">年表</button>
@@ -9644,6 +9649,14 @@ function onSyncBarTap(){
   if(getValidToken()) appSyncBtn(); else connectDrive();
 }
 function renderSyncStatus(){
+  const dot = $('syncdot');
+  if(dot){
+    /* diary semantics: green only with a live token and no error on
+       either dataset; red covers disconnected AND error, so the one
+       glance the user asked for never reads green on a broken link */
+    const ok = !!getValidToken() && CTX.artists.syncStatus!=='error' && CTX.designers.syncStatus!=='error';
+    dot.style.background = ok? '#46a758': '#e5484d';
+  }
   const cur = ctxStatus(DS);
   const bar = $('syncbar');
   if(bar){
@@ -10233,7 +10246,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.48';
+const APP_VERSION = '2.49';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
