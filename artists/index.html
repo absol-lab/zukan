@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="6.1">
+<meta name="app-version" content="7.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10368,8 +10368,105 @@ function reqMarkSeen(){ try{ storeSet(LS_REQ_SEEN, String(reqDoneItems().length)
 function refreshReqNotifBtn(){
   const b = $('navReqNotif'); if(!b) return;
   let n = 0;
-  try{ n = Math.max(0, reqDoneItems().length - reqSeenCount()); }catch(e){}
+  try{ n = Math.max(0, reqDoneItems().length - reqSeenCount()) + regUnseenCount(); }catch(e){}
   b.innerHTML = SICON.bell + (n? '<span class="nbadge">'+n+'</span>': '');
+}
+/* v7.0: new-registration notifications (his ask, 2026-11-13).
+   Until now only request-driven registrations produced a
+   completion notification; people registered by direct
+   instruction, batch work or the harvest arrived silently.
+   Detection is app-side: the person-id set of each dataset is
+   compared with the previous snapshot (zukan.knownIds) whenever
+   data lands — sync, datapack apply, boot. The processor's
+   write procedure does not change at all.
+   Baseline: the first run has no snapshot, so it is taken from
+   the SHIPPED datapack's person set (people added since that
+   snapshot — e.g. tonight's registrations — still surface
+   once); if the pack cannot be read, the current data becomes
+   the baseline silently. Either way the existing cast never
+   floods the panel. A person whose registration already has a
+   request-completion notification is skipped (no doubles).
+   Bursts are capped at 8 individual notes + one summary. */
+const LS_KNOWN = 'zukan.knownIds';
+const LS_REGNOTIFS = 'zukan.regNotifs';
+function regNotifsLoad(){ try{ const d = JSON.parse(storeGet(LS_REGNOTIFS)||'[]'); return Array.isArray(d)? d: []; }catch(e){ return []; } }
+function regNotifsSave(a){ try{ storeSet(LS_REGNOTIFS, JSON.stringify(a.slice(0, 60))); }catch(e){} }
+function regUnseenCount(){ return regNotifsLoad().filter(n=>!n.seen).length; }
+function regMarkSeen(){ const a = regNotifsLoad(); let ch = false; a.forEach(n=>{ if(!n.seen){ n.seen = true; ch = true; } }); if(ch) regNotifsSave(a); }
+let knownInitPromise = null;
+function ensureKnownIds(){
+  if(storeGet(LS_KNOWN)) return Promise.resolve(true);
+  if(knownInitPromise) return knownInitPromise;
+  knownInitPromise = (async()=>{
+    let base = null;
+    try{
+      const res = await fetch('datapack.json', { cache:'no-store' });
+      if(res && res.ok){
+        const pack = await res.json();
+        base = {};
+        for(const k of ['artists','designers']){
+          const inc = pack && pack[k];
+          base[k] = (inc && Array.isArray(inc.artists))? inc.artists.map(a=>String(a && a.id)): [];
+        }
+      }
+    }catch(e){ base = null; }
+    if(!base){
+      base = {};
+      for(const k of ['artists','designers']){
+        const c = CTX[k];
+        base[k] = (c && c.DB && Array.isArray(c.DB.artists))? c.DB.artists.map(a=>String(a && a.id)): [];
+      }
+    }
+    try{ storeSet(LS_KNOWN, JSON.stringify(base)); }catch(e){}
+    return true;
+  })();
+  return knownInitPromise;
+}
+const detectBusy = {};
+async function detectNewPeople(kind){
+  if(detectBusy[kind]) return;
+  detectBusy[kind] = true;
+  try{
+    await ensureKnownIds();
+    const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) return;
+    let known = {};
+    try{ known = JSON.parse(storeGet(LS_KNOWN)||'{}'); }catch(e){ known = {}; }
+    const prev = new Set((Array.isArray(known[kind])? known[kind]: []).map(String));
+    const cur = c.DB.artists.filter(a=>a && a.id!=null);
+    const fresh = cur.filter(a=>!prev.has(String(a.id)));
+    known[kind] = cur.map(a=>String(a.id));
+    try{ storeSet(LS_KNOWN, JSON.stringify(known)); }catch(e){}
+    if(!fresh.length) return;
+    const doneKeys = new Set();
+    try{
+      reqDoneItems().forEach(r=>{
+        if(r.status!=='registered') return;
+        if(r.kind==='works' && r.dataset && r.artist_id!=null) doneKeys.add('id:'+r.dataset+':'+String(r.artist_id));
+        const nm = reqResolvedName(r); if(nm) doneKeys.add('name:'+nm);
+      });
+    }catch(e){}
+    const todo = fresh.filter(a=> !doneKeys.has('id:'+kind+':'+String(a.id)) && !doneKeys.has('name:'+a.name));
+    if(!todo.length) return;
+    const at = new Date().toISOString();
+    const mk = (a)=>({ id:'reg'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), dataset:kind, personId:a.id, name:a.name, at, seen:false });
+    const entries = todo.slice(0, 8).map(mk);
+    if(todo.length > 8) entries.push({ id:'regsum'+Date.now().toString(36), summary:true, count: todo.length - 8, dataset:kind, at, seen:false });
+    regNotifsSave(entries.concat(regNotifsLoad()));
+    refreshReqNotifBtn();
+    if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist');
+  }catch(e){}
+  finally{ detectBusy[kind] = false; }
+}
+function regNotifJump(nid){
+  const n = regNotifsLoad().find(x=>x.id===nid); if(!n || n.summary) return;
+  if(n.dataset === DS){ const a = artistById(n.personId); if(a){ openDetail(a.id); return; } }
+  else{
+    const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
+    let found = null;
+    try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(n.personId)); }catch(e){}
+    if(found){ switchDataset(n.dataset); openDetail(found.id); return; }
+  }
+  toast('この端末にはまだ届いていません');
 }
 let reqNotifReturn = null;
 function openRequestNotifs(){
@@ -10413,8 +10510,7 @@ function reqNotifJump(id){
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
   const done = reqDoneItems();
-  if(!done.length){ el.innerHTML = '<div class="empty">完了したリクエストはまだありません</div>'; }
-  else el.innerHTML = done.map(r => {
+  const doneRows = done.map(r => {
     const resolved = reqResolvedName(r);
     const title = r.status==='declined'? esc(r.name)+' は見送りになりました'
       : (r.kind==='works'? esc(r.name)+' の情報を回収しました' : esc(resolved)+' が登録されました');
@@ -10422,14 +10518,24 @@ function renderRequestNotifs(targetId){
       ? '<div class="upat" style="margin-top:2px;">リクエスト：「'+esc(r.name)+'」</div>' : '';
     const noteIsNameOnly = r.note && /として登録/.test(r.note) && reqResolvedName(r) !== r.name;
     const tap = r.status!=='declined';
-    return '<div class="uprow'+(tap?' tap':'')+'"'+(tap?' onclick="reqNotifJump(\''+escA(r.id)+'\')"':'')+'><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
+    return { t: String(r.resolved_at||''), html: '<div class="uprow'+(tap?' tap':'')+'"'+(tap?' onclick="reqNotifJump(\''+escA(r.id)+'\')"':'')+'><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
       askedLine +
       '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
       (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') +
-      (tap? '<span class="upgo">›</span>': '') + '</div>';
-  }).join('');
+      (tap? '<span class="upgo">›</span>': '') + '</div>' };
+  });
+  /* v7.0: registration detections (see detectNewPeople) ride the
+     same panel, merged by time. */
+  const regRows = regNotifsLoad().map(n => {
+    if(n.summary) return { t: String(n.at||''), html: '<div class="uprow"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div></div>' };
+    const label = n.dataset==='designers'? 'デザイナー': '作家';
+    return { t: String(n.at||''), html: '<div class="uprow tap" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+label+' ・ '+esc(notifWhen(n.at))+'</div><span class="upgo">›</span></div>' };
+  });
+  const all = doneRows.concat(regRows).sort((a, b)=> b.t.localeCompare(a.t));
+  if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
+  else el.innerHTML = all.map(x=>x.html).join('');
   /* v2.95: he is looking at them — mark seen, badge clears */
-  reqMarkSeen();
+  reqMarkSeen(); regMarkSeen(); refreshReqNotifBtn();
   /* refresh the requests file in the background; re-render on arrival */
   if(getValidToken() || relayReady()){
     flushArtistRequests().then(()=>{ refreshReqNotifBtn(); if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist'); }).catch(()=>{});
@@ -11870,6 +11976,7 @@ async function syncDatasetOnce(kind, reason){
     c.lastSyncAt = Date.now();
     setCtxStatus(kind, 'synced');
     refreshAfterSync(kind);
+    detectNewPeople(kind);
     return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）' };
   }catch(e){
     const m = (e && e.message) ? e.message : String(e);
@@ -12354,7 +12461,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '6.1';
+const APP_VERSION = '7.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -12470,6 +12577,7 @@ async function applyDataPack(){
     }
   }catch(e){ return false; }
   storeSet(LS_PACK_APPLIED, String(DATA_PACK));
+  detectNewPeople('artists'); detectNewPeople('designers');
   return true;
 }
 
@@ -12882,6 +12990,9 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   if(!CTX.designers.loadedFromStore && !storeGet(CFG_DESIGNERS.prefix+'data')) loadDesignersSeed();
   updateHeader(); updatePill();
   renderList(); renderSyncStatus(); renderAbout();
+  /* v7.0: catch registrations that landed in local data before
+     this version existed (synced under an older app) */
+  detectNewPeople('artists'); detectNewPeople('designers');
   requestAnimationFrame(()=>moveNavInd(false));
   window.addEventListener('load', ()=>moveNavInd(false));
   checkForUpdate();
