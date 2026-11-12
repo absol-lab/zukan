@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.63">
+<meta name="app-version" content="2.64">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -7832,7 +7832,7 @@ let state = null;
 let pendingImages = {};
 
 /* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
-function freshState(prefix){ return { mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', tagsOpen:false, tagGroupsOpen:{}}; }
+function freshState(prefix){ return { mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', workSort:'reg', tagsOpen:false, tagGroupsOpen:{}}; }
 function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
 const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
 let DS = (location.hash==='#designers')? 'designers': 'artists';
@@ -7968,6 +7968,30 @@ if(a.work_image || a.work_caption) push({ caption:a.work_caption||'', file:a.wor
 return out;
 }
 function thumbOf(a){ const ws = worksOf(a); return ws.length? ws[0]: null;}
+/* v2.64: display-only works sorting. The canonical order (and with
+   it works[0] = the thumbnail) is never touched — displayWorks
+   returns a reordered copy. The year comes from the caption's first
+   4-digit number (captions carry 「YYYY年」); works without a year
+   sink to the end in both directions, keeping relative order. */
+function workYearOf(w){
+  const m = /(\d{4})/.exec((w && w.caption) || '');
+  return m? parseInt(m[1], 10): null;
+}
+function displayWorks(a){
+  const ws = worksOf(a).slice();
+  const mode = state.workSort || 'reg';
+  if(mode === 'reg' || ws.length < 2) return ws;
+  const dir = mode === 'old'? 1: -1;
+  return ws.map((w, i) => ({ w: w, i: i, y: workYearOf(w) }))
+    .sort((p, q) => {
+      if(p.y == null && q.y == null) return p.i - q.i;
+      if(p.y == null) return 1;
+      if(q.y == null) return -1;
+      return (p.y - q.y) * dir || (p.i - q.i);
+    }).map(x => x.w);
+}
+function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
+function workKeysOf(x){ return [ (x.img && x.img.fileId), (x.img && x.img.url), x.file, x.caption? ('cap:' + x.caption): '' ].filter(Boolean); }
 
 /* ---------- notes splitting (来歴 / 技法 / その他) ---------- */
 function splitNotes(notes){
@@ -8937,7 +8961,7 @@ if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); }
 }
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
-const ws = worksOf(a);
+const ws = displayWorks(a);
 const sp = splitNotes(a.notes);
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 '<div style="float:right"><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
@@ -8965,7 +8989,12 @@ worksHTML += '</div>';
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
-worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">作品をリクエスト</button></div>' + worksHTML;
+worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">作品をリクエスト</button></div>' +
+'<div class="worksreq"><span class="small">並び替え</span><span class="seg mini">' +
+'<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
+'<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">年代・古い順</button>' +
+'<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">年代・新しい順</button>' +
+'</span></div>' + worksHTML;
 bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
@@ -9027,17 +9056,27 @@ let viewerSeq = 0;
    the work carries pinned:true and the person carries
    thumb_pinned_at (ISO). Both ride through normalizeArtist, the
    local-first sync merge (order preserved), and datapack builds. */
+/* v2.64: thumbnail identity is key-based, not position-based —
+   with a sorted display the canonical works[0] can sit anywhere in
+   the viewer, and the badge must keep pointing at IT. */
+function viewerIsThumb(){
+const a = artistById(viewerArtistId); if(!a) return viewerIdx===0;
+const w = viewerWorks[viewerIdx]; if(!w) return false;
+const first = worksOf(a)[0]; if(!first) return false;
+const fk = workKeysOf(first);
+return workKeysOf(w).some(k=> fk.indexOf(k)>=0);
+}
 function updateVThumbBtn(){
 const b = $('vthumb'); if(!b) return;
-const isT = viewerIdx===0;
+const isT = viewerIsThumb();
 b.textContent = isT? 'サムネ' : 'サムネにする';
 b.classList.toggle('on', isT);
 }
 function viewerSetThumb(){
 const a = artistById(viewerArtistId); if(!a) return;
 const w = viewerWorks[viewerIdx]; if(!w) return;
-if(viewerIdx===0){ toast('この作品がサムネです'); return; }
-const keysOf = (x)=>[ (x.img&&x.img.fileId), (x.img&&x.img.url), x.file, x.caption? ('cap:'+x.caption): '' ].filter(Boolean);
+if(viewerIsThumb()){ toast('この作品がサムネです'); return; }
+const keysOf = workKeysOf;
 const keys = keysOf(w);
 const raw = (a.works||[]).slice();
 let j = raw.findIndex(rw=> keysOf(rw).some(k=> keys.indexOf(k)>=0));
@@ -9051,9 +9090,13 @@ a.works = raw;
 const now = new Date().toISOString();
 a.thumb_pinned_at = now; a.updated_at = now;
 saveDB(); scheduleSync();
-viewerWorks = worksOf(a); viewerIdx = 0;
+/* v2.64: stay in the current display order; the pinned work keeps
+   its sorted position, only its canonical-first status changed. */
+viewerWorks = displayWorks(a);
+const ni = viewerWorks.findIndex(x=> workKeysOf(x).some(k=> keys.indexOf(k)>=0));
+viewerIdx = ni>=0? ni: 0;
 updateVThumbBtn();
-$('vcount').textContent = '1 / '+viewerWorks.length;
+$('vcount').textContent = (viewerIdx+1)+' / '+viewerWorks.length;
 if(state.detailId!=null && String(state.detailId)===String(a.id)) renderDetail();
 toast('サムネにしました');
 }
@@ -10722,7 +10765,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.63';
+const APP_VERSION = '2.64';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
