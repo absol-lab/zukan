@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.28">
+<meta name="app-version" content="2.29">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -94,8 +94,13 @@ h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spac
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
 #navEx, #navTimeline{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
 #navEx.on, #navTimeline.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
-#syncbar{text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em;}
+#syncbar{display:block; width:100%; background:none; border:none; text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em; font-family:inherit; cursor:pointer;}
 #syncbar .err{color:var(--danger);}
+#syncbar .sbhint{color:var(--accent);}
+/* v2.29: facet panel group headings (filter grouping) + version badge */
+.facetgh{font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.06em; margin:12px 2px 2px;}
+.facetgh:first-child{margin-top:2px;}
+#verBadge{position:fixed; right:8px; bottom:calc(env(safe-area-inset-bottom, 0px) + 4px); z-index:35; font-size:10px; letter-spacing:.05em; color:var(--muted); opacity:.75; pointer-events:none; font-family:var(--sans);}
 /* toolbar */
 main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:calc(100dvh + 1px);}
 /* v2.24: the list toolbar (search + facet bar + mode bar) is sticky,
@@ -448,7 +453,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <button class="txtbtn hidden" id="navEx" onclick="showView('ex')">展示</button>
     <button class="txtbtn hidden" id="navTimeline" onclick="showView('timeline')">年表</button>
   </div>
-  <div id="syncbar"><span>読み込み中…</span></div>
+  <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
 </header>
 
 <main id="viewList">
@@ -488,6 +493,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div id="settingspanel" style="display:none"></div>
 </main>
 
+<div id="verBadge"></div>
 <nav id="pillnav">
   <span id="navind"></span>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
@@ -8351,7 +8357,7 @@ return q.split(/\s+/).every(tok=>hay.indexOf(tok)>=0);
 });
 }
 if(state.tags.size){
-arr = arr.filter(a=>{ const ts = new Set(a.tags||[]); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
+arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
 return arr;
 }
@@ -8368,8 +8374,83 @@ const TAG_FACETS_D = {};
 ["素材", "型", "Flash", "ISOTYPE", "カリグラフィ", "手書き文字", "書体", "水", "CMYK", "FF Meta", "Georgia", "Gill Sans", "Helvetica", "Mrs Eaves", "Optima", "Palatino", "Processing", "Times New Roman", "Transport書体", "Verdana", "ウニッコ", "ガラス", "グラデーション", "グラフ", "コラージュ", "コンクリート", "サンセリフ", "シェル", "スチール", "ドレープ", "ナイロン", "バイアスカット", "フォトモンタージュ", "フロー図", "プラスチック", "プリーツ", "リトグラフ", "一体成形", "一本脚", "一枚の布", "作庭", "借景", "円グラフ", "印刷実験", "吊る展示", "型染", "型絵染", "実験書体", "宿根草", "復刻", "手描き", "手書き", "投影", "折れ線", "接合", "改刻", "新聞書体", "曲木", "書体実験", "木工", "木版", "板金", "枯山水", "染織", "植栽", "植物染料", "極座標", "欧文書体", "活版", "画面分割", "紙", "紬", "組版", "織り", "舗装", "遠近法", "鋼管"].forEach(t=>TAG_FACETS_D[t]='gihou');
 ["日本", "イギリス", "フランス", "アメリカ", "イタリア", "デンマーク", "オランダ", "ドイツ", "ロシア", "構成主義", "近代", "スイス・スタイル", "バウハウス", "モダニズム", "五輪", "東京五輪", "民藝", "アングラ", "アーツ・アンド・クラフツ", "アール・デコ", "グランジ", "シュルレアリスム", "スイス", "スペイン", "チェコ", "デ・ステイル", "ニュールック", "バロック", "パリ", "パンク", "フィンランド", "ブラジル", "ベルギー", "ポストモダン", "ミニマリズム", "メンフィス", "具体芸術", "北欧", "反機能主義", "古典", "合理主義", "同時主義", "戦後", "新劇", "機能主義", "流線型", "現代"].forEach(t=>TAG_FACETS_D[t]='jidaikuni');
 ["幾何", "引き算", "システム", "平面", "光", "反復", "色彩", "記号", "起源", "シルエット", "余白", "先駆者", "制約", "建築", "抽象", "方法", "理論", "色面", "アップル", "グリッド", "可読性", "概念", "構造", "標準化", "浮遊", "物語", "白", "量産", "黒", "IDEO", "デジタル", "ネガティブスペース", "ブラウン", "ペンタグラム", "不穏", "制度", "図と地", "大柄", "教育", "時間", "民主化", "編集", "規律", "解放", "身体", "道具", "都市", "非対称", "007", "A List Apart", "AEG", "AIGA", "B&O", "Colors", "Dynabook", "Emigre", "FedEx", "FontShop", "GKデザイン", "GUI", "Habitat", "ISO", "LATCH", "MITメディアラボ", "Macintosh", "NN/g", "PARCO", "TED", "Time", "Vogue", "Wonderwall", "Xerox PARC", "YMO", "frog", "nendo", "tha", "くまモン", "アイデア", "インタラクティブ", "インターフェース", "ウルフ・オリンス", "ウルム", "オペラ", "オープンソース", "キューブリック", "クリエイティブコーディング", "グリッドの破壊", "コンサート", "コンピュータ", "シノグラフィ", "ショー", "ジェネラティブ", "スクリーン", "スケッチ", "スター・ウォーズ", "スーパーノーマル", "スーパーポテト", "タフテ", "ダリ", "チャートジャンク論争", "テクノポップ", "ディレクション", "デザイン思考", "デザイン統括", "デザイン言語", "デモ", "トリック", "ドット", "ノイズ", "ノイラートの相方", "ハイコントラスト", "ハイパーテキスト", "バランス", "パターン", "ヒューメイン", "ブランド体験", "ブレヒト", "プロトタイピング", "マリメッコ", "メモリアル", "モノタイプ", "モンドリアン", "ユーザビリティ", "ユーモア", "ランドー・アソシエイツ", "レイアウト", "レスポンシブ", "レディメイド", "ロンドン地下鉄", "不在", "世界観", "中立", "二重の意味", "人間中心", "人間国宝", "人間工学", "仕掛け", "伝統の翻訳", "似顔絵", "作画", "使いやすさ", "俳優座", "公共", "公共空間", "分布", "医療", "匿名", "原則", "台座", "商業", "図像編集", "図形", "図解", "国家ブランド", "基準", "基準の組み替え", "多変量", "媒体", "宇宙観", "実務", "実験", "対比", "居心地", "張力", "彫刻性", "情報整理", "感覚", "戦略", "手の痕跡", "技術", "抽象マーク", "抽象空間", "持続", "推理", "操作系", "文字の図形化", "文字の塊", "文字の彫刻", "日本との関係", "日本デザインセンター", "曲面", "有機形", "柄", "検証", "概念設計", "構築", "機構", "欠け", "正方形と斜線", "演出", "無印良品", "無意識", "物質性", "現役", "生命", "生活提案", "用の美", "画家転向", "画面", "異物", "疫学", "白黒", "破壊", "社会性", "社会改革", "空間", "立体", "素材の組み替え", "素材感", "組み替え", "経年変化", "絞り込み", "絵画性", "総合演出", "総合芸術", "線", "耽美", "職人", "職業の成立", "脱構築", "航空", "花椿", "若者文化", "蜷川幸雄", "蝶", "規則", "視覚の遊び", "視覚変数", "観察", "記号学", "記号性", "記号言語", "記憶", "評論", "試作", "認知", "誠実さ", "説得", "資生堂", "赤と黒", "転用", "軸線", "軽さ", "透明", "遊び", "量", "静けさ", "非常口", "風景"].forEach(t=>TAG_FACETS_D[t]='theme');
-function tagFacet(t){ return DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme'); }
+/* ---------- v2.29: tag curation layer ----------
+   The facet lists above classify by exact tag string, so anything
+   unlisted fell into テーマ・概念 — by 2026-11 the artists theme pool
+   held 396 tags (284 of them singletons) including bookkeeping tags
+   (正典 / 収穫：…), and the designers data carried a parallel
+   structural system (時代：… / 領域：…) that also landed in theme.
+   This layer curates the CHOICES without touching stored data:
+   - TAG_NORM merges notation variants into one canonical tag
+     (counts, chips and filtering all work on canonical tags).
+   - TAG_OVR reassigns tags that sit in the wrong facet per the real
+     data (movements that were in theme, materials that were in
+     theme, countries that were in theme).
+   - 時代：… / 領域：… structural tags join 年代・国 / 分類 facets,
+     displayed without the prefix.
+   - Bookkeeping tags （収穫：…, 正典, 試験対策） never appear as
+     filter choices (they stay in the data and in detail views).
+   - Inside panels, facets are grouped with headings: 技法/素材
+     （書体 for designers), 年代/国・地域/運動・様式, 領域/分類,
+     and theme is tiered by how many artists carry the tag. */
+const TAG_NORM = {
+artists: {'地と図':'図と地','コンセプチュアル・アート':'コンセプチュアル','Flashe':'フラッシェ'},
+designers: {'ミニマル':'ミニマリズム','ポップ':'ポップアート','ランプ':'照明','織物':'テキスタイル'}
+};
+const TAG_OVR = {
+artists: {
+'シュルレアリスム':'jidaikuni','バウハウス':'jidaikuni','ポスト印象派':'jidaikuni','抽象表現主義':'jidaikuni','表現主義':'jidaikuni','ロマン主義':'jidaikuni','象徴主義':'jidaikuni','ナビ派':'jidaikuni','モダニズム':'jidaikuni','オプ・アート':'jidaikuni','ポストミニマリズム':'jidaikuni','アメリカ・モダニズム':'jidaikuni','円山派':'jidaikuni','もの派以後':'jidaikuni','オーストラリア':'jidaikuni','東北':'jidaikuni',
+'フラッシェ':'gihou','ジュート':'gihou','韓紙':'gihou','ラテックス':'gihou','ガラスビーズ':'gihou','ビーズ':'gihou','オイルスティック':'gihou','鉛':'gihou','金属':'gihou'
+},
+designers: {
+'ポップアート':'jidaikuni','ウィーン工房':'jidaikuni','ウルム':'jidaikuni','北欧モダニズム':'jidaikuni','ラディカルデザイン':'jidaikuni','ジャパニーズモダン':'jidaikuni','アイルランド':'jidaikuni','オーストリア':'jidaikuni','スウェーデン':'jidaikuni','スコットランド':'jidaikuni','ハンガリー':'jidaikuni',
+'金属':'gihou','陶器':'gihou','漆':'gihou','籐':'gihou','FRP':'gihou','スチールパイプ':'gihou',
+'照明':'bunrui','時計':'bunrui'
+}
+};
+const TAG_SOZAI = {
+artists: ['油彩','アクリル','木炭','パステル','エンコスティック','工業素材','大理石粉','蝋','紙','布','鉄','ガラス','石','綿布','モスリン','金地','織物','タイル','支持体','水','釘','素材','粉','自作絵の具','白亜地','古いキャンバス','最小素材','フラッシェ','ジュート','韓紙','ラテックス','ガラスビーズ','ビーズ','オイルスティック','鉛','金属'],
+designers: ['ガラス','コンクリート','スチール','プラスチック','ナイロン','紙','鋼管','素材','水','シェル','ウニッコ','宿根草','紬','金属','陶器','漆','籐','FRP','スチールパイプ']
+};
+const TAG_SHOTAI_D = ['書体','FF Meta','Georgia','Gill Sans','Helvetica','Mrs Eaves','Optima','Palatino','Times New Roman','Transport書体','Verdana','欧文書体','新聞書体','サンセリフ','書体実験','実験書体'];
+const TAG_NENDAI = {
+artists: ['現代','現代日本','日本の戦後','戦後日本','江戸','近代','ルネサンス','ドイツ戦後'],
+designers: ['近代','戦後','現代','古典','五輪','東京五輪']
+};
+const TAG_KUNI = {
+artists: ['日本','ポーランド','ドイツ','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','バンドン','オーストラリア','東北'],
+designers: ['日本','イギリス','フランス','アメリカ','イタリア','デンマーク','オランダ','ドイツ','ロシア','スイス','スペイン','チェコ','パリ','フィンランド','ブラジル','ベルギー','北欧','アイルランド','オーストリア','スウェーデン','スコットランド','ハンガリー']
+};
+function tagHidden(t){ return t==='正典' || t==='試験対策' || t.indexOf('収穫：')===0; }
+function normTag(t){ const m = TAG_NORM[DS]; return (m && m[t]) || t; }
+function normTagSet(a){ const s = new Set(); (a.tags||[]).forEach(t=>{ if(!tagHidden(t)) s.add(normTag(t)); }); return s; }
+function chipLabel(t){ return t.replace(/^時代：/,'').replace(/^領域：/,''); }
+function tagFacet(t){
+if(t.indexOf('時代：')===0) return 'jidaikuni';
+if(t.indexOf('領域：')===0) return 'bunrui';
+const ov = TAG_OVR[DS]; if(ov && ov[t]) return ov[t];
+return DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme');
+}
+/* subgroup inside a facet panel (null = no grouping for this facet) */
+function tagGroup(f, t){
+if(f==='gihou'){
+if(TAG_SOZAI[DS].indexOf(t)>=0) return '素材';
+if(DS==='designers' && TAG_SHOTAI_D.indexOf(t)>=0) return '書体';
+return '技法';
+}
+if(f==='jidaikuni'){
+if(t.indexOf('時代：')===0 || TAG_NENDAI[DS].indexOf(t)>=0) return '年代';
+if(TAG_KUNI[DS].indexOf(t)>=0) return '国・地域';
+return '運動・様式';
+}
+if(f==='bunrui' && DS==='designers'){
+return t.indexOf('領域：')===0? '領域': '分類';
+}
+return null;
+}
+const TAG_GROUP_ORDER = { gihou:['技法','素材','書体'], jidaikuni:['年代','国・地域','運動・様式'], bunrui:['領域','分類'] };
 function renderAbout(){
+const vb = $('verBadge'); if(vb) vb.textContent = 'v'+APP_VERSION;
 const el = $('aboutbox'); if(!el) return;
 const cnt = k=>liveDB(k).artists.length;
 const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
@@ -8380,13 +8461,17 @@ document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on',
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 $('navEx').classList.toggle('hidden',!(DS==='artists' && DB.exhibitions && DB.exhibitions.length));
-/* tag chips from all artists, grouped by facet */
+/* tag chips from all artists, grouped by facet.
+   v2.29: chips work on canonical tags (normTagSet merges notation
+   variants and drops bookkeeping tags); stored data stays raw. Any
+   selection saved before the curation is re-canonicalised here too. */
+if(state.tags && state.tags.size){ const nt = new Set(); state.tags.forEach(t=>{ if(!tagHidden(t)) nt.add(normTag(t)); }); state.tags = nt; }
 const counts = {};
-DB.artists.forEach(a=>(a.tags||[]).forEach(t=>{ counts[t]=(counts[t]||0)+1;}));
+DB.artists.forEach(a=>{ normTagSet(a).forEach(t=>{ counts[t]=(counts[t]||0)+1; }); });
 const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
-+esc(t)+' '+counts[t]+'</button>';
++esc(chipLabel(t))+' '+counts[t]+'</button>';
 /* accordion groups: one row per group; chips render only when the group is
    open (explicitly opened, or force-opened because a selected tag lives in it) */
 if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
@@ -8418,16 +8503,36 @@ tagHtml = bar;
 if(openF){
 const all = tags.filter(t=>tagFacet(t)===openF);
 if(all.length){
-let gtags = all, toggleBtn = '';
-if(openF==='theme' && all.length>TAG_LIMIT){
-if(!state.tagsOpen){
-gtags = all.slice(0,TAG_LIMIT);
-all.forEach(t=>{ if(state.tags.has(t) && gtags.indexOf(t)<0) gtags.push(t); });
+let panel = '', toggleBtn = '';
+if(openF==='theme'){
+/* v2.29: theme is tiered by carrier count — 主要 (3+) always shows;
+   その他 (2), 個別 (1) and the 系譜 group open with すべて表示.
+   A tier holding a selected tag is always shown. */
+const isKeifu = t=>t.indexOf('系譜：')===0 || t==='系譜';
+const tiers = [
+{label:'主要なテーマ', tags: all.filter(t=>counts[t]>=3 && !isKeifu(t))},
+{label:'その他のテーマ', tags: all.filter(t=>counts[t]===2 && !isKeifu(t))},
+{label:'個別タグ（1件のみ）', tags: all.filter(t=>counts[t]===1 && !isKeifu(t))},
+{label:'系譜', tags: all.filter(isKeifu)}
+].filter(g=>g.tags.length);
+let hiddenN = 0;
+tiers.forEach((g,ix)=>{
+const hasSel = g.tags.some(t=>state.tags.has(t));
+if(ix>0 && !state.tagsOpen && !hasSel){ hiddenN += g.tags.length; return; }
+panel += '<div class="facetgh">'+esc(g.label)+'</div><div class="taggrouprow">'+g.tags.map(tagChip).join('')+'</div>';
+});
+if(hiddenN>0 || state.tagsOpen) toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
+} else {
+const order = TAG_GROUP_ORDER[openF];
+const byG = {}; if(order) all.forEach(t=>{ const g = tagGroup(openF,t); (byG[g]=byG[g]||[]).push(t); });
+const present = order? order.filter(g=>byG[g] && byG[g].length): [];
+if(present.length>1){
+present.forEach(g=>{ panel += '<div class="facetgh">'+esc(g)+'</div><div class="taggrouprow">'+byG[g].map(tagChip).join('')+'</div>'; });
+} else {
+panel = '<div class="taggrouprow">'+all.map(tagChip).join('')+'</div>';
 }
-toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'
-+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
 }
-tagHtml += '<div class="facetpanel"><div class="taggrouprow">'+gtags.map(tagChip).join('')+toggleBtn+'</div></div>';
+tagHtml += '<div class="facetpanel">'+panel+toggleBtn+'</div>';
 }
 }
 } else {
@@ -9256,9 +9361,26 @@ function appStatusInfo(){
   if(getValidToken()) return { label:'接続済み（未同期）', cls:'' };
   return { label:'Drive未接続（端末内に保存中）', cls:'' };
 }
+/* v2.29: the header sync bar is the primary sync control (the diary
+   pattern): it shows the state at all times and tapping it connects
+   when disconnected, re-syncs when connected, retries on error.
+   The settings Drive panel keeps the details and disconnect. */
+function onSyncBarTap(){
+  if(appSyncRunning) return;
+  if(getValidToken()) appSyncBtn(); else connectDrive();
+}
 function renderSyncStatus(){
   const cur = ctxStatus(DS);
-  const bar = $('syncbar'); if(bar) bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>';
+  const bar = $('syncbar');
+  if(bar){
+    let hint = '';
+    if(!appSyncRunning){
+      if(cur.cls==='err') hint = ' ・ <span class="sbhint">タップで再試行</span>';
+      else if(getValidToken()) hint = ' ・ <span class="sbhint">タップで再同期</span>';
+      else hint = ' ・ <span class="sbhint">タップで接続</span>';
+    }
+    bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>'+hint;
+  }
   const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>'; }
   const dv = $('driveval'); if(dv) dv.textContent = driveVal();
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
@@ -9718,7 +9840,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.28';
+const APP_VERSION = '2.29';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
