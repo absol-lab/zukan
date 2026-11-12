@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.41">
+<meta name="app-version" content="2.42">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -292,6 +292,17 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galrow .gmeta{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
 .galrow .gext{position:absolute; top:8px; right:10px; color:var(--accent); font-size:12px;}
 .galsub{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:16px 2px 0;}
+/* v2.42: registration requests */
+.reqinput{width:100%; font-size:16px; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); margin-top:12px; font-family:var(--sans);}
+.reqrow{display:flex; align-items:flex-start; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line);}
+.reqrow .rqname{font-weight:600; font-size:15px;}
+.reqrow .rqdate{font-size:12px; color:var(--muted); white-space:nowrap;}
+.reqrow .rqnote{display:block; font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.reqchip{margin-left:auto; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; background:var(--card2); color:var(--muted);}
+.reqchip.pending{color:var(--accent);}
+.reqchip.registered{color:var(--accent);}
+.reqchip.declined{color:var(--danger);}
+.reqcta{margin:18px auto 0; max-width:420px; text-align:center;}
 /* timeline / quiz */
 .tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
 .tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
@@ -8657,7 +8668,15 @@ updateSlimTools();
 function renderListBody(){
 const arr = filteredArtists();
 const body = $('listbody');
-if(!arr.length){ body.innerHTML = '<div class="empty">該当する項目がありません</div>'; return;}
+if(!arr.length){
+let h = '<div class="empty">該当する項目がありません</div>';
+const q = (state.query||'').trim();
+if(q){
+  if(artistAlreadyKnown(q)) h += '<div class="note" style="text-align:center">「'+esc(q)+'」は図鑑に登録済みです（別表記の可能性があります）</div>';
+  else if(reqAllItems().some(r=> reqNorm(r.name)===reqNorm(q) && (r._local || r.status==='pending'))) h += '<div class="note" style="text-align:center">「'+esc(q)+'」は登録を依頼中です</div>';
+  else h += '<div class="reqcta"><button class="blockbtn" onclick="submitRequestFromSearch()">「'+esc(q)+'」の登録を依頼する</button><div class="small" style="margin-top:8px">名前を送ると Muse が調べて図鑑に登録します（カタカナのままでOK）</div></div>';
+}
+body.innerHTML = h; return;}
 const order = [];
 DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
 arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
@@ -8912,9 +8931,10 @@ function setExSort(m){
    the gallery's official exhibitions page in Safari. */
 /* v2.38: expanded to 23 venues in three groups — the user's home-screen
    "gallery" and "Collection" folders both move in here so he can delete
-   them. Every URL verified on the official site 2026-11-12. Counts show
-   only when the encyclopedia data has current/upcoming exhibitions at
-   that venue (venue substring match absorbs 표기 variants). */
+   them. Every URL verified on the official site 2026-11-12. Counts
+   (0 included) are always shown since v2.39; the count is the number
+   of current/upcoming exhibitions at that venue in the app's data
+   (venue substring match absorbs notation variants). */
 /* v2.40: groups are by PLACE (headquarters city), not by venue type —
    the user's call. Mega-galleries sit in exactly one group (their home
    city); type survives only as the within-group ordering (galleries
@@ -9757,6 +9777,7 @@ async function runAppSync(reason, showResults){
     }
   }finally{
     appSyncRunning = false; renderSyncStatus();
+    try{ flushArtistRequests(); }catch(e){}
   }
 }
 function appSyncBtn(){
@@ -9779,6 +9800,115 @@ function sbMaxUpdated(data){
   arr.forEach(a=>{ const t = Date.parse((a && a.updated_at) || ''); if(!isNaN(t) && t>m) m = t; });
   return m;
 }
+
+/* ---------- v2.42: registration requests ----------
+   The user types a name (katakana is fine — identification is the
+   processor's job); the Muse side (Art Labo) verifies the person is
+   a real practicing artist/designer, registers them with works, and
+   writes the outcome back into the same file. Transport is a Drive
+   file the APP creates (zukan-requests.json): drive.file scope means
+   the processor finds it by name from the user's full Drive access.
+   Offline submissions wait in a local outbox and flush on the next
+   sync; statuses are read back from the file whenever the panel opens.
+   File shape: { requests: [{ id, name, requested_at, status:
+   'pending'|'registered'|'declined', note?, resolved_at? }],
+   updatedAt } — the processor only edits status/note/resolved_at of
+   existing items and never deletes; the app only appends. */
+const REQ_FILE = 'zukan-requests.json';
+const LS_REQ_OUTBOX = 'zukan.requests.outbox';
+const LS_REQ_CACHE = 'zukan.requests.cache';
+function reqNorm(s){ return String(s||'').replace(/[\s　・･.,、:：]/g,'').toLowerCase(); }
+function reqOutbox(){ try{ const a = JSON.parse(storeGet(LS_REQ_OUTBOX)||'[]'); return Array.isArray(a)? a: []; }catch(e){ return []; } }
+function reqSaveOutbox(a){ try{ storeSet(LS_REQ_OUTBOX, JSON.stringify(a)); }catch(e){} }
+function reqCache(){ try{ const d = JSON.parse(storeGet(LS_REQ_CACHE)||'null'); return (d && Array.isArray(d.requests))? d: { requests: [] }; }catch(e){ return { requests: [] }; } }
+function reqSaveCache(d){ try{ storeSet(LS_REQ_CACHE, JSON.stringify(d)); }catch(e){} }
+function reqAllItems(){
+  const remote = reqCache().requests || [];
+  const ids = {}; remote.forEach(r=>{ ids[r.id]=1; });
+  const local = reqOutbox().filter(r=>!ids[r.id]).map(r=>Object.assign({}, r, { _local:true }));
+  return remote.concat(local).sort((a,b)=> String(b.requested_at||'').localeCompare(String(a.requested_at||'')));
+}
+function reqSummaryLabel(){
+  const n = reqAllItems().filter(r=> r._local || r.status==='pending').length;
+  return n? ('依頼中 '+n+'件') : '';
+}
+function reqStatusOf(r){
+  if(r._local) return { key:'queued', label:'送信待ち' };
+  if(r.status==='registered') return { key:'registered', label:'✓ 登録済み' };
+  if(r.status==='declined') return { key:'declined', label:'見送り' };
+  return { key:'pending', label:'依頼中' };
+}
+function artistAlreadyKnown(name){
+  const n = reqNorm(name); if(!n) return null;
+  for(const k of ['artists','designers']){
+    let db = null; try{ db = liveDB(k); }catch(e){}
+    if(!db) continue;
+    for(const a of (db.artists||[])){
+      if(reqNorm(a.name)===n || reqNorm(a.name_en||'')===n || reqNorm(a.name_latin||'')===n || reqNorm(a.name_kana||'')===n) return a;
+    }
+  }
+  return null;
+}
+function requestName(name, source){
+  name = String(name||'').trim();
+  if(!name){ toast('名前を入力してください'); return false; }
+  if(artistAlreadyKnown(name)){ toast('「'+name+'」はすでに図鑑に登録されています'); return false; }
+  const n = reqNorm(name);
+  if(reqAllItems().some(r=> reqNorm(r.name)===n && (r._local || r.status==='pending'))){ toast('「'+name+'」はすでに依頼中です'); return false; }
+  const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), name:name, requested_at:new Date().toISOString(), status:'pending' };
+  const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
+  flushArtistRequests();
+  toast(getValidToken()? '登録を依頼しました（完了まで数十分かかることがあります）' : '送信待ちに保存しました（Drive接続時に送られます）', 3600);
+  if(settingsPanel==='request') renderRequestList();
+  if(source==='search') renderListBody();
+  return true;
+}
+async function flushArtistRequests(){
+  const tok = getValidToken(); if(!tok) return;
+  try{
+    let file = await findDataFileFor(tok, REQ_FILE);
+    let data = { requests: [], updatedAt: '' };
+    if(file){
+      const res = await driveReq(tok, '/files/'+encodeURIComponent(file.id)+'?alt=media', null, 60000);
+      if(res.ok){ const j = await res.json(); if(j && Array.isArray(j.requests)) data = j; }
+    }
+    if(!Array.isArray(data.requests)) data.requests = [];
+    const ids = {}; data.requests.forEach(r=>{ ids[r.id]=1; });
+    let changed = false;
+    reqOutbox().forEach(r=>{ if(!ids[r.id]){ data.requests.push(r); changed = true; } });
+    data.updatedAt = new Date().toISOString();
+    if(!file){
+      const created = await createDataFileFor(tok, REQ_FILE, data);
+      if(created && created.id) file = { id: created.id };
+    } else if(changed){ await uploadDataUpdateFor(tok, file.id, data); }
+    reqSaveCache(data);
+    reqSaveOutbox(reqOutbox().filter(r=> !data.requests.some(d=>d.id===r.id)));
+    if(settingsPanel==='request') renderRequestList();
+    if(view==='settings' && !settingsPanel) renderSettingsMain();
+  }catch(e){ /* stays queued; retried on next sync / panel open */ }
+}
+function refreshRequests(){
+  if(!getValidToken()){ renderRequestList(); return; }
+  flushArtistRequests();
+}
+function renderRequestList(){
+  const el = $('reqlist'); if(!el) return;
+  const conn = $('reqconn');
+  if(conn) conn.textContent = getValidToken()? '' : 'Drive未接続のため、依頼は端末内に「送信待ち」として保存され、接続した時に送られます。';
+  const items = reqAllItems();
+  if(!items.length){ el.innerHTML = '<div class="empty">まだ依頼はありません</div>'; return; }
+  el.innerHTML = items.map(r=>{
+    const st = reqStatusOf(r);
+    const d = r.requested_at? new Date(r.requested_at): null;
+    const ds = d && !isNaN(d)? (d.getMonth()+1)+'/'+d.getDate() : '';
+    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
+  }).join('');
+}
+function submitRequestFromPanel(){
+  const inp = $('reqname'); if(!inp) return;
+  if(requestName(inp.value, 'panel')) inp.value = '';
+}
+function submitRequestFromSearch(){ requestName(state.query, 'search'); }
 
 /* ---------- pill nav swipe ---------- */
 (function(){
@@ -10008,7 +10138,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.41';
+const APP_VERSION = '2.42';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10244,6 +10374,7 @@ function applyAppearance(){
 }
 const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
+  personPlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7.8" r="3.4"/><path d="M3.8 19.6c.7-3 3.1-4.7 6.2-4.7 1.5 0 2.9.4 3.9 1.2"/><path d="M18.6 12.2v6.6M15.3 15.5h6.6"/></svg>',
   palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
@@ -10278,6 +10409,7 @@ function renderSettingsMain(){
   m.innerHTML =
     '<div class="setttl">設定</div>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'drive\')"><span class="ic">'+SICON.cloud+'</span><span class="lb">Google Drive 同期</span><span id="driveval">'+esc(driveVal())+'</span><span class="chev">›</span></button>'+
+    '<button class="pillrow" onclick="openSettingsPanel(\'request\')"><span class="ic">'+SICON.personPlus+'</span><span class="lb">作家・デザイナーの登録依頼</span><span>'+esc(reqSummaryLabel())+'</span><span class="chev">›</span></button>'+
     '<div class="groupcard">'+
       srow(SICON.palette, 'テーマカラー', themeName(), "openSettingsPanel('theme')")+
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
@@ -10386,6 +10518,18 @@ function renderSettingsPanel(){
       '<div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>'+
       '</div>');
     renderSyncStatus();
+  }
+  else if(settingsPanel==='request'){
+    p.innerHTML = panelShell('登録依頼',
+      '<div class="setbox">'+
+      '<div class="small">雑誌やネットで見つけた作家・デザイナーの名前を送ると、Muse が素性を調べて図鑑に登録します。スペルが分からなければカタカナのままで大丈夫です。登録まで数十分かかることがあります。</div>'+
+      '<input class="reqinput" id="reqname" type="text" placeholder="名前（例：アンゼルムキーファー）" autocomplete="off">'+
+      '<button class="blockbtn" onclick="submitRequestFromPanel()">この名前で登録を依頼する</button>'+
+      '<div id="reqconn" class="note"></div>'+
+      '</div>'+
+      '<div class="setbox"><div class="setlabel">依頼の履歴</div><div id="reqlist"></div></div>');
+    renderRequestList();
+    refreshRequests();
   }
   else if(settingsPanel==='diag'){
     p.innerHTML = panelShell('画像診断',
