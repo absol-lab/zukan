@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.67">
+<meta name="app-version" content="2.68">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -321,28 +321,40 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .bookmeta .bt{font-size:15px; font-weight:700; line-height:1.45;}
 .bookmeta .bm{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .bookmeta .bp{font-size:15px; font-weight:700; margin-top:3px;}
-/* v2.67: exhibition calendar */
+/* v2.67: exhibition calendar — v2.68 restyled after the diary
+   app's calendar (the user's reference): full-bleed month grid,
+   thin lines, date number top-left (Sunday red, Saturday blue),
+   today framed in white, a faint giant month numeral behind the
+   grid, and the events as solid name chips stacked inside cells. */
 .calnav{display:flex; align-items:center; gap:8px; margin-top:12px;}
-.calnav .caltitle{font-size:17px; font-weight:700; letter-spacing:.04em;}
-.calwd{display:grid; grid-template-columns:repeat(7,1fr); margin-top:10px;}
-.calwd span{text-align:center; font-size:11px; color:var(--muted); padding:2px 0;}
-.calweek{margin-top:4px;}
-.caldays{display:grid; grid-template-columns:repeat(7,1fr);}
-.calday{text-align:center; font-size:12.5px; padding:2px 0; color:var(--text);}
-.calday.dim{color:var(--muted); opacity:.5;}
-.calday .tnum{display:inline-block; min-width:20px;}
-.calday.today .tnum{background:var(--accent); color:#fff; border-radius:999px; font-weight:700;}
-.calday .covf{display:block; font-size:9px; color:var(--muted); line-height:1;}
-.callane{display:grid; grid-template-columns:repeat(7,1fr); margin-top:2px;}
-.calbar{font-size:10.5px; line-height:1.45; padding:1px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:999px; cursor:pointer; min-height:16px; margin:0 1px;}
-.calbar.contl{border-top-left-radius:2px; border-bottom-left-radius:2px;}
-.calbar.contr{border-top-right-radius:2px; border-bottom-right-radius:2px;}
-.calbar.st-current{background:var(--accent); color:#fff;}
-.calbar.st-ending{background:var(--danger); color:#fff;}
-.calbar.st-future{background:none; border:1px solid var(--muted); color:var(--muted); padding:0 5px;}
-.calbar.st-past{background:var(--line); color:var(--muted);}
+.calnav .caltitle{font-size:22px; font-weight:800; letter-spacing:.03em;}
 .callegend{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--muted);}
 .callegend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+.calwrap{position:relative; margin-top:12px; border-top:1px solid var(--line); border-left:1px solid var(--line);}
+.calmark{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:210px; font-weight:800; color:rgba(255,255,255,.05); pointer-events:none; z-index:0; line-height:1;}
+.calgrid{position:relative; z-index:1; display:grid; grid-template-columns:repeat(7,1fr);}
+.calwdcell{text-align:center; font-size:12px; font-weight:700; color:var(--muted); padding:6px 0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:rgba(255,255,255,.03);}
+.calwdcell.sun{color:var(--danger);}
+.calwdcell.sat{color:var(--tag);}
+.calcell{border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-height:106px; padding:3px 3px 4px; cursor:pointer; overflow:hidden;}
+.calcell.dim .calnum{opacity:.45;}
+.calcell.today{box-shadow:inset 0 0 0 2px #fff; background:rgba(255,255,255,.06);}
+.calcell.selday{box-shadow:inset 0 0 0 2px var(--tag);}
+.calcell.today.selday{box-shadow:inset 0 0 0 2px #fff, inset 0 0 0 4px var(--tag);}
+.calnum{font-size:15px; font-weight:600; line-height:1.2;}
+.calcell.sun .calnum{color:var(--danger);}
+.calcell.sat .calnum{color:var(--tag);}
+.calchip{display:block; margin-top:3px; padding:1px 4px; font-size:10.5px; font-weight:700; line-height:1.5; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:2px; cursor:pointer;}
+.calchip.st-current{background:var(--tag);}
+.calchip.st-ending{background:var(--danger);}
+.calchip.st-future{background:rgba(255,255,255,.18); color:var(--text);}
+.calchip.st-past{background:rgba(255,255,255,.07); color:var(--muted);}
+.calchip.end{filter:brightness(.8);}
+.calmore{display:block; margin-top:2px; font-size:10px; color:var(--muted); padding-left:2px;}
+.caldayitem{display:flex; gap:8px; align-items:baseline; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin-top:7px; color:var(--text); cursor:pointer;}
+.caldayitem .dot{flex:none; width:9px; height:9px; border-radius:3px; transform:translateY(-1px);}
+.caldayitem .tt{font-size:14px; font-weight:600; line-height:1.4;}
+.caldayitem .mm{font-size:11.5px; color:var(--muted);}
 .corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
 .corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
 .corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
@@ -9547,18 +9559,15 @@ function renderNews(){
   v.innerHTML = html;
 }
 
-/* ---------- exhibition calendar: v2.67 ----------
-   A month grid whose weeks carry span bars for each exhibition's
-   run (start_date..end_date, clipped at week edges, continuation
-   corners squared). Status is computed against today: 開催中
-   (accent) / まもなく終了 (ends within 7 days, danger) / これから
-   (outline) / 終了 (dim). Exhibitions without a start_date cannot
-   be placed and are counted in a note instead of silently dropped;
-   a missing end_date renders as an open-ended run and is labelled
-   as such in the detail card. Tapping a bar selects the exhibition
-   and shows its card under the grid. */
+/* ---------- exhibition calendar (v2.67; restyled v2.68) ----------
+   Exhibitions without a start_date cannot be placed and are
+   counted in a note instead of silently dropped; a missing
+   end_date is labelled 終了日未登録 in the card and day panel.
+   Status is computed against today: 開催中 / まもなく終了 (ends
+   within 7 days) / これから / 終了. */
 let calCursor = null;
 let calSelId = null;
+let calDaySel = null; /* selected day (YYYY-MM-DD) for the day panel */
 function openCalendar(){
   if(view==='cal') return;
   if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
@@ -9578,66 +9587,80 @@ function calMove(dm){
   if(m < 0){ m = 11; y--; } if(m > 11){ m = 0; y++; }
   calCursor = { y: y, m: m }; renderCal();
 }
-function calToday(){ calCursor = null; renderCal(); }
+function calToday(){ calCursor = null; calDaySel = null; renderCal(); }
 function calSelect(id){ calSelId = (String(calSelId)===String(id))? null: id; renderCal(); }
+function calSelectDay(ds){ calDaySel = (calDaySel===ds)? null: ds; renderCal(); }
+/* v2.68: the calendar follows the diary app's calendar language —
+   solid name chips inside tall cells (start day = title; end day =
+   title + 「終」dimmed; a run already under way on the 1st gets a
+   « chip there), today framed in white, Sunday red / Saturday
+   blue, and a faint giant month numeral behind the grid. Runs are
+   read as start chip -> end chip; the full run is always one tap
+   away in the day panel under the grid, which lists everything
+   active on the tapped day with full titles (chips truncate). */
 function renderCal(){
   const v = $('viewCal'); if(!v) return;
   const now = new Date();
   if(!calCursor) calCursor = { y: now.getFullYear(), m: now.getMonth() };
   const y = calCursor.y, m = calCursor.m;
   const tstr = calDayStr(now);
+  if(!calDaySel) calDaySel = (y===now.getFullYear() && m===now.getMonth())? tstr: calDayStr(new Date(y, m, 1));
   const adb = liveDB('artists');
   const all = (adb && adb.exhibitions) || [];
   const exs = all.filter(e=> e.start_date);
   const noDate = all.length - exs.length;
   const first = new Date(y, m, 1);
   const gridStart = new Date(y, m, 1 - first.getDay());
+  const totalDays = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7) * 7;
+  const monthFirst = calDayStr(first);
+  /* chips per day: kind start | end | cont */
+  const byDay = {};
+  const push = (ds, e, kind)=>{ (byDay[ds] = byDay[ds] || []).push({ e: e, kind: kind, st: exStatusOf(e, tstr) }); };
+  exs.forEach(e=>{
+    const s = e.start_date, en = e.end_date || '';
+    push(s, e, 'start');
+    if(en && en !== s) push(en, e, 'end');
+    if(s < monthFirst && (!en || en >= monthFirst)) push(monthFirst, e, 'cont');
+  });
+  const kindRank = { end: 0, start: 1, cont: 2 };
+  Object.values(byDay).forEach(list => list.sort((a,b)=> kindRank[a.kind]-kindRank[b.kind] || String(a.e.title||'').localeCompare(String(b.e.title||''))));
   let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
-  html += '<div class="calnav"><button class="btn" onclick="calMove(-1)">‹ 前月</button><span class="caltitle">'+y+'年'+(m+1)+'月</span><button class="btn" onclick="calMove(1)">翌月 ›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
-  html += '<div class="callegend"><span><i style="background:var(--accent)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="border:1px solid var(--muted)"></i>これから</span><span><i style="background:var(--line)"></i>終了</span></div>';
-  html += '<div class="calwd"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>';
-  const totalWeeks = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7);
-  for(let w=0; w<totalWeeks; w++){
-    const wStart = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w*7);
-    const ws = calDayStr(wStart);
-    const wEnd = new Date(wStart.getFullYear(), wStart.getMonth(), wStart.getDate()+6);
-    const we = calDayStr(wEnd);
-    html += '<div class="calweek"><div class="caldays">';
-    for(let d=0; d<7; d++){
-      const dt = new Date(wStart.getFullYear(), wStart.getMonth(), wStart.getDate()+d);
-      const inMonth = dt.getMonth()===m;
-      const isToday = calDayStr(dt)===tstr;
-      html += '<div class="calday'+(inMonth?'':' dim')+(isToday?' today':'')+'"><span class="tnum">'+dt.getDate()+'</span></div>';
-    }
-    html += '</div>';
-    const segs = [];
-    exs.forEach(e=>{
-      const s = e.start_date, en = e.end_date || '9999-12-31';
-      if(en < ws || s > we) return;
-      const cs = s < ws? ws: s, ce = en > we? we: en;
-      const c0 = Math.round((new Date(cs+'T00:00:00') - new Date(ws+'T00:00:00'))/86400000);
-      const c1 = Math.round((new Date(ce+'T00:00:00') - new Date(ws+'T00:00:00'))/86400000);
-      segs.push({ e: e, c0: c0, c1: c1, contl: s < ws, contr: en > we, st: exStatusOf(e, tstr) });
+  html += '<div class="calnav"><button class="btn" onclick="calMove(-1)">‹</button><span class="caltitle">'+y+'年'+(m+1)+'月</span><button class="btn" onclick="calMove(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
+  html += '<div class="callegend"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span><span>「終」は最終日</span></div>';
+  html += '<div class="calwrap"><div class="calmark">'+(m+1)+'</div><div class="calgrid">';
+  ['日','月','火','水','木','金','土'].forEach((wd, i)=>{ html += '<div class="calwdcell'+(i===0?' sun': i===6?' sat': '')+'">'+wd+'</div>'; });
+  for(let d=0; d<totalDays; d++){
+    const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+d);
+    const ds = calDayStr(dt);
+    const inMonth = dt.getMonth()===m;
+    const dow = dt.getDay();
+    const chips = byDay[ds] || [];
+    const shown = chips.slice(0, 4);
+    html += '<div class="calcell'+(inMonth?'':' dim')+(ds===tstr?' today':'')+(ds===calDaySel?' selday':'')+(dow===0?' sun': dow===6?' sat': '')+'" onclick="calSelectDay(\''+ds+'\')"><div class="calnum">'+dt.getDate()+'</div>';
+    shown.forEach(c=>{
+      const label = c.kind==='end'? (c.e.title||'')+' 終': c.kind==='cont'? '« '+(c.e.title||''): (c.e.title||'');
+      html += '<span class="calchip st-'+c.st+(c.kind==='end'?' end':'')+'" onclick="event.stopPropagation(); calSelect(\''+escA(c.e.id||'')+'\')">'+esc(label)+'</span>';
     });
-    segs.sort((a,b)=> a.c0-b.c0 || ((b.c1-b.c0)-(a.c1-a.c0)));
-    const lanes = [];
-    segs.forEach(sg=>{
-      let placed = false;
-      for(const lane of lanes){ if(lane.every(o=> sg.c1 < o.c0 || sg.c0 > o.c1)){ lane.push(sg); placed = true; break; } }
-      if(!placed) lanes.push([sg]);
-    });
-    const MAXLANES = 4;
-    lanes.slice(0, MAXLANES).forEach(lane=>{
-      html += '<div class="callane">';
-      lane.forEach(sg=>{
-        html += '<div class="calbar st-'+sg.st+(sg.contl?' contl':'')+(sg.contr?' contr':'')+'" style="grid-column:'+(sg.c0+1)+' / '+(sg.c1+2)+'" onclick="calSelect(\''+escA(sg.e.id||'')+'\')">'+(sg.c1>sg.c0? esc(sg.e.title||''): '')+'</div>';
-      });
-      html += '</div>';
-    });
-    if(lanes.length > MAXLANES) html += '<div class="small" style="margin:2px 2px 0">この週は他に '+(lanes.slice(MAXLANES).flat().length)+' 件の展示があります</div>';
+    if(chips.length > shown.length) html += '<span class="calmore">+'+(chips.length - shown.length)+' 件</span>';
     html += '</div>';
   }
+  html += '</div></div>';
   if(noDate) html += '<div class="note" style="margin-top:12px">日付が未登録の展示が '+noDate+' 件あり、カレンダーには表示されません。</div>';
+  /* day panel: everything active on the selected day, full titles */
+  if(calDaySel){
+    const act = exs.filter(e=> e.start_date <= calDaySel && (!e.end_date || e.end_date >= calDaySel))
+      .sort((a,b)=> String(a.start_date).localeCompare(String(b.start_date)));
+    const dd = new Date(calDaySel+'T00:00:00');
+    html += '<h2 class="sechead"><span>'+(dd.getMonth()+1)+'月'+dd.getDate()+'日</span><span class="cnt">開催中 '+act.length+'件</span></h2>';
+    if(!act.length) html += '<div class="empty">この日の展示はありません</div>';
+    act.forEach(e=>{
+      const st = exStatusOf(e, tstr);
+      const dot = st==='current'? 'var(--tag)': st==='ending'? 'var(--danger)': st==='future'? 'rgba(255,255,255,.18)': 'rgba(255,255,255,.07)';
+      const role = e.start_date===calDaySel? '初日': (e.end_date===calDaySel? '最終日': '会期中');
+      html += '<button class="caldayitem" onclick="calSelect(\''+escA(e.id||'')+'\')"><span class="dot" style="background:'+dot+'"></span><span><span class="tt">'+esc(e.title||'')+'</span><br><span class="mm">'+esc(e.venue||'')+'　'+esc(e.start_date||'')+' – '+esc(e.end_date||'未登録')+'（'+role+'）</span></span></button>';
+    });
+  }
+  /* selected exhibition card */
   const sel = calSelId!=null? exs.find(e=> String(e.id)===String(calSelId)): null;
   if(sel){
     const st = exStatusOf(sel, tstr);
@@ -10955,7 +10978,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.67';
+const APP_VERSION = '2.68';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
