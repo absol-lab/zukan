@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="3.0">
+<meta name="app-version" content="3.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -338,6 +338,15 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
 .upat{font-size:12px; color:var(--muted);}
+/* v3.1: 作品でたどる歩み — dated works grouped by year inside
+   the biography tab, small thumbs, age shown beside the year. */
+.biowrap{display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); align-items:flex-start;}
+.bioyear{flex:none; width:88px; font-size:12.5px; font-weight:700; padding-top:4px;}
+.biothumbs{display:flex; flex-wrap:wrap; gap:6px;}
+.biothumb{width:52px; height:52px; padding:0; border-radius:8px; overflow:hidden; border:1px solid var(--line); background:var(--bg2);}
+.biothumb .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.biothumb .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.biothumb .imgholder .noimg{font-size:10px; color:var(--muted); letter-spacing:.15em;}
 .ratebtns{margin-left:auto; display:flex; gap:8px; align-self:center;}
 .ratebtn{width:44px; height:40px; border-radius:999px; border:1px solid var(--line); background:var(--bg2); font-size:17px; line-height:1; padding:0; filter:grayscale(1); opacity:.45;}
 .ratebtn.on{filter:none; opacity:1;}
@@ -9174,6 +9183,29 @@ pg.addEventListener('load', ()=>fitDPagerHeight(), true);
 requestAnimationFrame(()=>fitDPagerHeight());
 setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
 }
+/* v3.1: 作品でたどる歩み — in the biography tab, the person's
+   dated works grouped by year with small thumbnails (his
+   follow-up: period works shown small read well against the
+   chronology). The year row carries his age that year whenever
+   a birth year can be read from the record's years field. */
+function bioWorksStrip(a, ws){
+  const dated = [];
+  (ws || []).forEach((w, i)=>{ const y = workYearOf(w); if(y) dated.push({ y: y, i: i, w: w }); });
+  if(dated.length < 2) return '';
+  const by = {};
+  dated.forEach(d=>{ (by[d.y] = by[d.y] || []).push(d); });
+  const yrs = Object.keys(by).sort((x, y)=> x - y);
+  const bm = /(\d{4})/.exec(a.years || '');
+  const birth = bm? parseInt(bm[1], 10): null;
+  let h = '<h3 class="subhead">作品でたどる歩み</h3>';
+  yrs.forEach(y=>{
+    const age = (birth && +y >= birth)? '（'+(+y - birth)+'歳）': '';
+    h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
+      + by[y].map(d=> '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+'</button>').join('')
+      + '</div></div>';
+  });
+  return h;
+}
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
@@ -9232,6 +9264,7 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
 }
 bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
+bioHTML += bioWorksStrip(a, ws);
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+esc(sp.tech)+'</div>';
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+esc(sp.rest)+'</div>';
@@ -11618,7 +11651,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
