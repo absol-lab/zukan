@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="7.0">
+<meta name="app-version" content="8.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9013,11 +9013,20 @@ renderList();
    全角半角が違っても当たる (his words). Folds: full-width
    alphanumerics to half-width, hiragana to katakana, lowercase,
    and ・･, spaces, hyphens and the long-vowel mark removed. */
+/* v8.0: variant glyphs fold into one form on BOTH sides (query
+   and index), so 會見 finds 会見， 齋藤 finds 斎藤， ヴァ/ヂヅ/small
+   kana spellings stop mattering. */
+const KANJI_VARIANTS = { '會':'会','齋':'斎','斉':'斎','櫻':'桜','邊':'辺','髙':'高','淸':'清','瀨':'瀬','澤':'沢','廣':'広','德':'徳','眞':'真','龍':'竜','龜':'亀','亞':'亜','國':'国','圓':'円','繪':'絵','絲':'糸','黑':'黒','﨑':'崎','嶋':'島','嶌':'島','藝':'芸','檜':'桧','冨':'富','瀧':'滝' };
+const SMALL_KANA = { 'ァ':'ア','ィ':'イ','ゥ':'ウ','ェ':'エ','ォ':'オ','ャ':'ヤ','ュ':'ユ','ョ':'ヨ','ッ':'ツ','ヮ':'ワ','ヵ':'カ','ヶ':'ケ' };
 function normSearch(s){
 let t = String(s||'');
 t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
 t = t.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
 t = t.toLowerCase();
+t = t.replace(/[會齋斉櫻邊髙淸瀨澤廣德眞龍龜亞國圓繪絲黑﨑嶋嶌藝檜冨瀧]/g, c => KANJI_VARIANTS[c] || c);
+t = t.replace(/ヴァ/g, 'バ').replace(/ヴィ/g, 'ビ').replace(/ヴェ/g, 'ベ').replace(/ヴォ/g, 'ボ').replace(/ヴ/g, 'ブ');
+t = t.replace(/ヂ/g, 'ジ').replace(/ヅ/g, 'ズ');
+t = t.replace(/[ァィゥェォャュョッヮヵヶ]/g, c => SMALL_KANA[c] || c);
 t = t.replace(/[・･\s　\-‐ー―–—_]/g, '');
 return t;
 }
@@ -9053,27 +9062,103 @@ out += hit;
 }
 return out;
 }
-function filteredArtists(){
-let arr = DB.artists;
-const qRaw = state.query;
-if(qRaw && qRaw.trim()){
-const toks = qRaw.split(/\s+/).map(normSearch).filter(Boolean);
-if(toks.length){
-arr = arr.filter(a=>{
-const hay = normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' ')].join('\n'));
+/* v8.0: the search index/matcher as reusable units — the same
+   matcher now serves the current dataset, the cross-dataset
+   section and the near-miss rescue. Work captions joined the
+   index (a work's title used to be findable only when it also
+   appeared in key_works/notes). */
+function artistHay(a){
+return normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' '),(a.works||[]).map(w=>w.caption||'').join(' ')].join('\n'));
+}
+function artistMatches(a, toks){
+const hay = artistHay(a);
 return toks.every(tok=>{
 if(hay.indexOf(tok) >= 0) return true;
 const kv = romajiToKana(tok);
 return kv? hay.indexOf(normSearch(kv)) >= 0: false;
 });
-});
 }
+function queryToks(){
+const q = state.query;
+if(!q || !q.trim()) return [];
+return q.split(/\s+/).map(normSearch).filter(Boolean);
+}
+function filteredArtists(){
+let arr = DB.artists;
+const toks = queryToks();
+if(toks.length){
+arr = arr.filter(a=>artistMatches(a, toks));
 }
 if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
 if(favFilter) arr = arr.filter(a=> isFavPerson(DS, a.id));
 return arr;
+}
+/* v8.0: cross-dataset hits — a search no longer dead-ends at the
+   current side of the encyclopedia. The other dataset is matched
+   with the same index; tapping a hit switches over and opens. */
+function crossMatches(){
+const toks = queryToks(); if(!toks.length) return [];
+const other = DS==='artists'? 'designers':'artists';
+const oc = CTX[other];
+if(!oc || !oc.DB || !Array.isArray(oc.DB.artists)) return [];
+return oc.DB.artists.filter(a=>artistMatches(a, toks));
+}
+function openCrossDetail(kind, id){
+switchDataset(kind);
+const a = artistById(id);
+if(a) openDetail(a.id);
+else toast('この端末にはまだ届いていません');
+}
+/* v8.0: the near-miss rescue. When the strict AND search finds
+   nothing anywhere, surface the closest people instead of a
+   dead end: partial token hits first (ranked by how many tokens
+   land), then — for a single kana token — reading proximity
+   (bounded Levenshtein over windows of the reading/name, which
+   is what catches デビット → デイヴィッド). */
+function levWithin(a, b, maxD){
+if(Math.abs(a.length - b.length) > maxD) return false;
+let prev = []; for(let j=0; j<=b.length; j++) prev[j] = j;
+for(let i=1; i<=a.length; i++){
+const cur = [i]; let best = i;
+for(let j=1; j<=b.length; j++){
+cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1]? 0: 1));
+if(cur[j] < best) best = cur[j];
+}
+if(best > maxD) return false;
+prev = cur;
+}
+return prev[b.length] <= maxD;
+}
+function kanaProximity(tok, a){
+const cands = [a.name_kana, a.name].filter(Boolean).map(normSearch).filter(x=>/[ァ-ヶ]/.test(x));
+for(const cand of cands){
+for(let L = Math.max(2, tok.length-2); L <= tok.length+2; L++){
+for(let i=0; i+L <= cand.length; i++){
+if(levWithin(tok, cand.substr(i, L), 2)) return true;
+}
+}
+}
+return false;
+}
+function nearMatches(){
+const toks = queryToks(); if(!toks.length) return [];
+const scored = [];
+for(const kind of ['artists','designers']){
+const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
+c.DB.artists.forEach(a=>{
+const hay = artistHay(a);
+let score = 0;
+toks.forEach(tok=>{
+if(hay.indexOf(tok) >= 0) score += 2;
+else { const kv = romajiToKana(tok); if(kv && hay.indexOf(normSearch(kv)) >= 0) score += 2; }
+});
+if(!score && toks.length===1 && toks[0].length>=3 && /[ァ-ヶ]/.test(toks[0]) && kanaProximity(toks[0], a)) score = 1;
+if(score > 0) scored.push({ kind, a, score });
+});
+}
+return scored.sort((x, y)=> y.score - x.score).slice(0, 8);
 }
 /* tag facets: classification / technique-material / era-country / theme (default) */
 const TAG_FACETS = {};
@@ -9265,12 +9350,54 @@ renderListBody();
 renderAbout();
 updateSlimTools();
 }
+/* v8.0: one card builder for list / cross-dataset / near-miss
+   cards. Cross cards carry data-ds so the hydration wiring can
+   resolve the record in the other dataset's store. */
+function personCardHTML(a, kind){
+const th = thumbOf(a);
+const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+}
+function crossSectionHTML(){
+const cross = crossMatches(); if(!cross.length) return '';
+const other = DS==='artists'? 'designers':'artists';
+const label = other==='designers'? 'デザイナー図鑑':'作家図鑑';
+let h = '<h2 class="sechead"><span>'+label+'から</span><span class="cnt">'+cross.length+'名</span></h2><div class="grid '+state.mode+'">';
+cross.slice(0, 24).forEach(a=>{ h += personCardHTML(a, other); });
+return h + '</div>';
+}
+function nearSectionHTML(){
+const near = nearMatches(); if(!near.length) return '';
+let h = '<h2 class="sechead"><span>もしかして</span></h2><div class="grid '+state.mode+'">';
+near.forEach(({kind, a})=>{ h += personCardHTML(a, kind===DS? null: kind); });
+return h + '</div>';
+}
+function wireListImages(body){
+body.querySelectorAll('[data-work]').forEach(ph=>{
+const dsk = ph.dataset.ds;
+const a = dsk? (CTX[dsk] && CTX[dsk].DB && CTX[dsk].DB.artists.find(x=>String(x.id)===String(ph.dataset.work))) : artistById(ph.dataset.work);
+if(!a) return;
+ph._work = thumbOf(a);
+const span = ph.querySelector('.imgholder'); if(span){ span._work = ph._work; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, ph._work);}
+});
+}
 function renderListBody(){
 syncFavFilterBtn();
 const arr = filteredArtists();
 const body = $('listbody');
+const searching = queryToks().length > 0;
 if(!arr.length){
-body.innerHTML = '<div class="empty">'+(favFilter? 'お気に入りはまだありません。作家のページで ★ を押すと、ここに集まります': '該当する項目がありません')+'</div>' + reqFootHTML(); return;}
+let html = '';
+if(favFilter) html = '<div class="empty">お気に入りはまだありません。作家のページで ★ を押すと、ここに集まります</div>';
+else if(searching){
+html = crossSectionHTML() || nearSectionHTML();
+if(!html) html = '<div class="empty">該当する項目がありません</div>';
+}
+else html = '<div class="empty">該当する項目がありません</div>';
+body.innerHTML = html + reqFootHTML();
+wireListImages(body);
+return;
+}
 const order = [];
 DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
 arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
@@ -9281,19 +9408,13 @@ const group = arr.filter(a=>(a.section||'')===sec);
 if(!group.length) return;
 html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="cnt">'+group.length+'名</span></h2>';
 html += '<div class="grid '+state.mode+'">';
-group.forEach(a=>{
-const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
-});
+group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 });
+if(searching) html += crossSectionHTML();
 body.innerHTML = html + reqFootHTML();
 /* attach work objects for lazy hydration */
-body.querySelectorAll('[data-work]').forEach(ph=>{
-const a = artistById(ph.dataset.work); if(!a) return;
-ph._work = thumbOf(a);
-const span = ph.querySelector('.imgholder'); if(span){ span._work = ph._work; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, ph._work);}
-});
+wireListImages(body);
 }
 
 /* ---------- detail ---------- */
@@ -12149,6 +12270,14 @@ function refreshRequests(){
   if(!getValidToken() && !relayReady()){ renderRequestList(); return; }
   flushArtistRequests();
 }
+function fmtMDHM(iso){
+  if(!iso) return '';
+  const s = String(iso); const d = new Date(s);
+  if(isNaN(d)) return '';
+  const base = (d.getMonth()+1)+'/'+d.getDate();
+  if(s.indexOf('T')<0) return base+'（時刻なし）';
+  return base+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
 function renderRequestList(){
   const el = $('reqlist'); if(!el) return;
   const conn = $('reqconn');
@@ -12157,9 +12286,13 @@ function renderRequestList(){
   if(!items.length){ el.innerHTML = '<div class="empty">まだ依頼はありません</div>'; return; }
   el.innerHTML = items.map(r=>{
     const st = reqStatusOf(r);
-    const d = r.requested_at? new Date(r.requested_at): null;
-    const ds = d && !isNaN(d)? (d.getMonth()+1)+'/'+d.getDate() : '';
-    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（情報）': '')+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
+    /* v8.0: times, not just dates (his ask) — for the request and
+       for its completion. A date-only value (no 'T' in the ISO)
+       is labelled （時刻なし） instead of faking a 00:00. */
+    const ds = fmtMDHM(r.requested_at);
+    const done = (r.status==='registered' || r.status==='declined') && r.resolved_at
+      ? ' <span class="rqdate">完了 '+fmtMDHM(r.resolved_at)+'</span>' : '';
+    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（情報）': '')+'</span> <span class="rqdate">'+ds+'</span>'+done+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
   }).join('');
 }
 function submitRequestFromPanel(){
@@ -12461,7 +12594,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '7.0';
+const APP_VERSION = '8.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
