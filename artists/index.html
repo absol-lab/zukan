@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.61">
+<meta name="app-version" content="2.62">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -300,6 +300,22 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    always shown, 0 included, also his call. */
 .galgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
 .galrow{position:relative; display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 26px 9px 12px; min-height:52px; text-decoration:none; color:var(--text);}
+/* v2.62: gallery section collapses to one row by default */
+.galhead{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:16.5px; font-weight:700; letter-spacing:.04em; padding:14px 2px 10px; margin-top:14px; min-height:52px; text-align:left; cursor:pointer;}
+.galhead .galcnt{font-size:12px; color:var(--muted); font-weight:400;}
+.galhead .galchev{margin-left:auto; color:var(--muted); font-size:14px;}
+/* v2.62: news view */
+.newsrow{position:relative; display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 26px 11px 12px; margin-top:8px; min-height:52px; text-decoration:none; color:var(--text);}
+.newsrow .nt{font-size:15px; font-weight:600; line-height:1.45;}
+.newsrow .nm{font-size:12px; color:var(--muted); margin-top:3px;}
+.newsrow .nnote{font-size:13px; color:var(--text); margin-top:4px; line-height:1.5;}
+.newsrow .gext{position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted);}
+.corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
+.corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
+.corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
+.nbadge{display:inline-block; font-size:11px; font-weight:700; letter-spacing:.05em; border-radius:999px; padding:2px 8px; margin-bottom:6px;}
+.nbadge.fact{background:var(--tag); color:#fff;}
+.nbadge.reading{background:none; border:1px solid var(--muted); color:var(--muted);}
 .galrow:active{background:var(--card2);}
 .galrow .gname{display:block; font-family:var(--serif); font-size:13.5px; font-weight:600; letter-spacing:.02em; line-height:1.35;}
 .galrow .gmeta{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
@@ -526,6 +542,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <main id="viewDetail" class="hidden"></main>
 <main id="viewEx" class="hidden"></main>
+<main id="viewNews" class="hidden"></main>
 <main id="viewTimeline" class="hidden"></main>
 <main id="viewQuiz" class="hidden"></main>
 
@@ -8201,8 +8218,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -8263,6 +8280,7 @@ else updateHeader();
 if(v==='list') renderList();
 updateToolbarSlim();
 if(v==='ex') renderEx();
+if(v==='news') renderNews();
 if(v==='timeline') renderTimeline();
 if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSettings(); }
@@ -8508,9 +8526,9 @@ function updatePill(){
    展示 button was removed at the user's request). The ex view belongs
    to the artists dataset, and while it is shown the 展示 segment — not
    作家 — carries the active state. */
-$('pnEx').classList.toggle('on', view==='ex');
-$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex');
-$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex');
+$('pnEx').classList.toggle('on', view==='ex' || view==='news');
+$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='news');
+$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='news');
 $('pnSet').classList.toggle('on', view==='settings');
 }
 /* v2.35: the exhibitions entry point. Exhibitions live in the artists
@@ -9225,6 +9243,12 @@ const GAL_GROUPS = [
     { name: 'WikiArt', match: 'WikiArt', url: 'https://www.wikiart.org/' }
   ]}
 ];
+/* v2.62: the gallery block is collapsed by default (one header row);
+   the user asked for the space back so 開催中 is not pushed down.
+   The open state persists across visits. */
+let galOpen = false;
+try{ galOpen = storeGet('zukan.galOpen')==='1'; }catch(e){}
+function toggleGal(){ galOpen = !galOpen; try{ storeSet('zukan.galOpen', galOpen? '1': '0'); }catch(e){} renderEx(); }
 function galleryLinksHTML(exs){
   const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   const row = (g) => {
@@ -9233,7 +9257,10 @@ function galleryLinksHTML(exs){
       '<span class="gmeta">図鑑の展示 '+n+'件</span>' +
       '<span class="gext">↗</span></a>';
   };
-  let html = '<h2 class="sechead"><span>ギャラリー・美術館</span><span class="cnt">公式サイトの展示ページへ</span></h2>';
+  const total = GAL_GROUPS.reduce((n, gr) => n + gr.items.length, 0);
+  let html = '<button class="galhead" onclick="toggleGal()"><span>ギャラリー・美術館</span><span class="galcnt">'+total+'件</span><span class="galchev">'+(galOpen? '▾': '▸')+'</span></button>';
+  if(!galOpen) return html;
+  html += '<div class="small" style="margin:2px 4px 6px">公式サイトの展示ページへ</div>';
   GAL_GROUPS.forEach(gr => {
     html += '<div class="galsub">'+esc(gr.label)+'</div><div class="galgrid">' + gr.items.map(row).join('') + '</div>';
   });
@@ -9246,7 +9273,7 @@ const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getM
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
-let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
+let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
 +'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
 +'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
@@ -9286,7 +9313,7 @@ hydrateExPosters(v, exs);
 function renderExDesigners(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
-const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
+const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
 if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
@@ -9317,6 +9344,84 @@ hydrateExPosters(v, exs);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
+
+/* ---------- news （時事）: v2.62 ----------
+   Content is harvested on the Muse side into news.json, published
+   next to this app (same origin, no auth): { updatedAt, correlation:
+   { summary, points: [{ title, body, kind: 'fact'|'reading' }] },
+   society: [{ title, source, date, url, note? }], art: [same] }.
+   'fact' points are concrete, sourced overlaps; 'reading' points
+   are explicitly labelled interpretation — the app renders the
+   distinction, it never blends them. The last good payload is
+   cached on-device; the update date is always shown, with an age
+   note once it is more than 3 days old. */
+let newsData = null;
+let newsFetching = false;
+function newsCacheLoad(){ try{ const j = JSON.parse(storeGet('zukan.news')||'null'); return (j && typeof j==='object')? j: null; }catch(e){ return null; } }
+async function fetchNews(){
+  if(newsFetching) return;
+  newsFetching = true;
+  try{
+    const res = await fetch('news.json?cv=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) throw new Error('news HTTP ' + res.status);
+    const j = await res.json();
+    if(j && typeof j === 'object'){ newsData = j; try{ storeSet('zukan.news', JSON.stringify(j)); }catch(e){} }
+  }catch(e){
+    if(!newsData) newsData = newsCacheLoad();
+  }
+  newsFetching = false;
+  if(view === 'news') renderNews();
+}
+function openNews(){
+  if(!newsData) newsData = newsCacheLoad();
+  showView('news');
+  fetchNews();
+}
+function newsAgeDays(iso){
+  const t = Date.parse(iso||'');
+  if(isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86400000);
+}
+function newsDateLabel(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+function renderNews(){
+  const v = $('viewNews'); if(!v) return;
+  const d = newsData;
+  let html = '<div class="tlhead"><h2>時事</h2><span class="topsp"></span><button class="txtbtn" onclick="fetchNews()">更新</button><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+  if(!d || !d.updatedAt){
+    html += '<div class="empty" style="margin-top:26px">まだ配信がありません。<br>次回の収穫で、社会とアートの時事が届きます。</div>';
+    v.innerHTML = html;
+    return;
+  }
+  const age = newsAgeDays(d.updatedAt);
+  html += '<div class="small" style="margin-top:8px">'+newsDateLabel(d.updatedAt)+' 更新'+(age!=null && age>=1 ? '（'+age+'日前）': '')+'</div>';
+  if(age!=null && age > 3) html += '<div class="note">この情報は '+age+' 日前のものです。最新の状況は出典で確認してください。</div>';
+  const item = (n) =>
+    '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nt">'+esc(n.title||'')+'</span>' +
+    '<div class="nm">'+esc(n.source||'')+(n.date? ' ・ '+esc(n.date): '')+'</div>' +
+    (n.note? '<div class="nnote">'+esc(n.note)+'</div>': '') +
+    '<span class="gext">↗</span></a>';
+  const c = d.correlation;
+  if(c && (c.summary || (c.points||[]).length)){
+    html += '<h2 class="sechead"><span>相関を読む</span></h2>';
+    if(c.summary) html += '<div class="corbox"><div class="cb" style="margin-top:0">'+esc(c.summary)+'</div></div>';
+    (c.points||[]).forEach(p => {
+      const kind = p.kind === 'fact'? 'fact': 'reading';
+      html += '<div class="corbox"><span class="nbadge '+kind+'">'+(kind==='fact'? '接点（確認済み）': '読み（解釈）')+'</span>' +
+        (p.title? '<div class="ct">'+esc(p.title)+'</div>': '') +
+        (p.body? '<div class="cb">'+esc(p.body)+'</div>': '') + '</div>';
+    });
+  }
+  const soc = Array.isArray(d.society)? d.society: [];
+  const art = Array.isArray(d.art)? d.art: [];
+  if(soc.length) html += '<h2 class="sechead"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
+  if(art.length) html += '<h2 class="sechead"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + art.map(item).join('');
+  if(!soc.length && !art.length && !c) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
+  v.innerHTML = html;
+}
 
 /* ---------- timeline （作家のみ・データはDB.timeline） ---------- */
 let tlRegion = 'west'; /* 'west' | 'japan' */
@@ -10465,6 +10570,7 @@ function backTarget(){
      panel's own 戻る closes it (closeSettingsPanel via goBack). */
   if(view==='settings' && settingsPanel) return null;
   if(view==='quiz') return 'timeline';
+  if(view==='news') return 'ex';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
   return null;
 }
@@ -10594,7 +10700,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.61';
+const APP_VERSION = '2.62';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
