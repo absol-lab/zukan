@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.57">
+<meta name="app-version" content="2.58">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8189,7 +8189,23 @@ const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
    the viewer sheet and the nav indicator — not only by the opening. */
 const PRM_Q = (typeof window!=='undefined' && window.matchMedia)? window.matchMedia('(prefers-reduced-motion: reduce)'): null;
 function reducedMotion(){ try{ return !!(PRM_Q && PRM_Q.matches); }catch(e){ return false; } }
-let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null, vtForceDir = 0;
+let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null, vtForceDir = 0, vtAfterFinish = null;
+/* v2.58: restore the list's saved scroll position, then re-assert it
+   twice over the next half second: the sticky toolbar changes height
+   as it slims/expands around the restored offset, which shifts the
+   effective scroll by ~100px. A touch from the user cancels the
+   re-assertion (token), so it never fights a hand already scrolling. */
+let listRestoreToken = 0;
+document.addEventListener('touchstart', ()=>{ listRestoreToken++; }, { passive:true });
+function restoreListScroll(y){
+  if(!y){ window.scrollTo(0,0); return; }
+  const tk = ++listRestoreToken;
+  window.scrollTo(0, y);
+  [160, 420].forEach(ms=>setTimeout(()=>{
+    if(listRestoreToken !== tk || view !== 'list') return;
+    if(Math.abs((window.scrollY || 0) - y) > 4) window.scrollTo(0, y);
+  }, ms));
+}
 function showView(v){
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
@@ -8204,6 +8220,14 @@ vtForceDir = 0;
 const wantAnim = !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
+/* v2.58: leaving the list saves its scroll position; entering it
+   again restores it. Until now the position was only carried across
+   dataset switches, so detail → back always dumped the user at the
+   top of the list. The restore is deferred to the slide's finish
+   (vtAfterFinish) or applied directly on the instant path. */
+if(prev==='list' && v!=='list') CTX[DS].scrollY = window.scrollY || 0;
+const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 0): 0;
+/* (restoreListScroll itself is defined with the transition helpers) */
 
 /* v2.36: the timeline is a header button again (the 5-segment pill
    was too cramped, user's call); it stays visible on both datasets
@@ -8222,10 +8246,11 @@ if(v==='settings'){ renderSettings(); }
 moveNavInd(true);
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(wantAnim && oldEl && newEl && oldEl!==newEl){
+if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
 vtSlide(oldEl, newEl, dir);
 } else {
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
-window.scrollTo(0,0);
+if(restoreListY) restoreListScroll(restoreListY); else window.scrollTo(0,0);
 ensurePillAnchor();
 }
 }
@@ -8269,6 +8294,7 @@ document.querySelectorAll('main.vt-fixed').forEach(el=>{ el.classList.remove('vt
 oldEl.classList.add('hidden');
 document.body.classList.remove('vt-run');
 vtBusy = false; vtFinish = null;
+if(vtAfterFinish){ const f = vtAfterFinish; vtAfterFinish = null; f(); }
 ensurePillAnchor();
 };
 vtFinish = finish;
@@ -8509,8 +8535,8 @@ if(kind===DS){
    The 展示/設定 tabs do not come through here and are unchanged. */
 state = freshState(CONFIG.prefix);
 CTX[DS].state = state;
+CTX[DS].scrollY = 0; /* v2.58: zero BEFORE showView, so its restore step targets the top */
 showView('list');
-CTX[DS].scrollY = 0;
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
 window.scrollTo({ top:0, behavior: reducedMotion()? 'auto': 'smooth' });
 }));
@@ -10400,11 +10426,20 @@ if(Date.now() < segSuppressUntil){ segSuppressUntil = 0; e.preventDefault(); e.s
 
 /* ---------- swipe back: the finger drives the transition itself ---------- */
 function backTarget(){
+  /* v2.58: a settings SUB-PANEL is one level above the settings top,
+     not one level above the list — a view-level back from inside a
+     panel used to exit その他 entirely (and leave the header behind).
+     While a panel is open there is no view-level back target: the
+     panel's own 戻る closes it (closeSettingsPanel via goBack). */
+  if(view==='settings' && settingsPanel) return null;
   if(view==='quiz') return 'timeline';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
   return null;
 }
-function goBack(){ const t = backTarget(); if(t) showView(t); }
+function goBack(){
+  if(view==='settings' && settingsPanel){ closeSettingsPanel(); return; }
+  const t = backTarget(); if(t) showView(t);
+}
 function engageSwipe(st){
   if(st.target==='list') renderList();
   if(st.target==='timeline') renderTimeline();
@@ -10457,8 +10492,15 @@ function teardownSwipe(st, commit){
     if(view!=='settings') CTX[DS].lastView = view;
 
     $('navTimeline').classList.toggle('on', view==='timeline');
+    /* v2.58: this hand-rolled commit used to skip the header update
+       entirely, so a swipe back out of その他 landed on the list
+       still titled その他. showView's chrome steps apply here too. */
+    updateHeader();
     updatePill(); moveNavInd(true);
-    window.scrollTo(0,0);
+    /* v2.58: landing back on the list restores its saved scroll
+       position (showView saves it when the list is left), instead of
+       always resetting to the top. */
+    window.scrollTo(0, view==='list'? (CTX[DS].scrollY || 0): 0);
   } else if(st.newEl){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
@@ -10520,7 +10562,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.57';
+const APP_VERSION = '2.58';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
