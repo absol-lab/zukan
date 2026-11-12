@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.5">
+<meta name="app-version" content="4.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8104,6 +8104,12 @@ note: String(b.note||'')
 const rec = {
 id: (a.id!=null? a.id: null),
 name: String(a.name||''), name_latin: String(a.name_latin||''), name_native: String(a.name_native||''),
+/* v4.6: name_kana (the reading) MUST be carried here — until
+   now the whitelist silently stripped it on every load, sync
+   and pack apply, so reading search could never see it (and a
+   device sync then wrote the stripped data back over the
+   canonical, erasing the harvested readings entirely). */
+name_kana: String(a.name_kana||''),
 years: String(a.years||''), field: String(a.field||''), section: String(a.section||''),
 relation: String(a.relation||''), key_works: String(a.key_works||''), notes: String(a.notes||''),
 tags: Array.isArray(a.tags)? a.tags.map(String): [],
@@ -11021,6 +11027,8 @@ if(id!=null){
 const old = DB.artists.find(a=>String(a.id)===String(id));
 /* v2.65: a form edit must not strip the curated books */
 if(old && old.books && old.books.length) rec.books = old.books;
+/* v4.6: nor the reading (the form has no field for it) */
+if(old && old.name_kana) rec.name_kana = old.name_kana;
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -11064,7 +11072,7 @@ function mergeDataInto(local, incoming){
     if(ix<0){ local.artists.push(ia); return; }
     const la = local.artists[ix];
     const merged = Object.assign({}, la);
-    ['name','name_latin','name_native','years','field','section','relation','key_works','notes','work_image','work_caption','layer','updated_at'].forEach(k=>{
+    ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','layer','updated_at'].forEach(k=>{
       if(ia[k]) merged[k] = ia[k];
     });
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
@@ -12069,7 +12077,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.5';
+const APP_VERSION = '4.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
