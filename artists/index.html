@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.6">
+<meta name="app-version" content="4.7">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -80,13 +80,22 @@
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0; touch-action:manipulation; /* v2.41: no double-tap zoom (user: annoying when it fires by accident); pinch zoom stays — manipulation = pan + pinch-zoom without double-tap. Local rules (e.g. .seg pan-y) still win on their own elements via intersection. */}
 body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.65;
-  padding-bottom:108px; -webkit-text-size-adjust:100%;}
+  padding-top:var(--hdrh, 0px); padding-bottom:108px; -webkit-text-size-adjust:100%;}
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0; -webkit-appearance:none; appearance:none;}
 input,select,textarea{font:inherit; color:inherit;}
 a{color:var(--accent);}
 .homelink{font-size:12.5px; color:var(--muted); text-decoration:none; letter-spacing:.08em; white-space:nowrap; padding:6px 0;}
 /* header (diary .topbar) */
-header.top{position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
+/* v4.7: the header is FIXED, not sticky. On the user's iPhone
+   the sticky header's layer kept double-painting during scrolls
+   (the "帯" ghost: header and bands drawn twice, content diving
+   through them) across v3.2–v4.5 despite every sticky-side fix.
+   Fixed elements ride the same stable overlay path as the pill
+   (calm since its own v2.28 cure). body carries the height via
+   padding-top: var(--hdrh); during view transitions the mains
+   go position:fixed themselves with explicit tops, so nothing
+   double-counts. */
+header.top{position:fixed; top:0; left:0; right:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
 .toprow{display:flex; align-items:center; gap:8px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 14px 4px; max-width:720px; margin:0 auto;}
 h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spacing:.08em; margin:0;}
 /* v2.49: sync status dot, the diary app's exact pattern (8px circle
@@ -118,7 +127,7 @@ body.notifopen #pillnav{opacity:0; pointer-events:none;}
 /* v2.94: version badge moved to the top-center (all-apps rule,
    diary v2.28 values) — his cracked glass sheet makes the
    bottom-fixed label hard to read. */
-#verBadge{position:fixed; top:calc(env(safe-area-inset-top, 0px) + 2px); left:50%; transform:translateX(-50%); z-index:39; font-size:11px; letter-spacing:.03em; color:var(--muted); opacity:.85; pointer-events:none; white-space:nowrap; font-family:var(--sans);}
+#verBadge{position:fixed; top:calc(env(safe-area-inset-top, 0px) + 2px); left:0; right:0; text-align:center; z-index:39; font-size:11px; letter-spacing:.03em; color:var(--muted); opacity:.85; pointer-events:none; white-space:nowrap; font-family:var(--sans);}
 /* toolbar */
 main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:calc(100dvh + 1px);}
 /* v2.24: the list toolbar (search + facet bar + mode bar) is sticky,
@@ -12077,7 +12086,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.6';
+const APP_VERSION = '4.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
