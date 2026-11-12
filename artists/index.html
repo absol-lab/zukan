@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.72">
+<meta name="app-version" content="2.73">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -321,6 +321,16 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .corpoint.fact{border-left-color:var(--tag);}
 .corpoint .ct{font-size:15.5px; font-weight:700; line-height:1.5; margin-top:2px;}
 .corpoint .cb{font-size:14.5px; line-height:1.85; margin-top:4px; color:color-mix(in srgb, var(--text) 88%, transparent);}
+/* v2.73: editorial hierarchy — the correlation block sits on its
+   own ground, and the art section leads with one hero story. */
+.corwrap{background:color-mix(in srgb, var(--card) 62%, transparent); border:1px solid var(--line); border-radius:16px; padding:6px 16px 16px; margin-top:14px;}
+.corwrap .sechead{margin-top:14px;}
+.newshero{display:block; text-decoration:none; color:var(--text); padding:4px 0 16px; border-bottom:1px solid var(--line);}
+.newshero .himg{width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:12px; background:var(--card); display:block;}
+.newshero .nt{display:block; font-size:19.5px; font-weight:800; line-height:1.5; margin-top:11px;}
+.newshero .nm{font-size:12.5px; color:var(--muted); margin-top:6px;}
+.newshero .nm b{color:var(--text); font-weight:600;}
+.newshero .nnote{font-size:14px; color:color-mix(in srgb, var(--text) 84%, transparent); margin-top:6px; line-height:1.8;}
 /* v2.72: the exhibitions view's two main doors, made unmissable */
 .exnav{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
 .exnavcard{display:flex; align-items:center; gap:11px; min-height:62px; padding:10px 14px; background:var(--card); border:1px solid var(--lineStrong); border-radius:14px; color:var(--text); text-align:left; cursor:pointer; font-family:inherit;}
@@ -9630,7 +9640,7 @@ function renderNews(){
     '</a>';
   const c = d.correlation;
   if(c && (c.summary || (c.points||[]).length)){
-    html += '<h2 class="sechead" style="margin-top:26px"><span>相関を読む</span></h2>';
+    html += '<div class="corwrap"><h2 class="sechead"><span>相関を読む</span></h2>';
     if(c.summary) html += '<div class="corlead">'+esc(c.summary)+'</div>';
     (c.points||[]).forEach(p => {
       const kind = p.kind === 'fact'? 'fact': 'reading';
@@ -9638,11 +9648,23 @@ function renderNews(){
         (p.title? '<div class="ct">'+esc(p.title)+'</div>': '') +
         (p.body? '<div class="cb">'+esc(p.body)+'</div>': '') + '</div>';
     });
+    html += '</div>';
   }
   const soc = Array.isArray(d.society)? d.society: [];
   const art = Array.isArray(d.art)? d.art: [];
   if(soc.length) html += '<h2 class="sechead newssec"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
-  if(art.length) html += '<h2 class="sechead newssec"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + art.map(item).join('');
+  if(art.length){
+    /* v2.73: the first imaged art story leads as a hero — one
+       decisive large surface above the wire of rows. */
+    const hi = art.findIndex(n => n.img && n.img.url);
+    let artHtml = '';
+    art.forEach((n, i) => {
+      if(i === hi){
+        artHtml += '<a class="newshero" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><img class="himg" src="'+escA(sizedThumbUrl(n.img.url, 800))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="nt">'+esc(n.title||'')+'</span><div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>'+(n.note? '<div class="nnote">'+esc(n.note)+'</div>': '')+'</a>';
+      } else artHtml += item(n);
+    });
+    html += '<h2 class="sechead newssec"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + artHtml;
+  }
   if(!soc.length && !art.length && !c) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
   v.innerHTML = html;
 }
@@ -11230,7 +11252,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.72';
+const APP_VERSION = '2.73';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
