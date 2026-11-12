@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.78">
+<meta name="app-version" content="2.79">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9681,18 +9681,41 @@ async function fetchChangelog(){
     if(!changelogData) changelogData = changelogCacheLoad();
   }
   changelogFetching = false;
-  if(settingsPanel === 'updates') renderUpdateList();
+  if(settingsPanel === 'updates' && notifTab === 'app') renderUpdateList();
 }
+function notifWhen(iso){
+  const dt = iso? new Date(iso): null;
+  return (dt && !isNaN(dt))? (dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日 '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')): '';
+}
+/* v2.79: the notifications panel has two streams, per his ask —
+   アプデ (app updates) and リクエスト (his requests, completed). */
+let notifTab = 'app';
+function setNotifTab(t){ notifTab = t; renderSettingsPanel(); }
 function renderUpdateList(){
-  const el = $('updatelist'); if(!el) return;
+  const el = $('notifbody'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
   if(!d || !d.entries.length){ el.innerHTML = '<div class="empty">更新履歴はまだ読み込めていません</div>'; return; }
   el.innerHTML = d.entries.map(e => {
-    const dt = e.at? new Date(e.at): null;
-    const when = dt && !isNaN(dt)? (dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日 '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')): '';
-    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(when)+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')+'</div>' +
+    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')+'</div>' +
       '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
   }).join('');
+}
+function renderRequestNotifs(){
+  const el = $('notifbody'); if(!el) return;
+  const done = reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
+    .sort((a, b) => String(b.resolved_at||'').localeCompare(String(a.resolved_at||'')));
+  if(!done.length){ el.innerHTML = '<div class="empty">完了したリクエストはまだありません</div>'; }
+  else el.innerHTML = done.map(r => {
+    const title = r.status==='declined'? esc(r.name)+' は見送りになりました'
+      : (r.kind==='works'? esc(r.name)+' の情報を回収しました' : esc(r.name)+' を登録しました');
+    return '<div class="uprow"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
+      '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
+      (r.note? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') + '</div>';
+  }).join('');
+  /* refresh the requests file in the background; re-render on arrival */
+  if(getValidToken() || relayReady()){
+    flushArtistRequests().then(()=>{ if(settingsPanel==='updates' && notifTab==='req') renderRequestNotifs(); }).catch(()=>{});
+  }
 }
 function newsAgeDays(iso){
   const t = Date.parse(iso||'');
@@ -11336,7 +11359,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.78';
+const APP_VERSION = '2.79';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11620,7 +11643,7 @@ function renderSettingsMain(){
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
       srow(SICON.pin, '位置情報', geoEnabled()? 'オン': 'オフ', "openSettingsPanel('geo')")+
-      srow(SICON.bell, '更新履歴', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
+      srow(SICON.bell, '通知', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
       srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
@@ -11765,9 +11788,13 @@ function renderSettingsPanel(){
       '</div>');
   }
   else if(settingsPanel==='updates'){
-    p.innerHTML = panelShell('更新履歴', '<div id="updatelist"><div class="empty">読み込んでいます…</div></div>');
-    renderUpdateList();
-    fetchChangelog();
+    p.innerHTML = panelShell('通知',
+      '<div style="margin-bottom:4px;"><span class="seg">'
+      + '<button class="'+(notifTab==='app'? 'on': '')+'" onclick="setNotifTab(\'app\')">アプデ</button>'
+      + '<button class="'+(notifTab==='req'? 'on': '')+'" onclick="setNotifTab(\'req\')">リクエスト</button>'
+      + '</span></div><div id="notifbody"></div>');
+    if(notifTab==='app'){ renderUpdateList(); fetchChangelog(); }
+    else renderRequestNotifs();
   }
   else if(settingsPanel==='request'){
     p.innerHTML = panelShell('登録依頼',
