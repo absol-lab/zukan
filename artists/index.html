@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="6.0">
+<meta name="app-version" content="6.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -293,7 +293,15 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
    pattern that works on device): the three panels sit side by side in one
    horizontal scroller and each panel is a full-width snap page, while
    vertical scrolling stays with the page itself. */
-.dpager{display:flex; overflow-x:auto; overflow-y:hidden; align-items:flex-start; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
+/* v6.1: overflow-x:hidden — the pager is NOT user-scrollable any
+   more. On the user's iPhone, WebKit re-lays-out the incoming
+   panel at its visible sliver width during a native drag (the
+   neighbour's text wraps into a thin vertical band and panels
+   overlap; his 2026-11-13 Lynch recording). Tabs switch by tap
+   (instant jump, v4.3) or by a threshold drag handled in
+   wireDPager, which calls setTab — the panel itself never
+   free-scrolls. Programmatic scrollLeft still positions it. */
+.dpager{display:flex; overflow-x:hidden; overflow-y:hidden; align-items:flex-start; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
 .dpager::-webkit-scrollbar{display:none;}
 .dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always; overflow:hidden;}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
@@ -8279,14 +8287,22 @@ function workKeysOf(x){ return [ (x.img && x.img.fileId), (x.img && x.img.url), 
 function splitNotes(notes){
 const res = { bio:'', tech:'', rest:''};
 if(!notes) return res;
-let cur = 'rest'; const buf = { bio:[], tech:[], rest:[]};
-String(notes).split('\n').forEach(line=>{
-const t = line.trim();
-if(t==='【来歴】'){ cur='bio'; return;}
-if(t==='【技法・メディウム】' || t==='【技法】'){ cur='tech'; return;}
-buf[cur].push(line);
-});
-res.bio = buf.bio.join('\n').trim(); res.tech = buf.tech.join('\n').trim(); res.rest = buf.rest.join('\n').trim();
+/* v6.1: the 【…】 markers are delimiters ANYWHERE in the text.
+   The old parser recognized a marker only standing alone on its
+   own line; notes written with the marker inline (【来歴】1946年、…)
+   silently dumped everything into 特徴 and left 来歴/技法 empty —
+   20 artists were affected, Lynch among them (his bio tab showed
+   「まだありません」 while the text sat in 特徴）. Both writings
+   now split identically. */
+const parts = String(notes).split(/(【来歴】|【技法・メディウム】|【技法】)/);
+let cur = 'rest';
+for(let i=0; i<parts.length; i++){
+const p = parts[i];
+if(p==='【来歴】'){ cur='bio'; continue; }
+if(p==='【技法・メディウム】' || p==='【技法】'){ cur='tech'; continue; }
+res[cur] += p;
+}
+res.bio = res.bio.trim(); res.tech = res.tech.trim(); res.rest = res.rest.trim();
 return res;
 }
 
@@ -9324,8 +9340,9 @@ const idx = Math.max(0, DTABS.indexOf(t));
    panels (neighbouring text bleeding in on both sides, panels
    looking shifted and doubled), and clientWidth arithmetic could
    drift from the panels' true offsets. Instant + measured =
-   the panel is exactly in place, every time. Swiping the pager
-   itself still slides natively with snap. */
+   the panel is exactly in place, every time. (v6.1: the pager
+   no longer free-scrolls at all — drags are threshold triggers
+   that land here; see wireDPager.) */
 const panel = pg.querySelectorAll('.dpage')[idx];
 let left = idx * (pg.clientWidth || 1);
 if(panel){ /* rect-based: true regardless of offset parents
@@ -9374,6 +9391,30 @@ if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); fitDPagerHeight(); }
 pg.addEventListener('load', ()=>fitDPagerHeight(), true);
 requestAnimationFrame(()=>fitDPagerHeight());
 setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
+/* v6.1: tab drags as threshold triggers (the diary's settled
+   swipe pattern). The pager no longer free-scrolls (see the
+   .dpager CSS note), so a horizontal drag past ~52px switches
+   the tab on release via setTab's instant jump. Arbitration
+   with the view swipe-back stays as it was: on the first tab a
+   rightward drag belongs to swipe-back (this handler ignores
+   it); on later tabs the document handler leaves pager drags
+   alone and this one steps back a tab instead. Vertical drags
+   (reading) never engage. */
+let pgDrag = null;
+pg.addEventListener('touchstart', e=>{
+if(!e.touches || e.touches.length!==1){ pgDrag = null; return; }
+const t = e.touches[0];
+pgDrag = { x: t.clientX, y: t.clientY, idx: Math.max(0, DTABS.indexOf(state.tab)) };
+}, { passive:true });
+pg.addEventListener('touchend', e=>{
+const d = pgDrag; pgDrag = null;
+if(!d || !e.changedTouches || !e.changedTouches.length) return;
+const t = e.changedTouches[0];
+const dx = t.clientX - d.x, dy = t.clientY - d.y;
+if(Math.abs(dx) < 52 || Math.abs(dx) <= Math.abs(dy)*1.25) return;
+if(dx < 0 && d.idx < DTABS.length-1) setTab(DTABS[d.idx+1]);
+else if(dx > 0 && d.idx > 0) setTab(DTABS[d.idx-1]);
+}, { passive:true });
 }
 /* v3.1: 作品でたどる歩み — in the biography tab, the person's
    dated works grouped by year with small thumbnails (his
@@ -12313,7 +12354,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '6.0';
+const APP_VERSION = '6.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
