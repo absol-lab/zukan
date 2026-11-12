@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="3.1">
+<meta name="app-version" content="3.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -186,6 +186,9 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .tbwrap > .tbin{overflow:hidden; min-height:0;}
 .tbw-tags{margin-top:4px;}
 .toolbar.slim .tbwrap{grid-template-rows:0fr; opacity:0; visibility:hidden; transition:grid-template-rows .26s cubic-bezier(0.2,0,0,1), opacity .26s cubic-bezier(0.2,0,0,1), visibility 0s .26s;}
+/* v3.2: scroll-driven folds land instantly (see updateToolbarSlim) so
+   the height change and its scroll compensation share one frame. */
+.toolbar.tbnoanim .tbwrap{transition:none !important;}
 .toolbar.slim .tbw-tags{margin-top:0;}
 .moderow{display:flex; gap:8px; align-items:stretch; margin-top:4px;}
 .moderow .modebar{flex:1; min-width:0;}
@@ -8660,14 +8663,55 @@ if(ae && ae.id==='searchbox') return false;
 const y = window.scrollY || 0;
 const tb = $('toolbar');
 const slimNow = !!(tb && tb.classList.contains('slim'));
-if(y >= 40) return true;
+if(y >= 40){
+if(!slimNow && tb){
+/* v3.2: never ENTER slim on a page barely taller than the viewport
+   (a short filtered list). Folding removes ~the chip band's height
+   from the document; the browser then clamps the scroll back under
+   the release threshold, the bar re-expands, and the fold/expand
+   oscillation throws the first cards out from under the finger
+   (the user's recording: LeWitt's card at the section head). */
+const wrap = tb.querySelector('.tbwrap');
+const foldH = wrap? wrap.offsetHeight: 0;
+const maxY = document.documentElement.scrollHeight - window.innerHeight;
+if(maxY - foldH < 160) return false;
+/* …and only once the scroll is deep enough to absorb the fold:
+   the anchored compensation shifts the scroll up by foldH, and
+   if that would land in the release zone (<40) the browser clamp
+   + re-expand flaps the bar. Deeper in the same scroll the fold
+   simply engages a little later instead. */
+if(y - foldH < 40) return false;
+}
+return true;
+}
 if(y < 8) return false;
 return slimNow;
 }
-function updateToolbarSlim(){
+function updateToolbarSlim(manual){
 const tb = $('toolbar'); if(!tb) return;
 if((window.scrollY || 0) < 8) tbExpanded = false;
-tb.classList.toggle('slim', toolbarIsSlimWanted());
+const want = toolbarIsSlimWanted();
+const is = tb.classList.contains('slim');
+if(want !== is && !manual){
+/* v3.2: a scroll-driven fold/expand used to reflow the whole list
+   by the bar's height, animated over .26s — every card slid out
+   from under the user's finger (his words: ぶっ飛ばされて押しづらい).
+   Now the toggle is instant and scroll-anchored: the height the
+   toggle adds or removes is shifted into the scroll position in
+   the same frame, so the content under the finger does not move.
+   Manual toggles (the slim-row icons / collapse button — the
+   finger is on the bar itself) keep their animation. */
+const y = window.scrollY || 0;
+tb.classList.add('tbnoanim');
+const h0 = tb.offsetHeight;
+tb.classList.toggle('slim', want);
+const h1 = tb.offsetHeight;
+if(y >= 40 && h1 !== h0) window.scrollTo(0, Math.max(0, y + (h1 - h0)));
+void tb.offsetHeight;
+requestAnimationFrame(()=> tb.classList.remove('tbnoanim'));
+} else {
+tb.classList.toggle('slim', want);
+}
 updateSlimTools();
 }
 function updateSlimTools(){
@@ -8684,7 +8728,7 @@ if(which==='filter' && CONFIG.facets && !state.facetOpen){
 state.facetOpen = 'bunrui';
 renderList();
 }
-updateToolbarSlim();
+updateToolbarSlim(true);
 if(which==='search'){
 const sb = $('searchbox');
 if(sb){ try{ sb.focus({ preventScroll:true }); }catch(e){ try{ sb.focus(); }catch(_){} } }
@@ -8694,7 +8738,7 @@ function collapseToolbar(){
 tbExpanded = false;
 const sb = $('searchbox');
 if(sb && document.activeElement===sb){ try{ sb.blur(); }catch(e){} }
-updateToolbarSlim();
+updateToolbarSlim(true);
 }
 window.addEventListener('scroll', ()=>{
 if(tbRafPending) return;
@@ -11651,7 +11695,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '3.1';
+const APP_VERSION = '3.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
