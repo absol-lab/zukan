@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.73">
+<meta name="app-version" content="2.74">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9363,7 +9363,42 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
 });
 }
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
-let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied */
+let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied | off */
+/* v2.74: location the user's way — ON until he turns it off in
+   その他. The browser's own prompt can only ever be avoided by not
+   calling the API, so the first successful fix is cached on the
+   device (zukan.geoPos) and reused silently; a stale cache (>24h)
+   refreshes at most once per session, and a failure just keeps the
+   cache. Off means no calls and no use, anywhere. */
+let geoSetting = 'on';
+try{ if(localStorage.getItem('zukan.geo')==='off') geoSetting = 'off'; }catch(e){}
+function geoEnabled(){ return geoSetting !== 'off'; }
+function geoCachedPos(){ try{ const j = JSON.parse(localStorage.getItem('zukan.geoPos')||'null'); return (j && j.lat!=null && j.lng!=null)? j: null; }catch(e){ return null; } }
+function geoSavePos(p){ try{ localStorage.setItem('zukan.geoPos', JSON.stringify({ lat: p.lat, lng: p.lng, at: Date.now() })); }catch(e){} }
+let geoAskedThisSession = false;
+function ensureGeoPos(){
+  if(!geoEnabled()){ exGeoState = 'off'; return; }
+  const c = geoCachedPos();
+  if(c){ exUserPos = { lat: c.lat, lng: c.lng }; exGeoState = 'ok'; }
+  const stale = !c || (Date.now() - (c.at||0) > 24*3600*1000);
+  if(stale && !geoAskedThisSession && navigator.geolocation){
+    geoAskedThisSession = true;
+    if(!c) exGeoState = 'asking';
+    navigator.geolocation.getCurrentPosition(
+      function(p){ exUserPos = { lat: p.coords.latitude, lng: p.coords.longitude }; geoSavePos(exUserPos); exGeoState = 'ok'; if(view==='ex') renderEx(); },
+      function(){ if(!geoCachedPos()) exGeoState = 'denied'; },
+      { timeout: 10000, maximumAge: 3600000 });
+  }
+}
+function setGeoSetting(on){
+  geoSetting = on? 'on': 'off';
+  try{ localStorage.setItem('zukan.geo', geoSetting); }catch(e){}
+  if(!on){ exUserPos = null; exGeoState = 'off'; }
+  else { exGeoState = 'idle'; ensureGeoPos(); }
+  if(view==='settings') renderSettings();
+  if(view==='ex') renderEx();
+}
+if(geoEnabled()){ const c0 = geoCachedPos(); if(c0){ exUserPos = { lat: c0.lat, lng: c0.lng }; exGeoState = 'ok'; } }
 function exCoords(e){
   const lat = (e.lat!=null && e.lat!=='')? e.lat: e.latitude;
   const lng = (e.lng!=null && e.lng!=='')? e.lng: e.longitude;
@@ -9387,15 +9422,7 @@ function exSortCmp(mode){
 function setExSort(m){
   const dir = segDir(['start','end','near'], exSortMode, m);
   exSortMode = m;
-  if(m==='near' && !exUserPos && exGeoState!=='denied'){
-    if(navigator.geolocation){
-      exGeoState = 'asking';
-      navigator.geolocation.getCurrentPosition(
-        function(p){ exUserPos = { lat: p.coords.latitude, lng: p.coords.longitude }; exGeoState = 'ok'; renderEx(); },
-        function(){ exGeoState = 'denied'; renderEx(); },
-        { timeout: 10000, maximumAge: 600000 });
-    } else exGeoState = 'denied';
-  }
+  if(m==='near') ensureGeoPos();
   renderEx();
   driftIn($('viewEx'), dir);
 }
@@ -9500,7 +9527,8 @@ let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><butto
 +'<button class="'+(exSortMode==='near'?'on':'')+'" onclick="setExSort(\'near\')">近い順</button>'
 +'</span></div>';
 if(exSortMode==='near'){
-  if(exGeoState==='denied') html += '<div class="note">現在地を取得できなかったため、開始日順で表示しています。</div>';
+  if(!geoEnabled()) html += '<div class="note">位置情報がオフのため、開始日順で表示しています（その他でオンにできます）。</div>';
+  else if(exGeoState==='denied') html += '<div class="note">現在地を取得できなかったため、開始日順で表示しています。</div>';
   else if(!exUserPos) html += '<div class="note">現在地を取得しています…</div>';
 }
 html += galleryLinksHTML(exs);
@@ -11252,7 +11280,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.73';
+const APP_VERSION = '2.74';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11489,6 +11517,7 @@ function applyAppearance(){
 const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
   personPlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7.8" r="3.4"/><path d="M3.8 19.6c.7-3 3.1-4.7 6.2-4.7 1.5 0 2.9.4 3.9 1.2"/><path d="M18.6 12.2v6.6M15.3 15.5h6.6"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.4-6.5-10.4a6.5 6.5 0 0113 0C18.5 15.6 12 21 12 21z"/><circle cx="12" cy="10.4" r="2.3"/></svg>',
   palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
@@ -11533,6 +11562,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
+      srow(SICON.pin, '位置情報', geoEnabled()? 'オン': 'オフ', "openSettingsPanel('geo')")+
       srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
@@ -11664,6 +11694,16 @@ function renderSettingsPanel(){
       '<button class="blockbtn" onclick="relaySaveAndTest()">保存して接続テスト</button>'+
       '<div id="relayStat" class="note">'+(rc? '設定済みです。接続テストで中継の応答を確認できます。': '未設定です。')+'</div>'+
       (rc? '<button class="btn" style="margin-top:10px" onclick="relayClear()">中継を解除</button>': '')+
+      '</div>');
+  }
+  else if(settingsPanel==='geo'){
+    const c = geoCachedPos();
+    p.innerHTML = panelShell('位置情報',
+      '<div class="setbox">' +
+      '<div class="syncstat">'+(geoEnabled()? 'オン': 'オフ')+'</div>' +
+      '<div class="small">展示の「近い順」で、現在地から近い会場を探すためにだけ使います。オンの間は、許可は最初の一度だけで、取得した位置はこの端末の中に保存されて、次回からは聞かれません。オフにすると、取得も使用も一切しません。</div>' +
+      '<div class="note">'+(c? '前回の取得：'+new Date(c.at).toLocaleString('ja-JP'): '位置はまだ取得していません')+'</div>' +
+      (geoEnabled()? '<button class="blockbtn" onclick="setGeoSetting(false)">位置情報をオフにする</button>' : '<button class="blockbtn" onclick="setGeoSetting(true)">位置情報をオンにする</button>') +
       '</div>');
   }
   else if(settingsPanel==='request'){
