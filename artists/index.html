@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.92">
+<meta name="app-version" content="2.93">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -98,6 +98,16 @@ h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spac
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
 #navEx, #navTimeline, #navReqNotif{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
+/* v2.93: the request-notifications door is a bell-mark button —
+   icon only, with a small count badge (his call: the labelled
+   button was too big). */
+#navReqNotif{position:relative; display:inline-flex; align-items:center; justify-content:center; width:40px; height:33px; padding:0;}
+#navReqNotif svg{width:17px; height:17px;}
+#navReqNotif .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
+/* v2.93: on the notification screens (update history / request
+   notifications) the bottom pill is hidden — opacity only, so the
+   pill's rect never moves and its self-heal guard stays calm. */
+body.notifopen #pillnav{opacity:0; pointer-events:none;}
 #navEx.on, #navTimeline.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 #syncbar{display:block; width:100%; background:none; border:none; text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em; font-family:inherit; cursor:pointer;}
 #syncbar .err{color:var(--danger);}
@@ -635,7 +645,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
-    <button class="txtbtn" id="navReqNotif" onclick="openRequestNotifs()">回収通知</button>
+    <button class="txtbtn" id="navReqNotif" onclick="openRequestNotifs()" aria-label="リクエスト回収の通知"></button>
     <button class="txtbtn" id="navTimeline" onclick="openTimeline()">年表</button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
@@ -8419,6 +8429,8 @@ function restoreListScroll(y){
 function showView(v){
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
+if(v!=='settings') document.body.classList.remove('notifopen');
+syncTimelineBtn();
 /* v2.70: record the pill-trail — entering the list from a hub view
    （展示/年表/その他） makes that hub the list's swipe-back target.
    switchDataset records its own (it swaps DS before calling here)
@@ -8723,15 +8735,21 @@ showView('ex');
    first when needed. (v2.35 briefly put it in the pill as a fifth
    segment; v2.36 moved it back to a header button — called from there —
    because the user found five segments cramped.) */
+/* v2.93: the timeline button lives on the artists' first screen
+   only (his ask) — and openTimeline no longer drags the dataset
+   over from the designers' side; a separate design timeline is a
+   later build. */
+function syncTimelineBtn(v){ const nt = $('navTimeline'); if(nt) nt.style.display = (((v||view)==='list' && DS==='artists')? '' : 'none'); }
 function openTimeline(){
 if(view==='timeline') return;
-if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
+if(DS!=='artists') return;
 showView('timeline');
 }
 function updateHeader(){
 /* v2.48: the settings view is named その他 — while it is open the
    header carries the view's own name (user's instruction), whatever
    path refreshes the header. */
+syncTimelineBtn();
 if(view==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; return; }
 $('appname').textContent = CONFIG.appName;
 /* v2.30: the header count is shared chrome too. It used to be written
@@ -9845,12 +9863,13 @@ function reqDoneItems(){
 }
 /* v2.82: the door lives in the top header, left of the 年表
    button (his corrected placement — NOT beside the updates). It
-   opens the dedicated reqnotif panel. The count rides the label. */
+   opens the dedicated reqnotif panel.
+   v2.93: bell mark only, the count rides a small badge. */
 function refreshReqNotifBtn(){
   const b = $('navReqNotif'); if(!b) return;
   let n = 0;
   try{ n = reqDoneItems().length; }catch(e){}
-  b.textContent = '回収通知' + (n? '（'+n+'）': '');
+  b.innerHTML = SICON.bell + (n? '<span class="nbadge">'+n+'</span>': '');
 }
 function openRequestNotifs(){
   showView('settings');
@@ -11548,7 +11567,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.92';
+const APP_VERSION = '2.93';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11819,6 +11838,7 @@ function renderSettings(){
 }
 function renderSettingsMain(){
   const m = $('settingsmain'); if(!m) return;
+  document.body.classList.remove('notifopen');
   m.innerHTML =
     '<div class="setttl">その他</div>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'drive\')"><span class="ic">'+SICON.cloud+'</span><span class="lb">Google Drive 同期</span><span id="driveval">'+esc(driveVal())+'</span><span class="chev">›</span></button>'+
@@ -11919,6 +11939,8 @@ function renderSettingsPanel(){
   const m = $('settingsmain'); if(m) m.style.display='none';
   const p = $('settingspanel'); if(!p) return;
   p.style.display = 'block';
+  /* v2.93: the pill hides while a notification screen is open */
+  document.body.classList.toggle('notifopen', settingsPanel==='updates' || settingsPanel==='reqnotif');
   if(settingsPanel==='theme'){
     p.innerHTML = panelShell('テーマカラー', '<div class="setbox"><div class="swatches" id="themeswatches"></div></div>');
     $('themeswatches').innerHTML = THEMES.map(t=>'<button class="swatch'+(ZSET.theme===t.id?' on':'')+'" onclick="setTheme(\''+t.id+'\')"><div class="chip" style="background:'+t.chip+'"></div>'+t.name+'</button>').join('');
