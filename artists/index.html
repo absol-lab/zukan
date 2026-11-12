@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.49">
+<meta name="app-version" content="2.50">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9762,9 +9762,9 @@ function fetchT(url, opts, ms){
 async function driveReq(tok, path, opts, ms){
   return fetchT(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }), ms||30000);
 }
-async function findDataFileFor(tok, dataFile){
+async function findDataFileFor(tok, dataFile, ms){
   const q = encodeURIComponent("name='"+dataFile+"' and trashed=false");
-  const res = await driveReq(tok, '/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+  const res = await driveReq(tok, '/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime', null, ms||30000);
   if(!res.ok) throw new Error('files.list HTTP '+res.status);
   const j = await res.json();
   const files = (j.files||[]).filter(f=>f.name===dataFile);
@@ -9820,8 +9820,22 @@ function refreshAfterSync(kind){
   renderAbout();
 }
 /* 1データセット分の同期。ストレージを正として読み書きし、結果を CTX[kind] に残す。
-   成功・失敗どちらでも必ず状態が確定する（同期中のまま残らない）。 */
+   成功・失敗どちらでも必ず状態が確定する（同期中のまま残らない）。
+   v2.50: a timeout-class failure is retried once automatically —
+   the flow is idempotent (whole-file merge + upload), so a redo is
+   safe, and on a marginal link (the user's 4G case, where a single
+   1.5MB transfer can stall past its fuse) the second attempt is
+   usually what lands. Non-timeout errors are not retried. */
 async function syncDatasetFlow(kind, reason){
+  let r = await syncDatasetOnce(kind, reason);
+  if(!r.ok && r.timeout){
+    await new Promise(res=>setTimeout(res, 1500));
+    r = await syncDatasetOnce(kind, reason);
+  }
+  if(!r.ok && r.errMsg) setCtxStatus(kind, 'error', r.errMsg);
+  return r;
+}
+async function syncDatasetOnce(kind, reason){
   const c = CTX[kind]; if(!c) return { ok:false, msg:'対象がありません' };
   const cfg = c.cfg, prefix = cfg.prefix;
   const tok = getValidToken();
@@ -9833,7 +9847,7 @@ async function syncDatasetFlow(kind, reason){
     if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
     if(!data) data = c.DB;
     data = await uploadPendingImagesFor(prefix, data, tok);
-    const file = await findDataFileFor(tok, cfg.dataFile);
+    const file = await findDataFileFor(tok, cfg.dataFile, 60000);
     if(!file){
       const created = await createDataFileFor(tok, cfg.dataFile, data);
       if(created && created.id) storeSet(prefix+'driveFileId', created.id);
@@ -9856,8 +9870,7 @@ async function syncDatasetFlow(kind, reason){
     return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）' };
   }catch(e){
     const m = (e && e.message) ? e.message : String(e);
-    setCtxStatus(kind, 'error', m);
-    return { ok:false, msg:'同期に失敗しました（'+m+'）' };
+    return { ok:false, msg:'同期に失敗しました（'+m+'）', errMsg:m, timeout:/タイムアウト|abort/i.test(m) };
   }
 }
 function queueSync(task){
@@ -9869,13 +9882,19 @@ function queueSync(task){
 async function runAppSync(reason, showResults){
   appSyncRunning = true; renderSyncStatus();
   try{
+    /* v2.50: registration requests go FIRST, on their own — they are
+       a few hundred bytes and the user's real errand. Until now they
+       flushed only in the finally AFTER both ~1.5MB dataset syncs,
+       un-awaited, so one bulk timeout (or closing the app right
+       after the error) stranded them on the device indefinitely. */
+    try{ await flushArtistRequests(); }catch(e){}
     for(const kind of ['artists','designers']){
       const r = await syncDatasetFlow(kind, reason);
       if(showResults) appendSyncLine(CTX[kind].cfg.appName, r.msg, !r.ok);
     }
   }finally{
+    try{ await flushArtistRequests(); }catch(e){}
     appSyncRunning = false; renderSyncStatus();
-    try{ flushArtistRequests(); }catch(e){}
   }
 }
 function appSyncBtn(){
@@ -9963,7 +9982,16 @@ function requestName(name, source){
 }
 async function flushArtistRequests(){
   const tok = getValidToken(); if(!tok) return;
-  try{
+  /* v2.50: one automatic retry — the file is tiny, so a second try
+     costs a second or two and rescues the marginal-link case where
+     a single stall used to strand the requests silently. */
+  for(let attempt=0; attempt<2; attempt++){
+    try{ await flushRequestsOnce(tok); return; }
+    catch(e){ if(attempt===0) await new Promise(r=>setTimeout(r, 1200)); }
+  }
+}
+async function flushRequestsOnce(tok){
+  {
     let file = await findDataFileFor(tok, REQ_FILE);
     let data = { requests: [], updatedAt: '' };
     if(file){
@@ -9983,7 +10011,7 @@ async function flushArtistRequests(){
     reqSaveOutbox(reqOutbox().filter(r=> !data.requests.some(d=>d.id===r.id)));
     if(settingsPanel==='request') renderRequestList();
     if(view==='settings' && !settingsPanel) renderSettingsMain();
-  }catch(e){ /* stays queued; retried on next sync / panel open */ }
+  }
 }
 function refreshRequests(){
   if(!getValidToken()){ renderRequestList(); return; }
@@ -10246,7 +10274,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.49';
+const APP_VERSION = '2.50';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
