@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.36">
+<meta name="app-version" content="2.37">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -281,6 +281,12 @@ h3.subhead:first-child{margin-top:8px;}
 .exitem .edates{font-size:13.5px; margin-top:2px;}
 .exitem .days{color:var(--accent); font-weight:600;}
 button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; padding:0 6px; min-height:48px; display:inline-flex; align-items:center;}
+/* v2.37: gallery links at the top of the exhibitions view */
+.galrow{display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px; margin-top:10px; min-height:56px; text-decoration:none; color:var(--text);}
+.galrow:active{background:var(--card2);}
+.galrow .gname{font-family:var(--serif); font-size:16px; font-weight:600; letter-spacing:.02em;}
+.galrow .gmeta{margin-left:auto; font-size:12.5px; color:var(--muted); white-space:nowrap;}
+.galrow .gext{color:var(--accent); font-size:15px;}
 /* timeline / quiz */
 .tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
 .tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
@@ -8894,6 +8900,28 @@ function setExSort(m){
   renderEx();
   driftIn($('viewEx'), dir);
 }
+/* v2.37: mega-gallery links (user request via Art Labo). His home-screen
+   gallery folder went unread; the links now live at the top of the
+   exhibitions view, each with the count of that gallery's exhibitions
+   in the encyclopedia data that are current or upcoming. Tapping opens
+   the gallery's official exhibitions page in Safari. */
+const GALLERIES = [
+  { name: 'Gagosian', match: 'Gagosian', url: 'https://gagosian.com/exhibitions/' },
+  { name: 'Pace', match: 'Pace', url: 'https://www.pacegallery.com/exhibitions/' },
+  { name: 'David Zwirner', match: 'David Zwirner', url: 'https://www.davidzwirner.com/exhibitions' },
+  { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' },
+  { name: '小山登美夫ギャラリー', match: '小山登美夫', url: 'https://www.tomiokoyamagallery.com/exhibitions/' }
+];
+function galleryLinksHTML(exs){
+  const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  const rows = GALLERIES.map(g => {
+    const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && (!e.end_date || e.end_date >= tstr)).length;
+    return '<a class="galrow" href="'+g.url+'" target="_blank" rel="noopener"><span class="gname">'+esc(g.name)+'</span>' +
+      ((exs && exs.length) ? '<span class="gmeta">図鑑の展示 '+n+'件</span>' : '') +
+      '<span class="gext">↗</span></a>';
+  }).join('');
+  return '<h2 class="sechead"><span>ギャラリー</span><span class="cnt">公式サイトの展示ページへ</span></h2>' + rows;
+}
 function renderExArtists(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
@@ -8911,6 +8939,7 @@ if(exSortMode==='near'){
   if(exGeoState==='denied') html += '<div class="note">現在地を取得できなかったため、開始日順で表示しています。</div>';
   else if(!exUserPos) html += '<div class="note">現在地を取得しています…</div>';
 }
+html += galleryLinksHTML(exs);
 if(!exs.length){ v.innerHTML = html + '<div class="empty">展示データはまだありません</div>'; return;}
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr))).sort(cmp);
 const up = exs.filter(e=>!(cur.indexOf(e)>=0)).sort(cmp);
@@ -8941,7 +8970,7 @@ function renderExDesigners(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
 const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
-if(!exs.length){ v.innerHTML = head + '<div class="empty">展示データはまだありません</div>'; return;}
+if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
@@ -8963,7 +8992,7 @@ return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'
 (e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
 '</div></div>';
 };
-let html = head;
+let html = head + galleryLinksHTML(exs);
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
@@ -9931,7 +9960,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.36';
+const APP_VERSION = '2.37';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
