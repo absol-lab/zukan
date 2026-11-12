@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.50">
+<meta name="app-version" content="2.51">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -7921,8 +7921,16 @@ return;
 keysOf(w).forEach(k=>seen.set(k, w));
 out.push(w);
 };
-if(a.work_image || a.work_caption) push({ caption:a.work_caption||'', file:a.work_image||'', img:null});
 (a.works||[]).forEach(push);
+/* v2.51: the legacy work_image/work_caption entry goes LAST, not
+   first. It used to be pushed before the real works, so worksOf()[0]
+   — and therefore every list thumbnail — showed the pre-Drive-era
+   representative (Schiele's drawing instead of the oil painting the
+   representative-work pass put at works[0]). Now the canonical
+   works lead; the legacy entry still merges into a matching real
+   work (same file key) or survives at the end when it is the only
+   image a record has, so nothing is lost. */
+if(a.work_image || a.work_caption) push({ caption:a.work_caption||'', file:a.work_image||'', img:null});
 return out;
 }
 function thumbOf(a){ const ws = worksOf(a); return ws.length? ws[0]: null;}
@@ -10274,7 +10282,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.50';
+const APP_VERSION = '2.51';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
