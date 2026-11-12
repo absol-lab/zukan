@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.8">
+<meta name="app-version" content="4.9">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -361,6 +361,9 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newssec{margin-top:30px;}
 /* v2.78: update history */
 .uprow{padding:13px 2px 12px; border-bottom:1px solid var(--line);}
+/* v4.9: completed request notifications jump to the person's page */
+.uprow.tap{cursor:pointer; position:relative; padding-right:24px;}
+.uprow .upgo{position:absolute; right:2px; top:15px; color:var(--muted); font-size:17px; line-height:1;}
 .uphead{display:flex; align-items:baseline; gap:9px;}
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
@@ -10151,6 +10154,39 @@ function openRequestNotifs(){
   showView('settings');
   openSettingsPanel('reqnotif');
 }
+/* v4.9: tapping a completed notification opens the person's page
+   (his ask, 2026-11-13). Works items know their dataset + artist_id;
+   registrations carry only the resolved name, so the other dataset's
+   stored copy is peeked at BEFORE switching — no switch unless the
+   person is actually there. Declined items never jump. */
+function reqFindIn(kind, r){
+  try{
+    const cfg = kind==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
+    const raw = storeGet(cfg.prefix+'data'); if(!raw) return null;
+    const arr = (JSON.parse(raw)||{}).artists||[];
+    if(r.kind==='works' && r.artist_id!=null){ const a = arr.find(x=>String(x.id)===String(r.artist_id)); if(a) return a.id; }
+    const nm = reqResolvedName(r);
+    const a = arr.find(x=>x.name===nm);
+    return a? a.id: null;
+  }catch(e){ return null; }
+}
+function reqNotifJump(id){
+  const r = reqAllItems().find(x=>x.id===id); if(!r || r.status==='declined') return;
+  const nm = reqResolvedName(r);
+  if(r.kind==='works' && r.dataset && r.dataset!==DS){
+    const oid = reqFindIn(r.dataset, r);
+    switchDataset(r.dataset);
+    if(oid!=null) openDetail(oid); else toast('この端末にはまだ届いていません');
+    return;
+  }
+  if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ openDetail(a.id); return; } }
+  const here = DB.artists.find(x=>x.name===nm);
+  if(here){ openDetail(here.id); return; }
+  const other = DS==='artists'? 'designers':'artists';
+  const oid = reqFindIn(other, r);
+  if(oid!=null){ switchDataset(other); openDetail(oid); return; }
+  toast('この端末にはまだ届いていません');
+}
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
   const done = reqDoneItems();
@@ -10162,10 +10198,12 @@ function renderRequestNotifs(targetId){
     const askedLine = (r.status==='registered' && r.kind!=='works' && resolved && resolved !== r.name)
       ? '<div class="upat" style="margin-top:2px;">リクエスト：「'+esc(r.name)+'」</div>' : '';
     const noteIsNameOnly = r.note && /として登録/.test(r.note) && reqResolvedName(r) !== r.name;
-    return '<div class="uprow"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
+    const tap = r.status!=='declined';
+    return '<div class="uprow'+(tap?' tap':'')+'"'+(tap?' onclick="reqNotifJump(\''+escA(r.id)+'\')"':'')+'><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
       askedLine +
       '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
-      (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') + '</div>';
+      (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') +
+      (tap? '<span class="upgo">›</span>': '') + '</div>';
   }).join('');
   /* v2.95: he is looking at them — mark seen, badge clears */
   reqMarkSeen();
@@ -12090,7 +12128,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.8';
+const APP_VERSION = '4.9';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
