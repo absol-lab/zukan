@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.37">
+<meta name="app-version" content="2.38">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -287,6 +287,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galrow .gname{font-family:var(--serif); font-size:16px; font-weight:600; letter-spacing:.02em;}
 .galrow .gmeta{margin-left:auto; font-size:12.5px; color:var(--muted); white-space:nowrap;}
 .galrow .gext{color:var(--accent); font-size:15px;}
+.galsub{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:18px 2px 2px;}
 /* timeline / quiz */
 .tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
 .tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
@@ -8905,22 +8906,55 @@ function setExSort(m){
    exhibitions view, each with the count of that gallery's exhibitions
    in the encyclopedia data that are current or upcoming. Tapping opens
    the gallery's official exhibitions page in Safari. */
-const GALLERIES = [
-  { name: 'Gagosian', match: 'Gagosian', url: 'https://gagosian.com/exhibitions/' },
-  { name: 'Pace', match: 'Pace', url: 'https://www.pacegallery.com/exhibitions/' },
-  { name: 'David Zwirner', match: 'David Zwirner', url: 'https://www.davidzwirner.com/exhibitions' },
-  { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' },
-  { name: '小山登美夫ギャラリー', match: '小山登美夫', url: 'https://www.tomiokoyamagallery.com/exhibitions/' }
+/* v2.38: expanded to 23 venues in three groups — the user's home-screen
+   "gallery" and "Collection" folders both move in here so he can delete
+   them. Every URL verified on the official site 2026-11-12. Counts show
+   only when the encyclopedia data has current/upcoming exhibitions at
+   that venue (venue substring match absorbs 표기 variants). */
+const GAL_GROUPS = [
+  { label: 'ギャラリー', items: [
+    { name: 'Gagosian', match: 'Gagosian', url: 'https://gagosian.com/exhibitions/' },
+    { name: 'Pace', match: 'Pace', url: 'https://www.pacegallery.com/exhibitions/' },
+    { name: 'David Zwirner', match: 'David Zwirner', url: 'https://www.davidzwirner.com/exhibitions' },
+    { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' },
+    { name: 'White Cube', match: 'White Cube', url: 'https://www.whitecube.com/exhibitions' },
+    { name: 'Perrotin', match: 'Perrotin', url: 'https://www.perrotin.com/en/agenda' },
+    { name: '小山登美夫ギャラリー', match: '小山登美夫', url: 'https://www.tomiokoyamagallery.com/exhibitions/' },
+    { name: 'タカ・イシイギャラリー', match: 'タカ・イシイ', url: 'https://www.takaishiigallery.com/en/exhibitions/' },
+    { name: 'SCAI THE BATHHOUSE', match: 'SCAI', url: 'https://www.scaithebathhouse.com/en/gallery/' },
+    { name: 'シュウゴアーツ', match: 'シュウゴアーツ', url: 'https://shugoarts.com/exhibitions/' },
+    { name: 'TARO NASU', match: 'TARO NASU', url: 'https://www.taronasugallery.com/exhibition/current/' }
+  ]},
+  { label: '美術館・海外', items: [
+    { name: 'MoMA', match: 'MoMA', url: 'https://www.moma.org/calendar/exhibitions' },
+    { name: 'Tate', match: 'Tate', url: 'https://www.tate.org.uk/whats-on' },
+    { name: 'The Morgan Library & Museum', match: 'Morgan', url: 'https://www.themorgan.org/exhibitions' },
+    { name: 'The Drawing Center', match: 'Drawing Center', url: 'https://drawingcenter.org/exhibitions' },
+    { name: 'WikiArt', match: 'WikiArt', url: 'https://www.wikiart.org/' }
+  ]},
+  { label: '美術館・東京・国内', items: [
+    { name: '東京都現代美術館', match: '東京都現代美術館', url: 'https://www.mot-art-museum.jp/exhibitions/' },
+    { name: '東京国立近代美術館', match: '東京国立近代美術館', url: 'https://www.momat.go.jp/exhibitions' },
+    { name: '国立西洋美術館', match: '国立西洋美術館', url: 'https://www.nmwa.go.jp/jp/exhibitions/current.html' },
+    { name: '国立新美術館', match: '国立新美術館', url: 'https://www.nact.jp/exhibition_and_event/' },
+    { name: '森美術館', match: '森美術館', url: 'https://www.mori.art.museum/jp/exhibitions/' },
+    { name: '東京都美術館', match: '東京都美術館', url: 'https://www.tobikan.jp/exhibition/' },
+    { name: 'ワタリウム美術館', match: 'ワタリウム', url: 'http://www.watarium.co.jp/jp/exhibition/' }
+  ]}
 ];
 function galleryLinksHTML(exs){
   const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  const rows = GALLERIES.map(g => {
+  const row = (g) => {
     const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && (!e.end_date || e.end_date >= tstr)).length;
     return '<a class="galrow" href="'+g.url+'" target="_blank" rel="noopener"><span class="gname">'+esc(g.name)+'</span>' +
-      ((exs && exs.length) ? '<span class="gmeta">図鑑の展示 '+n+'件</span>' : '') +
+      (n > 0 ? '<span class="gmeta">図鑑の展示 '+n+'件</span>' : '') +
       '<span class="gext">↗</span></a>';
-  }).join('');
-  return '<h2 class="sechead"><span>ギャラリー</span><span class="cnt">公式サイトの展示ページへ</span></h2>' + rows;
+  };
+  let html = '<h2 class="sechead"><span>ギャラリー・美術館</span><span class="cnt">公式サイトの展示ページへ</span></h2>';
+  GAL_GROUPS.forEach(gr => {
+    html += '<div class="galsub">'+esc(gr.label)+'</div>' + gr.items.map(row).join('');
+  });
+  return html;
 }
 function renderExArtists(){
 const exs = (DB.exhibitions||[]).slice();
@@ -9960,7 +9994,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.37';
+const APP_VERSION = '2.38';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
