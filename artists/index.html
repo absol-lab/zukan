@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.59">
+<meta name="app-version" content="2.60">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8045,7 +8045,13 @@ if(r.bottom > -800 && r.top < vh + 800){ delete span.dataset.rearm; if(span._wor
    loads run at once; the rest queue in view order. The viewer
    (upgradeViewerImg / the fileId path) deliberately bypasses the
    queue: it is one or two images and the user is looking at them. */
-const IMG_MAX_CONCURRENT = 6;
+/* v2.60: the cap rises 6 -> 8 and the queue is viewport-priority:
+   on-device the cap fixed the burst collapse but visible tiles could
+   wait behind offscreen prefetch armed by the +-800px observer.
+   Dequeue now picks the queued span nearest the viewport (0 when
+   intersecting), so what the user is looking at always loads first;
+   the cap itself — the actual burst guard — stays. */
+const IMG_MAX_CONCURRENT = 8;
 let imgActive = 0;
 const imgWaitQ = [];
 const imgSchedStats = { max: 0 };
@@ -8053,11 +8059,28 @@ function imgSlotAcquire(span, run){
 if(imgActive < IMG_MAX_CONCURRENT){ imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive); run(); }
 else imgWaitQ.push({ span:span, run:run });
 }
+function imgPickNext(){
+for(let i=imgWaitQ.length-1;i>=0;i--){ if(!imgWaitQ[i].span.isConnected) imgWaitQ.splice(i,1); }
+let bi = -1, bs = Infinity;
+const vh = window.innerHeight || 800;
+for(let i=0;i<imgWaitQ.length;i++){
+const s = imgWaitQ[i].span;
+let sc = 0;
+try{
+const r = s.getBoundingClientRect();
+if(r.bottom < 0) sc = -r.bottom;
+else if(r.top > vh) sc = r.top - vh;
+}catch(e){}
+if(sc < bs){ bs = sc; bi = i; if(sc === 0) break; }
+}
+if(bi < 0) return null;
+return imgWaitQ.splice(bi, 1)[0];
+}
 function imgSlotRelease(){
 imgActive = Math.max(0, imgActive - 1);
 while(imgActive < IMG_MAX_CONCURRENT && imgWaitQ.length){
-const q = imgWaitQ.shift();
-if(!q.span.isConnected) continue;
+const q = imgPickNext();
+if(!q) break;
 imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive);
 q.run();
 }
@@ -10565,7 +10588,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.59';
+const APP_VERSION = '2.60';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
