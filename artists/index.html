@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.29">
+<meta name="app-version" content="2.30">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8180,8 +8180,14 @@ requestAnimationFrame(()=>{ nav.style.display = ''; });
 }
 });
 }
-let pillScrollT = null;
+let pillScrollT = null, pillScrollCheckAt = 0;
 window.addEventListener('scroll', ()=>{
+/* v2.30: also re-check DURING a long scroll (at most every 600ms) —
+   the recording showed the pill displaced mid-scroll, and healing
+   only after the scroll fully stops leaves it floating for the whole
+   fling. The settle check below still runs as before. */
+const now = Date.now();
+if(now - pillScrollCheckAt > 600){ pillScrollCheckAt = now; ensurePillAnchor(); }
 if(pillScrollT) clearTimeout(pillScrollT);
 pillScrollT = setTimeout(ensurePillAnchor, 180);
 }, { passive:true });
@@ -8285,6 +8291,13 @@ $('pnSet').classList.toggle('on', view==='settings');
 }
 function updateHeader(){
 $('appname').textContent = CONFIG.appName;
+/* v2.30: the header count is shared chrome too. It used to be written
+   only by renderList, so a dataset switch landing directly on a
+   remembered detail view left the OTHER dataset's count in the
+   header (seen in the user's 2026-11-12 recording: 作家図鑑 header
+   showing 全236名 on an artist detail). Write it here, where the
+   dataset binding has just changed. */
+$('topcount').textContent = '全'+DB.artists.length+'名';
 }
 /* ---------- dataset switching （ページ遷移なし・文脈はデータセット毎に保持） ---------- */
 function switchDataset(kind){
@@ -9840,7 +9853,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.29';
+const APP_VERSION = '2.30';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
