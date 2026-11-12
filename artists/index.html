@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.3">
+<meta name="app-version" content="4.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -286,6 +286,12 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 #viewDetail .gallery.wm-mini figcaption .sub{font-size:10.5px; line-height:1.35;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
 .bodytext{white-space:pre-wrap; overflow-wrap:anywhere; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
+/* v4.4: catalogue-CV setting for the biography */
+.cvlist{padding:6px 0 2px;}
+.cvrow{display:flex; gap:14px; padding:8px 0; border-bottom:1px solid var(--line);}
+.cvrow:last-child{border-bottom:none;}
+.cvyear{flex:0 0 100px; font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--ink); padding-top:5px; line-height:1.5;}
+.cvtext{flex:1; min-width:0; font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:1.9; overflow-wrap:anywhere;}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
@@ -9334,6 +9340,38 @@ setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
    follow-up: period works shown small read well against the
    chronology). The year row carries his age that year whenever
    a birth year can be read from the record's years field. */
+/* v4.4: the biography set like the CV at the back of an art
+   book / exhibition catalogue (his words: the prose wall was
+   unreadable). The harvested bios stay prose in the data; at
+   render time the prose is re-set as a chronology — split where
+   a sentence opens with a year (or an age), the year becomes a
+   quiet lead column and the rest of the sentence the entry.
+   Age-led continuations join the previous entry; anything
+   before the first year stays prose; a bio with no year-led
+   sentences renders exactly as before. */
+function cvBioHTML(text){
+const t = String(text || '').trim();
+if(!t) return '';
+const segs = t.split(/(?<=。)\s*(?=(?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年|\d{1,3}歳)/);
+const yearRe = /^((?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年(?:\s*（\d{1,3}歳）)?)/;
+const rows = [];
+let intro = '';
+segs.forEach(s=>{
+const ym = s.match(yearRe);
+if(ym && s.charAt(ym[0].length) !== '代'){
+rows.push({ y: ym[1].replace(/\s/g, ''), body: s.slice(ym[0].length).replace(/^[、\s]+/, '') });
+} else if(rows.length){
+rows[rows.length - 1].body += s;
+} else {
+intro += s;
+}
+});
+if(!rows.length) return '<div class="bodytext">'+esc(t)+'</div>';
+let h = '';
+if(intro) h += '<div class="bodytext">'+esc(intro)+'</div>';
+h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+esc(r.body)+'</span></div>').join('') + '</div>';
+return h;
+}
 let bioStripWiring = [];
 function bioWorksStrip(a, ws){
   const dated = [];
@@ -9416,7 +9454,7 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
 '</div></div>';
 }).join('');
 }
-bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
+bioHTML = sp.bio? cvBioHTML(sp.bio): '<div class="bodytext">（来歴の記載はまだありません）</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
@@ -12026,7 +12064,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.3';
+const APP_VERSION = '4.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
