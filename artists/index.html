@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.77">
+<meta name="app-version" content="2.78">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -316,6 +316,14 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newsrow .nnote{font-size:14px; color:color-mix(in srgb, var(--text) 84%, transparent); margin-top:6px; line-height:1.8;}
 .newsrow .nimg{flex:none; width:78px; height:78px; border-radius:10px; object-fit:cover; background:var(--card);}
 .newssec{margin-top:30px;}
+/* v2.78: update history */
+.uprow{padding:13px 2px 12px; border-bottom:1px solid var(--line);}
+.uphead{display:flex; align-items:baseline; gap:9px;}
+.upv{font-size:15px; font-weight:800;}
+.upv.now{color:var(--tag);}
+.upat{font-size:12px; color:var(--muted);}
+.upnotes{margin:6px 0 0; padding-left:17px;}
+.upnotes li{font-size:13.5px; line-height:1.75; margin-top:2px;}
 .corlead{font-size:15.5px; line-height:1.85; margin-top:10px;}
 .corpoint{border-left:3px solid var(--muted); padding:2px 0 2px 12px; margin-top:16px;}
 .corpoint.fact{border-left-color:var(--tag);}
@@ -9655,6 +9663,37 @@ function openNews(){
   showView('news');
   fetchNews();
 }
+/* v2.78: update history — changelog.json lives beside the app in
+   the repo and gains one entry per release; the panel renders the
+   last-good copy instantly, then refreshes. Written in plain
+   user-facing language with the release date AND time (JST). */
+let changelogData = null, changelogFetching = false;
+function changelogCacheLoad(){ try{ const j = JSON.parse(storeGet('zukan.changelog')||'null'); return (j && Array.isArray(j.entries))? j: null; }catch(e){ return null; } }
+async function fetchChangelog(){
+  if(changelogFetching) return;
+  changelogFetching = true;
+  try{
+    const res = await fetch('changelog.json?cv=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) throw new Error('changelog HTTP ' + res.status);
+    const j = await res.json();
+    if(j && Array.isArray(j.entries)){ changelogData = j; try{ storeSet('zukan.changelog', JSON.stringify(j)); }catch(e){} }
+  }catch(e){
+    if(!changelogData) changelogData = changelogCacheLoad();
+  }
+  changelogFetching = false;
+  if(settingsPanel === 'updates') renderUpdateList();
+}
+function renderUpdateList(){
+  const el = $('updatelist'); if(!el) return;
+  const d = changelogData || changelogCacheLoad();
+  if(!d || !d.entries.length){ el.innerHTML = '<div class="empty">更新履歴はまだ読み込めていません</div>'; return; }
+  el.innerHTML = d.entries.map(e => {
+    const dt = e.at? new Date(e.at): null;
+    const when = dt && !isNaN(dt)? (dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日 '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')): '';
+    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(when)+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')+'</div>' +
+      '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
+  }).join('');
+}
 function newsAgeDays(iso){
   const t = Date.parse(iso||'');
   if(isNaN(t)) return null;
@@ -11297,7 +11336,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.77';
+const APP_VERSION = '2.78';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11535,6 +11574,7 @@ const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
   personPlus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7.8" r="3.4"/><path d="M3.8 19.6c.7-3 3.1-4.7 6.2-4.7 1.5 0 2.9.4 3.9 1.2"/><path d="M18.6 12.2v6.6M15.3 15.5h6.6"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.4-6.5-10.4a6.5 6.5 0 0113 0C18.5 15.6 12 21 12 21z"/><circle cx="12" cy="10.4" r="2.3"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0112 0v5l1.2 2.6a.6.6 0 01-.55.9H5.35a.6.6 0 01-.55-.9L6 16z"/><path d="M10 21a2.2 2.2 0 004 0"/></svg>',
   palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
@@ -11580,6 +11620,7 @@ function renderSettingsMain(){
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
       srow(SICON.pin, '位置情報', geoEnabled()? 'オン': 'オフ', "openSettingsPanel('geo')")+
+      srow(SICON.bell, '更新履歴', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
       srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
@@ -11722,6 +11763,11 @@ function renderSettingsPanel(){
       '<div class="note">'+(c? '前回の取得：'+new Date(c.at).toLocaleString('ja-JP'): '位置はまだ取得していません')+'</div>' +
       (geoEnabled()? '<button class="blockbtn" onclick="setGeoSetting(false)">位置情報をオフにする</button>' : '<button class="blockbtn" onclick="setGeoSetting(true)">位置情報をオンにする</button>') +
       '</div>');
+  }
+  else if(settingsPanel==='updates'){
+    p.innerHTML = panelShell('更新履歴', '<div id="updatelist"><div class="empty">読み込んでいます…</div></div>');
+    renderUpdateList();
+    fetchChangelog();
   }
   else if(settingsPanel==='request'){
     p.innerHTML = panelShell('登録依頼',
