@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.51">
+<meta name="app-version" content="2.52">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -271,6 +271,10 @@ h3.subhead:first-child{margin-top:8px;}
 .tagline span{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:3px 11px; font-size:12.5px;}
 /* viewer */
 #viewer{position:fixed; inset:0; background:var(--bg); z-index:100; display:none; flex-direction:column;}
+/* v2.52: manual thumbnail button, top-right of the viewer (the
+   user's own placement). .on = this work IS the thumbnail. */
+#vthumb{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); right:12px; z-index:6; min-height:40px; padding:8px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:.04em;}
+#vthumb.on{background:var(--accent); border-color:var(--accent); color:#fff;}
 #viewer.open{display:flex;}
 #viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;}
 #viewer .vimg img{max-width:100%; max-height:100%; object-fit:contain;}
@@ -540,6 +544,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 </nav>
 
 <div id="viewer">
+  <button id="vthumb" onclick="viewerSetThumb()">サムネにする</button>
   <div class="vimg" id="vimg"></div>
   <div class="vcap" id="vcap"></div>
   <div class="vbar">
@@ -7852,12 +7857,17 @@ return (o.fileId || o.url)? o: null;
 }
 function normalizeArtist(a){
 a = a || {};
-const works = (Array.isArray(a.works)?a.works:[]).map(w=>({
+const works = (Array.isArray(a.works)?a.works:[]).map(w=>{
+const o = {
 caption: String(w && w.caption || ''),
 file: String(w && w.file || ''),
 img: normalizeImg(w && w.img)
-})).filter(w=>w.file || w.caption || w.img);
-return {
+};
+/* v2.52: the user's manual thumbnail pin survives normalization */
+if(w && w.pinned) o.pinned = true;
+return o;
+}).filter(w=>w.file || w.caption || w.img);
+const rec = {
 id: (a.id!=null? a.id: null),
 name: String(a.name||''), name_latin: String(a.name_latin||''), name_native: String(a.name_native||''),
 years: String(a.years||''), field: String(a.field||''), section: String(a.section||''),
@@ -7868,6 +7878,11 @@ works: works,
 layer: (a.layer==='candidate')? 'candidate': 'canon',
 updated_at: String(a.updated_at||'')
 };
+/* v2.52: manual thumbnail choice marker (see viewerSetThumb) — the
+   contract with the harvest side: a record carrying thumb_pinned_at
+   has a user-chosen works[0]; automated reordering must not touch it */
+if(a.thumb_pinned_at) rec.thumb_pinned_at = String(a.thumb_pinned_at);
+return rec;
 }
 function saveDB(){ storeSet(LS_DATA, JSON.stringify(DB));}
 function normalizeFor(kind, d){ const out = normalizeData(d); out.kind = kind; return out; }
@@ -8848,16 +8863,17 @@ wireDPager(v);
 v.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
-if(fig) fig.addEventListener('click', ()=>openViewer(ws, +ph.dataset.workidx));
+if(fig) fig.addEventListener('click', ()=>openViewer(ws, +ph.dataset.workidx, a.id));
 const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);}
 });
 }
 
 /* ---------- fullscreen viewer ---------- */
 let viewerWorks = [], viewerIdx = 0;
+let viewerArtistId = null;
 let viewerAnim = null;
-function openViewer(ws, idx){
-viewerWorks = ws; viewerIdx = idx||0;
+function openViewer(ws, idx, artistId){
+viewerWorks = ws; viewerIdx = idx||0; viewerArtistId = (artistId!=null)? artistId: null;
 const vw = $('viewer');
 vw.classList.add('open'); renderViewer();
 /* シートとして下からせり上がる */
@@ -8883,8 +8899,45 @@ viewerIdx = (viewerIdx + d + viewerWorks.length) % viewerWorks.length;
 renderViewer();
 }
 let viewerSeq = 0;
+/* v2.52: manual thumbnail (the user's proposal) — the viewer button
+   makes the shown work this person's works[0], i.e. their thumbnail
+   everywhere. The choice is marked so automation never overrides it:
+   the work carries pinned:true and the person carries
+   thumb_pinned_at (ISO). Both ride through normalizeArtist, the
+   local-first sync merge (order preserved), and datapack builds. */
+function updateVThumbBtn(){
+const b = $('vthumb'); if(!b) return;
+const isT = viewerIdx===0;
+b.textContent = isT? 'サムネ' : 'サムネにする';
+b.classList.toggle('on', isT);
+}
+function viewerSetThumb(){
+const a = artistById(viewerArtistId); if(!a) return;
+const w = viewerWorks[viewerIdx]; if(!w) return;
+if(viewerIdx===0){ toast('この作品がサムネです'); return; }
+const keysOf = (x)=>[ (x.img&&x.img.fileId), (x.img&&x.img.url), x.file, x.caption? ('cap:'+x.caption): '' ].filter(Boolean);
+const keys = keysOf(w);
+const raw = (a.works||[]).slice();
+let j = raw.findIndex(rw=> keysOf(rw).some(k=> keys.indexOf(k)>=0));
+let entry;
+if(j>=0) entry = raw.splice(j,1)[0];
+else entry = { caption: w.caption||'', file: w.file||'', img: w.img||null }; /* legacy-derived work becomes first-class */
+raw.forEach(rw=>{ if(rw) delete rw.pinned; });
+entry.pinned = true;
+raw.unshift(entry);
+a.works = raw;
+const now = new Date().toISOString();
+a.thumb_pinned_at = now; a.updated_at = now;
+saveDB(); scheduleSync();
+viewerWorks = worksOf(a); viewerIdx = 0;
+updateVThumbBtn();
+$('vcount').textContent = '1 / '+viewerWorks.length;
+if(state.detailId!=null && String(state.detailId)===String(a.id)) renderDetail();
+toast('サムネにしました');
+}
 function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
+updateVThumbBtn();
 const seq = ++viewerSeq;
 const box = $('vimg'); box.innerHTML = '';
 $('vcap').textContent = w.caption || '';
@@ -9453,6 +9506,15 @@ relation: $('ef_relation').value, key_works: $('ef_keyworks').value, notes: $('e
 works: editWorks.filter(w=>w.file||w.caption||w.img),
 updated_at: now
 });
+/* v2.52: a form edit must not strip a manual thumbnail pin */
+if(id!=null){
+const old = DB.artists.find(a=>String(a.id)===String(id));
+if(old && old.thumb_pinned_at){
+rec.thumb_pinned_at = old.thumb_pinned_at;
+const pw = (old.works||[]).find(x=>x && x.pinned);
+if(pw) rec.works.forEach(x=>{ if(x.file && pw.file && x.file===pw.file) x.pinned = true; });
+}
+}
 if(rec.section && DB.sections.indexOf(rec.section)<0) DB.sections.push(rec.section);
 if(id!=null){
 const ix = DB.artists.findIndex(a=>String(a.id)===String(id));
@@ -10282,7 +10344,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.51';
+const APP_VERSION = '2.52';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
