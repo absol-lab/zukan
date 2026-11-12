@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.32">
+<meta name="app-version" content="2.34">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -7976,7 +7976,7 @@ if(work.img && work.img.fileId){
 const fid = work.img.fileId;
 if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
 span.innerHTML = '<span class="noimg">図版 読込中</span>';
-loadDriveImage(fid).then(url=>{
+Promise.race([loadDriveImage(fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
 if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
 }).catch(fail);
 return;
@@ -8008,19 +8008,36 @@ if(work.img && work.img.url){
 const wantSz = parseInt(span.getAttribute('data-size'), 10);
 const fullUrl = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
 const RETRY_WAITS = [350, 1000, 2200];
+const IMG_LOAD_TIMEOUT_MS = 7000;
 let attemptNo = 0;
 const tryUrl = ()=>{
 attemptNo++;
 const uim = document.createElement('img');
 uim.loading = 'eager'; uim.alt = cap;
-uim.onerror = ()=>{
+let settled = false;
+const failAttempt = ()=>{
+if(settled) return; settled = true;
 if(attemptNo <= RETRY_WAITS.length && span.isConnected){
 span.innerHTML = '<span class="noimg">図版</span>';
 setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
 } else tryLocal();
 };
+uim.onload = ()=>{ settled = true; };
+uim.onerror = failAttempt;
 span.innerHTML=''; span.appendChild(uim);
-uim.src = fullUrl;
+/* retries carry a cache-buster: a second <img> for the identical URL
+   joins the SAME in-flight fetch, so retrying a hung request with the
+   clean URL would just hang on the same connection. The thumbnail
+   endpoint ignores unknown params. */
+uim.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
+/* v2.34: load watchdog. On the user's device, thumbnail requests were
+   observed to neither load nor error — the tile stayed a black box
+   forever because the wordmark had already been erased and the retry
+   chain is error-driven. A request that has not completed within
+   IMG_LOAD_TIMEOUT_MS is treated as failed, so the chain (and the
+   v2.31 self-heal behind it) can move and the tile can fall back to a
+   captioned plate instead of a silent void. */
+setTimeout(()=>{ if(!settled && !uim.complete) failAttempt(); }, IMG_LOAD_TIMEOUT_MS);
 };
 tryUrl();
 return;
@@ -9890,7 +9907,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.32';
+const APP_VERSION = '2.34';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -9936,7 +9953,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 11;
+const DATA_PACK = 12;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
@@ -10169,7 +10186,63 @@ function renderSettingsMain(){
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
+    '</div>'+
+    '<div class="groupcard">'+
+      srow(SICON.cloud, '画像診断（不具合調査用）', '', "openSettingsPanel('diag')")+
     '</div>';
+}
+/* v2.34: on-device image diagnostics. The user's iPhone showed every
+   list tile as a black box while every off-device check passed, so the
+   next fix must be chosen from measurements taken ON the device: this
+   panel exercises each candidate load path (the app's tile URL, the
+   stored URL, the uc?export=view form, the Drive API media route the
+   sync already uses, and two controls) and reports data state, tile
+   state and per-path results as plain text for a screenshot. */
+async function runImgDiagnostics(){
+  const out = $('diagout'); if(!out) return;
+  const lines = [];
+  const put = (s)=>{ lines.push(s); out.textContent = lines.join('\n'); };
+  put('=== 画像診断 v' + APP_VERSION + ' ===');
+  put('UA: ' + navigator.userAgent);
+  let sa = false;
+  try{ sa = (window.navigator.standalone === true) || window.matchMedia('(display-mode: standalone)').matches; }catch(e){}
+  put('standalone: ' + sa + ' / onLine: ' + navigator.onLine);
+  const dbA = liveDB('artists'), dbD = liveDB('designers');
+  const cnt = (db)=>{ let t = 0, u = 0; db.artists.forEach(a=>{ (a.works || []).forEach(w=>{ t++; if(w.img && w.img.url) u++; }); }); return u + '/' + t; };
+  put('img.url 保有: 作家 ' + cnt(dbA) + ' / デザイナー ' + cnt(dbD));
+  const gogh = dbA.artists.find(a=> (a.name || '').indexOf('ゴッホ') >= 0) || dbA.artists[0];
+  const w0 = gogh ? (gogh.works || []).find(w=> w.img && w.img.url) : null;
+  if(!w0){ put('サンプル作品（img.url 持ち）が見つかりません'); put('=== 終了 ==='); return; }
+  put('サンプル: ' + gogh.name + ' / ' + (w0.caption || ''));
+  put('保存URL: ' + w0.img.url);
+  const fid = (/[?&]id=([^&]+)/.exec(w0.img.url) || [])[1] || '';
+  const tiles = document.querySelectorAll('#listbody .imgholder');
+  let withImg = 0, decoded = 0;
+  tiles.forEach(s=>{ const im = s.querySelector('img'); if(im){ withImg++; if(im.naturalWidth > 0) decoded++; } });
+  put('一覧タイル実状態: holder ' + tiles.length + ' / img要素 ' + withImg + ' / 表示成功 ' + decoded);
+  const probe = (label, url)=> new Promise(res=>{
+    const t0 = Date.now(); const im = new Image(); let done = false;
+    const fin = (r)=>{ if(done) return; done = true; put(label + ': ' + r + ' (' + (Date.now() - t0) + 'ms)'); res(); };
+    im.onload = ()=> fin('成功 ' + im.naturalWidth + 'x' + im.naturalHeight);
+    im.onerror = ()=> fin('エラー');
+    setTimeout(()=> fin('タイムアウト(10秒)'), 10000);
+    im.src = url;
+  });
+  await probe('P1 タイルURL(w400)', sizedThumbUrl(w0.img.url, 400));
+  await probe('P2 保存URLそのまま', w0.img.url);
+  if(fid) await probe('P3 uc?export=view', 'https://drive.google.com/uc?export=view&id=' + fid);
+  await probe('P5 対照（同一オリジン）', 'icon.png');
+  await probe('P6 対照（gstatic）', 'https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png');
+  const tok = getValidToken();
+  if(tok && fid){
+    const t0 = Date.now();
+    try{
+      const r = await fetch(DRIVE_API + '/files/' + encodeURIComponent(fid) + '?alt=media', { headers: { Authorization: 'Bearer ' + tok } });
+      const b = await r.blob();
+      put('P4 Drive API: HTTP ' + r.status + ' / ' + b.size + ' bytes / ' + b.type + ' (' + (Date.now() - t0) + 'ms)');
+    }catch(e){ put('P4 Drive API: 例外 ' + ((e && e.message) || e)); }
+  } else put('P4 Drive API: スキップ（トークン' + (tok ? 'あり' : 'なし') + ' / ファイルID' + (fid ? 'あり' : 'なし') + '）');
+  put('=== 終了 ===');
 }
 function openSettingsPanel(name){ settingsPanel = name; renderSettingsPanel(); window.scrollTo(0,0); }
 function closeSettingsPanel(){ settingsPanel = null; renderSettings(); window.scrollTo(0,0); }
@@ -10212,6 +10285,14 @@ function renderSettingsPanel(){
       '<div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>'+
       '</div>');
     renderSyncStatus();
+  }
+  else if(settingsPanel==='diag'){
+    p.innerHTML = panelShell('画像診断',
+      '<div class="setbox">'+
+      '<div class="small">画像が表示されない不具合の調査用です。読み込み経路を1つずつ実測します（固まる経路があると最大1分ほどかかります）。終わったら結果をそのままスクリーンショットで送ってください。</div>'+
+      '<button class="blockbtn" onclick="runImgDiagnostics()">診断を開始</button>'+
+      '<div id="diagout" style="white-space:pre-wrap; font-size:12.5px; line-height:1.75; margin-top:12px; word-break:break-all;"></div>'+
+      '</div>');
   }
   else if(settingsPanel==='data'){
     p.innerHTML = panelShell('データ',
