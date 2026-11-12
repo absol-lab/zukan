@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.2">
+<meta name="app-version" content="4.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -277,10 +277,15 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
    vertical scrolling stays with the page itself. */
 .dpager{display:flex; overflow-x:auto; overflow-y:hidden; align-items:flex-start; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
 .dpager::-webkit-scrollbar{display:none;}
-.dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always;}
+.dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always; overflow:hidden;}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
+/* v4.3: works-grid display modes (detail works tab) */
+#viewDetail .gallery.wm-wide{grid-template-columns:1fr;}
+#viewDetail .gallery.wm-compact{grid-template-columns:repeat(3, 1fr); gap:10px 7px;}
+#viewDetail .gallery.wm-mini{grid-template-columns:repeat(4, 1fr); gap:8px 6px;}
+#viewDetail .gallery.wm-mini figcaption .sub{font-size:10.5px; line-height:1.35;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
-.bodytext{white-space:pre-wrap; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
+.bodytext{white-space:pre-wrap; overflow-wrap:anywhere; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
@@ -498,8 +503,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .tlbig{font-family:var(--serif); font-size:32px; line-height:1.1; letter-spacing:.02em;}
 .tlyears{font-size:13px; color:var(--muted); letter-spacing:.06em; margin-top:2px;}
 .tltitle{font-family:var(--serif); font-size:16.5px; margin-top:5px; line-height:1.5;}
-.tlsum{font-size:calc(var(--fs) * .9375); line-height:var(--lh); margin-top:8px; white-space:pre-wrap;}
-.tlbg{font-size:calc(var(--fs) * .90625); line-height:var(--lh); margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+.tlsum{font-size:calc(var(--fs) * .9375); line-height:var(--lh); margin-top:8px; white-space:pre-wrap; overflow-wrap:anywhere;}
+.tlbg{font-size:calc(var(--fs) * .90625); line-height:var(--lh); margin-top:10px; white-space:pre-wrap; overflow-wrap:anywhere; border-top:1px solid var(--line); padding-top:10px;}
 /* v3.3: era photo strip on timeline cards + the era detail view.
    Photos are the encyclopedia's own verified works from that era —
    the timeline becomes a visual index into the collection. */
@@ -8195,6 +8200,12 @@ function displayWorks(a){
     }).map(x => x.w);
 }
 function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
+/* v4.3: display modes for the detail works grid (his ask: the
+   works list gets the same ワイド/標準/小/ミニ stops as the
+   artist list). Device-local, shared across datasets. */
+let workMode = 'def';
+try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
+function setWorkMode(m){ workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} renderDetail(); }
 function workKeysOf(x){ return [ (x.img && x.img.fileId), (x.img && x.img.url), x.file, x.caption? ('cap:' + x.caption): '' ].filter(Boolean); }
 
 /* ---------- notes splitting (来歴 / 技法 / その他) ---------- */
@@ -8958,6 +8969,38 @@ t = t.toLowerCase();
 t = t.replace(/[・･\s　\-‐ー―–—_]/g, '');
 return t;
 }
+/* v4.3: romaji → kana query variants. A romaji token also matches
+   its kana reading, so "gokita" finds ごきた readings (name_kana)
+   as well as the Latin name — the readings themselves are data
+   (collected into name_kana); this makes both directions work. */
+function romajiToKana(s){
+if(!/^[a-z]+$/.test(s)) return null;
+const MAP = { a:'あ', i:'い', u:'う', e:'え', o:'お',
+ka:'か', ki:'き', ku:'く', ke:'け', ko:'こ', sa:'さ', shi:'し', su:'す', se:'せ', so:'そ',
+ta:'た', chi:'ち', tsu:'つ', te:'て', to:'と', na:'な', ni:'に', nu:'ぬ', ne:'ね', no:'の',
+ha:'は', hi:'ひ', fu:'ふ', he:'へ', ho:'ほ', ma:'ま', mi:'み', mu:'む', me:'め', mo:'も',
+ya:'や', yu:'ゆ', yo:'よ', ra:'ら', ri:'り', ru:'る', re:'れ', ro:'ろ', wa:'わ', wo:'を',
+ga:'が', gi:'ぎ', gu:'ぐ', ge:'げ', go:'ご', za:'ざ', ji:'じ', zu:'ず', ze:'ぜ', zo:'ぞ',
+da:'だ', de:'で', do:'ど', ba:'ば', bi:'び', bu:'ぶ', be:'べ', bo:'ぼ',
+pa:'ぱ', pi:'ぴ', pu:'ぷ', pe:'ぺ', po:'ぽ',
+kya:'きゃ', kyu:'きゅ', kyo:'きょ', sha:'しゃ', shu:'しゅ', sho:'しょ', cha:'ちゃ', chu:'ちゅ', cho:'ちょ',
+nya:'にゃ', nyu:'にゅ', nyo:'にょ', hya:'ひゃ', hyu:'ひゅ', hyo:'ひょ', mya:'みゃ', myu:'みゅ', myo:'みょ',
+rya:'りゃ', ryu:'りゅ', ryo:'りょ', gya:'ぎゃ', gyu:'ぎゅ', gyo:'ぎょ', ja:'じゃ', ju:'じゅ', jo:'じょ',
+bya:'びゃ', byu:'びゅ', byo:'びょ', pya:'ぴゃ', pyu:'ぴゅ', pyo:'ぴょ' };
+let out = '', i = 0;
+while(i < s.length){
+if(i + 1 < s.length && s[i] === s[i + 1] && 'aeioun'.indexOf(s[i]) < 0){ out += 'っ'; i++; continue; }
+if(s[i] === 'n'){
+const nx = s[i + 1];
+if(nx === undefined || 'aeiouy'.indexOf(nx) < 0){ out += 'ん'; i++; continue; }
+}
+let hit = null;
+for(const len of [3, 2, 1]){ const sub = s.substr(i, len); if(MAP[sub]){ hit = MAP[sub]; i += len; break; } }
+if(!hit) return null;
+out += hit;
+}
+return out;
+}
 function filteredArtists(){
 let arr = DB.artists;
 const qRaw = state.query;
@@ -8966,7 +9009,11 @@ const toks = qRaw.split(/\s+/).map(normSearch).filter(Boolean);
 if(toks.length){
 arr = arr.filter(a=>{
 const hay = normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' ')].join('\n'));
-return toks.every(tok=>hay.indexOf(tok)>=0);
+return toks.every(tok=>{
+if(hay.indexOf(tok) >= 0) return true;
+const kv = romajiToKana(tok);
+return kv? hay.indexOf(normSearch(kv)) >= 0: false;
+});
 });
 }
 }
@@ -9225,7 +9272,20 @@ state.tab = t;
 const pg = $('dpager');
 if(!pg){ renderDetail(); return; }
 const idx = Math.max(0, DTABS.indexOf(t));
-pg.scrollTo({ left: idx * (pg.clientWidth || 1), behavior: reducedMotion()? 'auto': 'smooth' });
+/* v4.3: tab taps jump instantly to the panel's measured
+   offsetLeft. The old code smooth-scrolled to idx*clientWidth —
+   on the user's iPhone the smooth scroll could rest between
+   panels (neighbouring text bleeding in on both sides, panels
+   looking shifted and doubled), and clientWidth arithmetic could
+   drift from the panels' true offsets. Instant + measured =
+   the panel is exactly in place, every time. Swiping the pager
+   itself still slides natively with snap. */
+const panel = pg.querySelectorAll('.dpage')[idx];
+let left = idx * (pg.clientWidth || 1);
+if(panel){ /* rect-based: true regardless of offset parents
+   (offsetLeft sat a constant 14px off the pager's origin) */
+left = pg.scrollLeft + (panel.getBoundingClientRect().left - pg.getBoundingClientRect().left); }
+pg.scrollTo({ left: left, behavior: 'auto' });
 dtabHighlight(t);
 fitDPagerHeight();
 }
@@ -9274,6 +9334,7 @@ setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
    follow-up: period works shown small read well against the
    chronology). The year row carries his age that year whenever
    a birth year can be read from the record's years field. */
+let bioStripWiring = [];
 function bioWorksStrip(a, ws){
   const dated = [];
   (ws || []).forEach((w, i)=>{ const y = workYearOf(w); if(y) dated.push({ y: y, i: i, w: w }); });
@@ -9287,7 +9348,7 @@ function bioWorksStrip(a, ws){
   yrs.forEach(y=>{
     const age = (birth && +y >= birth)? '（'+(+y - birth)+'歳）': '';
     h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
-      + by[y].map(d=> '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+'</button>').join('')
+      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+'</button>'; }).join('')
       + '</div></div>';
   });
   return h;
@@ -9312,11 +9373,12 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
+bioStripWiring = [];
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
-worksHTML = '<div class="gallery">';
+worksHTML = '<div class="gallery wm-'+workMode+'">';
 ws.forEach((w,i)=>{
-worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 worksHTML += '</div>';
 }
@@ -9328,6 +9390,12 @@ worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
 '<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">年代・古い順</button>' +
 '<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">年代・新しい順</button>' +
+'</span></div>' +
+'<div class="worksreq"><span class="small">表示</span><span class="seg mini">' +
+'<button class="'+(workMode==='wide'?'on':'')+'" onclick="setWorkMode(\'wide\')">ワイド</button>' +
+'<button class="'+(workMode==='def'?'on':'')+'" onclick="setWorkMode(\'def\')">標準</button>' +
+'<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')">小</button>' +
+'<button class="'+(workMode==='mini'?'on':'')+'" onclick="setWorkMode(\'mini\')">ミニ</button>' +
 '</span></div>' + worksHTML;
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
@@ -9375,6 +9443,17 @@ const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
 if(fig) fig.addEventListener('click', ()=>openViewer(ws, +ph.dataset.workidx, a.id));
 const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);}
+});
+/* v4.3: wire the biography strip's thumbnails. Until now these
+   spans were never observed, so the strip stayed on its 図版
+   placeholders forever (the works tab loaded because it IS wired
+   above). The sweep below is the self-heal: any holder in the
+   detail that still has no work after the specific wiring gets
+   one more chance from the strip's recorded order — a future
+   holder added to this view cannot silently starve again. */
+v.querySelectorAll('.biothumb .imgholder').forEach((span, k)=>{
+const w = bioStripWiring[k]; if(!w) return;
+span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 });
 }
 
@@ -11947,7 +12026,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
