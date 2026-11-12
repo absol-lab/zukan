@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.71">
+<meta name="app-version" content="2.72">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -305,11 +305,29 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galhead .galcnt{font-size:12px; color:var(--muted); font-weight:400;}
 .galhead .galchev{margin-left:auto; color:var(--muted); font-size:14px;}
 /* v2.62: news view */
-.newsrow{position:relative; display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 26px 11px 12px; margin-top:8px; min-height:52px; text-decoration:none; color:var(--text);}
-.newsrow .nt{font-size:15px; font-weight:600; line-height:1.45;}
-.newsrow .nm{font-size:12px; color:var(--muted); margin-top:3px;}
-.newsrow .nnote{font-size:13px; color:var(--text); margin-top:4px; line-height:1.5;}
-.newsrow .gext{position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted);}
+/* v2.72: news reads as articles, not cards — flat rows with a
+   hairline rule, a real type hierarchy, generous line height,
+   source set in text color, and the harvest's thumbnails shown. */
+.newsrow{position:relative; display:flex; gap:12px; padding:16px 2px 15px; border-bottom:1px solid var(--line); text-decoration:none; color:var(--text);}
+.newsrow .nmain{flex:1; min-width:0;}
+.newsrow .nt{font-size:16.5px; font-weight:700; line-height:1.55;}
+.newsrow .nm{font-size:12.5px; color:var(--muted); margin-top:5px;}
+.newsrow .nm b{color:var(--text); font-weight:600;}
+.newsrow .nnote{font-size:14px; color:color-mix(in srgb, var(--text) 84%, transparent); margin-top:6px; line-height:1.8;}
+.newsrow .nimg{flex:none; width:78px; height:78px; border-radius:10px; object-fit:cover; background:var(--card);}
+.newssec{margin-top:30px;}
+.corlead{font-size:15.5px; line-height:1.85; margin-top:10px;}
+.corpoint{border-left:3px solid var(--muted); padding:2px 0 2px 12px; margin-top:16px;}
+.corpoint.fact{border-left-color:var(--tag);}
+.corpoint .ct{font-size:15.5px; font-weight:700; line-height:1.5; margin-top:2px;}
+.corpoint .cb{font-size:14.5px; line-height:1.85; margin-top:4px; color:color-mix(in srgb, var(--text) 88%, transparent);}
+/* v2.72: the exhibitions view's two main doors, made unmissable */
+.exnav{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+.exnavcard{display:flex; align-items:center; gap:11px; min-height:62px; padding:10px 14px; background:var(--card); border:1px solid var(--lineStrong); border-radius:14px; color:var(--text); text-align:left; cursor:pointer; font-family:inherit;}
+.exnavcard svg{width:25px; height:25px; color:var(--tag); flex:none;}
+.exnavt{display:block; font-size:16.5px; font-weight:700; line-height:1.3;}
+.exnavs{display:block; font-size:11.5px; color:var(--muted); margin-top:1px;}
+.exitem .calbadge{vertical-align:2px; margin-left:7px;}
 /* v2.63: works-request bar at the top of the detail works tab */
 .worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px;}
 /* v2.65: books tab rows */
@@ -9446,6 +9464,17 @@ function galleryLinksHTML(exs){
   });
   return html;
 }
+/* v2.72: the exhibitions view's two main doors as large cards —
+   the small text buttons they replace were, in the user's words,
+   buried in the ground （目立たなすぎる). Shared by both renderers. */
+function exNavHTML(){
+  const cal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>';
+  const news = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 9h7"/><path d="M7 12.5h10"/><path d="M7 16h6"/></svg>';
+  return '<div class="exnav">'
+    + '<button class="exnavcard" onclick="openCalendar()">'+cal+'<span><span class="exnavt">カレンダー</span><span class="exnavs">会期を月で見る</span></span></button>'
+    + '<button class="exnavcard" onclick="openNews()">'+news+'<span><span class="exnavt">時事</span><span class="exnavs">ニュースと相関</span></span></button>'
+    + '</div>';
+}
 function renderExArtists(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
@@ -9453,8 +9482,9 @@ const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getM
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
-let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openCalendar()">カレンダー</button><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
-+'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
+let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
++ exNavHTML()
++'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
 +'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
 +'<button class="'+(exSortMode==='near'?'on':'')+'" onclick="setExSort(\'near\')">近い順</button>'
@@ -9474,9 +9504,17 @@ let dlabel = '';
 if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
 if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
 const dk = (effMode==='near')? exDistKm(e): null;
-return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+'</div>'+
+/* v2.72: the days-left label becomes a status pill beside the
+   title (same badge language as the calendar): red when the run
+   ends within a week, blue while running, gray before it starts. */
+let badge = '';
+if(dlabel){
+  const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
+  badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
+}
+return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
 '<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
-'<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
+'<div class="edates">'+esc(dates)+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
 (e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
@@ -9493,7 +9531,7 @@ hydrateExPosters(v, exs);
 function renderExDesigners(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
-const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openCalendar()">カレンダー</button><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
+const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>' + exNavHTML();
 if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
@@ -9507,9 +9545,14 @@ let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
 let dlabel = '';
 if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
 if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
-return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+'</div>'+
+let badge = '';
+if(dlabel){
+  const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
+  badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
+}
+return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
 '<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
-'<div class="edates">'+esc(dates)+(dlabel?'　<span class="days">'+esc(dlabel)+'</span>':'')+'</div>'+
+'<div class="edates">'+esc(dates)+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
 (e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
@@ -9580,25 +9623,26 @@ function renderNews(){
   html += '<div class="small" style="margin-top:8px">'+newsDateLabel(d.updatedAt)+' 更新'+(age!=null && age>=1 ? '（'+age+'日前）': '')+'</div>';
   if(age!=null && age > 3) html += '<div class="note">この情報は '+age+' 日前のものです。最新の状況は出典で確認してください。</div>';
   const item = (n) =>
-    '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nt">'+esc(n.title||'')+'</span>' +
-    '<div class="nm">'+esc(n.source||'')+(n.date? ' ・ '+esc(n.date): '')+'</div>' +
-    (n.note? '<div class="nnote">'+esc(n.note)+'</div>': '') +
-    '<span class="gext">↗</span></a>';
+    '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nmain"><span class="nt">'+esc(n.title||'')+'</span>' +
+    '<div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>' +
+    (n.note? '<div class="nnote">'+esc(n.note)+'</div>': '') + '</span>' +
+    (n.img && n.img.url? '<img class="nimg" src="'+escA(sizedThumbUrl(n.img.url, 400))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">': '') +
+    '</a>';
   const c = d.correlation;
   if(c && (c.summary || (c.points||[]).length)){
-    html += '<h2 class="sechead"><span>相関を読む</span></h2>';
-    if(c.summary) html += '<div class="corbox"><div class="cb" style="margin-top:0">'+esc(c.summary)+'</div></div>';
+    html += '<h2 class="sechead" style="margin-top:26px"><span>相関を読む</span></h2>';
+    if(c.summary) html += '<div class="corlead">'+esc(c.summary)+'</div>';
     (c.points||[]).forEach(p => {
       const kind = p.kind === 'fact'? 'fact': 'reading';
-      html += '<div class="corbox"><span class="nbadge '+kind+'">'+(kind==='fact'? '接点（確認済み）': '読み（解釈）')+'</span>' +
+      html += '<div class="corpoint '+kind+'"><span class="nbadge '+kind+'">'+(kind==='fact'? '接点（確認済み）': '読み（解釈）')+'</span>' +
         (p.title? '<div class="ct">'+esc(p.title)+'</div>': '') +
         (p.body? '<div class="cb">'+esc(p.body)+'</div>': '') + '</div>';
     });
   }
   const soc = Array.isArray(d.society)? d.society: [];
   const art = Array.isArray(d.art)? d.art: [];
-  if(soc.length) html += '<h2 class="sechead"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
-  if(art.length) html += '<h2 class="sechead"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + art.map(item).join('');
+  if(soc.length) html += '<h2 class="sechead newssec"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
+  if(art.length) html += '<h2 class="sechead newssec"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + art.map(item).join('');
   if(!soc.length && !art.length && !c) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
   v.innerHTML = html;
 }
@@ -11186,7 +11230,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.71';
+const APP_VERSION = '2.72';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
