@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.7">
+<meta name="app-version" content="4.8">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -297,10 +297,14 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .bodytext{white-space:pre-wrap; overflow-wrap:anywhere; font-size:calc(var(--fs) * 1); line-height:var(--lh); padding:12px 0; font-family:var(--serif);}
 /* v4.4: catalogue-CV setting for the biography */
 .cvlist{padding:6px 0 2px;}
-.cvrow{display:flex; gap:14px; padding:8px 0; border-bottom:1px solid var(--line);}
+.cvrow{display:flex; gap:14px; padding:6px 0; border-bottom:1px solid var(--line);}
 .cvrow:last-child{border-bottom:none;}
-.cvyear{flex:0 0 100px; font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--ink); padding-top:5px; line-height:1.5;}
-.cvtext{flex:1; min-width:0; font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:1.9; overflow-wrap:anywhere;}
+.cvyear{flex:0 0 100px; font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.03em; color:var(--ink); padding-top:3px; line-height:1.5;}
+/* v4.8: the CV text joins the app's line-height system (var(--lh),
+   default 1.7). It was hardcoded 1.9 — the widest step — which is
+   what read as spread-out and inorganic against the catalogue
+   density the user asked for. */
+.cvtext{flex:1; min-width:0; font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:var(--lh); overflow-wrap:anywhere;}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
@@ -12086,7 +12090,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.7';
+const APP_VERSION = '4.8';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
