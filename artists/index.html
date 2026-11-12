@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.56">
+<meta name="app-version" content="2.57">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9773,6 +9773,7 @@ function appStatusInfo(){
   const at = Math.max(a.lastSyncAt||0, d.lastSyncAt||0);
   if(at) return { label:'同期済み（'+hhmm(new Date(at))+'）', cls:'' };
   if(getValidToken()) return { label:'接続済み（未同期）', cls:'' };
+  if(relayReady()) return { label:'接続済み（中継・未同期）', cls:'' };
   return { label:'Drive未接続（端末内に保存中）', cls:'' };
 }
 /* v2.29: the header sync bar is the primary sync control (the diary
@@ -9781,7 +9782,7 @@ function appStatusInfo(){
    The settings Drive panel keeps the details and disconnect. */
 function onSyncBarTap(){
   if(appSyncRunning) return;
-  if(getValidToken()) appSyncBtn(); else connectDrive();
+  if(getValidToken() || relayReady()) appSyncBtn(); else connectDrive();
 }
 function renderSyncStatus(){
   const dot = $('syncdot');
@@ -9789,7 +9790,7 @@ function renderSyncStatus(){
     /* diary semantics: green only with a live token and no error on
        either dataset; red covers disconnected AND error, so the one
        glance the user asked for never reads green on a broken link */
-    const ok = !!getValidToken() && CTX.artists.syncStatus!=='error' && CTX.designers.syncStatus!=='error';
+    const ok = (!!getValidToken() || relayReady()) && CTX.artists.syncStatus!=='error' && CTX.designers.syncStatus!=='error';
     dot.style.background = ok? '#46a758': '#e5484d';
   }
   const cur = ctxStatus(DS);
@@ -9798,7 +9799,7 @@ function renderSyncStatus(){
     let hint = '';
     if(!appSyncRunning){
       if(cur.cls==='err') hint = ' ・ <span class="sbhint">タップで再試行</span>';
-      else if(getValidToken()) hint = ' ・ <span class="sbhint">タップで再同期</span>';
+      else if(getValidToken() || relayReady()) hint = ' ・ <span class="sbhint">タップで再同期</span>';
       else hint = ' ・ <span class="sbhint">タップで接続</span>';
     }
     bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>'+hint;
@@ -9821,7 +9822,7 @@ function clearSyncLines(){ const box = $('syncresults'); if(box) box.innerHTML =
 /* 編集後の自動同期：編集したデータセットだけを、トークンのみで静かに同期する（ポップアップなし） */
 let autoSyncTimer = null, autoSyncKind = null;
 function scheduleSync(){
-  if(!getValidToken()) return;
+  if(!getValidToken() && !relayReady()) return;
   autoSyncKind = DS;
   if(autoSyncTimer) clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(()=>{ const k = autoSyncKind; autoSyncKind = null; if(k) queueSync(()=>syncDatasetFlow(k, 'auto')); }, 1500);
@@ -9906,6 +9907,58 @@ async function driveFetch(path, opts){
   const tok = getValidToken(); if(!tok) throw new Error('no token');
   return fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }));
 }
+/* ---------- v2.57: Apps Script relay transport (opt-in) ----------
+   A tiny Web App deployed under the user's own Google account
+   executes as him and reads/writes the apps' JSON files by NAME,
+   guarded by a shared secret and a server-side filename allowlist.
+   When a relay is configured (settings, device-local storage —
+   never synced, never in this file), the sync primitives below
+   route through it and the app needs no Google token at all: the
+   "login" concept disappears, which is exactly what the user asked
+   for after v2.53 (silent reconnect still depended on the browser's
+   Google session). The GIS flow remains untouched as the fallback
+   whenever no relay is configured. In relay mode a file's "id" is
+   simply its name. */
+const LS_RELAY = 'zukan.relay';
+function relayCfg(){
+  try{ const r = JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.url && r.secret)? r: null; }catch(e){ return null; }
+}
+function relayReady(){ return !!relayCfg(); }
+async function relayCall(op, name, content){
+  const c = relayCfg(); if(!c) throw new Error('中継が未設定です');
+  const body = JSON.stringify({ secret: c.secret, op: op, name: name, content: content });
+  const res = await fetchT(c.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: body }, 60000);
+  if(!res.ok) throw new Error('中継 HTTP '+res.status);
+  const j = JSON.parse(await res.text());
+  if(!j || !j.ok) throw new Error('中継エラー：'+((j && j.error) || 'unknown'));
+  return j;
+}
+function relaySave(url, secret){
+  url = String(url||'').trim(); secret = String(secret||'').trim();
+  if(!url || !secret){ toast('URL とシークレットの両方を入力してください'); return false; }
+  try{ storeSet(LS_RELAY, JSON.stringify({ url: url, secret: secret })); }catch(e){}
+  renderSyncStatus();
+  return true;
+}
+function relayClear(){
+  try{ storeDel(LS_RELAY); }catch(e){}
+  renderSyncStatus();
+  if(settingsPanel==='relay') renderSettingsPanel();
+  toast('中継の設定を解除しました');
+}
+async function relaySaveAndTest(){
+  const u = $('relayUrl'), s = $('relaySecret'), st = $('relayStat');
+  if(!u || !s) return;
+  if(!relaySave(u.value, s.value)) return;
+  if(st) st.textContent = '接続テスト中…';
+  try{
+    await relayCall('ping');
+    if(st) st.textContent = '接続OK — この端末では Google ログインなしで同期します。';
+    queueSync(()=>runAppSync('relay'));
+  }catch(e){
+    if(st) st.textContent = '接続に失敗しました：'+((e && e.message) || e);
+  }
+}
 async function loadDriveImage(fid){
   if(driveImgCache[fid]) return driveImgCache[fid];
   const tok = getValidToken(); if(!tok) return null;
@@ -9936,9 +9989,24 @@ function fetchT(url, opts, ms){
   });
 }
 async function driveReq(tok, path, opts, ms){
+  /* v2.57: in relay mode, a media download is a relay 'get' (the
+     file id IS the file name there). Other Drive paths fall through
+     to the token flow. */
+  if(relayReady()){
+    const m = /^\/files\/(.+)\?alt=media$/.exec(path);
+    if(m){
+      const j = await relayCall('get', decodeURIComponent(m[1]));
+      const text = j.content;
+      return { ok:true, status:200, text: async()=>text, json: async()=>JSON.parse(text) };
+    }
+  }
   return fetchT(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }), ms||30000);
 }
 async function findDataFileFor(tok, dataFile, ms){
+  if(relayReady()){
+    const j = await relayCall('stat', dataFile);
+    return j.exists? { id: dataFile, name: dataFile }: null;
+  }
   const q = encodeURIComponent("name='"+dataFile+"' and trashed=false");
   const res = await driveReq(tok, '/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime', null, ms||30000);
   if(!res.ok) throw new Error('files.list HTTP '+res.status);
@@ -9947,6 +10015,7 @@ async function findDataFileFor(tok, dataFile, ms){
   return files.length ? files[0] : null;
 }
 async function createDataFileFor(tok, dataFile, data){
+  if(relayReady()){ await relayCall('put', dataFile, JSON.stringify(data)); return { id: dataFile }; }
   const meta = { name: dataFile, mimeType:'application/json' };
   const form = new FormData();
   form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
@@ -9956,6 +10025,7 @@ async function createDataFileFor(tok, dataFile, data){
   return res.json();
 }
 async function uploadDataUpdateFor(tok, fileId, data){
+  if(relayReady()){ await relayCall('put', fileId, JSON.stringify(data)); return; }
   const res = await fetchT(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', {
     method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(data)
   }, 60000);
@@ -10015,14 +10085,14 @@ async function syncDatasetOnce(kind, reason){
   const c = CTX[kind]; if(!c) return { ok:false, msg:'対象がありません' };
   const cfg = c.cfg, prefix = cfg.prefix;
   const tok = getValidToken();
-  if(!tok){ setCtxStatus(kind, 'disconnected'); return { ok:false, msg:'Drive未接続' }; }
+  if(!tok && !relayReady()){ setCtxStatus(kind, 'disconnected'); return { ok:false, msg:'Drive未接続' }; }
   setCtxStatus(kind, 'syncing');
   try{
     let data = null;
     const raw = storeGet(prefix+'data');
     if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
     if(!data) data = c.DB;
-    data = await uploadPendingImagesFor(prefix, data, tok);
+    if(tok) data = await uploadPendingImagesFor(prefix, data, tok);
     const file = await findDataFileFor(tok, cfg.dataFile, 60000);
     if(!file){
       const created = await createDataFileFor(tok, cfg.dataFile, data);
@@ -10075,7 +10145,7 @@ async function runAppSync(reason, showResults){
 }
 function appSyncBtn(){
   if(appSyncRunning) return;
-  if(!getValidToken()){ toast('Drive未接続です。先に「Drive に接続」を押してください', 3200); return; }
+  if(!getValidToken() && !relayReady()){ toast('Drive未接続です。先に「Drive に接続」を押してください', 3200); return; }
   clearSyncLines();
   queueSync(()=>runAppSync('manual', true));
 }
@@ -10151,13 +10221,13 @@ function requestName(name, source){
   const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), name:name, requested_at:new Date().toISOString(), status:'pending' };
   const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
   flushArtistRequests();
-  toast(getValidToken()? '登録を依頼しました（完了まで数十分かかることがあります）' : '送信待ちに保存しました（Drive接続時に送られます）', 3600);
+  toast((getValidToken() || relayReady())? '登録を依頼しました（完了まで数十分かかることがあります）' : '送信待ちに保存しました（Drive接続時に送られます）', 3600);
   if(settingsPanel==='request') renderRequestList();
   if(source==='search') renderListBody();
   return true;
 }
 async function flushArtistRequests(){
-  const tok = getValidToken(); if(!tok) return;
+  const tok = getValidToken(); if(!tok && !relayReady()) return;
   /* v2.50: one automatic retry — the file is tiny, so a second try
      costs a second or two and rescues the marginal-link case where
      a single stall used to strand the requests silently. */
@@ -10190,13 +10260,13 @@ async function flushRequestsOnce(tok){
   }
 }
 function refreshRequests(){
-  if(!getValidToken()){ renderRequestList(); return; }
+  if(!getValidToken() && !relayReady()){ renderRequestList(); return; }
   flushArtistRequests();
 }
 function renderRequestList(){
   const el = $('reqlist'); if(!el) return;
   const conn = $('reqconn');
-  if(conn) conn.textContent = getValidToken()? '' : 'Drive未接続のため、依頼は端末内に「送信待ち」として保存され、接続した時に送られます。';
+  if(conn) conn.textContent = (getValidToken() || relayReady())? '' : 'Drive未接続のため、依頼は端末内に「送信待ち」として保存され、接続した時に送られます。';
   const items = reqAllItems();
   if(!items.length){ el.innerHTML = '<div class="empty">まだ依頼はありません</div>'; return; }
   el.innerHTML = items.map(r=>{
@@ -10450,7 +10520,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.56';
+const APP_VERSION = '2.57';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10730,6 +10800,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
+      srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
     '<div class="groupcard">'+
@@ -10848,6 +10919,20 @@ function renderSettingsPanel(){
       '</div>');
     renderSyncStatus();
   }
+  else if(settingsPanel==='relay'){
+    const rc = relayCfg();
+    p.innerHTML = panelShell('中継（Apps Script）',
+      '<div class="setbox">'+
+      '<div class="small">あなたの Google アカウントの中で動く小さな中継スクリプト経由で同期します。設定すると、この端末では Google ログインが不要になり、アプリを落としても接続が切れません。URL とシークレットはこの端末の中にだけ保存されます。</div>'+
+      '<div class="setlabel" style="margin-top:12px">中継の URL</div>'+
+      '<input class="reqinput" id="relayUrl" type="text" placeholder="https://script.google.com/macros/s/…" autocomplete="off" value="'+(rc? escA(rc.url): '')+'">'+
+      '<div class="setlabel">シークレット</div>'+
+      '<input class="reqinput" id="relaySecret" type="text" placeholder="シークレット" autocomplete="off" value="'+(rc? escA(rc.secret): '')+'">'+
+      '<button class="blockbtn" onclick="relaySaveAndTest()">保存して接続テスト</button>'+
+      '<div id="relayStat" class="note">'+(rc? '設定済みです。接続テストで中継の応答を確認できます。': '未設定です。')+'</div>'+
+      (rc? '<button class="btn" style="margin-top:10px" onclick="relayClear()">中継を解除</button>': '')+
+      '</div>');
+  }
   else if(settingsPanel==='request'){
     p.innerHTML = panelShell('登録依頼',
       '<div class="setbox">'+
@@ -10935,6 +11020,10 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   } else {
     const ae = storeGet(CFG_ARTISTS.prefix+'authError') || storeGet(CFG_DESIGNERS.prefix+'authError');
     if(ae) setCtxStatus(DS, 'error', ae);
+    /* v2.57: a configured relay needs no token at all — sync on
+       open, unconditionally. This is the state the user asked for:
+       always connected, nothing to lapse. */
+    if(relayReady()){ queueSync(()=>runAppSync('relay')); }
     /* v2.53: previously connected → try to come back without a tap.
        The GIS script loads async, so poll briefly for it. */
     if(storeGet(LS_EVER_CONNECTED)==='1'){
