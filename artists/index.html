@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.34">
+<meta name="app-version" content="2.35">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -450,8 +450,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
-    <button class="txtbtn hidden" id="navEx" onclick="showView('ex')">展示</button>
-    <button class="txtbtn hidden" id="navTimeline" onclick="showView('timeline')">年表</button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
 </header>
@@ -496,8 +494,10 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="verBadge"></div>
 <nav id="pillnav">
   <span id="navind"></span>
+  <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
   <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
+  <button id="pnTimeline" onclick="openTimeline()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><circle cx="8" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="16" cy="12" r="1.7"/></svg><span>年表</span></button>
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
 </nav>
 
@@ -8094,9 +8094,8 @@ vtForceDir = 0;
 const wantAnim = !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
-$('navEx').classList.toggle('on', v==='ex');
-$('navTimeline').classList.toggle('hidden', DS!=='artists');
-$('navTimeline').classList.toggle('on', v==='timeline');
+
+
 updatePill();
 if(v==='list') renderList();
 updateToolbarSlim();
@@ -8340,9 +8339,33 @@ window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); });
    as a ghost instead of failing silently. */
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
 function updatePill(){
-$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings');
-$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings');
+/* v2.35: exhibitions became the pill's leftmost segment (the header's
+   展示 button was removed at the user's request). The ex view belongs
+   to the artists dataset, and while it is shown the 展示 segment — not
+   作家 — carries the active state. */
+$('pnEx').classList.toggle('on', view==='ex');
+$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='timeline');
+$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='timeline');
+$('pnTimeline').classList.toggle('on', view==='timeline');
 $('pnSet').classList.toggle('on', view==='settings');
+}
+/* v2.35: the exhibitions entry point. Exhibitions live in the artists
+   dataset, so from designers this first crosses over (instantly, per
+   v2.32) and then shows the ex view in the same task — no intermediate
+   paint of the artists list. */
+function openExhibitions(){
+if(view==='ex') return;
+if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
+showView('ex');
+}
+/* v2.35 (final form): the timeline joined the pill too — the user's
+   confirmed layout is [展示／作家／デザイナー／年表／設定], with BOTH
+   header buttons (展示・年表) removed. Same crossover as exhibitions:
+   the timeline lives in the artists dataset. */
+function openTimeline(){
+if(view==='timeline') return;
+if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
+showView('timeline');
 }
 function updateHeader(){
 $('appname').textContent = CONFIG.appName;
@@ -8527,7 +8550,7 @@ function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
-$('navEx').classList.toggle('hidden',!(DS==='artists' && DB.exhibitions && DB.exhibitions.length));
+
 /* tag chips from all artists, grouped by facet.
    v2.29: chips work on canonical tags (normTagSet merges notation
    variants and drops bookkeeping tags); stored data stays raw. Any
@@ -9841,9 +9864,8 @@ function teardownSwipe(st, commit){
     st.oldEl.classList.add('hidden');
     view = st.target;
     if(view!=='settings') CTX[DS].lastView = view;
-    $('navEx').classList.toggle('on', view==='ex');
-    $('navTimeline').classList.toggle('hidden', DS!=='artists');
-    $('navTimeline').classList.toggle('on', view==='timeline');
+
+
     updatePill(); moveNavInd(true);
     window.scrollTo(0,0);
   } else if(st.newEl){
@@ -9907,7 +9929,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.34';
+const APP_VERSION = '2.35';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
