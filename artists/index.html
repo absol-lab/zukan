@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.81">
+<meta name="app-version" content="2.82">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -97,7 +97,7 @@ h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spac
 .topcount{font-size:13px; color:var(--muted);}
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
-#navEx, #navTimeline{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
+#navEx, #navTimeline, #navReqNotif{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
 #navEx.on, #navTimeline.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 #syncbar{display:block; width:100%; background:none; border:none; text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em; font-family:inherit; cursor:pointer;}
 #syncbar .err{color:var(--danger);}
@@ -276,7 +276,10 @@ h3.subhead:first-child{margin-top:8px;}
 #vthumb{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); right:12px; z-index:6; min-height:40px; padding:8px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:.04em;}
 #vthumb.on{background:var(--accent); border-color:var(--accent); color:#fff;}
 #viewer.open{display:flex;}
-#viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+#viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none;}
+/* v2.82: the zoom stage — pinch/pan transforms apply here, inside
+   the frame, so the viewer chrome never moves. */
+#viewer .vstage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; will-change:transform;}
 #viewer .vimg img{max-width:100%; max-height:100%; object-fit:contain;}
 #viewer .vimg img.vup{position:absolute; inset:0; margin:auto; opacity:0; transition:opacity .18s ease;}
 #viewer .vimg img.vup.on{opacity:1;}
@@ -627,6 +630,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
+    <button class="txtbtn" id="navReqNotif" onclick="openRequestNotifs()">回収通知</button>
     <button class="txtbtn" id="navTimeline" onclick="openTimeline()">年表</button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
@@ -8691,6 +8695,7 @@ window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); if(v
    as a ghost instead of failing silently. */
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
 function updatePill(){
+refreshReqNotifBtn();
 /* v2.35: exhibitions became the pill's leftmost segment (the header's
    展示 button was removed at the user's request). The ex view belongs
    to the artists dataset, and while it is shown the 展示 segment — not
@@ -9309,7 +9314,9 @@ function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
 updateVThumbBtn();
 const seq = ++viewerSeq;
-const box = $('vimg'); box.innerHTML = '';
+const box = $('vimg'); box.innerHTML = '<div class="vstage" id="vstage"></div>';
+const stage = box.firstChild;
+vResetZoom();
 $('vcap').textContent = w.caption || '';
 $('vcount').textContent = (viewerIdx+1)+' / '+viewerWorks.length;
 if(w.img && w.img.fileId){
@@ -9327,7 +9334,7 @@ return;
 if(!(w.img && w.img.url)){
 const span = document.createElement('span');
 span.setAttribute('data-size', String(IMG_SIZE.viewer));
-box.appendChild(span); hydrateImg(span, w);
+stage.appendChild(span); hydrateImg(span, w);
 return;
 }
 /* v2.45: two layers. The viewer used to request ONLY the w1600 image
@@ -9343,13 +9350,15 @@ return;
 const base = document.createElement('img');
 base.loading = 'eager'; base.alt = w.caption || '';
 base.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
-box.appendChild(base);
-upgradeViewerImg(box, w, seq);
+stage.appendChild(base);
+upgradeViewerImg(stage, w, seq);
 }
+function viewerStage(){ return $('vstage'); }
 function setViewerImg(box, url, w){
+const st = viewerStage(); if(!st) return;
 const im = document.createElement('img');
 im.loading = 'eager'; im.alt = (w && w.caption) || ''; im.src = url;
-box.innerHTML = ''; box.appendChild(im);
+st.innerHTML = ''; st.appendChild(im);
 }
 function upgradeViewerImg(box, w, seq){
 const fullUrl = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
@@ -9374,19 +9383,78 @@ setTimeout(()=>{ if(!settled && !up.complete) fail(); }, 7000);
 };
 attempt();
 }
+/* v2.82: the viewer's own zoom. Before, the viewer had no zoom of
+   its own, so a pinch fell through to the browser's page zoom —
+   the whole page scaled (chrome clipped at the edges, the layout
+   shifted sideways) and the zoom stuck to the next photo. Now the
+   frame takes the gesture itself (touch-action:none on .vimg):
+   pinch zooms the stage inside the frame, one finger pans while
+   zoomed, a double-tap toggles 1x/2.5x, and changing photos or
+   closing resets to 1x. At 1x the old swipes still hold (side =
+   prev/next photo, down = close). */
+const vZoom = { s:1, x:0, y:0 };
+function vApplyZoom(){ const st = $('vstage'); if(st) st.style.transform = 'translate('+vZoom.x+'px, '+vZoom.y+'px) scale('+vZoom.s+')'; }
+function vResetZoom(){ vZoom.s = 1; vZoom.x = 0; vZoom.y = 0; const st = $('vstage'); if(st){ st.style.transformOrigin = '50% 50%'; st.style.transform = ''; } }
+function vClampPan(){
+  const box = $('vimg'); if(!box) return;
+  const r = box.getBoundingClientRect();
+  const mx = r.width * Math.max(0, vZoom.s - 1) * 0.75 + 60;
+  const my = r.height * Math.max(0, vZoom.s - 1) * 0.75 + 60;
+  vZoom.x = Math.max(-mx, Math.min(mx, vZoom.x));
+  vZoom.y = Math.max(-my, Math.min(my, vZoom.y));
+}
 (function(){
-let sx = null, sy = null;
-document.addEventListener('touchstart', e=>{ if($('viewer').classList.contains('open')){ sx = e.touches[0].clientX; sy = e.touches[0].clientY; }}, { passive:true});
-document.addEventListener('touchend', e=>{
-if(sx==null) return;
-const dx = e.changedTouches[0].clientX - sx;
-const dy = e.changedTouches[0].clientY - sy;
-sx = null; sy = null;
-/* sheet triad (v2.11): besides the visible 閉じる button, a downward swipe
-   also dismisses the viewer sheet */
-if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
-if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
-}, { passive:true});
+  const box = $('vimg'); if(!box) return;
+  let pan0 = null, pinch0 = null, tap0 = 0;
+  const tdist = (a, b)=> Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  const tmid = (a, b)=> ({ x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 });
+  const setOrigin = (pt)=>{ const st = $('vstage'); if(!st) return; const r = box.getBoundingClientRect(); st.style.transformOrigin = (((pt.x - r.left)/Math.max(1, r.width))*100)+'% '+(((pt.y - r.top)/Math.max(1, r.height))*100)+'%'; };
+  box.addEventListener('touchstart', e=>{
+    if(!$('viewer').classList.contains('open')) return;
+    if(e.touches.length === 1){ pan0 = { sx: e.touches[0].clientX, sy: e.touches[0].clientY, x: vZoom.x, y: vZoom.y }; pinch0 = null; }
+    else if(e.touches.length === 2){
+      const m = tmid(e.touches[0], e.touches[1]);
+      pinch0 = { d: Math.max(1, tdist(e.touches[0], e.touches[1])), s: vZoom.s, mx: m.x, my: m.y, x: vZoom.x, y: vZoom.y };
+      setOrigin(m);
+      pan0 = null;
+    }
+  }, { passive:true });
+  box.addEventListener('touchmove', e=>{
+    if(pinch0 && e.touches.length === 2){
+      e.preventDefault();
+      const m = tmid(e.touches[0], e.touches[1]);
+      vZoom.s = Math.min(4, Math.max(1, pinch0.s * tdist(e.touches[0], e.touches[1]) / pinch0.d));
+      vZoom.x = pinch0.x + (m.x - pinch0.mx);
+      vZoom.y = pinch0.y + (m.y - pinch0.my);
+      vClampPan(); vApplyZoom();
+    } else if(pan0 && e.touches.length === 1 && vZoom.s > 1){
+      e.preventDefault();
+      vZoom.x = pan0.x + (e.touches[0].clientX - pan0.sx);
+      vZoom.y = pan0.y + (e.touches[0].clientY - pan0.sy);
+      vClampPan(); vApplyZoom();
+    }
+  }, { passive:false });
+  box.addEventListener('touchend', e=>{
+    if(pinch0){ if(e.touches.length === 0){ pinch0 = null; if(vZoom.s < 1.02) vResetZoom(); } return; }
+    if(!pan0) return;
+    const dx = e.changedTouches[0].clientX - pan0.sx;
+    const dy = e.changedTouches[0].clientY - pan0.sy;
+    const wasZoom = vZoom.s > 1;
+    pan0 = null;
+    if(Math.abs(dx) < 10 && Math.abs(dy) < 10){
+      const now = Date.now();
+      if(now - tap0 < 320){
+        tap0 = 0;
+        if(wasZoom) vResetZoom();
+        else { setOrigin({ x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }); vZoom.s = 2.5; vZoom.x = 0; vZoom.y = 0; vApplyZoom(); }
+      } else tap0 = now;
+      return;
+    }
+    if(wasZoom) return; /* a pan is not a swipe */
+    if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
+    if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
+  });
+  box.addEventListener('gesturestart', e=>{ e.preventDefault(); });
 })();
 
 /* ---------- exhibitions （作家：並び替え付き） ---------- */
@@ -9702,16 +9770,15 @@ async function fetchChangelog(){
     if(!changelogData) changelogData = changelogCacheLoad();
   }
   changelogFetching = false;
-  if(settingsPanel === 'updates' && notifTab === 'app') renderUpdateList();
+  if(settingsPanel === 'updates') renderUpdateList();
 }
 function notifWhen(iso){
   const dt = iso? new Date(iso): null;
   return (dt && !isNaN(dt))? (dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日 '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')): '';
 }
-/* v2.79: the notifications panel has two streams, per his ask —
-   アプデ (app updates) and リクエスト (his requests, completed). */
-let notifTab = 'app';
-function setNotifTab(t){ notifTab = t; renderSettingsPanel(); }
+/* v2.79: notifications split into two streams — app updates here,
+   request completions on their own panel (v2.82: reached from the
+   header's 回収通知 button, not from a tab beside the updates). */
 function renderUpdateList(){
   const el = $('notifbody'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
@@ -9737,20 +9804,21 @@ function reqDoneItems(){
   return reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
     .sort((a, b) => String(b.resolved_at||'').localeCompare(String(a.resolved_at||'')));
 }
-/* v2.81: the timeline carries the door to these notifications —
-   his ask: a confirmation button around the timeline's left, with
-   the date/time and the name each request was collected under. */
-function tlReqNotifHTML(){
-  const n = reqDoneItems().length;
-  return '<div style="margin-top:10px;"><button class="txtbtn" style="padding-left:0;" onclick="openRequestNotifs()">✓ リクエスト回収の通知'+(n? '（'+n+'件）': '')+'</button></div>';
+/* v2.82: the door lives in the top header, left of the 年表
+   button (his corrected placement — NOT beside the updates). It
+   opens the dedicated reqnotif panel. The count rides the label. */
+function refreshReqNotifBtn(){
+  const b = $('navReqNotif'); if(!b) return;
+  let n = 0;
+  try{ n = reqDoneItems().length; }catch(e){}
+  b.textContent = '回収通知' + (n? '（'+n+'）': '');
 }
 function openRequestNotifs(){
-  notifTab = 'req';
   showView('settings');
-  openSettingsPanel('updates');
+  openSettingsPanel('reqnotif');
 }
-function renderRequestNotifs(){
-  const el = $('notifbody'); if(!el) return;
+function renderRequestNotifs(targetId){
+  const el = $(targetId || 'reqnotiflist'); if(!el) return;
   const done = reqDoneItems();
   if(!done.length){ el.innerHTML = '<div class="empty">完了したリクエストはまだありません</div>'; }
   else el.innerHTML = done.map(r => {
@@ -9767,7 +9835,7 @@ function renderRequestNotifs(){
   }).join('');
   /* refresh the requests file in the background; re-render on arrival */
   if(getValidToken() || relayReady()){
-    flushArtistRequests().then(()=>{ if(settingsPanel==='updates' && notifTab==='req') renderRequestNotifs(); }).catch(()=>{});
+    flushArtistRequests().then(()=>{ refreshReqNotifBtn(); if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist'); }).catch(()=>{});
   }
 }
 function newsAgeDays(iso){
@@ -10099,8 +10167,7 @@ let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></sp
 +'<div style="margin-top:12px;"><span class="seg">'
 +'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">西洋</button>'
 +'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
-+'</span></div>'
-+ tlReqNotifHTML();
++'</span></div>';
 const t = timelineOf();
 if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
@@ -11439,7 +11506,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.81';
+const APP_VERSION = '2.82';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11723,7 +11790,7 @@ function renderSettingsMain(){
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
       srow(SICON.pin, '位置情報', geoEnabled()? 'オン': 'オフ', "openSettingsPanel('geo')")+
-      srow(SICON.bell, '通知', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
+      srow(SICON.bell, '更新履歴', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
       srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
@@ -11868,13 +11935,13 @@ function renderSettingsPanel(){
       '</div>');
   }
   else if(settingsPanel==='updates'){
-    p.innerHTML = panelShell('通知',
-      '<div style="margin-bottom:4px;"><span class="seg">'
-      + '<button class="'+(notifTab==='app'? 'on': '')+'" onclick="setNotifTab(\'app\')">アプデ</button>'
-      + '<button class="'+(notifTab==='req'? 'on': '')+'" onclick="setNotifTab(\'req\')">リクエスト</button>'
-      + '</span></div><div id="notifbody"></div>');
-    if(notifTab==='app'){ renderUpdateList(); fetchChangelog(); }
-    else renderRequestNotifs();
+    p.innerHTML = panelShell('更新履歴', '<div id="notifbody"></div>');
+    renderUpdateList();
+    fetchChangelog();
+  }
+  else if(settingsPanel==='reqnotif'){
+    p.innerHTML = panelShell('リクエスト回収の通知', '<div id="reqnotiflist"></div>');
+    renderRequestNotifs('reqnotiflist');
   }
   else if(settingsPanel==='request'){
     p.innerHTML = panelShell('登録依頼',
