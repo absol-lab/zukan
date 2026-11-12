@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.0">
+<meta name="app-version" content="4.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8226,6 +8226,11 @@ return ['img/'+file+'.webp', 'img/'+file+'.jpg', 'img/'+file+'.jpeg', 'img/'+fil
    placement — list thumbnails w400 / detail plates w800 / viewer w1600. Only
    drive.google.com/thumbnail URLs are touched; anything else passes through. */
 const IMG_SIZE = { thumb:400, plate:800, viewer:1600 };
+/* v4.1 (image-speed stage 1a): list tiles are already the lightest
+   tier (w400); the small modes render tiles at a fraction of that
+   width, so they get a still lighter tier. Detail plates and the
+   viewer keep their larger sizes. */
+function tileSize(){ return (state.mode==='mini' || state.mode==='compact')? 256: IMG_SIZE.thumb; }
 function sizedThumbUrl(url, w){
 const s = String(url||'');
 if(!w || !/^https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
@@ -9177,7 +9182,7 @@ html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><spa
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{
 const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, IMG_SIZE.thumb):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 });
@@ -11942,7 +11947,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -12473,6 +12478,11 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   requestAnimationFrame(()=>moveNavInd(false));
   window.addEventListener('load', ()=>moveNavInd(false));
   checkForUpdate();
+  /* v4.1 (image-speed stage 1b): register the image-cache service
+     worker — repeat views of Drive thumbnails are served from the
+     device. Purely additive: unsupported or failed registration
+     leaves today's behavior exactly as it is. */
+  if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('sw.js').catch(()=>{}); } catch(e){} }
   /* 起動時自動同期：有効な（期限内の）トークンがある時だけ、ポップアップなしで
      静かにアプリ全体を同期する。トークンが無ければ何もしない。 */
   if(getValidToken()){
