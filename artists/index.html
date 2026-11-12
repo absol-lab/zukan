@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.79">
+<meta name="app-version" content="2.80">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -456,6 +456,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
 .tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
 .tlcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-top:12px;}
+/* v2.80: the timeline's continuous ground — one vertical line the
+   full height of the view, colored per era and blending at the
+   seams, so the eras read as one connected 地. */
+.tlwrap{position:relative; padding-left:20px;}
+.tlspine{position:absolute; left:6px; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--lineStrong);}
+.tldot{position:absolute; left:7.5px; width:10px; height:10px; margin-left:-5px; border-radius:50%; box-shadow:0 0 0 2px var(--bg);}
 .tlbig{font-family:var(--serif); font-size:32px; line-height:1.1; letter-spacing:.02em;}
 .tlyears{font-size:13px; color:var(--muted); letter-spacing:.06em; margin-top:2px;}
 .tltitle{font-family:var(--serif); font-size:16.5px; margin-top:5px; line-height:1.5;}
@@ -8662,7 +8668,7 @@ if(tbRafPending) return;
 tbRafPending = true;
 requestAnimationFrame(()=>{ tbRafPending = false; updateToolbarSlim(); });
 }, { passive:true });
-window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); });
+window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); if(view==='timeline') layoutTlSpine(); });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
    The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
    v2.22 after the pill/FAB double-draw recurred on the user's device
@@ -10051,6 +10057,7 @@ const t = timelineOf();
 if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
 if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
+html += '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
 entries.forEach((e,i)=>{
 if(!e || typeof e!=='object') return;
 const key = tlRegion+':'+i;
@@ -10077,7 +10084,32 @@ else chips.push('<span class="tlchip">'+esc(label)+'</span>');
 if(chips.length) html += '<div class="tlchips">'+chips.join('')+'</div>';
 html += '</div>';
 });
+html += '</div>';
 v.innerHTML = html;
+requestAnimationFrame(layoutTlSpine);
+}
+/* v2.80: era coloring shared with the coming year slider (#9):
+   one hue walk across the region's whole history, so an era keeps
+   the same color on the spine, on its dot, and (next version) on
+   the slider's era chip and spine marker. */
+function eraColor(i, n){ const f = n<=1? 0: i/(n-1); const h = (216 + 330*f) % 360; return 'hsl('+h.toFixed(0)+', 38%, 54%)'; }
+function tlBigYearNum(e){ const s = String((e&&e.bigYear)||''); const m = /(\d+)/.exec(s); if(!m) return null; const y = parseInt(m[1],10); return /bc/i.test(s)? -y: y; }
+function tlEraSpans(entries){ const starts = entries.map(tlBigYearNum); return entries.map((e,i)=>({ start: starts[i], end: (i+1<entries.length? starts[i+1]: new Date().getFullYear()) })); }
+function tlEraOfYear(entries, y){ const spans = tlEraSpans(entries); if(!spans.length) return -1; for(let i=0;i<spans.length;i++){ const s = spans[i]; if(s.start!=null && y>=s.start && (s.end==null || y<s.end)) return i; } return (spans[0].start!=null && y<spans[0].start)? -1: spans.length-1; }
+function layoutTlSpine(){
+  const wrap = $('tlwrap'), spine = $('tlspine'), dots = $('tldots');
+  if(!wrap || !spine) return;
+  const cards = Array.from(wrap.querySelectorAll('.tlcard'));
+  const H = wrap.offsetHeight;
+  if(!cards.length || !H) return;
+  const n = cards.length, stops = [];
+  cards.forEach((c, i) => {
+    const top = c.offsetTop, h = c.offsetHeight, col = eraColor(i, n);
+    stops.push(col+' '+(((top + h*0.18)/H)*100).toFixed(2)+'%');
+    stops.push(col+' '+(((top + h*0.82)/H)*100).toFixed(2)+'%');
+  });
+  spine.style.background = 'linear-gradient(to bottom, '+stops.join(', ')+')';
+  if(dots) dots.innerHTML = cards.map((c, i) => '<span class="tldot" style="top:'+(c.offsetTop + 20)+'px; background:'+eraColor(i, n)+';"></span>').join('');
 }
 
 /* ---------- quiz （DB.quiz・2 系統の形状に対応） ----------
@@ -11359,7 +11391,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.79';
+const APP_VERSION = '2.80';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
