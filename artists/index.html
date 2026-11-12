@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.70">
+<meta name="app-version" content="2.71">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -365,6 +365,28 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .caldayitem .dot{flex:none; width:9px; height:9px; border-radius:3px; transform:translateY(-1px);}
 .caldayitem .tt{font-size:14px; font-weight:600; line-height:1.4;}
 .caldayitem .mm{font-size:11.5px; color:var(--muted);}
+/* v2.71: period (bars) mode + section labels + day badges */
+.calmonthlabel{font-size:15px; font-weight:800; letter-spacing:.04em; margin:0 2px 6px;}
+.calbadge{flex:none; font-size:11px; font-weight:800; padding:2px 7px; border-radius:999px; color:#fff; background:var(--tag);}
+.calbadge.ending{background:var(--danger);}
+.calbadge.future{background:rgba(255,255,255,.18); color:var(--text);}
+.calbadge.past{background:rgba(255,255,255,.08); color:var(--muted);}
+.tlrow{padding:9px 2px 11px; border-bottom:1px solid var(--line); cursor:pointer;}
+.tlrow.sel{outline:2px solid #fff; outline-offset:-2px; border-radius:8px;}
+.tlhead2{display:flex; align-items:baseline; gap:8px;}
+.tltitle{font-size:14.5px; font-weight:700; line-height:1.35; flex:1;}
+.tlmeta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+.tltrack{position:relative; height:14px; background:rgba(255,255,255,.05); border-radius:4px; margin-top:6px;}
+.tlbar{position:absolute; top:2px; bottom:2px; border-radius:3px; min-width:4px;}
+.tlbar.st-current{background:var(--tag);}
+.tlbar.st-ending{background:var(--danger);}
+.tlbar.st-future{background:rgba(255,255,255,.28);}
+.tlbar.st-past{background:rgba(255,255,255,.10);}
+.tlbar.contl{border-top-left-radius:0; border-bottom-left-radius:0;}
+.tlbar.contr{border-top-right-radius:0; border-bottom-right-radius:0;}
+.tltoday{position:absolute; top:-2px; bottom:-2px; width:2px; background:#fff; opacity:.85;}
+.tlaxis{position:relative; height:14px; font-size:9.5px; color:var(--muted); margin-top:3px;}
+.tlaxis span{position:absolute; transform:translateX(-50%);}
 .corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
 .corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
 .corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
@@ -9591,6 +9613,9 @@ let calCursor = null; /* scroll-home target month */
 let calSelId = null;
 let calDaySel = null; /* selected day (YYYY-MM-DD) for the sheet */
 let calVisibleYM = null; /* month shown in the sticky bar */
+let calMode = 'grid'; /* 'grid' | 'bars' — v2.71 */
+try{ const cm = localStorage.getItem('zukan.calMode'); if(cm==='bars' || cm==='grid') calMode = cm; }catch(e){}
+function calSetMode(mode){ calMode = mode; try{ localStorage.setItem('zukan.calMode', mode); }catch(e){} calDaySel = null; calRerender(); }
 let calScrollBound = false;
 function openCalendar(){
   if(view==='cal') return;
@@ -9632,6 +9657,13 @@ function calScrollToYM(y, m, behavior){
   const off = (hdr? hdr.offsetHeight: 0) + (bar? bar.offsetHeight: 0) + 2;
   const top = sec.getBoundingClientRect().top + window.scrollY - off;
   window.scrollTo({ top: Math.max(0, top), behavior: behavior || 'smooth' });
+}
+function exBadge(e, tstr){
+  const st = exStatusOf(e, tstr);
+  if(st==='past') return { text: '終了', cls: 'past' };
+  if(st==='future') return { text: '開始まで'+Math.round((new Date(e.start_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日', cls: 'future' };
+  if(e.end_date){ const d = Math.round((new Date(e.end_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000); return { text: 'あと'+d+'日', cls: st==='ending'? 'ending': '' }; }
+  return { text: '開催中', cls: '' };
 }
 function calJump(dm){
   const base = calVisibleYM || calCursor || (()=>{ const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
@@ -9728,16 +9760,45 @@ function renderCal(){
   };
   let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
   html += '<div class="calsticky" style="top:'+hdrH+'px"><div class="calnav" style="margin-top:0"><button class="btn" onclick="calJump(-1)">‹</button><span class="caltitle" id="calTitle">'+now.getFullYear()+'年'+(now.getMonth()+1)+'月</span><button class="btn" onclick="calJump(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
-  html += '<div class="callegend" style="margin-top:6px"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span><span>「終」は最終日</span></div>';
+  html += '<div style="display:flex; align-items:center; gap:10px; margin-top:8px"><span class="seg"><button class="'+(calMode==='grid'?'on':'')+'" onclick="calSetMode(\'grid\')">カレンダー</button><button class="'+(calMode==='bars'?'on':'')+'" onclick="calSetMode(\'bars\')">会期</button></span><span class="small">'+(calMode==='bars'? '期間そのものを横棒で見る': '初日・最終日をチップで見る')+'</span></div>';
+  html += '<div class="callegend" style="margin-top:6px"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span>'+(calMode==='grid'? '<span>「終」は最終日</span>': '')+'</div>';
   html += '<div class="calgrid calwdrow">';
   ['日','月','火','水','木','金','土'].forEach((wd, i)=>{ html += '<div class="calwdcell'+(i===0?' sun': i===6?' sat': '')+'">'+wd+'</div>'; });
   html += '</div></div>';
   calMonthsRange(exs).forEach(({ y, m })=>{
     const first = new Date(y, m, 1);
+    const dim = new Date(y, m+1, 0).getDate();
+    if(calMode==='bars'){
+      /* v2.71: period mode — the run itself is the row. One month
+         section lists every overlapping exhibition with a bar laid
+         over a day axis, sorted ending-soonest first, so a whole
+         month's periods read at a glance (the grid's chips are
+         points; this is the lines view the user asked for). */
+      const mStart = calDayStr(first), mEnd = calDayStr(new Date(y, m, dim));
+      const rank = { ending: 0, current: 1, future: 2, past: 3 };
+      const rows = exs.filter(e=> e.start_date <= mEnd && (!e.end_date || e.end_date >= mStart));
+      rows.sort((a,b)=>{ const sa = exStatusOf(a, tstr), sb = exStatusOf(b, tstr); if(rank[sa]!==rank[sb]) return rank[sa]-rank[sb]; if(sa==='future') return String(a.start_date).localeCompare(String(b.start_date)); return String(a.end_date||'9999-12-31').localeCompare(String(b.end_date||'9999-12-31')); });
+      html += '<section class="calmonth" data-ym="'+y+'-'+m+'"><div class="calmonthlabel">'+y+'年'+(m+1)+'月</div><div class="tlaxis"><span style="left:'+(0.5/dim*100)+'%">1日</span><span style="left:'+(9.5/dim*100)+'%">10日</span><span style="left:'+(19.5/dim*100)+'%">20日</span><span style="left:'+((dim-0.5)/dim*100)+'%">'+dim+'日</span></div>';
+      if(!rows.length) html += '<div class="empty">この月の展示はありません</div>';
+      rows.forEach(e=>{
+        const st = exStatusOf(e, tstr);
+        const bd = exBadge(e, tstr);
+        const cs = e.start_date < mStart? mStart: e.start_date;
+        const ce = (!e.end_date || e.end_date > mEnd)? mEnd: e.end_date;
+        const left = ((+cs.slice(8)) - 1) / dim * 100;
+        const width = Math.max(1.2, ((+ce.slice(8)) - (+cs.slice(8)) + 1) / dim * 100);
+        const todayLine = (tstr >= mStart && tstr <= mEnd)? '<div class="tltoday" style="left:'+(((+tstr.slice(8)) - 0.5) / dim * 100)+'%"></div>': '';
+        html += '<div class="tlrow'+(String(calSelId)===String(e.id)? ' sel':'')+'" onclick="calSelect(\''+escA(e.id||'')+'\')"><div class="tlhead2"><span class="tltitle">'+esc(e.title||'')+'</span><span class="calbadge '+bd.cls+'">'+esc(bd.text)+'</span></div>'
+          + '<div class="tlmeta">'+esc(e.venue||'')+'　'+esc(e.start_date||'')+' – '+esc(e.end_date||'未登録')+'</div>'
+          + '<div class="tltrack"><div class="tlbar st-'+st+(e.start_date < mStart? ' contl':'')+((!e.end_date || e.end_date > mEnd)? ' contr':'')+'" style="left:'+left+'%; width:'+width+'%"></div>'+todayLine+'</div></div>';
+      });
+      html += '</section>';
+      return;
+    }
     const gridStart = new Date(y, m, 1 - first.getDay());
-    const totalDays = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7) * 7;
+    const totalDays = Math.ceil((first.getDay() + dim) / 7) * 7;
     const byDay = byDayFor(y, m);
-    html += '<section class="calmonth" data-ym="'+y+'-'+m+'"><div class="calwrap"><div class="calmark">'+(m+1)+'</div><div class="calgrid">';
+    html += '<section class="calmonth" data-ym="'+y+'-'+m+'"><div class="calmonthlabel">'+y+'年'+(m+1)+'月</div><div class="calwrap"><div class="calmark">'+(m+1)+'</div><div class="calgrid">';
     for(let d=0; d<totalDays; d++){
       const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+d);
       const ds = calDayStr(dt);
@@ -9760,7 +9821,7 @@ function renderCal(){
   /* fixed sheet: day list or exhibition card */
   if(calDaySel){
     const act = exs.filter(e=> e.start_date <= calDaySel && (!e.end_date || e.end_date >= calDaySel))
-      .sort((a,b)=> String(a.start_date).localeCompare(String(b.start_date)));
+      .sort((a,b)=>{ const ra = { ending: 0, current: 1, future: 2, past: 3 }[exStatusOf(a, tstr)], rb = { ending: 0, current: 1, future: 2, past: 3 }[exStatusOf(b, tstr)]; if(ra!==rb) return ra-rb; return String(a.end_date||'9999-12-31').localeCompare(String(b.end_date||'9999-12-31')); });
     const dd = new Date(calDaySel+'T00:00:00');
     html += '<div class="calsheet"><div class="calsheethead"><span>'+(dd.getMonth()+1)+'月'+dd.getDate()+'日　開催中 '+act.length+'件</span><button class="txtbtn" onclick="calCloseSheet()">閉じる</button></div><div class="calsheetbody">';
     if(!act.length) html += '<div class="empty">この日の展示はありません</div>';
@@ -9768,7 +9829,8 @@ function renderCal(){
       const st = exStatusOf(e, tstr);
       const dot = st==='current'? 'var(--tag)': st==='ending'? 'var(--danger)': st==='future'? 'rgba(255,255,255,.18)': 'rgba(255,255,255,.07)';
       const role = e.start_date===calDaySel? '初日': (e.end_date===calDaySel? '最終日': '会期中');
-      html += '<button class="caldayitem" onclick="calSelect(\''+escA(e.id||'')+'\')"><span class="dot" style="background:'+dot+'"></span><span><span class="tt">'+esc(e.title||'')+'</span><br><span class="mm">'+esc(e.venue||'')+'　'+esc(e.start_date||'')+' – '+esc(e.end_date||'未登録')+'（'+role+'）</span></span></button>';
+      const bd = exBadge(e, tstr);
+      html += '<button class="caldayitem" onclick="calSelect(\''+escA(e.id||'')+'\')"><span class="dot" style="background:'+dot+'"></span><span style="flex:1"><span class="tt">'+esc(e.title||'')+'</span><br><span class="mm">'+esc(e.venue||'')+'　'+esc(e.start_date||'')+' – '+esc(e.end_date||'未登録')+'（'+role+'）</span></span><span class="calbadge '+bd.cls+'">'+esc(bd.text)+'</span></button>';
     });
     html += '</div></div>';
   } else if(selEx){
@@ -11124,7 +11186,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.70';
+const APP_VERSION = '2.71';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
