@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.76">
+<meta name="app-version" content="2.77">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8800,14 +8800,31 @@ function toggleFacet(f){
 state.facetOpen = (state.facetOpen===f)? null : f;
 renderList();
 }
+/* v2.77: loose search normalization — the SAME folding applied to
+   the query and to the person fields, so ひらがなで打っても
+   カタカナでも、・があってもなくても、英字の大文字小文字や
+   全角半角が違っても当たる (his words). Folds: full-width
+   alphanumerics to half-width, hiragana to katakana, lowercase,
+   and ・･, spaces, hyphens and the long-vowel mark removed. */
+function normSearch(s){
+let t = String(s||'');
+t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+t = t.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+t = t.toLowerCase();
+t = t.replace(/[・･\s　\-‐ー―–—_]/g, '');
+return t;
+}
 function filteredArtists(){
 let arr = DB.artists;
-const q = state.query.toLowerCase();
-if(q){
+const qRaw = state.query;
+if(qRaw && qRaw.trim()){
+const toks = qRaw.split(/\s+/).map(normSearch).filter(Boolean);
+if(toks.length){
 arr = arr.filter(a=>{
-const hay = [a.name,a.name_latin,a.name_native,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' ')].join('\n').toLowerCase();
-return q.split(/\s+/).every(tok=>hay.indexOf(tok)>=0);
+const hay = normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' ')].join('\n'));
+return toks.every(tok=>hay.indexOf(tok)>=0);
 });
+}
 }
 if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
@@ -10873,7 +10890,7 @@ function sbMaxUpdated(data){
 const REQ_FILE = 'zukan-requests.json';
 const LS_REQ_OUTBOX = 'zukan.requests.outbox';
 const LS_REQ_CACHE = 'zukan.requests.cache';
-function reqNorm(s){ return String(s||'').replace(/[\s　・･.,、:：]/g,'').toLowerCase(); }
+function reqNorm(s){ return normSearch(String(s||'').replace(/[.,、:：]/g,'')); }
 function reqOutbox(){ try{ const a = JSON.parse(storeGet(LS_REQ_OUTBOX)||'[]'); return Array.isArray(a)? a: []; }catch(e){ return []; } }
 function reqSaveOutbox(a){ try{ storeSet(LS_REQ_OUTBOX, JSON.stringify(a)); }catch(e){} }
 function reqCache(){ try{ const d = JSON.parse(storeGet(LS_REQ_CACHE)||'null'); return (d && Array.isArray(d.requests))? d: { requests: [] }; }catch(e){ return { requests: [] }; } }
@@ -11280,7 +11297,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.76';
+const APP_VERSION = '2.77';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
