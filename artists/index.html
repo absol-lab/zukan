@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.93">
+<meta name="app-version" content="2.94">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -115,7 +115,10 @@ body.notifopen #pillnav{opacity:0; pointer-events:none;}
 /* v2.29: facet panel group headings (filter grouping) + version badge */
 .facetgh{font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.06em; margin:12px 2px 2px;}
 .facetgh:first-child{margin-top:2px;}
-#verBadge{position:fixed; right:8px; bottom:calc(env(safe-area-inset-bottom, 0px) + 4px); z-index:35; font-size:10px; letter-spacing:.05em; color:var(--muted); opacity:.75; pointer-events:none; font-family:var(--sans);}
+/* v2.94: version badge moved to the top-center (all-apps rule,
+   diary v2.28 values) — his cracked glass sheet makes the
+   bottom-fixed label hard to read. */
+#verBadge{position:fixed; top:calc(env(safe-area-inset-top, 0px) + 2px); left:50%; transform:translateX(-50%); z-index:39; font-size:9px; letter-spacing:.03em; color:var(--muted); opacity:.8; pointer-events:none; white-space:nowrap; font-family:var(--sans);}
 /* toolbar */
 main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:calc(100dvh + 1px);}
 /* v2.24: the list toolbar (search + facet bar + mode bar) is sticky,
@@ -8430,7 +8433,7 @@ function showView(v){
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
 if(v!=='settings') document.body.classList.remove('notifopen');
-syncTimelineBtn();
+syncTimelineBtn(v);
 /* v2.70: record the pill-trail — entering the list from a hub view
    （展示/年表/その他） makes that hub the list's swipe-back target.
    switchDataset records its own (it swaps DS before calling here)
@@ -11567,7 +11570,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.93';
+const APP_VERSION = '2.94';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
