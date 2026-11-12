@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.74">
+<meta name="app-version" content="2.75">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9124,7 +9124,7 @@ worksHTML += '</div>';
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
-worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">作品をリクエスト</button></div>' +
+worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'</button></div>' +
 '<div class="worksreq"><span class="small">並び替え</span><span class="seg mini">' +
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
 '<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">年代・古い順</button>' +
@@ -10890,7 +10890,7 @@ function reqSummaryLabel(){
 }
 function reqStatusOf(r){
   if(r._local) return { key:'queued', label:'送信待ち' };
-  if(r.status==='registered') return { key:'registered', label: r.kind==='works'? '✓ 追加済み': '✓ 登録済み' };
+  if(r.status==='registered') return { key:'registered', label: r.kind==='works'? '✓ 回収済み': '✓ 登録済み' };
   if(r.status==='declined') return { key:'declined', label:'見送り' };
   return { key:'pending', label:'依頼中' };
 }
@@ -10926,11 +10926,11 @@ function requestName(name, source){
 function requestWorks(){
   const a = (state.detailId!=null)? artistById(state.detailId): null;
   if(!a){ toast('対象の人物が開かれていません'); return; }
-  if(reqAllItems().some(r=> r.kind==='works' && String(r.artist_id)===String(a.id) && (r._local || r.status==='pending'))){ toast('「'+a.name+'」の作品はすでにリクエスト中です'); return; }
+  if(reqAllItems().some(r=> r.kind==='works' && String(r.artist_id)===String(a.id) && (r._local || r.status==='pending'))){ toast('「'+a.name+'」の情報はすでにリクエスト中です'); return; }
   const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), kind:'works', artist_id:a.id, name:a.name, dataset:DS, requested_at:new Date().toISOString(), status:'pending' };
   const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
   flushArtistRequests();
-  toast((getValidToken() || relayReady())? '作品をリクエストしました（優先的に探します）' : '送信待ちに保存しました（接続時に送られます）', 3600);
+  toast((getValidToken() || relayReady())? '情報をリクエストしました（優先的に探します）' : '送信待ちに保存しました（接続時に送られます）', 3600);
 }
 async function flushArtistRequests(){
   const tok = getValidToken(); if(!tok && !relayReady()) return;
@@ -10979,7 +10979,7 @@ function renderRequestList(){
     const st = reqStatusOf(r);
     const d = r.requested_at? new Date(r.requested_at): null;
     const ds = d && !isNaN(d)? (d.getMonth()+1)+'/'+d.getDate() : '';
-    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（作品）': '')+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
+    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（情報）': '')+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
   }).join('');
 }
 function submitRequestFromPanel(){
@@ -11280,7 +11280,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.74';
+const APP_VERSION = '2.75';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
