@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.4">
+<meta name="app-version" content="4.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -86,7 +86,7 @@ input,select,textarea{font:inherit; color:inherit;}
 a{color:var(--accent);}
 .homelink{font-size:12.5px; color:var(--muted); text-decoration:none; letter-spacing:.08em; white-space:nowrap; padding:6px 0;}
 /* header (diary .topbar) */
-header.top{position:sticky; top:0; z-index:30; background:var(--bg);}
+header.top{position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
 .toprow{display:flex; align-items:center; gap:8px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 14px 4px; max-width:720px; margin:0 auto;}
 h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spacing:.08em; margin:0;}
 /* v2.49: sync status dot, the diary app's exact pattern (8px circle
@@ -392,6 +392,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .exitem .calbadge{vertical-align:2px; margin-left:7px;}
 /* v2.63: works-request bar at the top of the detail works tab */
 .worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px;}
+.worksreq.wrap{justify-content:flex-start; flex-wrap:wrap; gap:8px 14px;}
 /* v2.65: books tab rows */
 .bookrow{display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px;}
 .bookcover{flex:none; width:72px;}
@@ -9424,12 +9425,16 @@ worksHTML += '</div>';
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
 worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'</button></div>' +
-'<div class="worksreq"><span class="small">並び替え</span><span class="seg mini">' +
+/* v4.5: sort + display share ONE row. The works tab used to
+   stack three control bands (request / sort / display) above
+   the gallery; on the user's phone those bands piled into the
+   header zone while scrolling (his "帯" report). One cluster,
+   wrapping as a unit when narrow, reads as a single shelf. */
+'<div class="worksreq wrap"><span class="seg mini" role="group" aria-label="並び替え">' +
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
-'<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">年代・古い順</button>' +
-'<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">年代・新しい順</button>' +
-'</span></div>' +
-'<div class="worksreq"><span class="small">表示</span><span class="seg mini">' +
+'<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">古い順</button>' +
+'<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">新しい順</button>' +
+'</span><span class="seg mini" role="group" aria-label="表示">' +
 '<button class="'+(workMode==='wide'?'on':'')+'" onclick="setWorkMode(\'wide\')">ワイド</button>' +
 '<button class="'+(workMode==='def'?'on':'')+'" onclick="setWorkMode(\'def\')">標準</button>' +
 '<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')">小</button>' +
@@ -12064,7 +12069,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.4';
+const APP_VERSION = '4.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
