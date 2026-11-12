@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.42">
+<meta name="app-version" content="2.43">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -303,6 +303,14 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .reqchip.registered{color:var(--accent);}
 .reqchip.declined{color:var(--danger);}
 .reqcta{margin:18px auto 0; max-width:420px; text-align:center;}
+/* v2.43: request banner above search hits — the offer keys off "no
+   exact name match", not "zero results": the list search also matches
+   notes/relations text, so an unregistered person can be buried under
+   other people's records (his ブランクーシ test, 2026-11-12). */
+.reqbar{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 14px; margin:2px 0 16px;}
+.reqbar .rqmsg{font-size:13.5px; color:var(--muted); line-height:1.5;}
+.reqbar .rqmsg b{color:var(--text);}
+.reqbarbtn{margin-left:auto; flex:none; min-height:44px; padding:8px 18px; border-radius:999px; background:var(--accent); color:var(--bg); font-size:14px; font-weight:700; font-family:var(--sans);}
 /* timeline / quiz */
 .tlhead{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;}
 .tlhead h2{font-family:var(--serif); font-size:21px; margin:0; letter-spacing:.04em;}
@@ -8693,7 +8701,7 @@ html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+
 });
 html += '</div>';
 });
-body.innerHTML = html;
+body.innerHTML = reqBarHTML() + html;
 /* attach work objects for lazy hydration */
 body.querySelectorAll('[data-work]').forEach(ph=>{
 const a = artistById(ph.dataset.work); if(!a) return;
@@ -9909,6 +9917,18 @@ function submitRequestFromPanel(){
   if(requestName(inp.value, 'panel')) inp.value = '';
 }
 function submitRequestFromSearch(){ requestName(state.query, 'search'); }
+/* v2.43: banner shown above search results when the query has no exact
+   name match in either encyclopedia — regardless of how many fuzzy
+   (notes/relation) hits the search returned. Registered name: no
+   banner. Pending request: status banner instead of the button. */
+function reqBarHTML(){
+  const q = (state.query||'').trim();
+  if(!q) return '';
+  if(artistAlreadyKnown(q)) return '';
+  if(reqAllItems().some(r=> reqNorm(r.name)===reqNorm(q) && (r._local || r.status==='pending')))
+    return '<div class="reqbar"><span class="rqmsg">「<b>'+esc(q)+'</b>」は登録を依頼中です</span></div>';
+  return '<div class="reqbar"><span class="rqmsg">「<b>'+esc(q)+'</b>」は未登録のようです</span><button class="reqbarbtn" onclick="submitRequestFromSearch()">登録を依頼する</button></div>';
+}
 
 /* ---------- pill nav swipe ---------- */
 (function(){
@@ -10138,7 +10158,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.42';
+const APP_VERSION = '2.43';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
