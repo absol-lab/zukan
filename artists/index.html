@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.82">
+<meta name="app-version" content="2.92">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -325,6 +325,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
 .upat{font-size:12px; color:var(--muted);}
+.ratebtns{margin-left:auto; display:flex; gap:8px; align-self:center;}
+.ratebtn{width:44px; height:40px; border-radius:999px; border:1px solid var(--line); background:var(--bg2); font-size:17px; line-height:1; padding:0; filter:grayscale(1); opacity:.45;}
+.ratebtn.on{filter:none; opacity:1;}
+.ratebtn.on.good{border-color:var(--tag); box-shadow:inset 0 0 0 1px var(--tag);}
+.ratebtn.on.bad{border-color:var(--danger); box-shadow:inset 0 0 0 1px var(--danger);}
 .upnotes{margin:6px 0 0; padding-left:17px;}
 .upnotes li{font-size:13.5px; line-height:1.75; margin-top:2px;}
 .corlead{font-size:15.5px; line-height:1.85; margin-top:10px;}
@@ -9779,13 +9784,47 @@ function notifWhen(iso){
 /* v2.79: notifications split into two streams — app updates here,
    request completions on their own panel (v2.82: reached from the
    header's 回収通知 button, not from a tab beside the updates). */
+/* v2.92: per-version 👍/👎 ratings on the update history (his
+   ask). The device copy (localStorage zukan.ratings) is the
+   source of truth; the map is mirrored into zukan-requests.json
+   (top-level "ratings") by flushRequestsOnce — the same relay
+   file as his requests — so the ratings reach Muse without a
+   new relay file or a redeploy. Shape per version:
+   { mark:'good'|'bad'|'none', at:ISO } — 'none' is a retraction
+   tombstone so a cancel is not resurrected by an older file copy;
+   merges take the newest `at` per version. */
+const LS_RATINGS = 'zukan.ratings';
+function ratingsLoad(){ try{ const d = JSON.parse(storeGet(LS_RATINGS)||'{}'); return (d && typeof d==='object' && !Array.isArray(d))? d: {}; }catch(e){ return {}; } }
+function ratingsSave(m){ try{ storeSet(LS_RATINGS, JSON.stringify(m)); }catch(e){} }
+function ratingOf(v){ const r = ratingsLoad()[v]; return (r && (r.mark==='good' || r.mark==='bad'))? r.mark: null; }
+function rateVersion(v, mark){
+  const m = ratingsLoad();
+  m[v] = { mark: (m[v] && m[v].mark===mark)? 'none': mark, at: new Date().toISOString() };
+  ratingsSave(m);
+  renderUpdateList();
+  flushArtistRequests();
+}
+function ratingsMerge(fileMap){
+  const m = ratingsLoad();
+  if(fileMap && typeof fileMap==='object' && !Array.isArray(fileMap)){
+    Object.keys(fileMap).forEach(v=>{
+      const fr = fileMap[v];
+      if(!fr || (fr.mark!=='good' && fr.mark!=='bad' && fr.mark!=='none')) return;
+      if(!m[v] || String(fr.at||'') > String(m[v].at||'')) m[v] = { mark: fr.mark, at: fr.at||'' };
+    });
+    ratingsSave(m);
+  }
+  return m;
+}
 function renderUpdateList(){
   const el = $('notifbody'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
   if(!d || !d.entries.length){ el.innerHTML = '<div class="empty">更新履歴はまだ読み込めていません</div>'; return; }
   el.innerHTML = d.entries.map(e => {
-    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')+'</div>' +
-      '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
+    const rt = ratingOf(e.v);
+    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
+      + '<span class="ratebtns"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span></div>'
+      + '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
   }).join('');
 }
 /* v2.81: a completed registration is announced under the name it
@@ -11180,6 +11219,9 @@ async function flushRequestsOnce(tok){
     const ids = {}; data.requests.forEach(r=>{ ids[r.id]=1; });
     let changed = false;
     reqOutbox().forEach(r=>{ if(!ids[r.id]){ data.requests.push(r); changed = true; } });
+    /* v2.92: mirror the update-history ratings through this file */
+    const mergedRatings = ratingsMerge(data.ratings);
+    if(JSON.stringify(data.ratings||{}) !== JSON.stringify(mergedRatings)){ data.ratings = mergedRatings; changed = true; }
     data.updatedAt = new Date().toISOString();
     if(!file){
       const created = await createDataFileFor(tok, REQ_FILE, data);
@@ -11506,7 +11548,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.82';
+const APP_VERSION = '2.92';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
