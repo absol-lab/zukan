@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.64">
+<meta name="app-version" content="2.65">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -312,6 +312,15 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newsrow .gext{position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted);}
 /* v2.63: works-request bar at the top of the detail works tab */
 .worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px;}
+/* v2.65: books tab rows */
+.bookrow{display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px;}
+.bookcover{flex:none; width:72px;}
+.bookcover .imgholder{display:block; aspect-ratio:3/4; background:var(--bg2); border-radius:6px; overflow:hidden;}
+.bookcover .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.bookmeta{flex:1 1 auto; min-width:0;}
+.bookmeta .bt{font-size:15px; font-weight:700; line-height:1.45;}
+.bookmeta .bm{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.bookmeta .bp{font-size:15px; font-weight:700; margin-top:3px;}
 .corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
 .corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
 .corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
@@ -7886,6 +7895,22 @@ img: normalizeImg(w && w.img)
 if(w && w.pinned) o.pinned = true;
 return o;
 }).filter(w=>w.file || w.caption || w.img);
+/* v2.65: books （作品集） — curated on the Muse side only; the app
+   never edits them, but they must survive normalization, merges
+   and editor saves or the tab would silently empty. */
+const books = (Array.isArray(a.books)? a.books: []).map(b=>{
+b = b || {};
+return {
+title: String(b.title||''),
+publisher: String(b.publisher||''),
+year: String(b.year||''),
+price_jpy: (typeof b.price_jpy==='number' && isFinite(b.price_jpy))? b.price_jpy: null,
+price_checked_at: String(b.price_checked_at||''),
+url: String(b.url||''),
+img: normalizeImg(b.img),
+note: String(b.note||'')
+};
+}).filter(b=>b.title);
 const rec = {
 id: (a.id!=null? a.id: null),
 name: String(a.name||''), name_latin: String(a.name_latin||''), name_native: String(a.name_native||''),
@@ -7894,6 +7919,7 @@ relation: String(a.relation||''), key_works: String(a.key_works||''), notes: Str
 tags: Array.isArray(a.tags)? a.tags.map(String): [],
 work_image: String(a.work_image||''), work_caption: String(a.work_caption||''),
 works: works,
+books: books,
 layer: (a.layer==='candidate')? 'candidate': 'canon',
 updated_at: String(a.updated_at||'')
 };
@@ -8924,7 +8950,7 @@ prefetchViewerImage(a);
    scrolls the pager and the pager's own scroll position is the single
    source of truth for which tab is active (wireDPager keeps state.tab
    and the .on highlight in sync with it). */
-const DTABS = ['works','bio','feat'];
+const DTABS = ['works','books','bio','feat'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -8974,6 +9000,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '</div>'+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品</button>'+
+'<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '</div>';
@@ -8995,6 +9022,25 @@ worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</
 '<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">年代・古い順</button>' +
 '<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">年代・新しい順</button>' +
 '</span></div>' + worksHTML;
+/* v2.65: books tab — cover, title, publisher, year, price WITH
+   the date it was checked (prices move; a price without its date
+   would be a small lie), and the purchase-page link. */
+const booksArr = Array.isArray(a.books)? a.books: [];
+let booksHTML = '';
+if(!booksArr.length) booksHTML = '<div class="empty">作品集のデータはまだありません</div>';
+else{
+booksHTML = booksArr.map((b, bi)=>{
+const price = (typeof b.price_jpy==='number')? '¥'+b.price_jpy.toLocaleString('ja-JP'): '価格未確認';
+const checked = b.price_checked_at? '<span class="small">（'+esc(b.price_checked_at)+' 時点の価格）</span>': '';
+return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img? imgHTML({ img: b.img, caption: b.title||'' }, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">表紙</span></span>')+'</div>'+
+'<div class="bookmeta"><div class="bt">'+esc(b.title||'')+'</div>'+
+'<div class="bm">'+[b.publisher, b.year].filter(Boolean).map(esc).join(' ・ ')+'</div>'+
+'<div class="bp">'+price+' '+checked+'</div>'+
+(b.note? '<div class="bm">'+esc(b.note)+'</div>': '')+
+(b.url? '<div style="margin-top:4px"><a href="'+escA(b.url)+'" target="_blank" rel="noopener">購入ページ ↗</a></div>': '')+
+'</div></div>';
+}).join('');
+}
 bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
@@ -9004,6 +9050,7 @@ if(a.key_works) featHTML += '<h3 class="subhead">見るべき代表作</h3><div 
 if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
++'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'</div>';
@@ -9011,6 +9058,10 @@ if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span
 html += '</div>';
 const v = $('viewDetail'); v.innerHTML = html;
 wireDPager(v);
+v.querySelectorAll('.bookcover').forEach(cv=>{
+const b = booksArr[+cv.dataset.bidx]; if(!b) return;
+const span = cv.querySelector('.imgholder'); if(span){ span._work = b; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, b); }
+});
 v.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
@@ -9761,6 +9812,8 @@ updated_at: now
 /* v2.52: a form edit must not strip a manual thumbnail pin */
 if(id!=null){
 const old = DB.artists.find(a=>String(a.id)===String(id));
+/* v2.65: a form edit must not strip the curated books */
+if(old && old.books && old.books.length) rec.books = old.books;
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -9808,6 +9861,9 @@ function mergeDataInto(local, incoming){
       if(ia[k]) merged[k] = ia[k];
     });
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
+    /* v2.65: books are curated wholesale on the Muse side — a
+       non-empty incoming set replaces the local one. */
+    if(ia.books && ia.books.length) merged.books = ia.books;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -10765,7 +10821,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.64';
+const APP_VERSION = '2.65';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
