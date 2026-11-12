@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.52">
+<meta name="app-version" content="2.53">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9677,6 +9677,7 @@ function storeToken(tok, expiresInSec){
     storeSet(p+'tokenExp', String(Date.now() + (expiresInSec||3600)*1000));
     storeDel(p+'authError');
   });
+  storeSet(LS_EVER_CONNECTED, '1');
 }
 function clearToken(){
   [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>{ sessDel(p+'token'); storeDel(p+'tokenExp'); });
@@ -9761,6 +9762,46 @@ function scheduleSync(){
   if(autoSyncTimer) clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(()=>{ const k = autoSyncKind; autoSyncKind = null; if(k) queueSync(()=>syncDatasetFlow(k, 'auto')); }, 1500);
 }
+/* ---------- v2.53: silent reconnect ----------
+   The token lives in sessionStorage, which iOS discards whenever
+   the standalone app is killed — so every cold start used to demand
+   a manual connect tap even though the user never signed out.
+   A static web app cannot hold a refresh token (that needs a
+   server), but GIS can re-issue an access token WITHOUT interaction
+   (prompt:'') while the browser's Google session and the earlier
+   consent are alive — the diary/movie pattern. Attempted once at
+   startup and by a 30s watchdog (expiry while the app sits open),
+   throttled to one try a minute, and only for users who connected
+   before (LS_EVER_CONNECTED, cleared by an explicit disconnect).
+   Failure is silent by design: the red dot + tap-to-connect path is
+   exactly what it was. */
+const LS_EVER_CONNECTED = 'zukan.connected';
+let silentTryAt = 0;
+function trySilentReconnect(){
+  if(storeGet(LS_EVER_CONNECTED)!=='1') return;
+  if(!(window.google && google.accounts && google.accounts.oauth2)) return;
+  const exp = Math.max(+(storeGet(CFG_ARTISTS.prefix+'tokenExp')||0), +(storeGet(CFG_DESIGNERS.prefix+'tokenExp')||0));
+  if(getValidToken() && Date.now() < exp - 30000) return;
+  const now = Date.now();
+  if(now - silentTryAt < 60000) return;
+  silentTryAt = now;
+  const cid = getClientId(); if(!cid) return;
+  try{
+    const tc = google.accounts.oauth2.initTokenClient({
+      client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
+      callback: function(resp){
+        if(resp && resp.access_token){
+          storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
+          [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeDel(p+'pendingAuth'));
+          renderSyncStatus();
+          queueSync(()=>runAppSync('silent', false));
+        }
+      },
+      error_callback: function(){ /* stay quietly disconnected */ }
+    });
+    tc.requestAccessToken({ prompt: '' });
+  }catch(e){}
+}
 function connectDrive(){
   const cid = getClientId();
   if(!(window.google && google.accounts && google.accounts.oauth2)){
@@ -9792,6 +9833,7 @@ function disconnectDrive(){
   if(tok && window.google && google.accounts && google.accounts.oauth2){
     try{ google.accounts.oauth2.revoke(tok, function(){}); }catch(e){}
   }
+  storeDel(LS_EVER_CONNECTED); /* explicit disconnect stops silent reconnect */
   clearToken();
   setCtxStatus('artists', 'disconnected'); setCtxStatus('designers', 'disconnected');
   toast('Drive との接続を解除しました');
@@ -10344,7 +10386,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.52';
+const APP_VERSION = '2.53';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10813,7 +10855,23 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   } else {
     const ae = storeGet(CFG_ARTISTS.prefix+'authError') || storeGet(CFG_DESIGNERS.prefix+'authError');
     if(ae) setCtxStatus(DS, 'error', ae);
+    /* v2.53: previously connected → try to come back without a tap.
+       The GIS script loads async, so poll briefly for it. */
+    if(storeGet(LS_EVER_CONNECTED)==='1'){
+      let n = 0;
+      const iv = setInterval(()=>{
+        n++;
+        if(getValidToken()){ clearInterval(iv); return; }
+        if(window.google && google.accounts && google.accounts.oauth2){ trySilentReconnect(); clearInterval(iv); }
+        else if(n>16) clearInterval(iv);
+      }, 500);
+    }
   }
+  /* v2.53 watchdog: a token that dies while the app sits open is
+     silently renewed the same way (throttled inside). */
+  setInterval(()=>{
+    if(!appSyncRunning) trySilentReconnect();
+  }, 30000);
 })();
 </script>
 </body>
