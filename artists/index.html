@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="8.2">
+<meta name="app-version" content="8.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -548,6 +548,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .reqchip{margin-left:auto; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; background:var(--card2); color:var(--muted);}
 .reqchip.pending{color:var(--accent);}
 .reqchip.processing{color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);}
+.reqprog{padding:10px 2px 12px; border-bottom:1px solid var(--line); margin-bottom:6px;}
+.reqprogline{font-size:13.5px; font-weight:700;}
+.reqbar{height:6px; background:var(--card2); border-radius:999px; overflow:hidden; margin-top:7px;}
+.reqbar span{display:block; height:100%; background:var(--accent); border-radius:999px;}
+.reqprogstates{font-size:12px; color:var(--muted); margin-top:6px;}
 .reqchip.waiting{color:var(--muted);}
 .reqchip.registered{color:var(--accent);}
 .reqchip.declined{color:var(--danger);}
@@ -12297,7 +12302,19 @@ function renderRequestList(){
   items.filter(r=> !r._local && r.status!=='registered' && r.status!=='declined' && !r.processing_at)
     .slice().sort((a, b)=> String(a.requested_at||'').localeCompare(String(b.requested_at||'')))
     .forEach((r, i)=>{ posMap[r.id] = i + 1; });
-  el.innerHTML = items.map(r=>{
+  /* v8.3: overall progress at the head of the history (his ask).
+     Honest counts only: done = registered + declined over the
+     real total, with the state split beside it. NO per-request
+     percentages — one request's research cannot be honestly
+     measured in percent (Art Labo's line, agreed). */
+  const doneN = items.filter(r=> r.status==='registered' || r.status==='declined').length;
+  const procN = items.filter(r=> !r._local && r.status!=='registered' && r.status!=='declined' && r.processing_at).length;
+  const localN = items.filter(r=> r._local).length;
+  const pct = items.length? Math.round(doneN / items.length * 100): 0;
+  const progHTML = '<div class="reqprog"><div class="reqprogline">完了 '+doneN+'／全'+items.length+'件（'+pct+'%）</div>'
+    + '<div class="reqbar"><span style="width:'+pct+'%"></span></div>'
+    + '<div class="reqprogstates">処理中 '+procN+'件 ・ 順番待ち '+Object.keys(posMap).length+'件'+(localN? ' ・ 送信待ち '+localN+'件': '')+'</div></div>';
+  el.innerHTML = progHTML + items.map(r=>{
     const st = reqStatusOf(r, posMap[r.id]);
     /* v8.0: times, not just dates (his ask) — for the request and
        for its completion. A date-only value (no 'T' in the ISO)
@@ -12609,7 +12626,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '8.2';
+const APP_VERSION = '8.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
