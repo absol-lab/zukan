@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="5.0">
+<meta name="app-version" content="5.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8751,75 +8751,38 @@ function fitToolbarTop(){
 const hdr = document.querySelector('header.top');
 if(hdr) document.documentElement.style.setProperty('--hdrh', hdr.offsetHeight+'px');
 }
-/* ---------- v2.25: slim toolbar while scrolling ----------
-   Once the list is scrolled past a small threshold (the toolbar is
-   docked under the header), the search and facet rows fold away and
-   only the slim row stays: the mode bar + search/filter icon buttons.
-   The fold is a class toggle only — no JS ever writes a position, the
-   toolbar stays plain sticky in normal flow (the v2.22 rule). The
-   fold/expand itself animates via grid-template-rows (see .tbwrap).
-   Hysteresis: slim engages at scrollY >= 40 and releases below 8,
-   where the expanded flag also resets, so returning to the top of the
-   list always restores the full toolbar. While the user has the
-   toolbar expanded (tbExpanded) or is typing in the search box, no
-   folding happens. */
-var tbExpanded = false, tbRafPending = false;
+/* ---------- slim toolbar (v2.25; manual-only since v5.1) ----------
+   The search and facet rows can fold away, leaving the mode bar +
+   search/filter icon buttons. The fold is a class toggle only — no
+   JS ever writes a position, the toolbar stays plain sticky in
+   normal flow (the v2.22 rule), and it animates via
+   grid-template-rows (see .tbwrap). Until v5.0 the fold was driven
+   by scroll position (engage >= 40, release < 8); that automation
+   is abolished in v5.1 — see the note at tbSlim. While he is
+   typing in the search box, no folding happens. */
+/* v5.1: the toolbar fold is MANUAL ONLY. The scroll-driven fold
+   is abolished: v3.2's recording showed the fold/expand flap on
+   short lists, and the 2026-11-13 recording (v4.7, mini mode, top
+   of the full list) shows it again — the bar toggling slim/full
+   while the fling stalls and the boundary card hangs half-cut.
+   The mechanism never stopped being wrong: any scroll-driven
+   toggle reflows the document mid-gesture, the compensating
+   scrollTo kills iOS momentum, and iOS's own scroll anchoring
+   fights the manual compensation, so around the engage band the
+   state oscillates instead of settling. Now the bar changes only
+   when he taps: the collapse chevron in the search row folds it,
+   the slim-row icons re-open it, and the state holds for the
+   whole session. Scrolling changes NO layout, ever. */
+var tbSlim = false, tbRafPending = false;
 function toolbarIsSlimWanted(){
-if(view!=='list' || tbExpanded) return false;
+if(view!=='list') return false;
 const ae = document.activeElement;
 if(ae && ae.id==='searchbox') return false;
-const y = window.scrollY || 0;
-const tb = $('toolbar');
-const slimNow = !!(tb && tb.classList.contains('slim'));
-if(y >= 40){
-if(!slimNow && tb){
-/* v3.2: never ENTER slim on a page barely taller than the viewport
-   (a short filtered list). Folding removes ~the chip band's height
-   from the document; the browser then clamps the scroll back under
-   the release threshold, the bar re-expands, and the fold/expand
-   oscillation throws the first cards out from under the finger
-   (the user's recording: LeWitt's card at the section head). */
-const wrap = tb.querySelector('.tbwrap');
-const foldH = wrap? wrap.offsetHeight: 0;
-const maxY = document.documentElement.scrollHeight - window.innerHeight;
-if(maxY - foldH < 160) return false;
-/* …and only once the scroll is deep enough to absorb the fold:
-   the anchored compensation shifts the scroll up by foldH, and
-   if that would land in the release zone (<40) the browser clamp
-   + re-expand flaps the bar. Deeper in the same scroll the fold
-   simply engages a little later instead. */
-if(y - foldH < 40) return false;
+return tbSlim;
 }
-return true;
-}
-if(y < 8) return false;
-return slimNow;
-}
-function updateToolbarSlim(manual){
+function updateToolbarSlim(){
 const tb = $('toolbar'); if(!tb) return;
-if((window.scrollY || 0) < 8) tbExpanded = false;
-const want = toolbarIsSlimWanted();
-const is = tb.classList.contains('slim');
-if(want !== is && !manual){
-/* v3.2: a scroll-driven fold/expand used to reflow the whole list
-   by the bar's height, animated over .26s — every card slid out
-   from under the user's finger (his words: ぶっ飛ばされて押しづらい).
-   Now the toggle is instant and scroll-anchored: the height the
-   toggle adds or removes is shifted into the scroll position in
-   the same frame, so the content under the finger does not move.
-   Manual toggles (the slim-row icons / collapse button — the
-   finger is on the bar itself) keep their animation. */
-const y = window.scrollY || 0;
-tb.classList.add('tbnoanim');
-const h0 = tb.offsetHeight;
-tb.classList.toggle('slim', want);
-const h1 = tb.offsetHeight;
-if(y >= 40 && h1 !== h0) window.scrollTo(0, Math.max(0, y + (h1 - h0)));
-void tb.offsetHeight;
-requestAnimationFrame(()=> tb.classList.remove('tbnoanim'));
-} else {
-tb.classList.toggle('slim', want);
-}
+tb.classList.toggle('slim', toolbarIsSlimWanted());
 updateSlimTools();
 }
 function updateSlimTools(){
@@ -8828,30 +8791,36 @@ if(fc){ const n = state.tags? state.tags.size: 0; fc.textContent = n? String(n):
 const qd = $('slimQDot');
 if(qd) qd.classList.toggle('hidden', !(state.query && state.query.length));
 const cb = $('tbCollapse');
-if(cb) cb.classList.toggle('hidden', !(tbExpanded && (window.scrollY || 0) >= 40));
+/* v5.1: the fold chevron is offered whenever the full bar is up
+   and he has scrolled a little — discovering the fold no longer
+   requires the fold to happen by itself first. Toggling this
+   button's visibility changes no layout (it shares the search
+   row's fixed height), so the scroll listener below may run it
+   freely. */
+if(cb) cb.classList.toggle('hidden', !(!tbSlim && view==='list' && (window.scrollY || 0) >= 40));
 }
 function expandToolbar(which){
-tbExpanded = true;
+tbSlim = false;
 if(which==='filter' && CONFIG.facets && !state.facetOpen){
 state.facetOpen = 'bunrui';
 renderList();
 }
-updateToolbarSlim(true);
+updateToolbarSlim();
 if(which==='search'){
 const sb = $('searchbox');
 if(sb){ try{ sb.focus({ preventScroll:true }); }catch(e){ try{ sb.focus(); }catch(_){} } }
 }
 }
 function collapseToolbar(){
-tbExpanded = false;
+tbSlim = true;
 const sb = $('searchbox');
 if(sb && document.activeElement===sb){ try{ sb.blur(); }catch(e){} }
-updateToolbarSlim(true);
+updateToolbarSlim();
 }
 window.addEventListener('scroll', ()=>{
 if(tbRafPending) return;
 tbRafPending = true;
-requestAnimationFrame(()=>{ tbRafPending = false; updateToolbarSlim(); });
+requestAnimationFrame(()=>{ tbRafPending = false; updateSlimTools(); });
 }, { passive:true });
 window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); if(view==='timeline') layoutTlSpine(); });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
@@ -8952,7 +8921,7 @@ return;
 if(view==='list') CTX[DS].scrollY = window.scrollY;
 const prevV = view;
 const srcDest = (view==='settings')? 'settings': DS;
-tbExpanded = false;
+tbSlim = false;
 /* v2.70: the dataset being left becomes the new list's swipe-back
    trail (recorded BEFORE the swap, with the origin dataset). */
 if(view==='list' || view==='ex' || view==='timeline' || view==='settings') prevPill = { view: view, ds: DS };
@@ -12246,7 +12215,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.0';
+const APP_VERSION = '5.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
