@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.40">
+<meta name="app-version" content="2.41">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -78,7 +78,7 @@
 :root[data-fontfamily="mincho"]{--bodyfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;}
 :root[data-fontfamily="gothic"]{--bodyfont:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;}
+html,body{margin:0;padding:0; touch-action:manipulation; /* v2.41: no double-tap zoom (user: annoying when it fires by accident); pinch zoom stays — manipulation = pan + pinch-zoom without double-tap. Local rules (e.g. .seg pan-y) still win on their own elements via intersection. */}
 body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.65;
   padding-bottom:108px; -webkit-text-size-adjust:100%;}
 button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0; -webkit-appearance:none; appearance:none;}
@@ -10008,7 +10008,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.40';
+const APP_VERSION = '2.41';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
