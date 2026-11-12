@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="4.9">
+<meta name="app-version" content="5.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -305,6 +305,33 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
    what read as spread-out and inorganic against the catalogue
    density the user asked for. */
 .cvtext{flex:1; min-width:0; font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:var(--lh); overflow-wrap:anywhere;}
+/* v5.0: the chronicle (年代記) — a person's page set as a period
+   narrative with the period's works woven in, modelled on the
+   Gokita chronicle the user praised. Dense catalogue typography:
+   serif body on the shared line-height, compact meta lines. */
+.chtext{font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:var(--lh); overflow-wrap:anywhere; margin:0 0 10px;}
+.chfacts{margin:2px 0 12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card);}
+.chfacts div{font-size:13px; line-height:1.75; padding:2px 0;}
+.chnote2{font-size:13px; line-height:1.8; color:var(--muted); font-family:var(--serif); margin:0 0 6px;}
+.chperiod{padding:16px 0 6px; border-top:1px solid var(--line); margin-top:14px;}
+.chhead{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+.chno{font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--bg); background:var(--ink); border-radius:5px; padding:2px 8px;}
+.chtitle{font-family:var(--serif); font-size:calc(var(--fs) * 1.12); font-weight:700; line-height:1.45;}
+.chsub{font-family:var(--serif); font-size:calc(var(--fs) * .92); color:var(--muted); line-height:1.5; margin-top:2px;}
+.chmeta{font-family:var(--sans); font-size:12px; color:var(--muted); letter-spacing:.04em; margin:5px 0 10px;}
+.chworks{margin:4px 0 8px;}
+.chwlabel{font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.1em; color:var(--muted); margin-bottom:6px;}
+.chsym{font-size:13px; line-height:1.75; font-family:var(--serif); border:1px dashed var(--line); border-radius:8px; padding:7px 10px; margin:4px 0 8px;}
+.chsym .tag{font-family:var(--sans); font-size:10.5px; color:var(--muted); letter-spacing:.06em;}
+.chqrow{padding:9px 0; border-bottom:1px solid var(--line);}
+.chqrow:last-child{border-bottom:none;}
+.chq1{font-family:var(--serif); font-weight:700; font-size:calc(var(--fs) * .95); line-height:1.5;}
+.chq2{font-family:var(--sans); font-size:11.5px; color:var(--muted); margin:1px 0 3px;}
+.chq3{font-size:13.5px; line-height:1.75; font-family:var(--serif);}
+.chconst{display:flex; gap:11px; padding:9px 0; border-bottom:1px solid var(--line);}
+.chconst:last-child{border-bottom:none;}
+.chcno{flex:0 0 22px; font-family:var(--sans); font-size:12px; font-weight:700; color:var(--bg); background:var(--ink); border-radius:50%; width:22px; height:22px; line-height:22px; text-align:center; margin-top:2px;}
+.chct{font-family:var(--serif); font-weight:700; font-size:calc(var(--fs) * .97); line-height:1.5; margin-bottom:3px;}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
@@ -9300,6 +9327,14 @@ function setTab(t){
 state.tab = t;
 const pg = $('dpager');
 if(!pg){ renderDetail(); return; }
+/* v5.0: the chronicle fetch is async — if it landed after this
+   detail was rendered, swap the bio panel in at the moment the
+   reader opens the tab (renderDetail re-lands on this tab; the
+   .chperiod guard ends the recursion). */
+if(t==='bio' && view==='detail'){
+  const ca = artistById(state.detailId);
+  if(ca && CHRONICLE_FILES[ca.name] && chronicleFor(ca) && !pg.querySelector('.chperiod')){ renderDetail(); return; }
+}
 const idx = Math.max(0, DTABS.indexOf(t));
 /* v4.3: tab taps jump instantly to the panel's measured
    offsetLeft. The old code smooth-scrolled to idx*clientWidth —
@@ -9372,6 +9407,83 @@ setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
    Age-led continuations join the previous entry; anything
    before the first year stays prose; a bio with no year-led
    sentences renders exactly as before. */
+/* v5.0: chronicles （年代記) — per-person period narratives that
+   replace the CV biography on that person's page, modelled on
+   the Gokita chronicle Space the user praised （ものすごく良かった).
+   Content lives in a repo JSON beside the app (same channel as
+   news.json / changelog.json): periods with their works woven in,
+   a quick table, constants, and closing steps. Works are named by
+   title + year and resolved against the record's own captions,
+   so thumbnails open the real viewer; anything unresolved renders
+   as text and nothing breaks. No file -> the CV bio stays. */
+const CHRONICLE_FILES = { '五木田智央': 'chronicle-gokita.json' };
+const chronicleMem = {}; const chronicleBusy = {};
+function chronicleCacheLoad(file){ try{ const j = JSON.parse(storeGet('zukan.chronicle.'+file)||'null'); return (j && Array.isArray(j.periods))? j: null; }catch(e){ return null; } }
+function chronicleFor(a){
+  const f = CHRONICLE_FILES[a.name]; if(!f) return null;
+  if(chronicleMem[f]) return chronicleMem[f];
+  const c = chronicleCacheLoad(f); if(c){ chronicleMem[f] = c; return c; }
+  ensureChronicle(a);
+  return null;
+}
+async function ensureChronicle(a){
+  const f = CHRONICLE_FILES[a.name]; if(!f || chronicleBusy[f]) return;
+  chronicleBusy[f] = true;
+  try{
+    const res = await fetch(f+'?cv=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) throw new Error('chronicle HTTP ' + res.status);
+    const j = await res.json();
+    if(j && Array.isArray(j.periods)){ chronicleMem[f] = j; try{ storeSet('zukan.chronicle.'+f, JSON.stringify(j)); }catch(e){} }
+  }catch(e){ /* the CV bio stays as the fallback */ }
+  chronicleBusy[f] = false;
+  if(view==='detail' && state.tab==='bio'){ const cur = artistById(state.detailId); if(cur && cur.name===a.name) renderDetail(); }
+}
+function chWorkIdx(ws, title, year){
+  for(let i=0;i<ws.length;i++){
+    const c = ws[i].caption||'';
+    const m = /《(.+?)》/.exec(c); if(!m || m[1]!==title) continue;
+    const y = /(19|20)\d\d/.exec(c);
+    if(!y || +y[0]===year) return i;
+  }
+  return -1;
+}
+function chronicleHTML(a, ch, ws){
+  let h = '<h3 class="subhead">年代記</h3>';
+  const p = ch.profile||{};
+  (p.lead||[]).forEach(t=>{ h += '<p class="chtext">'+esc(t)+'</p>'; });
+  if(p.facts && p.facts.length) h += '<div class="chfacts">'+p.facts.map(f=>'<div>'+esc(f)+'</div>').join('')+'</div>';
+  if(p.note) h += '<p class="chnote2">'+esc(p.note)+'</p>';
+  (ch.periods||[]).forEach(per=>{
+    h += '<div class="chperiod"><div class="chhead"><span class="chno">第'+per.n+'期</span><span class="chtitle">'+esc(per.title||'')+'</span></div>'
+      + (per.sub? '<div class="chsub">'+esc(per.sub)+'</div>': '')
+      + '<div class="chmeta">'+esc(per.years||'')+(per.age? '｜'+esc(per.age): '')+'</div>';
+    (per.text||[]).forEach(t=>{ h += '<p class="chtext">'+esc(t)+'</p>'; });
+    if(per.works && per.works.length){
+      const thumbs = [];
+      per.works.forEach(w=>{
+        const idx = chWorkIdx(ws, w.title, w.year);
+        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+idx+', \''+escA(a.id)+'\')">'+imgHTML(work, IMG_SIZE.thumb)+'</button>'); }
+        else thumbs.push('<span class="chsym">《'+esc(w.title)+'》（'+w.year+'年）</span>');
+      });
+      h += '<div class="chworks"><div class="chwlabel">正本の代表作品</div><div class="biothumbs">'+thumbs.join('')+'</div></div>';
+    }
+    if(per.works_note) h += '<div class="chnote2">正本の代表作品 — '+esc(per.works_note)+'</div>';
+    (per.symbolic||[]).forEach(s=>{ h += '<div class="chsym"><span class="tag">時期を象徴する仕事（ドシエ確認・正本未登録）</span><br>'+esc(s)+'</div>'; });
+    h += '</div>';
+  });
+  if(ch.quicktable && ch.quicktable.length){
+    h += '<h3 class="subhead">早見表</h3>' + ch.quicktable.map(q=>'<div class="chqrow"><div class="chq1">'+esc(q.period)+'</div><div class="chq2">'+esc(q.years)+'｜'+esc(q.age)+'</div><div class="chq3">'+esc(q.turning)+'</div></div>').join('');
+  }
+  if(ch.constants && ch.constants.length){
+    h += '<h3 class="subhead">年代が変わっても、変わらなかったもの</h3>' + ch.constants.map((c,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(c.title)+'</div><p class="chtext" style="margin:0;">'+esc(c.text)+'</p></div></div>').join('');
+  }
+  if(ch.steps && ch.steps.length){
+    h += '<h3 class="subhead">では、なぜ画家になれたのか</h3>';
+    if(ch.steps_intro) h += '<p class="chtext">'+esc(ch.steps_intro)+'</p>';
+    h += ch.steps.map((s,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(s.title)+'</div><p class="chtext" style="margin:0;">'+esc(s.text)+'</p></div></div>').join('');
+  }
+  return h;
+}
 function cvBioHTML(text){
 const t = String(text || '').trim();
 if(!t) return '';
@@ -9481,9 +9593,15 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
 '</div></div>';
 }).join('');
 }
+/* v5.0: a person with a chronicle gets the chronicle as their
+   biography — the CV setting and the works strip step aside. */
+const chData = chronicleFor(a);
+if(chData) bioHTML = chronicleHTML(a, chData, ws);
+else{
 bioHTML = sp.bio? cvBioHTML(sp.bio): '<div class="bodytext">（来歴の記載はまだありません）</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
+}
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+esc(sp.tech)+'</div>';
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+esc(sp.rest)+'</div>';
@@ -12128,7 +12246,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -12174,7 +12292,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 18;
+const DATA_PACK = 19;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
