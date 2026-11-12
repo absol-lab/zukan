@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.80">
+<meta name="app-version" content="2.81">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -259,7 +259,7 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
    pattern that works on device): the three panels sit side by side in one
    horizontal scroller and each panel is a full-width snap page, while
    vertical scrolling stays with the page itself. */
-.dpager{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
+.dpager{display:flex; overflow-x:auto; overflow-y:hidden; align-items:flex-start; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
 .dpager::-webkit-scrollbar{display:none;}
 .dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always;}
 .gallery{display:grid; grid-template-columns:1fr 1fr; gap:12px 9px; margin-top:14px;}
@@ -9097,6 +9097,18 @@ if(!pg){ renderDetail(); return; }
 const idx = Math.max(0, DTABS.indexOf(t));
 pg.scrollTo({ left: idx * (pg.clientWidth || 1), behavior: reducedMotion()? 'auto': 'smooth' });
 dtabHighlight(t);
+fitDPagerHeight();
+}
+/* v2.81: the pager's height follows the ACTIVE panel. Before, the
+   box was as tall as the tallest tab (long 特徴 text), so the
+   works tab trailed a screen-plus of nothing underneath — the
+   page must end where the visible panel ends. */
+function fitDPagerHeight(){
+const pg = $('dpager'); if(!pg) return;
+const idx = Math.max(0, DTABS.indexOf(state.tab));
+const panel = pg.querySelectorAll('.dpage')[idx]; if(!panel) return;
+const h = panel.offsetHeight;
+if(h > 0) pg.style.height = h + 'px';
 }
 function dtabHighlight(t){
 const bar = document.querySelector('#viewDetail .dtabs'); if(!bar) return;
@@ -9120,9 +9132,12 @@ dpagerRAF = 0;
 if(!pg.isConnected) return;
 const i = Math.max(0, Math.min(DTABS.length-1, Math.round(pg.scrollLeft / Math.max(1, pg.clientWidth))));
 const t = DTABS[i];
-if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); }
+if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); fitDPagerHeight(); }
 });
 }, { passive:true });
+pg.addEventListener('load', ()=>fitDPagerHeight(), true);
+requestAnimationFrame(()=>fitDPagerHeight());
+setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
 }
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
@@ -9706,17 +9721,49 @@ function renderUpdateList(){
       '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
   }).join('');
 }
+/* v2.81: a completed registration is announced under the name it
+   was actually registered as — his request text is often a vague
+   memory ("ブラックミディのジャケの人"), so the notice leads with
+   the resolved name and keeps his original wording underneath.
+   Name sources, best first: resolved_name (processor contract),
+   the 「Xとして登録」 phrasing in the note, then the request text. */
+function reqResolvedName(r){
+  if(r.resolved_name) return r.resolved_name;
+  const m = /(.+?)として登録/.exec(r.note||'');
+  if(m) return m[1];
+  return r.name;
+}
+function reqDoneItems(){
+  return reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
+    .sort((a, b) => String(b.resolved_at||'').localeCompare(String(a.resolved_at||'')));
+}
+/* v2.81: the timeline carries the door to these notifications —
+   his ask: a confirmation button around the timeline's left, with
+   the date/time and the name each request was collected under. */
+function tlReqNotifHTML(){
+  const n = reqDoneItems().length;
+  return '<div style="margin-top:10px;"><button class="txtbtn" style="padding-left:0;" onclick="openRequestNotifs()">✓ リクエスト回収の通知'+(n? '（'+n+'件）': '')+'</button></div>';
+}
+function openRequestNotifs(){
+  notifTab = 'req';
+  showView('settings');
+  openSettingsPanel('updates');
+}
 function renderRequestNotifs(){
   const el = $('notifbody'); if(!el) return;
-  const done = reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
-    .sort((a, b) => String(b.resolved_at||'').localeCompare(String(a.resolved_at||'')));
+  const done = reqDoneItems();
   if(!done.length){ el.innerHTML = '<div class="empty">完了したリクエストはまだありません</div>'; }
   else el.innerHTML = done.map(r => {
+    const resolved = reqResolvedName(r);
     const title = r.status==='declined'? esc(r.name)+' は見送りになりました'
-      : (r.kind==='works'? esc(r.name)+' の情報を回収しました' : esc(r.name)+' を登録しました');
+      : (r.kind==='works'? esc(r.name)+' の情報を回収しました' : esc(resolved)+' が登録されました');
+    const askedLine = (r.status==='registered' && r.kind!=='works' && resolved && resolved !== r.name)
+      ? '<div class="upat" style="margin-top:2px;">リクエスト：「'+esc(r.name)+'」</div>' : '';
+    const noteIsNameOnly = r.note && /として登録/.test(r.note) && reqResolvedName(r) !== r.name;
     return '<div class="uprow"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
+      askedLine +
       '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
-      (r.note? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') + '</div>';
+      (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') + '</div>';
   }).join('');
   /* refresh the requests file in the background; re-render on arrival */
   if(getValidToken() || relayReady()){
@@ -10052,7 +10099,8 @@ let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></sp
 +'<div style="margin-top:12px;"><span class="seg">'
 +'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">西洋</button>'
 +'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
-+'</span></div>';
++'</span></div>'
++ tlReqNotifHTML();
 const t = timelineOf();
 if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
@@ -11391,7 +11439,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.80';
+const APP_VERSION = '2.81';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
