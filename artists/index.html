@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="3.2">
+<meta name="app-version" content="3.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -500,6 +500,19 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .tltitle{font-family:var(--serif); font-size:16.5px; margin-top:5px; line-height:1.5;}
 .tlsum{font-size:calc(var(--fs) * .9375); line-height:var(--lh); margin-top:8px; white-space:pre-wrap;}
 .tlbg{font-size:calc(var(--fs) * .90625); line-height:var(--lh); margin-top:10px; white-space:pre-wrap; border-top:1px solid var(--line); padding-top:10px;}
+/* v3.3: era photo strip on timeline cards + the era detail view.
+   Photos are the encyclopedia's own verified works from that era —
+   the timeline becomes a visual index into the collection. */
+.tlstrip{display:flex; gap:6px; margin-top:12px;}
+.tlthumb{flex:1; min-width:0; aspect-ratio:4/3; padding:0; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--bg2);}
+.tlthumb .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.tlthumb .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.tlthumb .imgholder .noimg{font-size:10px; color:var(--muted); letter-spacing:.15em;}
+.eraband{height:6px; border-radius:3px; margin:10px 0 2px;}
+.erahero{display:block; width:100%; margin-top:12px; padding:0; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:var(--bg2);}
+.erahero .imgholder{display:flex; align-items:center; justify-content:center; width:100%; aspect-ratio:4/3;}
+.erahero .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.erahero .imgholder .noimg{color:var(--muted); letter-spacing:.2em;}
 .tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
 .tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
 button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
@@ -698,6 +711,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewNews" class="hidden"></main>
 <main id="viewCal" class="hidden"></main>
 <main id="viewTimeline" class="hidden"></main>
+<main id="viewEra" class="hidden"></main>
 <main id="viewQuiz" class="hidden"></main>
 
 <main id="viewSettings" class="hidden">
@@ -8413,8 +8427,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2, cal:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2, cal:2, era:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -8487,6 +8501,7 @@ if(v==='ex') renderEx();
 if(v==='news') renderNews();
 if(v==='cal') renderCal();
 if(v==='timeline') renderTimeline();
+if(v==='era') renderEra();
 if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSettings(); }
 moveNavInd(true);
@@ -8855,6 +8870,7 @@ editWorks = [];
 updateHeader(); updatePill();
 let v = (view==='settings')? 'list': (CTX[DS].lastView || 'list');
 if(v==='ex' && DS!=='artists') v = 'list';
+if(v==='era') v = 'timeline';
 if((v==='timeline' || v==='quiz') && DS!=='artists') v = 'list';
 if(v==='detail' && !artistById(state.detailId)) v = 'list';
 if(v==='settings') v = 'list';
@@ -10359,6 +10375,8 @@ if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだあり�
 const entries = t[tlRegion] || [];
 if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 html += '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
+const spans = tlEraSpans(entries);
+const stripWiring = [];
 entries.forEach((e,i)=>{
 if(!e || typeof e!=='object') return;
 const key = tlRegion+':'+i;
@@ -10383,11 +10401,126 @@ if(target) chips.push('<button class="tlchip" onclick="openDetail(\''+escA(targe
 else chips.push('<span class="tlchip">'+esc(label)+'</span>');
 });
 if(chips.length) html += '<div class="tlchips">'+chips.join('')+'</div>';
+/* v3.3: photo strip — this era's works from the encyclopedia
+   itself (verified images only, nothing new to source), plus the
+   door into the era detail view. */
+const ew = eraWorks(entries, spans, i);
+if(ew.length){
+const picks = []; const seenA = {};
+ew.forEach(c=>{ if(picks.length<3 && !seenA[c.a.id]){ seenA[c.a.id]=1; picks.push(c); } });
+if(picks.length<3) ew.forEach(c=>{ if(picks.length<3 && picks.indexOf(c)<0) picks.push(c); });
+html += '<div class="tlstrip">'+picks.map(c=>{ stripWiring.push(c.w); return '<button class="tlthumb" aria-label="'+escA(c.w.caption||'')+'" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</button>'; }).join('')+'</div>';
+}
+html += '<div style="margin-top:10px;"><button class="linkbtn" onclick="openEra('+i+')">詳しく見る ›</button></div>';
 html += '</div>';
 });
 html += '</div>';
 v.innerHTML = html;
+v.querySelectorAll('.tlthumb .imgholder').forEach((span, k)=>{ const w = stripWiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 requestAnimationFrame(layoutTlSpine);
+}
+/* v3.3: era detail — the timeline stops being a list of labels.
+   Each era card carries photos (the encyclopedia's own verified
+   works made in that era) and opens a detail page: a hero work,
+   a longer study text (the entry's `detail`, or the design
+   timeline's built-in texts below), the era's people, and every
+   in-era work the collection holds. */
+let eraCtx = null;
+const TL_DESIGN_DETAIL = {
+"産業革命とデザインの誕生": "1851年、ロンドンのハイド・パークに鉄とガラスの「クリスタル・パレス」が立ち、世界初の万国博覧会が開かれた。機械生産で作られた日用品が一堂に並び、その造形の粗さが知識人の批判を浴びたことが、「形を専門に考える仕事」としてのデザインの出発点になる。パクストンの温室式工法自体が、部品の標準化と現場組立という近代生産の原型だった。ヘンリー・コールは『ジャーナル・オブ・デザイン』を創刊し、教育と制度の面から改革を進めた。博覧会はその後パリやウィーンへ広がり、国家がデザインを競う舞台になっていく。",
+"アーツ・アンド・クラフツ運動": "機械化で粗悪化した製品への反発から、ウィリアム・モリスは中世の工房に範を取り、手仕事の誠実さと材料への正直さを掲げた。1861年創業のモリス商会は壁紙・織物・家具・書物を一体の生活芸術として作り、ケルムスコット・プレスの豪華本で印刷美術の頂点も示した。皮肉にも手仕事の製品は高価で富裕層にしか届かなかったが、「日用品こそ美しくあるべきだ」という思想は各国に輸出され、日本の民藝運動にも直接つながっていく。マッキントッシュのグラスゴー派は、その直線的な造形で次世代のモダニズムへの橋渡しをした。",
+"アール・ヌーヴォー": "1890年代、植物の茎や炎のような曲線が建築・家具・ポスター・宝飾を一気に染めた国際様式。ギマールのパリ地下鉄入口は都市の顔そのものになり、ミュシャのポスターは広告を芸術の域に引き上げた。ガレのガラス、ラリックの宝飾、ホルタとワーグナーらの建築まで、職人の手と新しい素材（鋳鉄・ガラス）が結びついた点が特徴。わずか20年ほどの流行で終わったが、装飾の全面解放と、生活のすべてを一つの様式で貫く「総合芸術」の試みは、デザインの可能性を大きく広げた。",
+"ドイツ工作連盟と企業デザイン": "1907年、ミュンヘンでドイツ工作連盟が結成され、ムテジウスらは産業と芸術の和解を掲げた。議論の中心は「標準化」——型の美しさと大量生産は両立する、という近代デザインの根本命題がここで生まれる。同年、電機会社AEGはペーター・ベーレンスを起用し、製品・工場建築・ロゴ・印刷物までを一貫させる世界初の企業デザイン（コーポレート・アイデンティティ）を実現した。ベーレンスの工房からはグロピウス、ミース、ル・コルビュジエが育ち、近代建築とデザインの系譜の源流となる。",
+"バウハウス": "1919年、グロピウスがワイマールに開いた造形学校。工芸と美術の統一を掲げ、予備課程で素材と造形の基礎を叩き込む教育は今の美大の原型になった。モホイ＝ナギの構成主義、カンディンスキーとクレーの造形理論、ブロイヤーの鋼管椅子《ワシリーチェア》、バイヤーのユニバーサル書体——実験は印刷・舞台・写真・建築の全域に及んだ。1933年にナチスの圧力で閉校するが、教員と学生が世界へ散り、その教育と様式はアメリカと日本を含む戦後デザインの標準になった。",
+"アール・デコと流線型": "1925年のパリ装飾美術博覧会に名を取る様式。幾何学と豪華素材で大衆消費の時代を飾り、摩天楼・映画館・客船の内装に広がった。アメリカでは航空と鉄道の時代を映す「流線型（ストリームライン）」が家電や文具にまで及び、ロウイ、ベル・ゲデス、ドレフュスらインダストリアルデザイナーが職業として確立する。速度と進歩への信仰を形にした時代で、機能と無関係な「速そうな形」が売れたこと自体、デザインが大衆の欲望を扱う仕事になった証拠である。",
+"戦後のグッドデザイン": "第二次大戦後、復興と大量消費の中で「良い形とは何か」が各国で制度化された。ドイツではウルム造形大学とブラウン社が手を組み、ディーター・ラムスらが「より少なく、しかしより良く」を体現する電化製品を生む。イタリアではオリベッティやカッシーナが建築家と協働し、アメリカではイームズ夫妻が成形合板とプラスチックで大衆に届く家具を設計した。1953年の国際様式の普及とともに、グッドデザインは輸出産業の競争力そのものになっていく。",
+"スイス・スタイル": "1950年代のスイスで確立したタイポグラフィの方法。グリッドによる版面の秩序、左揃えの不揃い組、サンセリフ（ヘルベチカは1957年）、写真の客観的使用を原則とし、ミューラー＝ブロックマンらが理論化した。感情を排した明快さは国際タイポグラフィ様式として世界中の企業と公共印刷物に広がり、今のUIデザインの「見えない秩序」の直接の祖先にあたる。一方で、その没個性への反発が後のポストモダンの揺り戻しも準備した。",
+"イタリアンデザインの黄金期": "戦後イタリアでは、ジオ・ポンティが雑誌『ドムス』を拠点に建築と日用品を往復し、ラディカルな造形が中小工房の職人技と結びついた。ジョエ・コロンボはプラスチック成形で近未来の生活単位を提案し、ソットサスはオリベッティの赤いタイプライター《バレンタイン》で機械に感情を持ち込んだ。ヴェスパやフィアット500の国民的プロダクトと並行し、イタリアのデザインは「工業と芸術のあいだ」の独自路線として世界に影響を与え、1981年のメンフィスへ直結していく。",
+"ポップとカウンターカルチャー": "1960年代、大量消費と若者文化がデザインの主役になった。レコードジャケット、ポスター、ファッションが表現の最前線になり、サイケデリックな色彩と手書き文字がアンダーグラウンド紙面を覆う。パントンの一体成形椅子のように新素材が造形を解放し、デザインは「長く使う良いもの」より「今の気分」を優先し始めた。広告とサブカルチャーが混ざり合うこの転換は、後のストリート文化や、デザインが世代の記号になる時代の入口にあたる。",
+"ポストモダンとメンフィス": "1981年、ミラノでソットサスを中心とするメンフィスが、モダニズムの禁欲を笑い飛ばす色彩と模様の家具を発表した。機能より記号、永続性より一瞬の輝き——デザインは「意味」を扱うものになった。建築ではヴェンチューリやグレイヴスが装飾と引用を復権させ、グラフィックではニューウェーブがグリッドを意図的に崩した。バブル期の日本でも倉俣史朗らが世界的な仕事を残し、様式の多様化と消費社会の成熟が重なった時代である。",
+"デジタルデザインの幕開け": "1984年のMacintosh発売と、スーザン・ケアのアイコンやフォントが、画面の中のデザインを大衆の仕事にした。デスクトップパブリッシングで印刷の版組みは個人の机に移り、1990年代にはウェブが新しい公共空間として立ち上がる。紙の制約（固定寸法・一方向の読解）から解かれたデザインは、インタラクションと情報設計を含むものへ拡張し始めた。ここから先のデザインは「物」だけでなく「振る舞い」を設計する時代に入っていく。",
+"スマートフォン以降": "2007年のiPhoneが、電話・メディア・道具を一枚のガラスに統合した。ジョナサン・アイブのハードウェアとiOSのインターフェースは、スキュアモーフィズムからフラットデザインへ、そして素材感の再発明へと画面の様式を更新し続けた。アプリ経済とSNSの普及で、デザイナーの主戦場はサービスと体験の設計に移り、プロトタイピングと検証の速度が品質を左右する時代になった。道具の形より、人の時間と注意をどう扱うかが問われている。",
+"明治の図案と工芸の輸出": "明治政府は殖産興業のもと、万国博覧会への出品を国策として工芸を磨いた。1873年のウィーン万博で日本の陶磁・漆器・金工は熱狂的に迎えられ、ジャポニスムの波がヨーロッパの装飾を変えていく。国内では東京美術学校の設立（1889年）、フェノロサと岡倉天心による美術行政が進み、「図案」は美術と産業をつなぐ新しい職能として制度化された。並河靖之の七宝、濤川惣助の無線七宝など、輸出工芸の技術はこの時期に頂点へ達する。",
+"商業デザインの芽生え": "大正期、都市の百貨店と雑誌文化が広告の仕事を生んだ。杉浦非水は三越の図案部でポスターと宣伝を担い、日本の商業美術の父と呼ばれる。パッケージ、商標、店内装飾が「意匠」として意識され始め、1920年代には構成主義やバウハウスの影響が前衛的な図案家たちに届く。まだ「デザイナー」という職業名はなくとも、印刷と販売の現場で近代的な視覚伝達の実践が始まっていた時代である。",
+"民藝とモダニズムの受容": "1926年、柳宗悦は無名の職人の日用品に美を見出す「民藝」を提唱し、濱田庄司、河井寬次郎らと運動を広げた。同時期、ブルーノ・タウトが来日（1933年）して桂離宮を絶賛し、日本の伝統とモダニズムの親和が国際的に語られ始める。柳宗理は戦後この二つの流れ——民藝の「用と美」と、西洋の合理主義——をバタフライスツールで結晶させた。伝統をどう近代に生かすかという問いは、今も日本のデザインの底流にある。",
+"戦後復興とインダストリアルデザイン": "1950年代、輸出振興のために意匠の近代化が急がれた。1951年には日本インダストリアルデザイナー協会（JIDA）、1952年には日本宣伝美術会（日宣美）が発足し、亀倉雄策、早川良雄らがグラフィックの水準を引き上げた。1957年のグッドデザイン賞（Gマーク）制度もこの流れにある。家電とカメラが輸出の主役になる過程で、模倣から独創への転換が業界全体の課題となり、榮久庵憲司らは工業製品の形に日本の方法を持ち込もうとした。",
+"東京オリンピックとグラフィックの確立": "1964年の東京オリンピックは、日本のグラフィックデザインの到達点を示す舞台になった。亀倉雄策のポスターは金色の日の丸と写真の力で国際的な評価を受け、勝見勝のデザイン計画のもと、競技を表すピクトグラムが初めて体系化され、後の非常口サインや国際標準の原型になった。田中一光、永井一正、横尾忠則らの世代が台頭し、グラフィックは広告の装飾から社会の視覚システムへと役割を広げた。1970年の大阪万博へ向かう高度成長の自信が背景にある。",
+"大阪万博と高度成長のデザイン": "1970年の大阪万博は、丹下健三の大屋根、岡本太郎の太陽の塔に象徴される未来志向の祭典で、デザインは国家規模のプロジェクトを束ねる仕事になった。高度成長のなかで家電・自動車・住宅は大量供給され、榮久庵憲司の醤油さしのようなロングセラーが「日本の日常の形」を作っていく。一方で公害と環境問題が影を落とし、無制限の成長への疑問がデザインの内部にも芽生え始めた転換点でもある。",
+"バブルとポストモダン": "1980年代、経済の繁栄とともにデザインは記号消費の最前線に立った。無印良品（1980年、西友のPBとして誕生）は田中一光のアートディレクションのもと「ノーブランドの美学」を提示し、対極のバブル的な華やかさと同時に進んだ。倉俣史朗のアクリルと光の家具、磯崎新らのポストモダン建築、資生堂やパルコの広告文化が東京を世界有数のデザイン都市に見せた時代。量から質へ、モノからコトへの転換の兆しもここに現れる。",
+"日常と余白のデザイン": "2000年前後、原研哉は「白」の感覚と情報設計を軸に、無印良品の広告と長野オリンピックのプログラムで日本的な余白の美学を更新した。深澤直人の「without thought」は意識に上る前の行為に寄り添う形を提案し、佐藤卓は日常品のパッケージを情報の編集として設計した。大量消費の反省のうえに、静かで長く使えるもの、環境への配慮、体験の設計が重なり、日本のデザインの国際的な個性として語られる領域が固まった。"
+};
+function eraWorks(entries, spans, i){
+  const e = entries[i]; if(!e) return [];
+  const sp = spans[i]; if(!sp || sp.start==null) return [];
+  const out = [];
+  (Array.isArray(e.artists)? e.artists: []).forEach(x=>{
+    const link = (x && typeof x==='object')? x.link: null;
+    if(!link) return;
+    const a = DB.artists.find(r=>r.name===link); if(!a) return;
+    const ws = displayWorks(a);
+    ws.forEach((w, wi)=>{
+      const y = workYearOf(w);
+      if(y==null) return;
+      if(y >= sp.start && (i === entries.length-1? y <= sp.end : y < sp.end)) out.push({ a: a, w: w, wi: wi, y: y });
+    });
+  });
+  out.sort((p, q)=> (p.y - q.y) || p.a.name.localeCompare(q.a.name));
+  return out;
+}
+function openEraWork(aid, wi){
+  const a = artistById(aid); if(!a) return;
+  openViewer(displayWorks(a), wi, aid);
+}
+function openEra(i){
+  eraCtx = { ds: DS, region: tlRegion, idx: i };
+  showView('era');
+}
+function renderEra(){
+  const v = $('viewEra'); if(!v) return;
+  if(!eraCtx || eraCtx.ds !== DS){ showView('timeline'); return; }
+  const t = timelineOf();
+  const entries = t? (t[eraCtx.region] || []): [];
+  const e = entries[eraCtx.idx];
+  if(!e){ showView('timeline'); return; }
+  const spans = tlEraSpans(entries);
+  const ew = eraWorks(entries, spans, eraCtx.idx);
+  const col = eraColor(eraCtx.idx, entries.length);
+  let html = '<div style="padding:16px 16px 28px;">'
+    +'<button class="backbtn" onclick="showView(\'timeline\')">‹ 年表へ戻る</button>'
+    +'<div class="eraband" style="background:'+col+'"></div>'
+    +(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
+    +'<div class="tlyears">'+esc(e.years||'')+'</div>'
+    +(e.title? '<div class="tltitle">'+esc(e.title)+'</div>': '')
+    +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
+  const wiring = [];
+  if(ew.length){
+    const h0 = ew[0];
+    wiring.push(h0.w);
+    html += '<button class="erahero" aria-label="'+escA(h0.w.caption||'')+'" onclick="openEraWork(\''+escA(h0.a.id)+'\', '+h0.wi+')">'+imgHTML(h0.w, IMG_SIZE.plate)+'</button>'
+      +'<div class="small" style="margin-top:6px;">'+esc(h0.a.name)+'　'+esc(h0.w.caption||'')+'</div>';
+  }
+  const detail = e.detail || (DS==='designers'? (TL_DESIGN_DETAIL[e.title] || ''): '') || e.background || '';
+  if(detail) html += '<h3 class="subhead">詳しく</h3><div class="bodytext">'+esc(detail)+'</div>';
+  if(e.background && detail && detail !== e.background) html += '<h3 class="subhead">背景</h3><div class="bodytext">'+esc(e.background)+'</div>';
+  const arts = Array.isArray(e.artists)? e.artists: [];
+  const chips = [];
+  arts.forEach(x=>{
+    const label = (x && typeof x==='object')? String(x.label||''): String(x||'');
+    const link = (x && typeof x==='object')? x.link: null;
+    if(!label) return;
+    const target = link? (DB.artists.find(a=>a.name===link) || null): null;
+    if(target) chips.push('<button class="tlchip" onclick="openDetail(\''+escA(target.id)+'\')">'+esc(label)+'</button>');
+    else chips.push('<span class="tlchip">'+esc(label)+'</span>');
+  });
+  if(chips.length) html += '<h3 class="subhead">この時代の人々</h3><div class="tlchips" style="margin-top:4px;">'+chips.join('')+'</div>';
+  if(ew.length){
+    html += '<h3 class="subhead">この時代の作品（図鑑から）</h3><div class="gallery">'
+      + ew.map(c=>{ wiring.push(c.w); return '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'（'+c.y+'年）</div><div class="sub">'+esc(c.w.caption||'')+'</div></figcaption></figure>'; }).join('')
+      + '</div>';
+  }
+  html += '</div>';
+  v.innerHTML = html;
+  v.querySelectorAll('.imgholder').forEach((span, k)=>{ const w = wiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 }
 /* v2.80: era coloring shared with the coming year slider (#9):
    one hue walk across the region's whole history, so an era keeps
@@ -11538,6 +11671,7 @@ function backTarget(forSwipe){
      panel's own 戻る closes it (closeSettingsPanel via goBack). */
   if(view==='settings' && settingsPanel) return null;
   if(view==='quiz') return 'timeline';
+  if(view==='era') return 'timeline';
   if(view==='news' || view==='cal') return 'ex';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
   if(forSwipe && view==='list' && prevPill && (prevPill.view!=='list' || prevPill.ds!==DS)) return prevPill.view;
@@ -11695,7 +11829,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
