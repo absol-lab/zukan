@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="5.1">
+<meta name="app-version" content="6.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -200,6 +200,15 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .toolbar.tbnoanim .tbwrap{transition:none !important;}
 .toolbar.slim .tbw-tags{margin-top:0;}
 .moderow{display:flex; gap:8px; align-items:stretch; margin-top:4px;}
+/* v6.0: favorites */
+.favbtn{background:none; border:none; font-size:21px; line-height:1; color:var(--muted); padding:6px 8px; cursor:pointer; font-family:var(--sans);}
+.favbtn.on{color:#e3a93c;}
+.favmark{color:#e3a93c; font-size:11px;}
+.favfilter{flex:none; width:48px; min-height:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:16px; position:relative; cursor:pointer; font-family:var(--sans); padding:0;}
+.favfilter.on{color:#e3a93c; border-color:#e3a93c;}
+.favfilter .favcnt{position:absolute; top:3px; right:6px; font-size:9.5px; color:var(--muted);}
+#vfav{font-size:17px; color:#cfd2e0;}
+#vfav.on{color:#e3a93c;}
 .moderow .modebar{flex:1; min-width:0;}
 .slimtools{display:none; gap:8px;}
 .toolbar.slim .slimtools{display:flex;}
@@ -777,6 +786,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         <button id="slimSearch" onclick="expandToolbar('search')" aria-label="検索を開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg><span class="qdot hidden" id="slimQDot"></span></button>
         <button id="slimFilter" onclick="expandToolbar('filter')" aria-label="タグ絞り込みを開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.1 7.1v5.4l-3.8 2v-7.4L4 5z"/></svg><span class="fcount hidden" id="slimFilterCount"></span></button>
       </div>
+      <button id="favFilterBtn" class="favfilter" onclick="toggleFavFilter()" aria-label="お気に入りだけ表示">★</button>
     </div>
   </div>
   <div id="listbody"></div>
@@ -811,6 +821,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div class="vbar">
     <button onclick="viewerMove(-1)">‹ 前</button>
     <span class="vcount" id="vcount"></span>
+    <button id="vfav" onclick="toggleFavWork()" aria-label="作品をお気に入り">☆</button>
     <button onclick="closeViewer()">閉じる</button>
     <button onclick="viewerMove(1)">次 ›</button>
   </div>
@@ -9045,6 +9056,7 @@ return kv? hay.indexOf(normSearch(kv)) >= 0: false;
 if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
+if(favFilter) arr = arr.filter(a=> isFavPerson(DS, a.id));
 return arr;
 }
 /* tag facets: classification / technique-material / era-country / theme (default) */
@@ -9238,10 +9250,11 @@ renderAbout();
 updateSlimTools();
 }
 function renderListBody(){
+syncFavFilterBtn();
 const arr = filteredArtists();
 const body = $('listbody');
 if(!arr.length){
-body.innerHTML = '<div class="empty">該当する項目がありません</div>' + reqFootHTML(); return;}
+body.innerHTML = '<div class="empty">'+(favFilter? 'お気に入りはまだありません。作家のページで ★ を押すと、ここに集まります': '該当する項目がありません')+'</div>' + reqFootHTML(); return;}
 const order = [];
 DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
 arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
@@ -9254,7 +9267,7 @@ html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><spa
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{
 const th = thumbOf(a);
-html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+html += '<figure class="work" data-aid="'+escA(a.id)+'" onclick="openDetail(\''+escA(a.id)+'\')"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'">'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 });
 html += '</div>';
 });
@@ -9500,7 +9513,7 @@ const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
 const sp = splitNotes(a.notes);
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
-'<div style="float:right"><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
+'<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
 (a.name_latin||a.name_native? '<div class="dlatin">'+esc(a.name_latin)+(a.name_native?'　'+esc(a.name_native):'')+'</div>': '')+
 '<div class="dmeta">'+
@@ -9607,6 +9620,7 @@ v.querySelectorAll('.biothumb .imgholder').forEach((span, k)=>{
 const w = bioStripWiring[k]; if(!w) return;
 span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 });
+syncFavBtn();
 }
 
 /* ---------- fullscreen viewer ---------- */
@@ -9693,6 +9707,7 @@ toast('サムネにしました');
 function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
 updateVThumbBtn();
+syncVFavBtn();
 const seq = ++viewerSeq;
 const box = $('vimg'); box.innerHTML = '<div class="vstage" id="vstage"></div>';
 const stage = box.firstChild;
@@ -10190,6 +10205,86 @@ function ratingsMerge(fileMap){
     ratingsSave(m);
   }
   return m;
+}
+/* v6.0: favorites (his ask, 2026-11-13) — people AND works.
+   Device localStorage is the source of truth; the map mirrors
+   into zukan-requests.json (top-level "favorites") through the
+   same flush as the ratings, so Muse can read his taste back
+   through the relay: no new relay file, no redeploy. Entries
+   carry the person's name / the work's caption so the file is
+   readable as-is. Un-favoriting writes a fav:false tombstone
+   and merges take the newest `at` per key, so an older file
+   copy cannot resurrect a removed favorite. */
+const LS_FAVS = 'zukan.favorites';
+function favsLoad(){
+  try{ const d = JSON.parse(storeGet(LS_FAVS)||'{}');
+    return { people: (d && d.people && typeof d.people==='object' && !Array.isArray(d.people))? d.people: {},
+             works: (d && d.works && typeof d.works==='object' && !Array.isArray(d.works))? d.works: {} };
+  }catch(e){ return { people:{}, works:{} }; }
+}
+function favsSave(m){ try{ storeSet(LS_FAVS, JSON.stringify(m)); }catch(e){} }
+function favPersonKey(kind, id){ return kind+':'+id; }
+function favWorkKey(kind, id, caption){ return kind+':'+id+'|'+caption; }
+function isFavPerson(kind, id){ const e = favsLoad().people[favPersonKey(kind,id)]; return !!(e && e.fav); }
+function isFavWork(kind, id, caption){ const e = favsLoad().works[favWorkKey(kind,id,caption)]; return !!(e && e.fav); }
+function favPeopleCount(kind){ const m = favsLoad().people; return Object.keys(m).filter(k=> k.indexOf(kind+':')===0 && m[k].fav).length; }
+function setFavPerson(a, on){
+  const m = favsLoad();
+  m.people[favPersonKey(DS, a.id)] = { fav: !!on, at: new Date().toISOString(), name: a.name };
+  favsSave(m); flushArtistRequests();
+}
+function setFavWork(a, w, on){
+  const m = favsLoad();
+  m.works[favWorkKey(DS, a.id, w.caption||'')] = { fav: !!on, at: new Date().toISOString(), name: a.name, caption: w.caption||'' };
+  favsSave(m); flushArtistRequests();
+}
+function favsMerge(fileFavs){
+  const m = favsLoad();
+  if(fileFavs && typeof fileFavs==='object'){
+    ['people','works'].forEach(part=>{
+      const fm = fileFavs[part];
+      if(!fm || typeof fm!=='object' || Array.isArray(fm)) return;
+      Object.keys(fm).forEach(k=>{
+        const fe = fm[k];
+        if(!fe || typeof fe.fav!=='boolean') return;
+        if(!m[part][k] || String(fe.at||'') > String(m[part][k].at||'')) m[part][k] = fe;
+      });
+    });
+    favsSave(m);
+  }
+  return m;
+}
+let favFilter = false;
+function toggleFavFilter(){ favFilter = !favFilter; syncFavFilterBtn(); renderListBody(); window.scrollTo(0,0); }
+function syncFavFilterBtn(){
+  const b = $('favFilterBtn'); if(!b) return;
+  const n = favPeopleCount(DS);
+  b.classList.toggle('on', favFilter);
+  b.innerHTML = '★' + (n? '<span class="favcnt">'+n+'</span>': '');
+}
+function toggleFavPerson(){
+  const a = artistById(state.detailId); if(!a) return;
+  setFavPerson(a, !isFavPerson(DS, a.id));
+  syncFavBtn(); syncFavFilterBtn();
+  toast(isFavPerson(DS, a.id)? 'お気に入りに追加しました': 'お気に入りから外しました', 1600);
+}
+function syncFavBtn(){
+  const a = artistById(state.detailId); const b = $('favBtn'); if(!b || !a) return;
+  const on = isFavPerson(DS, a.id);
+  b.classList.toggle('on', on); b.textContent = on? '★': '☆';
+}
+function toggleFavWork(){
+  const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
+  if(!a || !w){ toast('この作品はお気に入りにできません', 1600); return; }
+  setFavWork(a, w, !isFavWork(DS, a.id, w.caption||''));
+  syncVFavBtn();
+  toast(isFavWork(DS, a.id, w.caption||'')? '作品をお気に入りに追加しました': '作品のお気に入りを外しました', 1600);
+}
+function syncVFavBtn(){
+  const b = $('vfav'); if(!b) return;
+  const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
+  const on = !!(a && w && isFavWork(DS, a.id, w.caption||''));
+  b.classList.toggle('on', on); b.textContent = on? '★': '☆';
 }
 function renderUpdateList(){
   const el = $('notifbody'); if(!el) return;
@@ -11888,6 +11983,9 @@ async function flushRequestsOnce(tok){
     /* v2.92: mirror the update-history ratings through this file */
     const mergedRatings = ratingsMerge(data.ratings);
     if(JSON.stringify(data.ratings||{}) !== JSON.stringify(mergedRatings)){ data.ratings = mergedRatings; changed = true; }
+    /* v6.0: favorites ride the same file (see favsMerge) */
+    const mergedFavs = favsMerge(data.favorites);
+    if(JSON.stringify(data.favorites||null) !== JSON.stringify(mergedFavs)){ data.favorites = mergedFavs; changed = true; }
     data.updatedAt = new Date().toISOString();
     if(!file){
       const created = await createDataFileFor(tok, REQ_FILE, data);
@@ -12215,7 +12313,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.1';
+const APP_VERSION = '6.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
