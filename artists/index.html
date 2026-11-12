@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.60">
+<meta name="app-version" content="2.61">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9972,8 +9972,14 @@ async function driveFetch(path, opts){
    whenever no relay is configured. In relay mode a file's "id" is
    simply its name. */
 const LS_RELAY = 'zukan.relay';
+/* v2.61: the relay URL is not a secret (without the secret every
+   call is rejected), so it is embedded as the default — setup needs
+   only the secret pasted once. The secret itself must never be
+   embedded: this file is public, and whoever holds the secret can
+   read and write the app's Drive files. */
+const RELAY_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbziV1Wpv7AWSUJJgaKyRzFeBR81Td4CjryGGuq4avt1xAo-e2mbeyS2vBpCuqx4_KI/exec';
 function relayCfg(){
-  try{ const r = JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.url && r.secret)? r: null; }catch(e){ return null; }
+  try{ const r = JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.secret)? { url: r.url || RELAY_URL_DEFAULT, secret: r.secret }: null; }catch(e){ return null; }
 }
 function relayReady(){ return !!relayCfg(); }
 async function relayCall(op, name, content){
@@ -9986,8 +9992,8 @@ async function relayCall(op, name, content){
   return j;
 }
 function relaySave(url, secret){
-  url = String(url||'').trim(); secret = String(secret||'').trim();
-  if(!url || !secret){ toast('URL とシークレットの両方を入力してください'); return false; }
+  url = String(url||'').trim() || RELAY_URL_DEFAULT; secret = String(secret||'').trim();
+  if(!secret){ toast('シークレットを入力してください（URLは入力済みです）'); return false; }
   try{ storeSet(LS_RELAY, JSON.stringify({ url: url, secret: secret })); }catch(e){}
   renderSyncStatus();
   return true;
@@ -10588,7 +10594,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.60';
+const APP_VERSION = '2.61';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10992,9 +10998,9 @@ function renderSettingsPanel(){
     const rc = relayCfg();
     p.innerHTML = panelShell('中継（Apps Script）',
       '<div class="setbox">'+
-      '<div class="small">あなたの Google アカウントの中で動く小さな中継スクリプト経由で同期します。設定すると、この端末では Google ログインが不要になり、アプリを落としても接続が切れません。URL とシークレットはこの端末の中にだけ保存されます。</div>'+
+      '<div class="small">あなたの Google アカウントの中で動く小さな中継スクリプト経由で同期します。設定すると、この端末では Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末の中にだけ保存されます。</div>'+
       '<div class="setlabel" style="margin-top:12px">中継の URL</div>'+
-      '<input class="reqinput" id="relayUrl" type="text" placeholder="https://script.google.com/macros/s/…" autocomplete="off" value="'+(rc? escA(rc.url): '')+'">'+
+      '<input class="reqinput" id="relayUrl" type="text" placeholder="https://script.google.com/macros/s/…" autocomplete="off" value="'+escA(rc? rc.url: RELAY_URL_DEFAULT)+'">'+
       '<div class="setlabel">シークレット</div>'+
       '<input class="reqinput" id="relaySecret" type="text" placeholder="シークレット" autocomplete="off" value="'+(rc? escA(rc.secret): '')+'">'+
       '<button class="blockbtn" onclick="relaySaveAndTest()">保存して接続テスト</button>'+
