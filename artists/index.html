@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.54">
+<meta name="app-version" content="2.55">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8019,12 +8019,49 @@ window.addEventListener('scroll', ()=>{
 if(imgSweepT) clearTimeout(imgSweepT);
 imgSweepT = setTimeout(()=>{
 const vh = window.innerHeight;
+/* v2.55: prune queued (not yet started) loads that have scrolled far
+   away — they would burn connections the visible tiles need. The span
+   is re-armed instead, so the settle sweep below re-hydrates it when
+   it comes back into range. */
+for(let i = imgWaitQ.length - 1; i >= 0; i--){
+const q = imgWaitQ[i];
+if(!q.span.isConnected){ imgWaitQ.splice(i, 1); continue; }
+const r = q.span.getBoundingClientRect();
+if(r.bottom < -1600 || r.top > vh + 1600){ imgWaitQ.splice(i, 1); q.span._imgJob = false; q.span.dataset.rearm = '1'; }
+}
 document.querySelectorAll('.imgholder[data-rearm="1"]').forEach(span=>{
 const r = span.getBoundingClientRect();
 if(r.bottom > -800 && r.top < vh + 800){ delete span.dataset.rearm; if(span._work) hydrateImg(span, span._work); }
 });
 }, 350);
 }, { passive:true });
+/* v2.55: image load scheduler. Until v2.54 every tile within the
+   observer's ±800px fired its load immediately and loads were never
+   held back: a fast scroll (or opening a detail on top of a scrolled
+   list) put 50-100+ requests in flight at once, and on a marginal
+   link that burst is what collapses — mass fast-errors, cache-busted
+   retries multiplying the burst, and the visible tiles starved
+   behind offscreen ones. Now at most IMG_MAX_CONCURRENT Drive-image
+   loads run at once; the rest queue in view order. The viewer
+   (upgradeViewerImg / the fileId path) deliberately bypasses the
+   queue: it is one or two images and the user is looking at them. */
+const IMG_MAX_CONCURRENT = 6;
+let imgActive = 0;
+const imgWaitQ = [];
+const imgSchedStats = { max: 0 };
+function imgSlotAcquire(span, run){
+if(imgActive < IMG_MAX_CONCURRENT){ imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive); run(); }
+else imgWaitQ.push({ span:span, run:run });
+}
+function imgSlotRelease(){
+imgActive = Math.max(0, imgActive - 1);
+while(imgActive < IMG_MAX_CONCURRENT && imgWaitQ.length){
+const q = imgWaitQ.shift();
+if(!q.span.isConnected) continue;
+imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive);
+q.run();
+}
+}
 function hydrateImg(span, work){
 if(!span ||!work) return;
 const cap = work.caption||'';
@@ -8066,6 +8103,8 @@ if(work.img && work.img.url){
    bad moment could plate every tile on screen (the "all photos gone"
    outage). The local fallback now runs only after the retries are
    exhausted, and fail() only after that. */
+if(span._imgJob) return; /* a load chain is already queued/running for this span (v2.55) */
+span._imgJob = true;
 const wantSz = parseInt(span.getAttribute('data-size'), 10);
 const fullUrl = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
 const RETRY_WAITS = [350, 1000, 2200];
@@ -8073,17 +8112,26 @@ const IMG_LOAD_TIMEOUT_MS = 7000;
 let attemptNo = 0;
 const tryUrl = ()=>{
 attemptNo++;
+/* v2.55: every attempt — first tries and retries alike — takes a
+   scheduler slot, so a retry storm can no longer multiply a burst. */
+imgSlotAcquire(span, ()=>{
+if(!span.isConnected){ imgSlotRelease(); span._imgJob = false; return; }
 const uim = document.createElement('img');
 uim.loading = 'eager'; uim.alt = cap;
 let settled = false;
-const failAttempt = ()=>{
+const settle = (ok)=>{
 if(settled) return; settled = true;
+imgSlotRelease();
+if(ok) span._imgJob = false;
+};
+const failAttempt = ()=>{
+if(settled) return; settle(false);
 if(attemptNo <= RETRY_WAITS.length && span.isConnected){
 span.innerHTML = '<span class="noimg">図版</span>';
 setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
-} else tryLocal();
+} else { span._imgJob = false; tryLocal(); }
 };
-uim.onload = ()=>{ settled = true; };
+uim.onload = ()=>{ settle(true); };
 uim.onerror = failAttempt;
 span.innerHTML=''; span.appendChild(uim);
 /* retries carry a cache-buster: a second <img> for the identical URL
@@ -8099,6 +8147,7 @@ uim.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
    v2.31 self-heal behind it) can move and the tile can fall back to a
    captioned plate instead of a silent void. */
 setTimeout(()=>{ if(!settled && !uim.complete) failAttempt(); }, IMG_LOAD_TIMEOUT_MS);
+});
 };
 tryUrl();
 return;
@@ -10401,7 +10450,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.54';
+const APP_VERSION = '2.55';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10727,6 +10776,14 @@ async function runImgDiagnostics(){
   await probe('P1 タイルURL(w400)', sizedThumbUrl(w0.img.url, 400));
   await probe('P2 保存URLそのまま', w0.img.url);
   await probe('P7 拡大URL(w1600)', sizedThumbUrl(w0.img.url, 1600));
+  /* v2.55: P8 = the same bytes served directly from the host the
+     thumbnail endpoint redirects to. If P1/P2 fail while P8 works,
+     the blockage sits at the drive.google.com hop and the app can
+     switch its URL form without migrating hosts. P9 = a non-Google
+     host control (Wikimedia) to separate "Google's edges" from
+     "the link itself". */
+  if(fid) await probe('P8 lh3直リンク(w400)', 'https://lh3.googleusercontent.com/d/' + fid + '=w400');
+  await probe('P9 対照（Wikimedia）', 'https://upload.wikimedia.org/wikipedia/commons/6/63/Wikipedia-logo.png');
   if(fid) await probe('P3 uc?export=view', 'https://drive.google.com/uc?export=view&id=' + fid);
   await probe('P5 対照（同一オリジン）', 'icon.png');
   await probe('P6 対照（gstatic）', 'https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png');
