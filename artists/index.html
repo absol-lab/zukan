@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.95">
+<meta name="app-version" content="3.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8744,11 +8744,12 @@ showView('ex');
    later build. */
 /* v2.95: hiding is by visibility, not display — the button keeps
    its slot, so the bell beside it never shifts position between
-   pages (his complaint). visibility:hidden is also not tappable. */
-function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; const show = ((v||view)==='list' && DS==='artists'); nt.style.display = ''; nt.style.visibility = show? 'visible': 'hidden'; }
+   pages (his complaint). visibility:hidden is also not tappable.
+   v3.0: both datasets have a timeline now (art / design history),
+   so the button belongs to both first screens. */
+function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; const show = ((v||view)==='list'); nt.style.display = ''; nt.style.visibility = show? 'visible': 'hidden'; }
 function openTimeline(){
 if(view==='timeline') return;
-if(DS!=='artists') return;
 showView('timeline');
 }
 function updateHeader(){
@@ -10220,10 +10221,43 @@ function renderCal(){
   v.innerHTML = html;
 }
 
-/* ---------- timeline （作家のみ・データはDB.timeline） ---------- */
+/* ---------- timeline （作家はDB.timeline、デザイナーはデザイン史） ---------- */
 let tlRegion = 'west'; /* 'west' | 'japan' */
 const tlOpenBg = {}; /* key: region+':'+index -> true */
+/* v3.0: the designers' own timeline — a DESIGN HISTORY, separate
+   from the art timeline (his specification). Embedded data for
+   now (era text is stable content); entry shape mirrors the art
+   timeline exactly, chips link into the designers' encyclopedia
+   when the person is registered. */
+const TL_DESIGN = {
+west: [
+{ bigYear: "1851", years: "1851年–1900年頃", title: "産業革命とデザインの誕生", summary: "1851年のロンドン万国博覧会とクリスタル・パレスが象徴。機械生産が日用品を大量に作り出し、形を考える仕事が職人の手から分かれて「デザイン」が生まれた。", background: "工場生産が広がると、設計する人と作る人が分離した。博覧会に並んだ機械製の日用品には装飾過剰で粗悪なものも多く、その反省が後の工芸改革運動の出発点になった。", artists: [{label: "ジョゼフ・パクストン"}, {label: "ヘンリー・コール"}] },
+{ bigYear: "1861", years: "1861年–1910年頃", title: "アーツ・アンド・クラフツ運動", summary: "ウィリアム・モリスが機械生産による粗悪化に反発し、手仕事と中世の工房を理想に掲げた。モリス商会の壁紙・家具・書物が、近代デザイン運動の起点になる。", background: "産業化で失われゆく作る喜びを取り戻す運動は各国に広がり、工芸の改革や、後の日本の民藝にもつながっていく。デザインを社会思想として捉えた最初の運動でもあった。", artists: [{label: "ウィリアム・モリス", link: "ウィリアム・モリス"}] },
+{ bigYear: "1890", years: "1890年–1910年", title: "アール・ヌーヴォー", summary: "植物のような曲線を建築・家具・ポスターに展開した国際様式。ギマールのパリ地下鉄入口やミュシャのポスターが象徴で、都市と広告の時代が新しいグラフィックを生んだ。", background: "鉄とガラスの新技術、石版印刷の発達が背景にある。様式はヨーロッパ各地と日本にも及び、地域ごとに異なる名前で呼ばれた。", artists: [{label: "エクトール・ギマール"}, {label: "アルフォンス・ミュシャ"}, {label: "チャールズ・レニー・マッキントッシュ", link: "チャールズ・レニー・マッキントッシュ"}] },
+{ bigYear: "1907", years: "1907年–1914年", title: "ドイツ工作連盟と企業デザイン", summary: "1907年にドイツ工作連盟が結成。ペーター・ベーレンスはAEGでロゴ、製品、工場建築までを統一し、企業デザイン（コーポレートデザイン）の原型を作った。", background: "工業と芸術の協力で製品の質を上げる試みには、輸出を伸ばす国家的な狙いもあった。標準化と規格化が、近代デザインの土台になっていく。", artists: [{label: "ペーター・ベーレンス", link: "ペーター・ベーレンス"}, {label: "ヘルマン・ムテジウス"}] },
+{ bigYear: "1919", years: "1919年–1933年", title: "バウハウス", summary: "グロピウスがヴァイマルに開いた造形学校。工房での実作と幾何学的な形態で、工業生産のためのデザイン教育の原型を作った。1933年に閉校し、亡命した教師たちが世界へ広めた。", background: "同じ時代にロシア構成主義やデ・ステイルも生まれ、抽象と機能を結ぶモダニズムの造形言語がヨーロッパで共有された。ル・コルビュジエの建築もこの流れと響き合う。", artists: [{label: "ヴァルター・グロピウス"}, {label: "マルセル・ブロイヤー", link: "マルセル・ブロイヤー"}, {label: "ラースロー・モホイ＝ナギ"}, {label: "ル・コルビュジエ", link: "ル・コルビュジエ"}] },
+{ bigYear: "1925", years: "1925年–1939年", title: "アール・デコと流線型", summary: "1925年のパリ装飾美術博のアール・デコは、幾何学と豪華さを都会の様式にした。アメリカでは流線型が自動車から家電までを包み、消費を刺激するデザインが大きな産業になった。", background: "大恐慌の時代に、形を変えることが売り上げを左右した。ロウイら職業デザイナーの登場で、デザインは企業の競争手段として定着する。", artists: [{label: "レイモンド・ロウイ"}, {label: "ノーマン・ベル・ゲデス"}] },
+{ bigYear: "1945", years: "1945年–1960年", title: "戦後のグッドデザイン", summary: "復興と大衆消費社会の到来。ウルム造形大学とブラウン社のラムスが機能主義を推し進め、イームズ夫妻やアアルトが新しい生活の形を提案した。", background: "デザインは戦後復興と民主化の道具になった。プラスチックなどの新素材と成形技術が、家具や家電の形を大きく変えた時代でもある。", artists: [{label: "チャールズ・イームズ"}, {label: "レイ・イームズ"}, {label: "ディーター・ラムス", link: "ディーター・ラムス"}, {label: "アルヴァ・アアルト", link: "アルヴァ・アアルト"}] },
+{ bigYear: "1950", years: "1950年代–1960年代", title: "スイス・スタイル", summary: "グリッドとサンセリフ書体、左揃えのレイアウトで情報を整理する国際タイポグラフィ様式。スイスから世界中の企業グラフィックの標準になった。", background: "戦後の国際化で、言語に頼らず伝わる明快な視覚情報が求められた。その方法は後のコーポレート・アイデンティティやサイン計画にも受け継がれる。", artists: [{label: "ヨゼフ・ミューラー＝ブロックマン", link: "ヨゼフ・ミューラー＝ブロックマン"}, {label: "マックス・ビル"}] },
+{ bigYear: "1958", years: "1950年代–1970年代", title: "イタリアンデザインの黄金期", summary: "オリベッティやアルテミデなど企業とデザイナーの蜜月。ポンティ、コロンボ、若きソットサスらが、彫刻的で遊びのある日用品を次々に送り出した。", background: "職人の技と工業生産を結ぶ小さな工房の伝統がイタリアには残っていた。デザインが国の輸出の顔になり、ミラノが世界の中心地になる。", artists: [{label: "ジオ・ポンティ", link: "ジオ・ポンティ"}, {label: "ジョエ・コロンボ", link: "ジョエ・コロンボ"}, {label: "エットーレ・ソットサス"}] },
+{ bigYear: "1960", years: "1960年代–1970年代", title: "ポップとカウンターカルチャー", summary: "若者文化と大量消費への熱狂と皮肉。使い捨ての家具やサイケデリックなポスターが溢れ、デザインが反体制の表現にもなった時代。", background: "ポップアートと響き合いながら、デザインは「永く使う良いもの」という前提を疑い始めた。この揺り戻しがポストモダンへの道を開く。", artists: [{label: "ヴァーナー・パントン"}] },
+{ bigYear: "1981", years: "1981年–1990年代", title: "ポストモダンとメンフィス", summary: "1981年、ミラノでソットサス率いるメンフィスが原色と奇抜な形でモダニズムの禁欲を笑った。機能より意味や記号を問う、ポストモダンへの転換点。", background: "合理主義だけでは捉えきれない感情や装飾の価値が見直された。日本の倉俣史朗も参加し、東京とミラノが同じ空気を吸っていた。", artists: [{label: "エットーレ・ソットサス"}, {label: "倉俣史朗", link: "倉俣史朗"}] },
+{ bigYear: "1984", years: "1984年–2000年代", title: "デジタルデザインの幕開け", summary: "1984年のMacintoshがGUIを大衆化し、DTPがグラフィック制作を一変させた。90年代にウェブが登場し、画面の中のデザインという新しい領域が生まれる。", background: "道具のデジタル化は、デザイナーの作業そのものと、情報の届き方の両方を変えた。インタラクションデザインの基礎がこの時期に形作られる。", artists: [{label: "スーザン・ケア"}] },
+{ bigYear: "2007", years: "2007年–現在", title: "スマートフォン以降", summary: "iPhone（2007年）がタッチ操作とアプリの形を決め、デザインの主戦場はモノから体験（UX）へ移った。サービス全体の設計と、持続可能性が中心の課題になっている。", background: "製品がネットワークと結びつき、買った後も更新され続ける時代になった。デザインの対象は画面とサービスの全体へ広がっている。", artists: [{label: "ジョナサン・アイブ", link: "ジョナサン・アイブ"}] }
+],
+japan: [
+{ bigYear: "1868", years: "1868年–1912年", title: "明治の図案と工芸の輸出", summary: "開国と殖産興業のもと、万国博覧会への出品工芸が国の産業になった。「図案」が学校で教えられ始め、伝統の技が西洋市場に向けて作り替えられた。", background: "ジャポニスムの流行が追い風になり、七宝や金工、陶磁器が輸出の主力になった。工芸家という作者の姿も、この時代に表に出てくる。", artists: [{label: "並河靖之"}] },
+{ bigYear: "1912", years: "1912年–1930年代", title: "商業デザインの芽生え", summary: "百貨店と雑誌の時代。杉浦非水が三越のポスターで図案家の地位を築き、「商業美術」という言葉とともにデザインが職業として自立し始めた。", background: "都市の消費文化が広告表現を求めた。ポスターや包装など、印刷を中心にした視覚デザインが日本のデザインの最初の主戦場になる。", artists: [{label: "杉浦非水"}] },
+{ bigYear: "1926", years: "1926年–1945年", title: "民藝とモダニズムの受容", summary: "柳宗悦の民藝運動が「用の美」を唱える一方、1933年に来日したブルーノ・タウトが日本の伝統を近代の目で再評価した。バウハウスの造形も紹介され始める。", background: "西洋化の中で日本のものづくりの価値を見直す動きと、新しい造形を取り入れる動きが並行した。この緊張が戦後の日本デザインの土壌になる。", artists: [{label: "柳宗悦"}, {label: "ブルーノ・タウト"}] },
+{ bigYear: "1951", years: "1951年–1960年", title: "戦後復興とインダストリアルデザイン", summary: "1952年、柳宗理らが日本インダストリアルデザイナー協会を設立。輸出振興とGマーク制度（1957年）が、「良いデザイン」を社会の基準として示した。", background: "GHQのデザイナー招聘や海外視察を通して、アメリカのインダストリアルデザインが導入された。電化製品と家具が新しい生活の中心になる。", artists: [{label: "柳宗理", link: "柳宗理"}, {label: "剣持勇", link: "剣持勇"}, {label: "渡辺力", link: "渡辺力"}] },
+{ bigYear: "1964", years: "1960年代", title: "東京オリンピックとグラフィックの確立", summary: "1964年の東京五輪のポスターとピクトグラムが、日本のグラフィックの水準を世界に示した。亀倉雄策を中心に、デザイナーの職能が社会に認められた時代。", background: "日本宣伝美術会（日宣美）の活動が若いデザイナーの登竜門になった。大会の視覚システムは、後の国際イベントの手本にもなっている。", artists: [{label: "亀倉雄策", link: "亀倉雄策"}, {label: "田中一光", link: "田中一光"}, {label: "永井一正", link: "永井一正"}] },
+{ bigYear: "1970", years: "1970年代", title: "大阪万博と高度成長のデザイン", summary: "1970年の大阪万博は未来都市の実験場だった。企業のCI計画が広がり、デザインの領域は製品から環境やシステムへと拡張していく。", background: "高度成長の後半、デザインは大量生産の飾りから、企業と社会の仕組みを考える仕事へ変わり始めた。公害など成長の影も課題になる。", artists: [{label: "榮久庵憲司", link: "榮久庵憲司"}] },
+{ bigYear: "1980", years: "1980年代", title: "バブルとポストモダン", summary: "無印良品（1980年）の「わけあって、安い。」が反ブランドの思想を提示。倉俣史朗の家具や田中一光のグラフィックなど、消費社会の成熟と遊びが交差した。", background: "豊かさの中で、デザインは記号と物語を売る時代に入った。イタリアのポストモダンとも響き合い、東京が発信地のひとつになる。", artists: [{label: "倉俣史朗", link: "倉俣史朗"}, {label: "田中一光", link: "田中一光"}] },
+{ bigYear: "2000", years: "2000年代–現在", title: "日常と余白のデザイン", summary: "原研哉の「白」とリデザイン、深澤直人の無意識に寄り添うデザインが、情報とモノに埋もれた時代の質を問い直した。震災後は社会のためのデザインも問われている。", background: "成熟した消費社会で、足すデザインから引くデザインへ。日本の美意識を世界に翻訳し直す試みが続いている。", artists: [{label: "原研哉", link: "原研哉"}, {label: "深澤直人", link: "深澤直人"}, {label: "佐藤卓", link: "佐藤卓"}] }
+]
+};
 function timelineOf(){
+if(DS==='designers') return TL_DESIGN;
 const t = DB && DB.timeline;
 if(!t || typeof t!=='object') return null;
 const west = Array.isArray(t.west)? t.west: [];
@@ -10235,12 +10269,12 @@ function setTlRegion(r){ const dir = segDir(['west','japan'], tlRegion, r); tlRe
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
-let html = '<div class="tlhead"><h2>美術史年表</h2><span class="topsp"></span>'
+let html = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表': '美術史年表')+'</h2><span class="topsp"></span>'
 +'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>'
 +'<div style="margin-top:12px;"><span class="seg">'
-+'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">西洋</button>'
++'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">'+(DS==='designers'? '世界': '西洋')+'</button>'
 +'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
 +'</span></div>';
 const t = timelineOf();
@@ -11584,7 +11618,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.95';
+const APP_VERSION = '3.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
