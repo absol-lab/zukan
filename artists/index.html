@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.58">
+<meta name="app-version" content="2.59">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9777,6 +9777,9 @@ function statusLabelFor(st, msg, at){
   if(st==='synced') label = '同期済み'+(at ? '（'+String(new Date(at).getHours()).padStart(2,'0')+':'+String(new Date(at).getMinutes()).padStart(2,'0')+'）' : '');
   else if(st==='syncing') label = '同期中…';
   else if(st==='error'){ label = '同期エラー'+(msg ? '：'+msg : ''); cls = 'err'; }
+  /* v2.59: with a relay configured, "disconnected" is a stale word —
+     the transport is the relay, not a Drive login. */
+  else if(relayReady()) label = '中継で接続済み（未同期）';
   else label = 'Drive未接続（端末内に保存中）';
   return { label:label, cls:cls };
 }
@@ -10500,7 +10503,7 @@ function teardownSwipe(st, commit){
     /* v2.58: landing back on the list restores its saved scroll
        position (showView saves it when the list is left), instead of
        always resetting to the top. */
-    window.scrollTo(0, view==='list'? (CTX[DS].scrollY || 0): 0);
+    if(view==='list') restoreListScroll(CTX[DS].scrollY || 0); else window.scrollTo(0,0);
   } else if(st.newEl){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
@@ -10562,7 +10565,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.58';
+const APP_VERSION = '2.59';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -10816,6 +10819,7 @@ function driveVal(){
   if(s.cls==='err') return '同期エラー';
   if(s.label.indexOf('同期中')===0) return '同期中…';
   if(s.label.indexOf('同期済み')===0) return '同期済み';
+  if(s.label.indexOf('接続済み（中継')===0 || s.label.indexOf('中継で接続済み')===0) return '中継で接続済み';
   if(s.label.indexOf('接続済み')===0) return '接続済み';
   return '未接続';
 }
@@ -10957,7 +10961,7 @@ function renderSettingsPanel(){
       '<div class="syncstat" id="syncstat">未接続</div>'+
       '<div class="setrow btnrow"><button class="btn primary" id="btnConnect" onclick="connectDrive()">Drive に接続</button><button class="btn" id="btnSync" onclick="appSyncBtn()">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">接続を解除</button></div>'+
       '<div id="syncresults"></div>'+
-      '<div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。</div>'+
+      '<div class="note">Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。'+(relayReady()? '現在は中継（Apps Script）経由で接続しています。': '')+'</div>'+
       '</div>');
     renderSyncStatus();
   }
