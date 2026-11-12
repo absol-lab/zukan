@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.66">
+<meta name="app-version" content="2.67">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -321,6 +321,28 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .bookmeta .bt{font-size:15px; font-weight:700; line-height:1.45;}
 .bookmeta .bm{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .bookmeta .bp{font-size:15px; font-weight:700; margin-top:3px;}
+/* v2.67: exhibition calendar */
+.calnav{display:flex; align-items:center; gap:8px; margin-top:12px;}
+.calnav .caltitle{font-size:17px; font-weight:700; letter-spacing:.04em;}
+.calwd{display:grid; grid-template-columns:repeat(7,1fr); margin-top:10px;}
+.calwd span{text-align:center; font-size:11px; color:var(--muted); padding:2px 0;}
+.calweek{margin-top:4px;}
+.caldays{display:grid; grid-template-columns:repeat(7,1fr);}
+.calday{text-align:center; font-size:12.5px; padding:2px 0; color:var(--text);}
+.calday.dim{color:var(--muted); opacity:.5;}
+.calday .tnum{display:inline-block; min-width:20px;}
+.calday.today .tnum{background:var(--accent); color:#fff; border-radius:999px; font-weight:700;}
+.calday .covf{display:block; font-size:9px; color:var(--muted); line-height:1;}
+.callane{display:grid; grid-template-columns:repeat(7,1fr); margin-top:2px;}
+.calbar{font-size:10.5px; line-height:1.45; padding:1px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:999px; cursor:pointer; min-height:16px; margin:0 1px;}
+.calbar.contl{border-top-left-radius:2px; border-bottom-left-radius:2px;}
+.calbar.contr{border-top-right-radius:2px; border-bottom-right-radius:2px;}
+.calbar.st-current{background:var(--accent); color:#fff;}
+.calbar.st-ending{background:var(--danger); color:#fff;}
+.calbar.st-future{background:none; border:1px solid var(--muted); color:var(--muted); padding:0 5px;}
+.calbar.st-past{background:var(--line); color:var(--muted);}
+.callegend{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--muted);}
+.callegend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
 .corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
 .corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
 .corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
@@ -554,6 +576,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewDetail" class="hidden"></main>
 <main id="viewEx" class="hidden"></main>
 <main id="viewNews" class="hidden"></main>
+<main id="viewCal" class="hidden"></main>
 <main id="viewTimeline" class="hidden"></main>
 <main id="viewQuiz" class="hidden"></main>
 
@@ -8270,8 +8293,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2, cal:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -8333,6 +8356,7 @@ if(v==='list') renderList();
 updateToolbarSlim();
 if(v==='ex') renderEx();
 if(v==='news') renderNews();
+if(v==='cal') renderCal();
 if(v==='timeline') renderTimeline();
 if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSettings(); }
@@ -8578,9 +8602,9 @@ function updatePill(){
    展示 button was removed at the user's request). The ex view belongs
    to the artists dataset, and while it is shown the 展示 segment — not
    作家 — carries the active state. */
-$('pnEx').classList.toggle('on', view==='ex' || view==='news');
-$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='news');
-$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='news');
+$('pnEx').classList.toggle('on', view==='ex' || view==='news' || view==='cal');
+$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal');
+$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal');
 $('pnSet').classList.toggle('on', view==='settings');
 }
 /* v2.35: the exhibitions entry point. Exhibitions live in the artists
@@ -9373,7 +9397,7 @@ const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getM
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
-let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
+let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openCalendar()">カレンダー</button><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
 +'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
 +'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
@@ -9413,7 +9437,7 @@ hydrateExPosters(v, exs);
 function renderExDesigners(){
 const exs = (DB.exhibitions||[]).slice();
 const v = $('viewEx');
-const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
+const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="openCalendar()">カレンダー</button><button class="txtbtn" onclick="openNews()">時事</button><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>';
 if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">展示データはまだありません</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
@@ -9520,6 +9544,116 @@ function renderNews(){
   if(soc.length) html += '<h2 class="sechead"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
   if(art.length) html += '<h2 class="sechead"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + art.map(item).join('');
   if(!soc.length && !art.length && !c) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
+  v.innerHTML = html;
+}
+
+/* ---------- exhibition calendar: v2.67 ----------
+   A month grid whose weeks carry span bars for each exhibition's
+   run (start_date..end_date, clipped at week edges, continuation
+   corners squared). Status is computed against today: 開催中
+   (accent) / まもなく終了 (ends within 7 days, danger) / これから
+   (outline) / 終了 (dim). Exhibitions without a start_date cannot
+   be placed and are counted in a note instead of silently dropped;
+   a missing end_date renders as an open-ended run and is labelled
+   as such in the detail card. Tapping a bar selects the exhibition
+   and shows its card under the grid. */
+let calCursor = null;
+let calSelId = null;
+function openCalendar(){
+  if(view==='cal') return;
+  if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
+  showView('cal');
+}
+function calDayStr(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
+function exStatusOf(e, tstr){
+  const s = e.start_date||'', en = e.end_date||'';
+  if(en && en < tstr) return 'past';
+  if(s && s > tstr) return 'future';
+  if(en){ const days = Math.round((new Date(en+'T00:00:00') - new Date(tstr+'T00:00:00'))/86400000); if(days <= 7) return 'ending'; }
+  return 'current';
+}
+function calMove(dm){
+  if(!calCursor){ const t = new Date(); calCursor = { y: t.getFullYear(), m: t.getMonth() }; }
+  let m = calCursor.m + dm, y = calCursor.y;
+  if(m < 0){ m = 11; y--; } if(m > 11){ m = 0; y++; }
+  calCursor = { y: y, m: m }; renderCal();
+}
+function calToday(){ calCursor = null; renderCal(); }
+function calSelect(id){ calSelId = (String(calSelId)===String(id))? null: id; renderCal(); }
+function renderCal(){
+  const v = $('viewCal'); if(!v) return;
+  const now = new Date();
+  if(!calCursor) calCursor = { y: now.getFullYear(), m: now.getMonth() };
+  const y = calCursor.y, m = calCursor.m;
+  const tstr = calDayStr(now);
+  const adb = liveDB('artists');
+  const all = (adb && adb.exhibitions) || [];
+  const exs = all.filter(e=> e.start_date);
+  const noDate = all.length - exs.length;
+  const first = new Date(y, m, 1);
+  const gridStart = new Date(y, m, 1 - first.getDay());
+  let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+  html += '<div class="calnav"><button class="btn" onclick="calMove(-1)">‹ 前月</button><span class="caltitle">'+y+'年'+(m+1)+'月</span><button class="btn" onclick="calMove(1)">翌月 ›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
+  html += '<div class="callegend"><span><i style="background:var(--accent)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="border:1px solid var(--muted)"></i>これから</span><span><i style="background:var(--line)"></i>終了</span></div>';
+  html += '<div class="calwd"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>';
+  const totalWeeks = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7);
+  for(let w=0; w<totalWeeks; w++){
+    const wStart = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w*7);
+    const ws = calDayStr(wStart);
+    const wEnd = new Date(wStart.getFullYear(), wStart.getMonth(), wStart.getDate()+6);
+    const we = calDayStr(wEnd);
+    html += '<div class="calweek"><div class="caldays">';
+    for(let d=0; d<7; d++){
+      const dt = new Date(wStart.getFullYear(), wStart.getMonth(), wStart.getDate()+d);
+      const inMonth = dt.getMonth()===m;
+      const isToday = calDayStr(dt)===tstr;
+      html += '<div class="calday'+(inMonth?'':' dim')+(isToday?' today':'')+'"><span class="tnum">'+dt.getDate()+'</span></div>';
+    }
+    html += '</div>';
+    const segs = [];
+    exs.forEach(e=>{
+      const s = e.start_date, en = e.end_date || '9999-12-31';
+      if(en < ws || s > we) return;
+      const cs = s < ws? ws: s, ce = en > we? we: en;
+      const c0 = Math.round((new Date(cs+'T00:00:00') - new Date(ws+'T00:00:00'))/86400000);
+      const c1 = Math.round((new Date(ce+'T00:00:00') - new Date(ws+'T00:00:00'))/86400000);
+      segs.push({ e: e, c0: c0, c1: c1, contl: s < ws, contr: en > we, st: exStatusOf(e, tstr) });
+    });
+    segs.sort((a,b)=> a.c0-b.c0 || ((b.c1-b.c0)-(a.c1-a.c0)));
+    const lanes = [];
+    segs.forEach(sg=>{
+      let placed = false;
+      for(const lane of lanes){ if(lane.every(o=> sg.c1 < o.c0 || sg.c0 > o.c1)){ lane.push(sg); placed = true; break; } }
+      if(!placed) lanes.push([sg]);
+    });
+    const MAXLANES = 4;
+    lanes.slice(0, MAXLANES).forEach(lane=>{
+      html += '<div class="callane">';
+      lane.forEach(sg=>{
+        html += '<div class="calbar st-'+sg.st+(sg.contl?' contl':'')+(sg.contr?' contr':'')+'" style="grid-column:'+(sg.c0+1)+' / '+(sg.c1+2)+'" onclick="calSelect(\''+escA(sg.e.id||'')+'\')">'+(sg.c1>sg.c0? esc(sg.e.title||''): '')+'</div>';
+      });
+      html += '</div>';
+    });
+    if(lanes.length > MAXLANES) html += '<div class="small" style="margin:2px 2px 0">この週は他に '+(lanes.slice(MAXLANES).flat().length)+' 件の展示があります</div>';
+    html += '</div>';
+  }
+  if(noDate) html += '<div class="note" style="margin-top:12px">日付が未登録の展示が '+noDate+' 件あり、カレンダーには表示されません。</div>';
+  const sel = calSelId!=null? exs.find(e=> String(e.id)===String(calSelId)): null;
+  if(sel){
+    const st = exStatusOf(sel, tstr);
+    const stLabel = { current:'開催中', ending:'まもなく終了', future:'これから', past:'終了' }[st];
+    let dlabel = '';
+    if((st==='current' || st==='ending') && sel.end_date) dlabel = 'あと'+Math.round((new Date(sel.end_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
+    if(st==='future') dlabel = '開始まで'+Math.round((new Date(sel.start_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
+    html += '<div class="corbox" style="margin-top:14px"><div class="ct">'+esc(sel.title||'')+'</div>'
+      + '<div class="cb">'+esc(sel.artist_name||'')+(sel.venue? '　'+esc(sel.venue): '')+(sel.city? '（'+esc(sel.city)+'）': '')+'</div>'
+      + '<div class="cb">'+esc(sel.start_date||'')+(sel.end_date? ' – '+esc(sel.end_date): ' – 終了日未登録')+'　'+esc(stLabel)+(dlabel? '（'+esc(dlabel)+'）': '')+'</div>'
+      + (sel.note? '<div class="cb">'+esc(sel.note)+'</div>': '')
+      + '<div style="margin-top:6px; display:flex; gap:16px;">'
+      + (sel.url? '<a href="'+escA(sel.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
+      + (sel.artist_id!=null && artistById(sel.artist_id)? '<button class="linkbtn" onclick="openDetail(\''+escA(sel.artist_id)+'\')">図鑑で見る</button>': '')
+      + '</div></div>';
+  }
   v.innerHTML = html;
 }
 
@@ -10691,7 +10825,7 @@ function backTarget(){
      panel's own 戻る closes it (closeSettingsPanel via goBack). */
   if(view==='settings' && settingsPanel) return null;
   if(view==='quiz') return 'timeline';
-  if(view==='news') return 'ex';
+  if(view==='news' || view==='cal') return 'ex';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
   return null;
 }
@@ -10821,7 +10955,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.66';
+const APP_VERSION = '2.67';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
