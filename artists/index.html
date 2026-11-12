@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.30">
+<meta name="app-version" content="2.31">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -7935,19 +7935,49 @@ const id = 'im'+(++imgSeq);
 const cap = work? (work.caption||''): '';
 return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"><span class="noimg">図版</span></span>';
 }
+/* v2.31: self-healing images. A terminal failure is no longer the end
+   state for a render: when a work HAS a Drive image (url or fileId), a
+   failed span is re-armed (budget: 3 re-arms per element) and retried
+   after a growing delay, and a scroll-settle sweep re-hydrates any
+   re-armed span near the viewport. Whatever the platform did to the
+   load — burst throttling, a scroll-cancel, a momentary drop — the
+   tile recovers on its own once things settle, instead of staying a
+   plate until the next full re-render. Works with no image at all
+   never re-arm (nothing to heal). */
+const imgRearmBudget = new WeakMap();
+function maybeRearmImg(span, work){
+if(!work || !work.img || !(work.img.url || work.img.fileId)) return;
+const n = (imgRearmBudget.get(span) || 0) + 1;
+if(n > 3) return;
+imgRearmBudget.set(span, n);
+span.dataset.rearm = '1';
+setTimeout(()=>{ if(span.isConnected && span.dataset.rearm === '1'){ delete span.dataset.rearm; hydrateImg(span, work); } }, 4000 * n);
+}
+let imgSweepT = null;
+window.addEventListener('scroll', ()=>{
+if(imgSweepT) clearTimeout(imgSweepT);
+imgSweepT = setTimeout(()=>{
+const vh = window.innerHeight;
+document.querySelectorAll('.imgholder[data-rearm="1"]').forEach(span=>{
+const r = span.getBoundingClientRect();
+if(r.bottom > -800 && r.top < vh + 800){ delete span.dataset.rearm; if(span._work) hydrateImg(span, span._work); }
+});
+}, 350);
+}, { passive:true });
 function hydrateImg(span, work){
 if(!span ||!work) return;
 const cap = work.caption||'';
 /* v2.18: failure adds .platefail (same box), NOT .noplate (shorter box) —
    see the CSS note. The tile keeps its exact geometry and shows the
-   typographic plate instead. */
-const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>';};
+   typographic plate instead. v2.31: the failure plate now also arms
+   the self-heal above (maybeRearmImg) when the work has a Drive image. */
+const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
-if(driveImgCache[fid]){ span.innerHTML = '<img loading="lazy" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
+if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
 span.innerHTML = '<span class="noimg">図版 読込中</span>';
 loadDriveImage(fid).then(url=>{
-if(url){ span.innerHTML = '<img loading="lazy" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
+if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
 }).catch(fail);
 return;
 }
@@ -7955,12 +7985,12 @@ const tryLocal = ()=>{
 const cands = localCandidates(work.file);
 if(!cands.length){ fail(); return;}
 /* NOTE: the <img> must be inserted into the document BEFORE setting src.
-   A detached Image() with loading="lazy" never starts loading in Chrome/
+   A detached Image() with loading="eager" never starts loading in Chrome/
    WebKit (lazy defers until the element is in the document near the
    viewport), so preload-then-append-on-load deadlocks: no request, no
    onload, no onerror — the plate stays empty forever. */
 const im = document.createElement('img');
-im.loading = 'lazy'; im.alt = cap;
+im.loading = 'eager'; im.alt = cap;
 let i = 0;
 im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
 span.innerHTML=''; span.appendChild(im);
@@ -7982,7 +8012,7 @@ let attemptNo = 0;
 const tryUrl = ()=>{
 attemptNo++;
 const uim = document.createElement('img');
-uim.loading = 'lazy'; uim.alt = cap;
+uim.loading = 'eager'; uim.alt = cap;
 uim.onerror = ()=>{
 if(attemptNo <= RETRY_WAITS.length && span.isConnected){
 span.innerHTML = '<span class="noimg">図版</span>';
@@ -9853,7 +9883,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.30';
+const APP_VERSION = '2.31';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
