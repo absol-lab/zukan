@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.27">
+<meta name="app-version" content="2.28">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -338,7 +338,16 @@ button.blockbtn:disabled{opacity:.4;}
    arrive via the harvest/registration flow, not manual adds. The editor
    itself stays, reachable from a detail view's 編集 button.) */
 /* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
-#pillnav{position:fixed; left:50%; transform:translateX(-50%); z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+#pillnav{position:fixed; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+/* v2.28: the pill is centred WITHOUT a transform (left/right 0 + auto
+   margins). It used to be left:50% + translateX(-50%) — a permanent
+   transform on a position:fixed element keeps it on the composited
+   transform path, which is exactly the layer iOS Safari misplaces
+   during the app's full-screen fixed/transformed view transitions
+   (the recurring "pill floats to mid-screen" bug, 3rd recurrence).
+   The diary's identical pill never shows the bug, but the diary has
+   no vt-fixed transition churn; in this app the fixed element itself
+   now carries no transform at all. */
 #navind{position:absolute; top:3px; bottom:3px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
 #pillnav button{position:relative; z-index:1; flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; border-radius:999px; font-size:12px; font-weight:500; color:var(--muted); white-space:nowrap; font-family:inherit; transition:color .3s;}
 #pillnav svg{width:21px; height:21px;}
@@ -8049,6 +8058,7 @@ vtSlide(oldEl, newEl, dir);
 } else {
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 window.scrollTo(0,0);
+ensurePillAnchor();
 }
 }
 function vtSlide(oldEl, newEl, dir){
@@ -8091,6 +8101,7 @@ document.querySelectorAll('main.vt-fixed').forEach(el=>{ el.classList.remove('vt
 oldEl.classList.add('hidden');
 document.body.classList.remove('vt-run');
 vtBusy = false; vtFinish = null;
+ensurePillAnchor();
 };
 vtFinish = finish;
 Promise.all([aIn.finished.catch(()=>{}), aOut.finished.catch(()=>{})]).then(finish);
@@ -8115,18 +8126,61 @@ const x = b.offsetLeft, w = b.offsetWidth;
 if(!w) return;
 ind.style.width = w+'px';
 const from = lastNavX, to = x;
-ind.style.transform = 'translateX('+to+'px)';
+/* v2.28: the indicator's RESTING position is its left, not a permanent
+   transform (same fixed-layer hygiene as the pill itself). The slide
+   animation still runs on transform, WAAPI-only, from the offset
+   between the old and new resting positions back to 0. */
+ind.style.left = to+'px';
 lastNavX = to;
 if(animate && !reducedMotion() && from!==null && from!==to && ind.animate){
 /* v2.11: the old cubic-bezier(.30,1.25,.35,1) overshot (a spring) — springs
    are reserved for finger-driven surfaces, so the indicator now uses the
    standard component curve at a component duration. */
 ind.animate([
-{ transform:'translateX('+from+'px)' },
-{ transform:'translateX('+to+'px)' }
+{ transform:'translateX('+(from-to)+'px)' },
+{ transform:'translateX(0px)' }
 ], { duration:300, easing:'cubic-bezier(0.2,0,0,1)' });
 }
 }
+/* ---------- v2.28: pill anchor self-heal ----------
+   The recurring iOS bug: during the full-screen fixed/transformed view
+   transitions, Safari's compositor can lose the viewport anchor of the
+   fixed pill layer and leave it rendered mid-screen until restart.
+   v2.22 removed the JS position rewriting and the backdrop filter;
+   the pill's own transform is now gone too (above). As the final
+   layer of defence, this guard measures the pill's real rect at every
+   settle point (transition finish, swipe teardown, scroll settle,
+   viewport resize, visibility return): a healthy pill's bottom edge
+   sits (safe-area + 10px, i.e. at most ~50px) above the viewport
+   bottom, so a gap outside [-1, 90] means the layer is displaced,
+   and a display toggle forces the browser to rebuild it in place.
+   Invisible when healthy; never writes positions itself. */
+let pillHealQueued = false;
+function ensurePillAnchor(){
+if(pillHealQueued) return; pillHealQueued = true;
+requestAnimationFrame(()=>{
+pillHealQueued = false;
+const nav = $('pillnav'); if(!nav) return;
+const r = nav.getBoundingClientRect();
+if(!r.height) return;
+const gap = window.innerHeight - r.bottom;
+if(gap < -1 || gap > 90){
+nav.style.display = 'none';
+void nav.offsetHeight;
+/* restore on the NEXT frame, not in the same task: a full frame with
+   the element unrendered guarantees the stale layer is dropped before
+   the rebuilt one is anchored (and makes the recovery observable). */
+requestAnimationFrame(()=>{ nav.style.display = ''; });
+}
+});
+}
+let pillScrollT = null;
+window.addEventListener('scroll', ()=>{
+if(pillScrollT) clearTimeout(pillScrollT);
+pillScrollT = setTimeout(ensurePillAnchor, 180);
+}, { passive:true });
+if(window.visualViewport) visualViewport.addEventListener('resize', ()=>{ setTimeout(ensurePillAnchor, 60); });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensurePillAnchor(); });
 /* v2.24: the list toolbar docks under the sticky app header; the
    header's height (safe-area inset + title row + sync line) is measured
    into --hdrh so the dock point is exact on any device. Re-measured on
@@ -9607,6 +9661,7 @@ function teardownSwipe(st, commit){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
   }
+  ensurePillAnchor();
 }
 (function(){
   document.addEventListener('touchstart', e=>{
@@ -9663,7 +9718,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.27';
+const APP_VERSION = '2.28';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
