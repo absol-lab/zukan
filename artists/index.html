@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.31">
+<meta name="app-version" content="2.32">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8192,8 +8192,12 @@ ind.animate([
    and a display toggle forces the browser to rebuild it in place.
    Invisible when healthy; never writes positions itself. */
 let pillHealQueued = false;
+let pillHealQueuedAt = 0;
 function ensurePillAnchor(){
-if(pillHealQueued) return; pillHealQueued = true;
+/* a queued heal older than 1s means its rAF was starved (backgrounded
+   webview); treat the queue as stale instead of wedging the guard */
+if(pillHealQueued && Date.now() - pillHealQueuedAt < 1000) return;
+pillHealQueued = true; pillHealQueuedAt = Date.now();
 requestAnimationFrame(()=>{
 pillHealQueued = false;
 const nav = $('pillnav'); if(!nav) return;
@@ -8205,8 +8209,12 @@ nav.style.display = 'none';
 void nav.offsetHeight;
 /* restore on the NEXT frame, not in the same task: a full frame with
    the element unrendered guarantees the stale layer is dropped before
-   the rebuilt one is anchored (and makes the recovery observable). */
-requestAnimationFrame(()=>{ nav.style.display = ''; });
+   the rebuilt one is anchored. A timeout runs the same restore as a
+   fallback so a throttled rAF can never leave the pill hidden. */
+let restored = false;
+const restore = ()=>{ if(restored) return; restored = true; nav.style.display = ''; };
+requestAnimationFrame(restore);
+setTimeout(restore, 80);
 }
 });
 }
@@ -8346,24 +8354,23 @@ if(v==='ex' && DS!=='artists') v = 'list';
 if((v==='timeline' || v==='quiz') && DS!=='artists') v = 'list';
 if(v==='detail' && !artistById(state.detailId)) v = 'list';
 if(v==='settings') v = 'list';
-/* v2.18: dataset switches used to be forced instant (vtNoAnim) — another
-   hard cut. They now take the view slide, directed by the pill order.
-   When the target is the SAME view element (list->list, detail->detail:
-   both datasets share the <main>), no two-view slide is possible, so the
-   re-rendered content instead enters with a short directional drift —
-   a nudge in the travel direction rather than a teleport. */
-const DS_ORDER = ['artists','designers','settings'];
-const dsDir = Math.sign(DS_ORDER.indexOf(kind) - DS_ORDER.indexOf(srcDest)) || 1;
-vtForceDir = dsDir;
+/* v2.32: dataset switches are INSTANT again — deliberately reversing
+   the v2.18 slide/drift for this one navigation class. A dataset
+   switch is a context change (the two datasets share the same <main>
+   elements; the content is re-rendered in place), and the user's
+   2026-11-12 recording showed what the motion layer did to it: the
+   heavy synchronous re-render (283<->236 tiles) running under a WAAPI
+   drift / full-screen fixed slide read as the whole screen lurching
+   ("ググンってなる"), with the shared header garbling mid-flight.
+   Context switches now swap atomically — header, count and content
+   change in the same frame, no fixed positioning, no transform, no
+   scroll juggling. In-dataset navigation (list<->detail etc.) keeps
+   its slides; the pill indicator still animates. */
+vtForceDir = 0;
+vtNoAnim = true;
 showView(v);
+vtNoAnim = false;
 if(v==='detail') renderDetail();
-if(v===prevV && !reducedMotion()){
-const el = $(VIEW_EL[v]);
-if(el && el.animate){
-try{ const dr = el.animate([{ transform:'translateX('+(dsDir*22)+'px)', opacity:'0.3' },{ transform:'translateX(0px)', opacity:'1' }], { duration:260, easing:VT_EASE });
-if(dr && dr.finished) dr.finished.then(()=>{ try{ dr.cancel(); }catch(e){} }); }catch(e){}
-}
-}
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 }
 /* 設定画面から、表示中データセットを切り替えて操作するための束縛 */
@@ -9883,7 +9890,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.31';
+const APP_VERSION = '2.32';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
