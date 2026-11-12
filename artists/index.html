@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.68">
+<meta name="app-version" content="2.69">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -336,7 +336,17 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .calwdcell{text-align:center; font-size:12px; font-weight:700; color:var(--muted); padding:6px 0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:rgba(255,255,255,.03);}
 .calwdcell.sun{color:var(--danger);}
 .calwdcell.sat{color:var(--tag);}
-.calcell{border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-height:106px; padding:3px 3px 4px; cursor:pointer; overflow:hidden;}
+.calcell{border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-height:92px; padding:3px 3px 4px; cursor:pointer; overflow:hidden;}
+/* v2.69: continuous month scroll */
+.calsticky{position:sticky; z-index:20; background:var(--bg); padding-top:10px;}
+.calwdrow{border-top:1px solid var(--line); border-left:1px solid var(--line); margin-top:8px;}
+.calmonth{margin-top:14px;}
+.calmonth .calwrap{margin-top:0;}
+.calcell.inrun{background:rgba(77,163,255,.15);}
+.calchip.sel{box-shadow:0 0 0 2px #fff;}
+.calsheet{position:fixed; left:10px; right:10px; bottom:calc(82px + env(safe-area-inset-bottom)); z-index:25; background:var(--card); border:1px solid var(--lineStrong); border-radius:14px; padding:12px 12px 10px; box-shadow:0 10px 34px rgba(0,0,0,.5);}
+.calsheethead{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14.5px; font-weight:700;}
+.calsheetbody{max-height:42vh; overflow-y:auto; margin-top:6px;}
 .calcell.dim .calnum{opacity:.45;}
 .calcell.today{box-shadow:inset 0 0 0 2px #fff; background:rgba(255,255,255,.06);}
 .calcell.selday{box-shadow:inset 0 0 0 2px var(--tag);}
@@ -9565,13 +9575,20 @@ function renderNews(){
    end_date is labelled 終了日未登録 in the card and day panel.
    Status is computed against today: 開催中 / まもなく終了 (ends
    within 7 days) / これから / 終了. */
-let calCursor = null;
+let calCursor = null; /* scroll-home target month */
 let calSelId = null;
-let calDaySel = null; /* selected day (YYYY-MM-DD) for the day panel */
+let calDaySel = null; /* selected day (YYYY-MM-DD) for the sheet */
+let calVisibleYM = null; /* month shown in the sticky bar */
+let calScrollBound = false;
 function openCalendar(){
   if(view==='cal') return;
   if(DS!=='artists'){ switchDataset('artists'); vtNoAnim = true; }
+  const t = new Date();
+  calCursor = { y: t.getFullYear(), m: t.getMonth() };
   showView('cal');
+  const home = ()=>{ if(view==='cal') calScrollToYM(calCursor.y, calCursor.m, 'auto'); };
+  vtAfterFinish = home;
+  setTimeout(()=>{ if(view==='cal' && !calVisibleYM) home(); }, 600);
 }
 function calDayStr(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 function exStatusOf(e, tstr){
@@ -9581,77 +9598,159 @@ function exStatusOf(e, tstr){
   if(en){ const days = Math.round((new Date(en+'T00:00:00') - new Date(tstr+'T00:00:00'))/86400000); if(days <= 7) return 'ending'; }
   return 'current';
 }
-function calMove(dm){
-  if(!calCursor){ const t = new Date(); calCursor = { y: t.getFullYear(), m: t.getMonth() }; }
-  let m = calCursor.m + dm, y = calCursor.y;
-  if(m < 0){ m = 11; y--; } if(m > 11){ m = 0; y++; }
-  calCursor = { y: y, m: m }; renderCal();
+function calMonthsRange(exs){
+  const t = new Date();
+  let lo = t.getFullYear()*12 + t.getMonth(), hi = lo;
+  exs.forEach(e=>{
+    const s = e.start_date, en = e.end_date || e.start_date;
+    const a = (+s.slice(0,4))*12 + (+s.slice(5,7)) - 1, b = (+en.slice(0,4))*12 + (+en.slice(5,7)) - 1;
+    if(a < lo) lo = a; if(b > hi) hi = b;
+  });
+  lo -= 1; hi += 1;
+  if(hi - lo > 35){ const c = t.getFullYear()*12 + t.getMonth(); lo = Math.max(lo, c-17); hi = Math.min(hi, lo+35); }
+  const out = [];
+  for(let k = lo; k <= hi; k++) out.push({ y: Math.floor(k/12), m: k % 12 });
+  return out;
 }
-function calToday(){ calCursor = null; calDaySel = null; renderCal(); }
-function calSelect(id){ calSelId = (String(calSelId)===String(id))? null: id; renderCal(); }
-function calSelectDay(ds){ calDaySel = (calDaySel===ds)? null: ds; renderCal(); }
+function calScrollToYM(y, m, behavior){
+  const sec = document.querySelector('.calmonth[data-ym="'+y+'-'+m+'"]');
+  if(!sec) return;
+  const hdr = document.querySelector('header.top');
+  const bar = document.querySelector('.calsticky');
+  const off = (hdr? hdr.offsetHeight: 0) + (bar? bar.offsetHeight: 0) + 2;
+  const top = sec.getBoundingClientRect().top + window.scrollY - off;
+  window.scrollTo({ top: Math.max(0, top), behavior: behavior || 'smooth' });
+}
+function calJump(dm){
+  const base = calVisibleYM || calCursor || (()=>{ const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
+  let k = base.y*12 + base.m + dm;
+  calScrollToYM(Math.floor(k/12), k % 12, 'smooth');
+}
+function calToday(){
+  const t = new Date();
+  calScrollToYM(t.getFullYear(), t.getMonth(), 'smooth');
+}
+function calRerender(){
+  const y = window.scrollY;
+  renderCal();
+  window.scrollTo(0, y);
+  calSyncTitle();
+}
+function calSelect(id){
+  calSelId = (String(calSelId)===String(id))? null: id;
+  if(calSelId!=null) calDaySel = null;
+  calRerender();
+}
+function calSelectDay(ds){
+  calDaySel = (calDaySel===ds)? null: ds;
+  if(calDaySel) calSelId = null;
+  calRerender();
+}
+function calCloseSheet(){ calSelId = null; calDaySel = null; calRerender(); }
+function calSyncTitle(){
+  if(view!=='cal') return;
+  const bar = document.querySelector('.calsticky');
+  const title = $('calTitle');
+  if(!bar || !title) return;
+  const hdr = document.querySelector('header.top');
+  const probe = window.scrollY + (hdr? hdr.offsetHeight: 0) + bar.offsetHeight + 6;
+  let cur = null;
+  document.querySelectorAll('.calmonth').forEach(sec=>{
+    if(sec.getBoundingClientRect().top + window.scrollY <= probe) cur = sec;
+  });
+  if(cur){
+    const parts = cur.getAttribute('data-ym').split('-');
+    calVisibleYM = { y: +parts[0], m: +parts[1] };
+    title.textContent = parts[0]+'年'+(+parts[1]+1)+'月';
+  }
+}
+function calBindScroll(){
+  if(calScrollBound) return;
+  calScrollBound = true;
+  let tick = false;
+  window.addEventListener('scroll', ()=>{
+    if(view!=='cal' || tick) return;
+    tick = true;
+    requestAnimationFrame(()=>{ tick = false; calSyncTitle(); });
+  }, { passive: true });
+}
 /* v2.68: the calendar follows the diary app's calendar language —
    solid name chips inside tall cells (start day = title; end day =
    title + 「終」dimmed; a run already under way on the 1st gets a
    « chip there), today framed in white, Sunday red / Saturday
-   blue, and a faint giant month numeral behind the grid. Runs are
-   read as start chip -> end chip; the full run is always one tap
-   away in the day panel under the grid, which lists everything
-   active on the tapped day with full titles (chips truncate). */
+   blue, and a faint giant month numeral behind the grid.
+   v2.69 (from the user's screen recording of the diary calendar):
+   months are NOT paged — they flow in one continuous vertical
+   scroll, the sticky bar's month title follows the scroll, each
+   month section carries its own watermark, and tapping a chip
+   highlights that exhibition's whole run across the grid. The
+   day list and the exhibition card live in a fixed sheet above
+   the pill so they work from any scroll position. */
 function renderCal(){
+  calBindScroll();
   const v = $('viewCal'); if(!v) return;
   const now = new Date();
-  if(!calCursor) calCursor = { y: now.getFullYear(), m: now.getMonth() };
-  const y = calCursor.y, m = calCursor.m;
   const tstr = calDayStr(now);
-  if(!calDaySel) calDaySel = (y===now.getFullYear() && m===now.getMonth())? tstr: calDayStr(new Date(y, m, 1));
   const adb = liveDB('artists');
   const all = (adb && adb.exhibitions) || [];
   const exs = all.filter(e=> e.start_date);
   const noDate = all.length - exs.length;
-  const first = new Date(y, m, 1);
-  const gridStart = new Date(y, m, 1 - first.getDay());
-  const totalDays = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7) * 7;
-  const monthFirst = calDayStr(first);
-  /* chips per day: kind start | end | cont */
-  const byDay = {};
-  const push = (ds, e, kind)=>{ (byDay[ds] = byDay[ds] || []).push({ e: e, kind: kind, st: exStatusOf(e, tstr) }); };
-  exs.forEach(e=>{
-    const s = e.start_date, en = e.end_date || '';
-    push(s, e, 'start');
-    if(en && en !== s) push(en, e, 'end');
-    if(s < monthFirst && (!en || en >= monthFirst)) push(monthFirst, e, 'cont');
-  });
-  const kindRank = { end: 0, start: 1, cont: 2 };
-  Object.values(byDay).forEach(list => list.sort((a,b)=> kindRank[a.kind]-kindRank[b.kind] || String(a.e.title||'').localeCompare(String(b.e.title||''))));
-  let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
-  html += '<div class="calnav"><button class="btn" onclick="calMove(-1)">‹</button><span class="caltitle">'+y+'年'+(m+1)+'月</span><button class="btn" onclick="calMove(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
-  html += '<div class="callegend"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span><span>「終」は最終日</span></div>';
-  html += '<div class="calwrap"><div class="calmark">'+(m+1)+'</div><div class="calgrid">';
-  ['日','月','火','水','木','金','土'].forEach((wd, i)=>{ html += '<div class="calwdcell'+(i===0?' sun': i===6?' sat': '')+'">'+wd+'</div>'; });
-  for(let d=0; d<totalDays; d++){
-    const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+d);
-    const ds = calDayStr(dt);
-    const inMonth = dt.getMonth()===m;
-    const dow = dt.getDay();
-    const chips = byDay[ds] || [];
-    const shown = chips.slice(0, 4);
-    html += '<div class="calcell'+(inMonth?'':' dim')+(ds===tstr?' today':'')+(ds===calDaySel?' selday':'')+(dow===0?' sun': dow===6?' sat': '')+'" onclick="calSelectDay(\''+ds+'\')"><div class="calnum">'+dt.getDate()+'</div>';
-    shown.forEach(c=>{
-      const label = c.kind==='end'? (c.e.title||'')+' 終': c.kind==='cont'? '« '+(c.e.title||''): (c.e.title||'');
-      html += '<span class="calchip st-'+c.st+(c.kind==='end'?' end':'')+'" onclick="event.stopPropagation(); calSelect(\''+escA(c.e.id||'')+'\')">'+esc(label)+'</span>';
+  const selEx = calSelId!=null? exs.find(e=> String(e.id)===String(calSelId)): null;
+  const hdr = document.querySelector('header.top');
+  const hdrH = hdr? hdr.offsetHeight: 0;
+  const byDayFor = (y, m)=>{
+    const first = new Date(y, m, 1);
+    const monthFirst = calDayStr(first);
+    const byDay = {};
+    const push = (ds, e, kind)=>{ (byDay[ds] = byDay[ds] || []).push({ e: e, kind: kind, st: exStatusOf(e, tstr) }); };
+    exs.forEach(e=>{
+      const s = e.start_date, en = e.end_date || '';
+      const inMonth = (ds)=> ds.slice(0,7) === monthFirst.slice(0,7);
+      if(inMonth(s)) push(s, e, 'start');
+      if(en && en !== s && inMonth(en)) push(en, e, 'end');
+      if(s < monthFirst && (!en || en >= monthFirst)) push(monthFirst, e, 'cont');
     });
-    if(chips.length > shown.length) html += '<span class="calmore">+'+(chips.length - shown.length)+' 件</span>';
-    html += '</div>';
-  }
+    const kindRank = { end: 0, start: 1, cont: 2 };
+    Object.values(byDay).forEach(list => list.sort((a,b)=> kindRank[a.kind]-kindRank[b.kind] || String(a.e.title||'').localeCompare(String(b.e.title||''))));
+    return byDay;
+  };
+  let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+  html += '<div class="calsticky" style="top:'+hdrH+'px"><div class="calnav" style="margin-top:0"><button class="btn" onclick="calJump(-1)">‹</button><span class="caltitle" id="calTitle">'+now.getFullYear()+'年'+(now.getMonth()+1)+'月</span><button class="btn" onclick="calJump(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
+  html += '<div class="callegend" style="margin-top:6px"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span><span>「終」は最終日</span></div>';
+  html += '<div class="calgrid calwdrow">';
+  ['日','月','火','水','木','金','土'].forEach((wd, i)=>{ html += '<div class="calwdcell'+(i===0?' sun': i===6?' sat': '')+'">'+wd+'</div>'; });
   html += '</div></div>';
-  if(noDate) html += '<div class="note" style="margin-top:12px">日付が未登録の展示が '+noDate+' 件あり、カレンダーには表示されません。</div>';
-  /* day panel: everything active on the selected day, full titles */
+  calMonthsRange(exs).forEach(({ y, m })=>{
+    const first = new Date(y, m, 1);
+    const gridStart = new Date(y, m, 1 - first.getDay());
+    const totalDays = Math.ceil((first.getDay() + new Date(y, m+1, 0).getDate()) / 7) * 7;
+    const byDay = byDayFor(y, m);
+    html += '<section class="calmonth" data-ym="'+y+'-'+m+'"><div class="calwrap"><div class="calmark">'+(m+1)+'</div><div class="calgrid">';
+    for(let d=0; d<totalDays; d++){
+      const dt = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()+d);
+      const ds = calDayStr(dt);
+      const inMonth = dt.getMonth()===m;
+      const dow = dt.getDay();
+      const chips = byDay[ds] || [];
+      const shown = chips.slice(0, 3);
+      const inRun = selEx && ds >= selEx.start_date && (!selEx.end_date || ds <= selEx.end_date);
+      html += '<div class="calcell'+(inMonth?'':' dim')+(ds===tstr?' today':'')+(ds===calDaySel?' selday':'')+(inRun?' inrun':'')+(dow===0?' sun': dow===6?' sat': '')+'" onclick="calSelectDay(\''+ds+'\')"><div class="calnum">'+dt.getDate()+'</div>';
+      shown.forEach(c=>{
+        const label = c.kind==='end'? (c.e.title||'')+' 終': c.kind==='cont'? '« '+(c.e.title||''): (c.e.title||'');
+        html += '<span class="calchip st-'+c.st+(c.kind==='end'?' end':'')+(String(calSelId)===String(c.e.id)? ' sel':'')+'" onclick="event.stopPropagation(); calSelect(\''+escA(c.e.id||'')+'\')">'+esc(label)+'</span>';
+      });
+      if(chips.length > shown.length) html += '<span class="calmore">+'+(chips.length - shown.length)+' 件</span>';
+      html += '</div>';
+    }
+    html += '</div></div></section>';
+  });
+  if(noDate) html += '<div class="note" style="margin:14px 0">日付が未登録の展示が '+noDate+' 件あり、カレンダーには表示されません。</div>';
+  /* fixed sheet: day list or exhibition card */
   if(calDaySel){
     const act = exs.filter(e=> e.start_date <= calDaySel && (!e.end_date || e.end_date >= calDaySel))
       .sort((a,b)=> String(a.start_date).localeCompare(String(b.start_date)));
     const dd = new Date(calDaySel+'T00:00:00');
-    html += '<h2 class="sechead"><span>'+(dd.getMonth()+1)+'月'+dd.getDate()+'日</span><span class="cnt">開催中 '+act.length+'件</span></h2>';
+    html += '<div class="calsheet"><div class="calsheethead"><span>'+(dd.getMonth()+1)+'月'+dd.getDate()+'日　開催中 '+act.length+'件</span><button class="txtbtn" onclick="calCloseSheet()">閉じる</button></div><div class="calsheetbody">';
     if(!act.length) html += '<div class="empty">この日の展示はありません</div>';
     act.forEach(e=>{
       const st = exStatusOf(e, tstr);
@@ -9659,23 +9758,21 @@ function renderCal(){
       const role = e.start_date===calDaySel? '初日': (e.end_date===calDaySel? '最終日': '会期中');
       html += '<button class="caldayitem" onclick="calSelect(\''+escA(e.id||'')+'\')"><span class="dot" style="background:'+dot+'"></span><span><span class="tt">'+esc(e.title||'')+'</span><br><span class="mm">'+esc(e.venue||'')+'　'+esc(e.start_date||'')+' – '+esc(e.end_date||'未登録')+'（'+role+'）</span></span></button>';
     });
-  }
-  /* selected exhibition card */
-  const sel = calSelId!=null? exs.find(e=> String(e.id)===String(calSelId)): null;
-  if(sel){
-    const st = exStatusOf(sel, tstr);
+    html += '</div></div>';
+  } else if(selEx){
+    const st = exStatusOf(selEx, tstr);
     const stLabel = { current:'開催中', ending:'まもなく終了', future:'これから', past:'終了' }[st];
     let dlabel = '';
-    if((st==='current' || st==='ending') && sel.end_date) dlabel = 'あと'+Math.round((new Date(sel.end_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
-    if(st==='future') dlabel = '開始まで'+Math.round((new Date(sel.start_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
-    html += '<div class="corbox" style="margin-top:14px"><div class="ct">'+esc(sel.title||'')+'</div>'
-      + '<div class="cb">'+esc(sel.artist_name||'')+(sel.venue? '　'+esc(sel.venue): '')+(sel.city? '（'+esc(sel.city)+'）': '')+'</div>'
-      + '<div class="cb">'+esc(sel.start_date||'')+(sel.end_date? ' – '+esc(sel.end_date): ' – 終了日未登録')+'　'+esc(stLabel)+(dlabel? '（'+esc(dlabel)+'）': '')+'</div>'
-      + (sel.note? '<div class="cb">'+esc(sel.note)+'</div>': '')
-      + '<div style="margin-top:6px; display:flex; gap:16px;">'
-      + (sel.url? '<a href="'+escA(sel.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
-      + (sel.artist_id!=null && artistById(sel.artist_id)? '<button class="linkbtn" onclick="openDetail(\''+escA(sel.artist_id)+'\')">図鑑で見る</button>': '')
-      + '</div></div>';
+    if((st==='current' || st==='ending') && selEx.end_date) dlabel = 'あと'+Math.round((new Date(selEx.end_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
+    if(st==='future') dlabel = '開始まで'+Math.round((new Date(selEx.start_date+'T00:00:00')-new Date(tstr+'T00:00:00'))/86400000)+'日';
+    html += '<div class="calsheet"><div class="calsheethead"><span>'+esc(selEx.title||'')+'</span><button class="txtbtn" onclick="calCloseSheet()">閉じる</button></div><div class="calsheetbody">'
+      + '<div class="cb" style="font-size:13.5px; color:var(--text)">'+esc(selEx.artist_name||'')+(selEx.venue? '　'+esc(selEx.venue): '')+(selEx.city? '（'+esc(selEx.city)+'）': '')+'</div>'
+      + '<div class="cb" style="font-size:13.5px; color:var(--text); margin-top:4px">'+esc(selEx.start_date||'')+(selEx.end_date? ' – '+esc(selEx.end_date): ' – 終了日未登録')+'　'+esc(stLabel)+(dlabel? '（'+esc(dlabel)+'）': '')+'</div>'
+      + (selEx.note? '<div class="cb" style="font-size:13px; margin-top:4px">'+esc(selEx.note)+'</div>': '')
+      + '<div style="margin-top:8px; display:flex; gap:16px;">'
+      + (selEx.url? '<a href="'+escA(selEx.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
+      + (selEx.artist_id!=null && artistById(selEx.artist_id)? '<button class="linkbtn" onclick="openDetail(\''+escA(selEx.artist_id)+'\')">図鑑で見る</button>': '')
+      + '</div><div class="small" style="margin-top:8px">会期中はカレンダー上で色づいています</div></div></div>';
   }
   v.innerHTML = html;
 }
@@ -10978,7 +11075,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.68';
+const APP_VERSION = '2.69';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
