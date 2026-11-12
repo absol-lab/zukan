@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="8.0">
+<meta name="app-version" content="8.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12292,7 +12292,7 @@ function renderRequestList(){
     const ds = fmtMDHM(r.requested_at);
     const done = (r.status==='registered' || r.status==='declined') && r.resolved_at
       ? ' <span class="rqdate">完了 '+fmtMDHM(r.resolved_at)+'</span>' : '';
-    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（情報）': '')+'</span> <span class="rqdate">'+ds+'</span>'+done+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
+    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+'</span> <span class="rqdate">'+ds+'</span>'+done+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
   }).join('');
 }
 function submitRequestFromPanel(){
@@ -12594,7 +12594,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '8.0';
+const APP_VERSION = '8.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
