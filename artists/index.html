@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.62">
+<meta name="app-version" content="2.63">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -310,6 +310,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newsrow .nm{font-size:12px; color:var(--muted); margin-top:3px;}
 .newsrow .nnote{font-size:13px; color:var(--text); margin-top:4px; line-height:1.5;}
 .newsrow .gext{position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--muted);}
+/* v2.63: works-request bar at the top of the detail works tab */
+.worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px;}
 .corbox{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-top:8px;}
 .corbox .ct{font-size:15px; font-weight:700; line-height:1.5;}
 .corbox .cb{font-size:13.5px; line-height:1.65; margin-top:4px;}
@@ -8960,6 +8962,10 @@ worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx=
 });
 worksHTML += '</div>';
 }
+/* v2.63: works-request bar — rides the registration-request file
+   with kind:'works' (see requestWorks). Shown whether or not the
+   person already has works: "too few" is the user's call to make. */
+worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">作品をリクエスト</button></div>' + worksHTML;
 bioHTML = '<div class="bodytext">'+(sp.bio? esc(sp.bio): '（来歴の記載はまだありません）')+'</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
@@ -10339,7 +10345,10 @@ function sbMaxUpdated(data){
    File shape: { requests: [{ id, name, requested_at, status:
    'pending'|'registered'|'declined', note?, resolved_at? }],
    updatedAt } — the processor only edits status/note/resolved_at of
-   existing items and never deletes; the app only appends. */
+   existing items and never deletes; the app only appends.
+   v2.63: items may carry kind:'works' (plus artist_id and dataset)
+   — a request to harvest MORE WORKS for an already-registered
+   person; absent kind means a new-person registration request. */
 const REQ_FILE = 'zukan-requests.json';
 const LS_REQ_OUTBOX = 'zukan.requests.outbox';
 const LS_REQ_CACHE = 'zukan.requests.cache';
@@ -10360,7 +10369,7 @@ function reqSummaryLabel(){
 }
 function reqStatusOf(r){
   if(r._local) return { key:'queued', label:'送信待ち' };
-  if(r.status==='registered') return { key:'registered', label:'✓ 登録済み' };
+  if(r.status==='registered') return { key:'registered', label: r.kind==='works'? '✓ 追加済み': '✓ 登録済み' };
   if(r.status==='declined') return { key:'declined', label:'見送り' };
   return { key:'pending', label:'依頼中' };
 }
@@ -10380,7 +10389,7 @@ function requestName(name, source){
   if(!name){ toast('名前を入力してください'); return false; }
   if(artistAlreadyKnown(name)){ toast('「'+name+'」はすでに図鑑に登録されています'); return false; }
   const n = reqNorm(name);
-  if(reqAllItems().some(r=> reqNorm(r.name)===n && (r._local || r.status==='pending'))){ toast('「'+name+'」はすでに依頼中です'); return false; }
+  if(reqAllItems().some(r=> r.kind!=='works' && reqNorm(r.name)===n && (r._local || r.status==='pending'))){ toast('「'+name+'」はすでに依頼中です'); return false; }
   const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), name:name, requested_at:new Date().toISOString(), status:'pending' };
   const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
   flushArtistRequests();
@@ -10388,6 +10397,19 @@ function requestName(name, source){
   if(settingsPanel==='request') renderRequestList();
   if(source==='search') renderListBody();
   return true;
+}
+/* v2.63: works request for the person currently open in detail.
+   Same outbox → flush path as registration requests; the item is
+   distinguished by kind:'works' + artist_id + dataset so the
+   watcher can prioritise harvesting for this person. */
+function requestWorks(){
+  const a = (state.detailId!=null)? artistById(state.detailId): null;
+  if(!a){ toast('対象の人物が開かれていません'); return; }
+  if(reqAllItems().some(r=> r.kind==='works' && String(r.artist_id)===String(a.id) && (r._local || r.status==='pending'))){ toast('「'+a.name+'」の作品はすでにリクエスト中です'); return; }
+  const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), kind:'works', artist_id:a.id, name:a.name, dataset:DS, requested_at:new Date().toISOString(), status:'pending' };
+  const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
+  flushArtistRequests();
+  toast((getValidToken() || relayReady())? '作品をリクエストしました（優先的に探します）' : '送信待ちに保存しました（接続時に送られます）', 3600);
 }
 async function flushArtistRequests(){
   const tok = getValidToken(); if(!tok && !relayReady()) return;
@@ -10436,7 +10458,7 @@ function renderRequestList(){
     const st = reqStatusOf(r);
     const d = r.requested_at? new Date(r.requested_at): null;
     const ds = d && !isNaN(d)? (d.getMonth()+1)+'/'+d.getDate() : '';
-    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
+    return '<div class="reqrow"><div><span class="rqname">'+esc(r.name)+(r.kind==='works'? '（作品）': '')+'</span> <span class="rqdate">'+ds+'</span>'+(r.note? '<span class="rqnote">'+esc(r.note)+'</span>':'')+'</div><span class="reqchip '+st.key+'">'+st.label+'</span></div>';
   }).join('');
 }
 function submitRequestFromPanel(){
@@ -10700,7 +10722,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.62';
+const APP_VERSION = '2.63';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
