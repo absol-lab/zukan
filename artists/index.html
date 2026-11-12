@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.39">
+<meta name="app-version" content="2.40">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8915,28 +8915,17 @@ function setExSort(m){
    them. Every URL verified on the official site 2026-11-12. Counts show
    only when the encyclopedia data has current/upcoming exhibitions at
    that venue (venue substring match absorbs 표기 variants). */
+/* v2.40: groups are by PLACE (headquarters city), not by venue type —
+   the user's call. Mega-galleries sit in exactly one group (their home
+   city); type survives only as the within-group ordering (galleries
+   first, then museums). */
 const GAL_GROUPS = [
-  { label: 'ギャラリー', items: [
-    { name: 'Gagosian', match: 'Gagosian', url: 'https://gagosian.com/exhibitions/' },
-    { name: 'Pace', match: 'Pace', url: 'https://www.pacegallery.com/exhibitions/' },
-    { name: 'David Zwirner', match: 'David Zwirner', url: 'https://www.davidzwirner.com/exhibitions' },
-    { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' },
-    { name: 'White Cube', match: 'White Cube', url: 'https://www.whitecube.com/exhibitions' },
-    { name: 'Perrotin', match: 'Perrotin', url: 'https://www.perrotin.com/en/agenda' },
+  { label: '東京', items: [
     { name: '小山登美夫ギャラリー', match: '小山登美夫', url: 'https://www.tomiokoyamagallery.com/exhibitions/' },
     { name: 'タカ・イシイギャラリー', match: 'タカ・イシイ', url: 'https://www.takaishiigallery.com/en/exhibitions/' },
     { name: 'SCAI THE BATHHOUSE', match: 'SCAI', url: 'https://www.scaithebathhouse.com/en/gallery/' },
     { name: 'シュウゴアーツ', match: 'シュウゴアーツ', url: 'https://shugoarts.com/exhibitions/' },
-    { name: 'TARO NASU', match: 'TARO NASU', url: 'https://www.taronasugallery.com/exhibition/current/' }
-  ]},
-  { label: '美術館・海外', items: [
-    { name: 'MoMA', match: 'MoMA', url: 'https://www.moma.org/calendar/exhibitions' },
-    { name: 'Tate', match: 'Tate', url: 'https://www.tate.org.uk/whats-on' },
-    { name: 'The Morgan Library & Museum', match: 'Morgan', url: 'https://www.themorgan.org/exhibitions' },
-    { name: 'The Drawing Center', match: 'Drawing Center', url: 'https://drawingcenter.org/exhibitions' },
-    { name: 'WikiArt', match: 'WikiArt', url: 'https://www.wikiart.org/' }
-  ]},
-  { label: '美術館・東京・国内', items: [
+    { name: 'TARO NASU', match: 'TARO NASU', url: 'https://www.taronasugallery.com/exhibition/current/' },
     { name: '東京都現代美術館', match: '東京都現代美術館', url: 'https://www.mot-art-museum.jp/exhibitions/' },
     { name: '東京国立近代美術館', match: '東京国立近代美術館', url: 'https://www.momat.go.jp/exhibitions' },
     { name: '国立西洋美術館', match: '国立西洋美術館', url: 'https://www.nmwa.go.jp/jp/exhibitions/current.html' },
@@ -8944,6 +8933,27 @@ const GAL_GROUPS = [
     { name: '森美術館', match: '森美術館', url: 'https://www.mori.art.museum/jp/exhibitions/' },
     { name: '東京都美術館', match: '東京都美術館', url: 'https://www.tobikan.jp/exhibition/' },
     { name: 'ワタリウム美術館', match: 'ワタリウム', url: 'http://www.watarium.co.jp/jp/exhibition/' }
+  ]},
+  { label: 'ニューヨーク', items: [
+    { name: 'Gagosian', match: 'Gagosian', url: 'https://gagosian.com/exhibitions/' },
+    { name: 'Pace', match: 'Pace', url: 'https://www.pacegallery.com/exhibitions/' },
+    { name: 'David Zwirner', match: 'David Zwirner', url: 'https://www.davidzwirner.com/exhibitions' },
+    { name: 'MoMA', match: 'MoMA', url: 'https://www.moma.org/calendar/exhibitions' },
+    { name: 'The Morgan Library & Museum', match: 'Morgan', url: 'https://www.themorgan.org/exhibitions' },
+    { name: 'The Drawing Center', match: 'Drawing Center', url: 'https://drawingcenter.org/exhibitions' }
+  ]},
+  { label: 'ロンドン', items: [
+    { name: 'White Cube', match: 'White Cube', url: 'https://www.whitecube.com/exhibitions' },
+    { name: 'Tate', match: 'Tate', url: 'https://www.tate.org.uk/whats-on' }
+  ]},
+  { label: 'パリ', items: [
+    { name: 'Perrotin', match: 'Perrotin', url: 'https://www.perrotin.com/en/agenda' }
+  ]},
+  { label: 'チューリッヒ', items: [
+    { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' }
+  ]},
+  { label: 'オンライン', items: [
+    { name: 'WikiArt', match: 'WikiArt', url: 'https://www.wikiart.org/' }
   ]}
 ];
 function galleryLinksHTML(exs){
@@ -9998,7 +10008,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.39';
+const APP_VERSION = '2.40';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
