@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.94">
+<meta name="app-version" content="2.95">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8742,7 +8742,10 @@ showView('ex');
    only (his ask) — and openTimeline no longer drags the dataset
    over from the designers' side; a separate design timeline is a
    later build. */
-function syncTimelineBtn(v){ const nt = $('navTimeline'); if(nt) nt.style.display = (((v||view)==='list' && DS==='artists')? '' : 'none'); }
+/* v2.95: hiding is by visibility, not display — the button keeps
+   its slot, so the bell beside it never shifts position between
+   pages (his complaint). visibility:hidden is also not tappable. */
+function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; const show = ((v||view)==='list' && DS==='artists'); nt.style.display = ''; nt.style.visibility = show? 'visible': 'hidden'; }
 function openTimeline(){
 if(view==='timeline') return;
 if(DS!=='artists') return;
@@ -9867,14 +9870,23 @@ function reqDoneItems(){
 /* v2.82: the door lives in the top header, left of the 年表
    button (his corrected placement — NOT beside the updates). It
    opens the dedicated reqnotif panel.
-   v2.93: bell mark only, the count rides a small badge. */
+   v2.93: bell mark only, the count rides a small badge.
+   v2.95: the badge counts UNSEEN completions — opening the
+   notifications marks them seen and the badge clears (his ask);
+   it returns when new completions arrive. And the panel's back
+   returns to the screen he opened it from, not to その他. */
+const LS_REQ_SEEN = 'zukan.reqSeen';
+function reqSeenCount(){ const n = parseInt(storeGet(LS_REQ_SEEN)||'0', 10); return isNaN(n)? 0: n; }
+function reqMarkSeen(){ try{ storeSet(LS_REQ_SEEN, String(reqDoneItems().length)); }catch(e){} refreshReqNotifBtn(); }
 function refreshReqNotifBtn(){
   const b = $('navReqNotif'); if(!b) return;
   let n = 0;
-  try{ n = reqDoneItems().length; }catch(e){}
+  try{ n = Math.max(0, reqDoneItems().length - reqSeenCount()); }catch(e){}
   b.innerHTML = SICON.bell + (n? '<span class="nbadge">'+n+'</span>': '');
 }
+let reqNotifReturn = null;
 function openRequestNotifs(){
+  reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
   openSettingsPanel('reqnotif');
 }
@@ -9894,6 +9906,8 @@ function renderRequestNotifs(targetId){
       '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
       (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') + '</div>';
   }).join('');
+  /* v2.95: he is looking at them — mark seen, badge clears */
+  reqMarkSeen();
   /* refresh the requests file in the background; re-render on arrival */
   if(getValidToken() || relayReady()){
     flushArtistRequests().then(()=>{ refreshReqNotifBtn(); if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist'); }).catch(()=>{});
@@ -11570,7 +11584,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.94';
+const APP_VERSION = '2.95';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -11934,7 +11948,18 @@ async function runImgDiagnostics(){
   put('=== 終了 ===');
 }
 function openSettingsPanel(name){ settingsPanel = name; renderSettingsPanel(); window.scrollTo(0,0); }
-function closeSettingsPanel(){ settingsPanel = null; renderSettings(); window.scrollTo(0,0); }
+function closeSettingsPanel(){
+  /* v2.95: the request-notifications panel remembers the screen
+     it was opened from — its back goes THERE, not to その他. */
+  if(settingsPanel==='reqnotif' && reqNotifReturn){
+    const back = reqNotifReturn; reqNotifReturn = null;
+    settingsPanel = null;
+    showView(back);
+    window.scrollTo(0,0);
+    return;
+  }
+  settingsPanel = null; renderSettings(); window.scrollTo(0,0);
+}
 function panelShell(title, inner){
   return '<div class="panelnav"><button class="back" onclick="closeSettingsPanel()">‹ 戻る</button><div class="pttl">'+esc(title)+'</div><div class="psp"></div></div>'+inner;
 }
