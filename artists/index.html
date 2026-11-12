@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="2.69">
+<meta name="app-version" content="2.70">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8346,6 +8346,13 @@ function restoreListScroll(y){
 function showView(v){
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
+/* v2.70: record the pill-trail — entering the list from a hub view
+   （展示/年表/その他） makes that hub the list's swipe-back target.
+   switchDataset records its own (it swaps DS before calling here)
+   and mutes this rule for its call. */
+if(v==='list' && !pillRecMute && (prev==='ex' || prev==='timeline' || prev==='settings')){
+  prevPill = { view: prev, ds: (prev==='settings'? DS: 'artists') };
+}
 if(vtBusy && vtFinish) vtFinish();
 let dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[v]-VIEW_DEPTH[prev]): 0;
 /* v2.18: same-depth switches (detail<->ex<->timeline<->settings) used to be
@@ -8686,6 +8693,10 @@ if(view==='list') CTX[DS].scrollY = window.scrollY;
 const prevV = view;
 const srcDest = (view==='settings')? 'settings': DS;
 tbExpanded = false;
+/* v2.70: the dataset being left becomes the new list's swipe-back
+   trail (recorded BEFORE the swap, with the origin dataset). */
+if(view==='list' || view==='ex' || view==='timeline' || view==='settings') prevPill = { view: view, ds: DS };
+pillRecMute = true;
 stashCtx();
 DS = kind; bindCtx();
 editWorks = [];
@@ -8711,6 +8722,7 @@ vtForceDir = 0;
 vtNoAnim = true;
 showView(v);
 vtNoAnim = false;
+pillRecMute = false;
 if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 }
@@ -10937,7 +10949,17 @@ if(Date.now() < segSuppressUntil){ segSuppressUntil = 0; e.preventDefault(); e.s
 }, true);
 
 /* ---------- swipe back: the finger drives the transition itself ---------- */
-function backTarget(){
+/* v2.70: pill-trail — the list is the classic root (no back target),
+   yet the user navigates 展示 → 作家 (pill) and then tries to slide
+   back to 展示， which used to do nothing at all (2026-11-12 on-device
+   report: 「このページからスライドで戻れない」). prevPill remembers the
+   hub the list was entered from (展示 / 年表 / その他， or the other
+   dataset's list after a dataset switch); a swipe on the list goes
+   back there, one step, toggling. Header-button backs (goBack) keep
+   the classic targets only — the trail is a swipe-only affordance. */
+let prevPill = null;
+let pillRecMute = false;
+function backTarget(forSwipe){
   /* v2.58: a settings SUB-PANEL is one level above the settings top,
      not one level above the list — a view-level back from inside a
      panel used to exit その他 entirely (and leave the header behind).
@@ -10947,6 +10969,7 @@ function backTarget(){
   if(view==='quiz') return 'timeline';
   if(view==='news' || view==='cal') return 'ex';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings') return 'list';
+  if(forSwipe && view==='list' && prevPill && (prevPill.view!=='list' || prevPill.ds!==DS)) return prevPill.view;
   return null;
 }
 function goBack(){
@@ -10954,8 +10977,14 @@ function goBack(){
   const t = backTarget(); if(t) showView(t);
 }
 function engageSwipe(st){
+  /* v2.70: a pill-trail swipe can cross datasets （展示/その他 of the
+     other context). Swap the dataset context first so the target
+     renders with its own data; a cancel swaps back in teardown. */
+  if(st.trail && st.tds && st.tds !== DS){ st.fromDs = DS; stashCtx(); DS = st.tds; bindCtx(); st.swapped = true; }
   if(st.target==='list') renderList();
   if(st.target==='timeline') renderTimeline();
+  if(st.target==='ex') renderEx();
+  if(st.target==='settings') renderSettings();
   const oldEl = $(VIEW_EL[view]), newEl = $(VIEW_EL[st.target]);
   if(!oldEl || !newEl){ st.engaged = false; return; }
   st.oldEl = oldEl; st.newEl = newEl;
@@ -10999,6 +11028,8 @@ function teardownSwipe(st, commit){
   [st.oldEl, st.newEl].forEach(el=>{ if(!el) return; el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; });
   document.body.classList.remove('vt-run');
   if(swipeSt===st) swipeSt = null;
+  if(!commit && st.swapped){ stashCtx(); DS = st.fromDs; bindCtx(); }
+  if(commit && st.trail){ prevPill = { view: st.fromView, ds: st.fromDs }; }
   if(commit){
     st.oldEl.classList.add('hidden');
     view = st.target;
@@ -11039,10 +11070,18 @@ function teardownSwipe(st, commit){
     if(pg && Math.round(pg.scrollLeft / Math.max(1, pg.clientWidth)) > 0) return;
     const vw = $('viewer'); if(vw && vw.classList.contains('open')) return;
     if(isEditing()) return; /* 編集フォーム表示中は無効 */
-    const target = backTarget(); if(!target) return; /* 一覧では何もしない */
+    const classic = backTarget(false);
+    const target = backTarget(true); if(!target) return; /* 一覧（トレイル無し）では何もしない */
+    const isTrail = !classic;
     const t = e.touches[0];
+    /* v2.70: a trail back to the OTHER dataset's list shares the same
+       <main> element, so the two-element slide cannot run — the drag
+       is tracked as a pull and released into the (deliberately
+       instant) dataset switch, per the v2.32 design. */
+    const pull = isTrail && VIEW_EL[target] === VIEW_EL[view];
     swipeSt = { sx:t.clientX, sy:t.clientY, dx:0, target:target, engaged:false, done:false,
-                px:t.clientX, pt:Date.now(), vx:0 };
+                px:t.clientX, pt:Date.now(), vx:0,
+                trail:isTrail, tds: isTrail? prevPill.ds: DS, fromView:view, fromDs:DS, pull:pull };
   }, { passive:true });
   document.addEventListener('touchmove', e=>{
     const st = swipeSt; if(!st || st.done) return;
@@ -11052,6 +11091,11 @@ function teardownSwipe(st, commit){
     if(now > st.pt){ const v = (t.clientX - st.px) / Math.max(1, now - st.pt); st.vx = 0.7*st.vx + 0.3*v; }
     st.px = t.clientX; st.pt = now;
     if(!st.engaged){
+      if(st.pull){
+        if(dx > 12 && Math.abs(dx) > Math.abs(dy)*1.25){ st.dx = Math.max(0, dx); }
+        else if(Math.abs(dy) > 14 && Math.abs(dy) >= Math.abs(dx)){ swipeSt = null; }
+        return;
+      }
       if(dx > 12 && Math.abs(dx) > Math.abs(dy)*1.25){ st.dx = Math.max(0, dx); engageSwipe(st); }
       else if(Math.abs(dy) > 14 && Math.abs(dy) >= Math.abs(dx)){ swipeSt = null; }
       return;
@@ -11063,8 +11107,13 @@ function teardownSwipe(st, commit){
   document.addEventListener('touchend', e=>{
     const st = swipeSt; if(!st) return;
     swipeSt = null;
-    if(!st.engaged || st.done) return;
     const W = window.innerWidth || 1;
+    if(st.pull){
+      const commitPull = st.dx > W*0.35 || (st.dx > 56 && st.vx > 0.3);
+      if(commitPull && st.tds && st.tds !== DS) switchDataset(st.tds);
+      return;
+    }
+    if(!st.engaged || st.done) return;
     const commit = st.dx > W*0.35 || (st.dx > 56 && st.vx > 0.3);
     finishSwipe(st, commit);
   }, { passive:true });
@@ -11075,7 +11124,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '2.69';
+const APP_VERSION = '2.70';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
