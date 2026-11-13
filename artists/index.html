@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="13.0">
+<meta name="app-version" content="13.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9056,6 +9056,7 @@ stashCtx();
 DS = kind; bindCtx();
 editWorks = [];
 updateHeader(); updatePill();
+refreshReqNotifBtn(); /* v13.1: the badge counts this book only */
 let v = (view==='settings')? 'list': (CTX[DS].lastView || 'list');
 if(v==='ex' && DS!=='artists') v = 'list';
 if(v==='era') v = 'timeline';
@@ -11093,11 +11094,54 @@ function reqDoneItems(){
    returns to the screen he opened it from, not to その他. */
 const LS_REQ_SEEN = 'zukan.reqSeen';
 function reqSeenCount(){ const n = parseInt(storeGet(LS_REQ_SEEN)||'0', 10); return isNaN(n)? 0: n; }
-function reqMarkSeen(){ try{ storeSet(LS_REQ_SEEN, String(reqDoneItems().length)); }catch(e){} refreshReqNotifBtn(); }
+/* v13.1 (his correction): notifications belong to ONE book at
+   a time — the panel and the unread badge show only the
+   current dataset's items, and "seen" is tracked per dataset
+   (id sets, migrated once from the legacy global count).
+   A completion's dataset: its explicit dataset field when it
+   has one (works items), else resolved by looking the person
+   up in each book; unclassifiable items show in BOTH books
+   rather than vanishing. */
+const LS_REQ_SEEN2 = 'zukan.reqSeenIds';
+function reqItemDatasets(r){
+  if(r.dataset === 'artists' || r.dataset === 'designers') return [r.dataset];
+  const nm = reqResolvedName(r);
+  const out = [];
+  if(nm){
+    for(const k of ['artists', 'designers']){
+      try{ const db = liveDB(k); if(db && db.artists.some(a=>a.name===nm)) out.push(k); }catch(e){}
+    }
+  }
+  return out.length? out: ['artists', 'designers'];
+}
+function reqSeenIdsLoad(){
+  try{ const d = JSON.parse(storeGet(LS_REQ_SEEN2)||'null'); if(d && Array.isArray(d.artists) && Array.isArray(d.designers)) return d; }catch(e){}
+  const d = { artists: [], designers: [] };
+  try{
+    const legacy = reqSeenCount();
+    if(legacy > 0){
+      const done = reqDoneItems();
+      done.slice(Math.max(0, done.length - legacy)).forEach(r=>{ reqItemDatasets(r).forEach(k=>{ if(!d[k].includes(r.id)) d[k].push(r.id); }); });
+    }
+  }catch(e){}
+  try{ storeSet(LS_REQ_SEEN2, JSON.stringify(d)); }catch(e){}
+  return d;
+}
+function reqDoneForDS(k){ return reqDoneItems().filter(r=> reqItemDatasets(r).includes(k)); }
+function reqUnseenForDS(k){ const seen = new Set(reqSeenIdsLoad()[k] || []); return reqDoneForDS(k).filter(r=> !seen.has(r.id)).length; }
+function reqMarkSeen(){
+  try{
+    const d = reqSeenIdsLoad(); const set = new Set(d[DS] || []);
+    reqDoneForDS(DS).forEach(r=> set.add(r.id));
+    d[DS] = [...set].slice(-300);
+    storeSet(LS_REQ_SEEN2, JSON.stringify(d));
+  }catch(e){}
+  refreshReqNotifBtn();
+}
 function refreshReqNotifBtn(){
   const b = $('navReqNotif'); if(!b) return;
   let n = 0;
-  try{ n = Math.max(0, reqDoneItems().length - reqSeenCount()) + regUnseenCount(); }catch(e){}
+  try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
   b.innerHTML = SICON.bell + (n? '<span class="nbadge">'+n+'</span>': '');
 }
 /* v7.0: new-registration notifications (his ask, 2026-11-13).
@@ -11120,8 +11164,8 @@ const LS_KNOWN = 'zukan.knownIds';
 const LS_REGNOTIFS = 'zukan.regNotifs';
 function regNotifsLoad(){ try{ const d = JSON.parse(storeGet(LS_REGNOTIFS)||'[]'); return Array.isArray(d)? d: []; }catch(e){ return []; } }
 function regNotifsSave(a){ try{ storeSet(LS_REGNOTIFS, JSON.stringify(a.slice(0, 60))); }catch(e){} }
-function regUnseenCount(){ return regNotifsLoad().filter(n=>!n.seen).length; }
-function regMarkSeen(){ const a = regNotifsLoad(); let ch = false; a.forEach(n=>{ if(!n.seen){ n.seen = true; ch = true; } }); if(ch) regNotifsSave(a); }
+function regUnseenCount(k){ return regNotifsLoad().filter(n=>!n.seen && n.dataset === (k || DS)).length; }
+function regMarkSeen(){ const a = regNotifsLoad(); let ch = false; a.forEach(n=>{ if(!n.seen && n.dataset === DS){ n.seen = true; ch = true; } }); if(ch) regNotifsSave(a); }
 let knownInitPromise = null;
 function ensureKnownIds(){
   if(storeGet(LS_KNOWN)) return Promise.resolve(true);
@@ -11209,10 +11253,9 @@ let notifNewSet = null;
 function computeNotifNewSet(){
   const s = new Set();
   try{
-    const done = reqDoneItems();
-    const un = Math.max(0, done.length - reqSeenCount());
-    done.slice(0, un).forEach(r=> s.add('req:' + r.id));
-    regNotifsLoad().forEach(n=>{ if(!n.seen) s.add('reg:' + n.id); });
+    const seen = new Set(reqSeenIdsLoad()[DS] || []);
+    reqDoneForDS(DS).forEach(r=>{ if(!seen.has(r.id)) s.add('req:' + r.id); });
+    regNotifsLoad().forEach(n=>{ if(!n.seen && n.dataset === DS) s.add('reg:' + n.id); });
   }catch(e){}
   return s;
 }
@@ -11258,7 +11301,7 @@ function reqNotifJump(id){
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
   if(!notifNewSet) notifNewSet = computeNotifNewSet();
-  const done = reqDoneItems();
+  const done = reqDoneForDS(DS);
   const doneRows = done.map(r => {
     const resolved = reqResolvedName(r);
     const title = r.status==='declined'? esc(r.name)+' は見送りになりました'
@@ -11275,25 +11318,20 @@ function renderRequestNotifs(targetId){
       (isNew? '<span class="newtag">NEW</span>': '') +
       (tap? '<span class="upgo">›</span>': '') + '</div>' };
   });
-  /* v7.0: registration detections (see detectNewPeople) ride the
-     same panel. v13.0 (his ask): the panel is SECTIONED — new
-     artists, new designers, then request results — instead of
-     one time-merged stream, so which book a registration landed
-     in is visible at a glance. Jumps and NEW tags unchanged. */
-  const regRows = regNotifsLoad().map(n => {
+  /* v7.0: registration detections (see detectNewPeople) ride
+     the same panel. v13.1: only the current book's notes are
+     mapped in (the filter above), matching the per-book badge. */
+  const regRows = regNotifsLoad().filter(n => n.dataset === DS).map(n => {
     const isNew = notifNewSet.has('reg:' + n.id);
     if(n.summary) return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow'+(isNew?' hasnew':'')+'"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
     return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div>' };
   });
-  const byT = (a, b)=> b.t.localeCompare(a.t);
-  const secs = [];
-  const regA = regRows.filter(x=>x.ds !== 'designers').sort(byT);
-  const regD = regRows.filter(x=>x.ds === 'designers').sort(byT);
-  if(regA.length) secs.push(['新しい作家', regA]);
-  if(regD.length) secs.push(['新しいデザイナー', regD]);
-  if(doneRows.length) secs.push(['リクエストの結果', doneRows.slice().sort(byT)]);
-  if(!secs.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
-  else el.innerHTML = secs.map(s=> '<div class="notifsec">'+s[0]+'</div>' + s[1].map(x=>x.html).join('')).join('');
+  /* v13.1: one chronological stream again, but only THIS
+     book's rows reach it (the v13.0 sections mixed both books
+     into one panel — not what he meant by 分ける). */
+  const all = doneRows.concat(regRows).sort((a, b)=> b.t.localeCompare(a.t));
+  if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
+  else el.innerHTML = all.map(x=>x.html).join('');
   /* v2.95: he is looking at them — mark seen, badge clears */
   reqMarkSeen(); regMarkSeen(); refreshReqNotifBtn();
   /* refresh the requests file in the background; re-render on arrival */
@@ -13366,7 +13404,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '13.0';
+const APP_VERSION = '13.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
