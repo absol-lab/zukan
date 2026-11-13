@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.5">
+<meta name="app-version" content="13.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -428,6 +428,9 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newssec{margin-top:30px;}
 /* v2.78: update history */
 .uprow{padding:13px 2px 12px; border-bottom:1px solid var(--line);}
+/* v13.0: notification panel section headings */
+.notifsec{font-size:12.5px; letter-spacing:.14em; color:var(--muted); font-weight:700; font-family:var(--sans); margin:18px 2px 2px;}
+.notifsec:first-child{margin-top:2px;}
 /* v4.9: completed request notifications jump to the person's page */
 .uprow.tap{cursor:pointer; position:relative; padding-right:24px;}
 .uprow .upgo{position:absolute; right:2px; top:15px; color:var(--muted); font-size:17px; line-height:1;}
@@ -11273,16 +11276,24 @@ function renderRequestNotifs(targetId){
       (tap? '<span class="upgo">›</span>': '') + '</div>' };
   });
   /* v7.0: registration detections (see detectNewPeople) ride the
-     same panel, merged by time. */
+     same panel. v13.0 (his ask): the panel is SECTIONED — new
+     artists, new designers, then request results — instead of
+     one time-merged stream, so which book a registration landed
+     in is visible at a glance. Jumps and NEW tags unchanged. */
   const regRows = regNotifsLoad().map(n => {
     const isNew = notifNewSet.has('reg:' + n.id);
-    if(n.summary) return { t: String(n.at||''), html: '<div class="uprow'+(isNew?' hasnew':'')+'"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
-    const label = n.dataset==='designers'? 'デザイナー': '作家';
-    return { t: String(n.at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+label+' ・ '+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div>' };
+    if(n.summary) return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow'+(isNew?' hasnew':'')+'"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
+    return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div>' };
   });
-  const all = doneRows.concat(regRows).sort((a, b)=> b.t.localeCompare(a.t));
-  if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
-  else el.innerHTML = all.map(x=>x.html).join('');
+  const byT = (a, b)=> b.t.localeCompare(a.t);
+  const secs = [];
+  const regA = regRows.filter(x=>x.ds !== 'designers').sort(byT);
+  const regD = regRows.filter(x=>x.ds === 'designers').sort(byT);
+  if(regA.length) secs.push(['新しい作家', regA]);
+  if(regD.length) secs.push(['新しいデザイナー', regD]);
+  if(doneRows.length) secs.push(['リクエストの結果', doneRows.slice().sort(byT)]);
+  if(!secs.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
+  else el.innerHTML = secs.map(s=> '<div class="notifsec">'+s[0]+'</div>' + s[1].map(x=>x.html).join('')).join('');
   /* v2.95: he is looking at them — mark seen, badge clears */
   reqMarkSeen(); regMarkSeen(); refreshReqNotifBtn();
   /* refresh the requests file in the background; re-render on arrival */
@@ -13355,7 +13366,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.5';
+const APP_VERSION = '13.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
