@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="13.3">
+<meta name="app-version" content="14.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12296,8 +12296,22 @@ function mergeDataInto(local, incoming){
     if(ix<0){ local.artists.push(ia); return; }
     const la = local.artists[ix];
     const merged = Object.assign({}, la);
+    /* v14.0: scalar fields — the incoming side fills whatever
+       the local record lacks, and where both sides hold a
+       value the NEWER record (by updated_at, the same
+       authority the works order uses since v2.54) wins. The
+       old incoming-always-wins rule was masked by the delta
+       path; with puts re-based on a full download it would
+       silently overwrite a device edit (the editor and the
+       thumbnail pin both stamp updated_at) with the older
+       server copy before upload. */
+    /* strictly newer: at equal stamps the local side wins a
+       conflict — same-stamp differing content means an edit
+       that did not stamp, and the device's live record is the
+       safer holder (server writers stamp their changes). */
+    const scalarFromRemote = (ia.updated_at||'') > (la.updated_at||'');
     ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','layer','updated_at'].forEach(k=>{
-      if(ia[k]) merged[k] = ia[k];
+      if(ia[k] && (!la[k] || scalarFromRemote)) merged[k] = ia[k];
     });
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
     /* v2.65: books are curated wholesale on the Muse side — a
@@ -12808,6 +12822,29 @@ function syncHashOfStr(s){
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return s.length + ':' + (h2 >>> 0).toString(16) + (h1 >>> 0).toString(16);
 }
+/* ---------- v14.0: the no-rollback write rule ----------
+   The 2026-11-13 16:15 incident: a device holding a stale
+   local base pinned one thumbnail; the sync took the delta
+   path, and because the delta did not carry every server-side
+   addition (records whose updated_at did not beat the device
+   watermark never arrive via getSince), the put that followed
+   uploaded local+delta and erased 71 works the server side
+   had just restored. Two structural rules now govern every
+   upload, here and in the token path below:
+   1. A put is ONLY ever built on a full fresh download of
+      the server's current file — local edits are merged onto
+      that, never onto a local or delta base.
+   2. A totals guard vetoes any payload holding fewer people,
+      works or exhibitions than that download. */
+function dataTotals(d){
+  let w = 0;
+  ((d && d.artists) || []).forEach(a=>{ w += ((a && a.works) || []).length; });
+  return { people: ((d && d.artists) || []).length, works: w, ex: ((d && d.exhibitions) || []).length };
+}
+function syncTotalsOk(payload, remote){
+  const p = dataTotals(payload), r = dataTotals(remote);
+  return p.people >= r.people && p.works >= r.works && p.ex >= r.ex;
+}
 function syncMetaGet(prefix){ try{ const m = JSON.parse(storeGet(prefix+'syncMeta')||'null'); return (m && typeof m === 'object')? m: null; }catch(e){ return null; } }
 function syncMetaSet(prefix, data, stamp){
   try{ storeSet(prefix+'syncMeta', JSON.stringify({ stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) })); }catch(e){}
@@ -12830,8 +12867,12 @@ async function syncDatasetRelay(kind, data){
     return data;
   }
   let merged = null, remoteFull = null;
-  /* C: delta first when we hold a watermark */
-  if(stamp !== null && meta && meta.maxUpd > 0){
+  /* C: the delta may refresh the local VIEW only while the
+     local side is clean — a clean side never puts, so a
+     partial delta can never become an upload base (v14.0).
+     A dirty side goes straight to the full download and
+     re-bases its edits onto the server's current file. */
+  if(localClean && stamp !== null && meta && meta.maxUpd > 0){
     try{
       const j = await relayCall('getSince', cfg.dataFile, undefined, { since: meta.maxUpd });
       if(j && typeof j.content === 'string'){
@@ -12845,16 +12886,18 @@ async function syncDatasetRelay(kind, data){
   }
   if(!merged){
     const j = await relayCall('get', cfg.dataFile);
-    if(!j || typeof j.content !== 'string') throw new Error('中継からデータを取得できませんでした');
+    if(!j || typeof j.content !== 'string') throw new Error('中継からデータを得られませんでした');
     remoteFull = normalizeFor(kind, JSON.parse(j.content));
     merged = mergeDataInto(data, remoteFull);
   }
-  /* A1: push only what the server lacks — with a full download
-     the comparison is exact; on the delta path the local
-     cleanliness flag is the evidence */
-  const needPut = remoteFull ? (JSON.stringify(merged) !== JSON.stringify(remoteFull)) : !localClean;
+  /* A1: push only what the server lacks. A put can only be
+     reached with a full download in hand (v14.0 rule 1). */
+  const needPut = remoteFull ? (JSON.stringify(merged) !== JSON.stringify(remoteFull)) : false;
   let stampAfter = stamp;
   if(needPut){
+    /* v14.0 rule 2: the totals guard — a payload smaller
+       than the server's current file is never uploaded. */
+    if(!syncTotalsOk(merged, remoteFull)) throw new Error('送信データがサーバの現在より少ないため、巻き戻し防止でアップロードを中止しました');
     await relayCall('put', cfg.dataFile, JSON.stringify(merged));
     /* our own put moved the stamp — re-read it, so the next
        sync can take the B shortcut instead of re-downloading
@@ -12895,17 +12938,20 @@ async function syncDatasetOnce(kind, reason){
       if(created && created.id) storeSet(prefix+'driveFileId', created.id);
     } else {
       storeSet(prefix+'driveFileId', file.id);
-      let remoteStr = null;
+      let remoteStr = null, remoteNorm = null;
       if(reason!=='wipe'){
         const res = await driveReq(tok, '/files/'+encodeURIComponent(file.id)+'?alt=media', null, 60000);
         if(!res.ok) throw new Error('download HTTP '+res.status);
         const remote = normalizeFor(kind, JSON.parse(await res.text()));
         remoteStr = JSON.stringify(remote);
+        remoteNorm = remote;
         data = mergeDataInto(data, remote);
       }
       /* v12.0 (A1): no put-back when the merge changed nothing
          relative to what the server already has */
       if(reason==='wipe' || !remoteStr || JSON.stringify(data) !== remoteStr){
+        /* v14.0 rule 2 (token path): the same totals guard */
+        if(remoteNorm && !syncTotalsOk(data, remoteNorm)) throw new Error('送信データがサーバの現在より少ないため、巻き戻し防止でアップロードを中止しました');
         await uploadDataUpdateFor(tok, file.id, data);
       }
     }
@@ -13443,7 +13489,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '13.3';
+const APP_VERSION = '14.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -13489,7 +13535,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 19;
+const DATA_PACK = 20;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
