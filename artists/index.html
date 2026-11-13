@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.5">
+<meta name="app-version" content="21.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -539,6 +539,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .phouse{font-size:12.5px; color:var(--muted); margin-top:2px;}
 .pricerow .pprice{font-size:16px; font-weight:800; margin-top:3px;}
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.pbuyer{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.pbuyer b{color:var(--text); font-weight:600;}
 .bizwrap{padding:6px 2px 90px}
 .bpchart{border:1px solid var(--line); border-radius:12px; padding:8px 6px 2px; background:var(--card); margin:0 0 8px}
 .bpdetail{display:flex; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card2); margin-top:10px}
@@ -8394,6 +8396,11 @@ price: isFinite(pr)? pr: null,
 currency: String(p.currency||'').toUpperCase(),
 source: String(p.source||''),
 note: String(p.note||''),
+/* v21.6: buyer — who bought the work, where publicly known
+   (data-side collected with sources; most buyers stay
+   anonymous, so the field is simply absent for most records). */
+buyer: String(p.buyer||''),
+buyer_source: String(p.buyer_source||''),
 /* img: {url} is the contract shape (same as works/books);
    a bare string URL is also accepted so staging notation
    variance never drops a record. Missing img is fine — the
@@ -9264,6 +9271,7 @@ function detailScatterDetailHTML(){
     + '<div class="phouse">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div>'
     + '<div class="pprice">' + esc(bpFmtPrice(p)) + '</div>'
     + (p.currency && p.currency !== 'JPY' && j != null ? '<div class="pjpy">≈ ' + esc(fmtJPY(j)) + '（概算）</div>' : '')
+    + (p.buyer ? '<div class="pbuyer">買い手：<b>' + esc(p.buyer) + '</b></div>' : '')
     + '</div></div>';
 }
 function detailScatterPick(i){
@@ -10452,6 +10460,7 @@ pricesHTML += pricesDesc.map((p, pi)=> '<div class="pricerow">'+
 '<div class="pprice">'+esc(fmtPrice(p))+'</div>'+
 (p.currency && p.currency !== 'JPY' && jpyOf(p) != null? '<div class="pjpy">≈ '+esc(fmtJPY(jpyOf(p)))+'（概算）</div>': '')+
 (p.note? '<div class="pnote">'+esc(p.note)+'</div>': '')+
+(p.buyer? '<div class="pbuyer">買い手：<b>'+esc(p.buyer)+'</b></div>': '')+
 (p.source? '<div style="margin-top:4px"><a href="'+escA(p.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')+
 '</div></div>').join('');
 const usedFx = [...new Set(pricesArr.map(p=>p.currency).filter(c=>c && c !== 'JPY' && FX_JPY[c]))];
@@ -14037,7 +14046,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.5';
+const APP_VERSION = '21.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
