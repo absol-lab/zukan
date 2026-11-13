@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="16.0">
+<meta name="app-version" content="16.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11054,7 +11054,7 @@ async function fetchChangelog(){
     if(!changelogData) changelogData = changelogCacheLoad();
   }
   changelogFetching = false;
-  if(settingsPanel === 'updates') renderUpdateList();
+  if(settingsPanel === 'reqnotif' && bellTab === 'history') renderUpdateList();
 }
 function notifWhen(iso){
   const dt = iso? new Date(iso): null;
@@ -11176,7 +11176,7 @@ function syncVFavBtn(){
   b.classList.toggle('on', on); b.textContent = on? '★': '☆';
 }
 function renderUpdateList(){
-  const el = $('notifbody'); if(!el) return;
+  const el = $('updatelist'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
   if(!d || !d.entries.length){ el.innerHTML = '<div class="empty">更新履歴はまだ読み込めていません</div>'; return; }
   el.innerHTML = d.entries.map(e => {
@@ -11386,9 +11386,14 @@ function toggleNotifDetail(key){
   notifOpen[key] = !notifOpen[key];
   renderRequestNotifs('reqnotiflist');
 }
+/* v16.1: the bell panel also carries the update history
+   (his ask — the history no longer lives in the settings list). */
+let bellTab = 'notifs';
+function setBellTab(t){ bellTab = t; renderSettingsPanel(); }
 function openRequestNotifs(){
   notifNewSet = computeNotifNewSet();
   notifOpen = {};
+  bellTab = 'notifs';
   reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
   openSettingsPanel('reqnotif');
@@ -13616,7 +13621,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '16.0';
+const APP_VERSION = '16.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -13902,7 +13907,6 @@ function renderSettingsMain(){
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
       srow(SICON.pin, '位置情報', geoEnabled()? 'オン': 'オフ', "openSettingsPanel('geo')")+
-      srow(SICON.bell, '更新履歴', 'v'+APP_VERSION, "openSettingsPanel('updates')")+
       srow(SICON.cloud, '中継（Apps Script）', relayReady()? '設定済み': '未設定', "openSettingsPanel('relay')")+
       srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>'+
@@ -14007,7 +14011,7 @@ function renderSettingsPanel(){
   const p = $('settingspanel'); if(!p) return;
   p.style.display = 'block';
   /* v2.93: the pill hides while a notification screen is open */
-  document.body.classList.toggle('notifopen', settingsPanel==='updates' || settingsPanel==='reqnotif');
+  document.body.classList.toggle('notifopen', settingsPanel==='reqnotif');
   if(settingsPanel==='theme'){
     p.innerHTML = panelShell('テーマカラー', '<div class="setbox"><div class="swatches" id="themeswatches"></div></div>');
     $('themeswatches').innerHTML = THEMES.map(t=>'<button class="swatch'+(ZSET.theme===t.id?' on':'')+'" onclick="setTheme(\''+t.id+'\')"><div class="chip" style="background:'+t.chip+'"></div>'+t.name+'</button>').join('');
@@ -14065,14 +14069,15 @@ function renderSettingsPanel(){
       (geoEnabled()? '<button class="blockbtn" onclick="setGeoSetting(false)">位置情報をオフにする</button>' : '<button class="blockbtn" onclick="setGeoSetting(true)">位置情報をオンにする</button>') +
       '</div>');
   }
-  else if(settingsPanel==='updates'){
-    p.innerHTML = panelShell('更新履歴', '<div id="notifbody"></div>');
-    renderUpdateList();
-    fetchChangelog();
-  }
   else if(settingsPanel==='reqnotif'){
-    p.innerHTML = panelShell('リクエスト回収の通知', '<div id="reqnotiflist"></div>');
-    renderRequestNotifs('reqnotiflist');
+    p.innerHTML = panelShell('通知',
+      '<div class="seg" role="group" aria-label="通知と更新履歴" style="margin-bottom:12px">'
+      + '<button class="'+(bellTab==='notifs'? 'on': '')+'" onclick="setBellTab(\'notifs\')">通知</button>'
+      + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴</button></div>'
+      + '<div id="reqnotiflist"'+(bellTab==='notifs'? '': ' style="display:none"')+'></div>'
+      + '<div id="updatelist"'+(bellTab==='history'? '': ' style="display:none"')+'></div>');
+    if(bellTab==='notifs') renderRequestNotifs('reqnotiflist');
+    else { renderUpdateList(); fetchChangelog(); }
   }
   else if(settingsPanel==='request'){
     p.innerHTML = panelShell('登録依頼',
