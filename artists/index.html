@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.1">
+<meta name="app-version" content="12.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -571,6 +571,13 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .mgrid.wide{grid-template-columns:1fr; gap:18px;}
 .mgrid.wide .mtile .imgholder{aspect-ratio:3/2;}
 .mgrid.wide .mcap{font-size:13.5px;}
+/* v12.2: compact (3-up) and mini (4-up) shelves, mirroring
+   the artist works grid's geometry. */
+.mgrid.compact{grid-template-columns:repeat(3, 1fr); gap:10px 7px;}
+.mgrid.compact .mcap{font-size:12px;}
+.mgrid.mini{grid-template-columns:repeat(4, 1fr); gap:8px 6px;}
+.mgrid.mini .mcap{font-size:10.5px; line-height:1.35;}
+.mgrid.mini .mart{font-size:11px;}
 .mhead-r{display:inline-flex; align-items:center; gap:10px;}
 .mtile{position:relative; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
 .mtile .imgholder{display:block; aspect-ratio:4/3;}
@@ -8351,8 +8358,11 @@ try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
 function setWorkModeCore(m){ workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
 function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
 /* v11.0: the museum shelf shares the works display mode —
-   'wide' there means one large tile per row. */
-function setMuseumWide(w){ setWorkModeCore(w? 'wide': 'def'); renderMuseum(); }
+   'wide' there means one large tile per row.
+   v12.2: all four modes on the shelf, same control as the
+   artist works grid. */
+function setMuseumMode(m){ setWorkModeCore(m); renderMuseum(); }
+function setMuseumWide(w){ setMuseumMode(w? 'wide': 'def'); }
 function workKeysOf(x){ return [ (x.img && x.img.fileId), (x.img && x.img.url), x.file, x.caption? ('cap:' + x.caption): '' ].filter(Boolean); }
 
 /* ---------- notes splitting (来歴 / 技法 / その他) ---------- */
@@ -9885,7 +9895,7 @@ worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</
 '</span><span class="seg mini" role="group" aria-label="表示">' +
 '<button class="'+(workMode==='wide'?'on':'')+'" onclick="setWorkMode(\'wide\')">ワイド</button>' +
 '<button class="'+(workMode==='def'?'on':'')+'" onclick="setWorkMode(\'def\')">標準</button>' +
-'<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')">小</button>' +
+'<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')">コンパクト</button>' +
 '<button class="'+(workMode==='mini'?'on':'')+'" onclick="setWorkMode(\'mini\')">ミニ</button>' +
 '</span></div>' + worksHTML;
 /* v2.65: books tab — cover, title, publisher, year, price WITH
@@ -10781,7 +10791,8 @@ let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
 const shelfWide = (workMode==='wide');
-html += '<h2 class="sechead"><span>収蔵作品</span><span class="mhead-r"><span class="cnt">'+held.length+'点</span><span class="seg mini" role="group" aria-label="表示"><button class="'+(shelfWide?'':'on')+'" onclick="setMuseumWide(false)">標準</button><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumWide(true)">ワイド</button></span></span></h2><div class="mgrid'+(shelfWide?' wide':'')+'">'
+const shelfModeCls = shelfWide? ' wide': (workMode==='compact' || workMode==='mini')? ' '+workMode: '';
+html += '<h2 class="sechead"><span>収蔵作品</span><span class="mhead-r"><span class="cnt">'+held.length+'点</span><span class="seg mini" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')">ワイド</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')">標準</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')">コンパクト</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')">ミニ</button></span></span></h2><div class="mgrid'+shelfModeCls+'">'
 + held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
 + '</div>';
@@ -13270,7 +13281,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.1';
+const APP_VERSION = '12.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
