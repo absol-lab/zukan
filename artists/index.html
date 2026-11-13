@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="10.0">
+<meta name="app-version" content="10.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -364,6 +364,7 @@ h3.subhead:first-child{margin-top:8px;}
 /* v2.82: the zoom stage — pinch/pan transforms apply here, inside
    the frame, so the viewer chrome never moves. */
 #viewer .vstage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; will-change:transform;}
+#viewer .vstage.vsnap{transition:transform .25s cubic-bezier(.32,.72,.24,1);}
 #viewer .vimg img{max-width:100%; max-height:100%; object-fit:contain;}
 #viewer .vimg img.vup{position:absolute; inset:0; margin:auto; opacity:0; transition:opacity .18s ease;}
 #viewer .vimg img.vup.on{opacity:1;}
@@ -10207,7 +10208,26 @@ if(top){ top.src = p.src; vDeepCheck(); }
 function vBoxRect(){ const box = $('vimg'); return box? box.getBoundingClientRect(): null; }
 function vApplyZoom(){ const st = $('vstage'); if(st) st.style.transform = 'translate3d('+vZoom.x+'px, '+vZoom.y+'px, 0) scale('+vZoom.s+')'; }
 function vResetZoom(){ vZoom.s = 1; vZoom.x = 0; vZoom.y = 0; const st = $('vstage'); if(st){ st.style.transformOrigin = '50% 50%'; st.style.transform = ''; } }
+/* v10.1: the animated settle into the fit frame (the X viewer's
+   すっと収まる feel): state goes home at once, the stage glides
+   there under a short transition that only exists for this
+   programmatic move — a fresh touch removes the class first,
+   so a gesture never inherits the lag. */
+function vSnapHome(){
+const st = $('vstage'); if(!st) return;
+vZoom.s = 1; vZoom.x = 0; vZoom.y = 0;
+st.classList.add('vsnap');
+vApplyZoom();
+const done = ()=>{ st.classList.remove('vsnap'); st.removeEventListener('transitionend', done); };
+st.addEventListener('transitionend', done);
+setTimeout(done, 340);
+}
 function vClampPan(){
+  /* v10.1: at the fit scale there is nothing to pan — the stage
+     is centred by layout, so any offset is wrong by definition.
+     (The shrink-side bug: residual offsets survived at s = 1
+     and the painting rested off-frame.) */
+  if(vZoom.s <= 1){ vZoom.x = 0; vZoom.y = 0; return; }
   const st = viewerStage(); if(!st) return;
   /* measure the FIRST image in the stage (the plate layer):
      the upgrade layer's layout box is not meaningful until it
@@ -10227,6 +10247,13 @@ function vClampPan(){
   const box = $('vimg'); if(!box) return;
   let g = null; /* the live gesture baseline */
   let tap0 = 0;
+  /* v10.1: whether THIS touch sequence ever had two fingers.
+     Real pinches almost always end through a one-finger tail
+     (one finger lifts a hair earlier, the baseline re-forms as
+     n=1) — the v9.1 snap check keyed on the FINAL baseline
+     being n=2, so it never fired and the painting rested at
+     ~1.1x, off-frame. The verdict must key on the sequence. */
+  let seqHad2 = false;
   const tdist = (a, b)=> Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
   const tmid = (a, b)=> ({ x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 });
   /* Derive the content anchor (unscaled, stage-centre-relative)
@@ -10246,15 +10273,18 @@ function vClampPan(){
   }
   function baseline(e){
     if(e.touches.length === 2){
+      seqHad2 = true;
       const m = tmid(e.touches[0], e.touches[1]);
       g = { n: 2, d: Math.max(1, tdist(e.touches[0], e.touches[1])), s: vZoom.s, A: anchorUnder(m), sx: m.x, sy: m.y, moved: false };
     } else if(e.touches.length === 1){
+      if(!g) seqHad2 = false; /* a fresh sequence starts un-pinched */
       const t = e.touches[0];
       g = { n: 1, A: anchorUnder({ x: t.clientX, y: t.clientY }), sx: t.clientX, sy: t.clientY, moved: false };
     } else g = null;
   }
   box.addEventListener('touchstart', e=>{
     if(!$('viewer').classList.contains('open')) return;
+    const st = $('vstage'); if(st) st.classList.remove('vsnap');
     vTouchCount = e.touches.length;
     baseline(e);
   }, { passive:true });
@@ -10264,9 +10294,18 @@ function vClampPan(){
       e.preventDefault();
       const m = tmid(e.touches[0], e.touches[1]);
       if(Math.abs(m.x - g.sx) + Math.abs(m.y - g.sy) > 6) g.moved = true;
-      vZoom.s = Math.min(vMaxScale(), Math.max(1, g.s * tdist(e.touches[0], e.touches[1]) / g.d));
+      const rawS = g.s * tdist(e.touches[0], e.touches[1]) / g.d;
+      /* v10.1 (reference: the X photo viewer, his pick): the
+         shrink may run BELOW the fit scale, down to 0.6,
+         following the fingers; vClampPan centres the stage
+         while s <= 1, so the painting shrinks around the
+         middle like the reference. The exact fit frame is
+         restored by the animated snap on release (vSnapHome),
+         not by a mid-gesture clamp. */
+      vZoom.s = Math.min(vMaxScale(), Math.max(0.6, rawS));
       applyAnchor(g.A, m);
-      vClampPan(); vApplyZoom();
+      vClampPan();
+      vApplyZoom();
       vDeepSchedule();
     } else if(g.n === 1 && e.touches.length === 1 && vZoom.s > 1){
       e.preventDefault();
@@ -10282,8 +10321,14 @@ function vClampPan(){
     const was = g; g = null;
     vFlushPendingSwap();
     if(!was) return;
-    if(was.n === 2){
-      if(vZoom.s < 1.02) vResetZoom(); else vDeepCheck();
+    if(was.n === 2 || seqHad2){
+      /* v10.1: a sequence that pinched ends here even when its
+         final baseline was the one-finger tail. Near the floor
+         (<= 1.2x) the painting snaps to the exact fit frame —
+         his ask: shrinking home lands in the original frame,
+         not near it. */
+      seqHad2 = false;
+      if(vZoom.s <= 1.2) vSnapHome(); else vDeepCheck();
       return;
     }
     const t = e.changedTouches[0];
@@ -10292,7 +10337,7 @@ function vClampPan(){
       const now = Date.now();
       if(now - tap0 < 320){
         tap0 = 0;
-        if(vZoom.s > 1) vResetZoom();
+        if(vZoom.s > 1) vSnapHome();
         else {
           const P = { x: t.clientX, y: t.clientY };
           const A = anchorUnder(P);
@@ -10307,7 +10352,7 @@ function vClampPan(){
     if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
     if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
   });
-  box.addEventListener('touchcancel', ()=>{ vTouchCount = 0; g = null; vFlushPendingSwap(); });
+  box.addEventListener('touchcancel', ()=>{ vTouchCount = 0; g = null; seqHad2 = false; vFlushPendingSwap(); });
   box.addEventListener('gesturestart', e=>{ e.preventDefault(); });
 })();
 
@@ -13053,7 +13098,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '10.0';
+const APP_VERSION = '10.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
