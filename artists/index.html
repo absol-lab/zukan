@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="19.5">
+<meta name="app-version" content="19.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -106,18 +106,24 @@ h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spac
 .topcount{font-size:13px; color:var(--muted);}
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
-#navEx, #navTimeline, #navReqNotif{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
+#navEx, #navTimeline, #navReqNotif, #navBiz{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
 /* v2.93: the request-notifications door is a bell-mark button —
    icon only, with a small count badge (his call: the labelled
    button was too big). */
 #navReqNotif{position:relative; display:inline-flex; align-items:center; justify-content:center; width:40px; height:33px; padding:0;}
 #navReqNotif svg{width:17px; height:17px;}
+/* v19.6: the biz entry missed the pill-button enumeration and
+   every svg size rule — on iOS its viewBox-only svg collapsed
+   to zero width and the button vanished between the bell and
+   年表 (his screenshot, 2026-11-13 23:49). Same box as the bell. */
+#navBiz{position:relative; display:inline-flex; align-items:center; justify-content:center; width:40px; height:33px; padding:0;}
+#navBiz svg{width:17px; height:17px;}
 #navReqNotif .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
 /* v2.93: on the notification screens (update history / request
    notifications) the bottom pill is hidden — opacity only, so the
    pill's rect never moves and its self-heal guard stays calm. */
 body.notifopen #pillnav{opacity:0; pointer-events:none;}
-#navEx.on, #navTimeline.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
+#navEx.on, #navTimeline.on, #navBiz.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 #syncbar{display:block; width:100%; background:none; border:none; text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em; font-family:inherit; cursor:pointer;}
 #syncbar .err{color:var(--danger);}
 #syncbar .sbhint{color:var(--accent);}
@@ -13856,7 +13862,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '19.5';
+const APP_VERSION = '19.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
