@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="10.1">
+<meta name="app-version" content="10.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -409,6 +409,14 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 /* v4.9: completed request notifications jump to the person's page */
 .uprow.tap{cursor:pointer; position:relative; padding-right:24px;}
 .uprow .upgo{position:absolute; right:2px; top:15px; color:var(--muted); font-size:17px; line-height:1;}
+/* v10.2: NEW tag on unseen notification rows (his ask — tell
+   at a glance which entries the bell badge is counting). The
+   row becomes the positioning context; tagged rows gain right
+   padding so titles never run under the tag. */
+.uprow.hasnew{position:relative; padding-right:64px;}
+.uprow.tap.hasnew{padding-right:86px;}
+.newtag{position:absolute; top:13px; right:2px; font-size:10px; font-weight:700; letter-spacing:.08em; color:#fff; background:var(--accent); border-radius:999px; padding:2px 7px; line-height:1.5;}
+.uprow.tap .newtag{right:24px;}
 .uphead{display:flex; align-items:baseline; gap:9px;}
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
@@ -11063,7 +11071,26 @@ function regNotifJump(nid){
   toast('この端末にはまだ届いていません');
 }
 let reqNotifReturn = null;
+/* v10.2: the set of notification ids that are NEW for this
+   panel opening — exactly what the bell badge counts (the
+   newest (done − seen) request completions, plus registration
+   notes with seen=false). Captured at open time, BEFORE the
+   render's mark-seen runs, and kept for the whole opening so
+   the panel's background re-render cannot strip the tags
+   while he is still looking at them. */
+let notifNewSet = null;
+function computeNotifNewSet(){
+  const s = new Set();
+  try{
+    const done = reqDoneItems();
+    const un = Math.max(0, done.length - reqSeenCount());
+    done.slice(0, un).forEach(r=> s.add('req:' + r.id));
+    regNotifsLoad().forEach(n=>{ if(!n.seen) s.add('reg:' + n.id); });
+  }catch(e){}
+  return s;
+}
 function openRequestNotifs(){
+  notifNewSet = computeNotifNewSet();
   reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
   openSettingsPanel('reqnotif');
@@ -11103,6 +11130,7 @@ function reqNotifJump(id){
 }
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
+  if(!notifNewSet) notifNewSet = computeNotifNewSet();
   const done = reqDoneItems();
   const doneRows = done.map(r => {
     const resolved = reqResolvedName(r);
@@ -11112,18 +11140,21 @@ function renderRequestNotifs(targetId){
       ? '<div class="upat" style="margin-top:2px;">リクエスト：「'+esc(r.name)+'」</div>' : '';
     const noteIsNameOnly = r.note && /として登録/.test(r.note) && reqResolvedName(r) !== r.name;
     const tap = r.status!=='declined';
-    return { t: String(r.resolved_at||''), html: '<div class="uprow'+(tap?' tap':'')+'"'+(tap?' onclick="reqNotifJump(\''+escA(r.id)+'\')"':'')+'><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
+    const isNew = notifNewSet.has('req:' + r.id);
+    return { t: String(r.resolved_at||''), html: '<div class="uprow'+(tap?' tap':'')+(isNew?' hasnew':'')+'"'+(tap?' onclick="reqNotifJump(\''+escA(r.id)+'\')"':'')+'><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+title+'</div>' +
       askedLine +
       '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>' +
       (r.note && !noteIsNameOnly? '<div style="font-size:13.5px; line-height:1.7; margin-top:3px;">'+esc(r.note)+'</div>': '') +
+      (isNew? '<span class="newtag">NEW</span>': '') +
       (tap? '<span class="upgo">›</span>': '') + '</div>' };
   });
   /* v7.0: registration detections (see detectNewPeople) ride the
      same panel, merged by time. */
   const regRows = regNotifsLoad().map(n => {
-    if(n.summary) return { t: String(n.at||''), html: '<div class="uprow"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div></div>' };
+    const isNew = notifNewSet.has('reg:' + n.id);
+    if(n.summary) return { t: String(n.at||''), html: '<div class="uprow'+(isNew?' hasnew':'')+'"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">ほか '+n.count+' 名が登録されました</div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
     const label = n.dataset==='designers'? 'デザイナー': '作家';
-    return { t: String(n.at||''), html: '<div class="uprow tap" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+label+' ・ '+esc(notifWhen(n.at))+'</div><span class="upgo">›</span></div>' };
+    return { t: String(n.at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div style="font-size:14.5px; font-weight:700; line-height:1.5;">'+esc(n.name)+' が登録されました</div><div class="upat" style="margin-top:2px;">'+label+' ・ '+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div>' };
   });
   const all = doneRows.concat(regRows).sort((a, b)=> b.t.localeCompare(a.t));
   if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
@@ -13098,7 +13129,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '10.1';
+const APP_VERSION = '10.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
