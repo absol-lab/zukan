@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="9.0">
+<meta name="app-version" content="9.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9899,9 +9899,11 @@ syncFavBtn();
 let viewerWorks = [], viewerIdx = 0;
 let viewerArtistId = null;
 let viewerAnim = null;
+let viewerGen = 0;
 function openViewer(ws, idx, artistId){
 viewerWorks = ws; viewerIdx = idx||0; viewerArtistId = (artistId!=null)? artistId: null;
 const vw = $('viewer');
+viewerGen++;
 vw.classList.add('open'); renderViewer();
 /* シートとして下からせり上がる */
 if(viewerAnim){ try{ viewerAnim.cancel(); }catch(e){} viewerAnim = null; }
@@ -9912,12 +9914,19 @@ try{ viewerAnim = vw.animate([{ transform:'translateY(100%)' },{ transform:'tran
 function closeViewer(){
 const vw = $('viewer');
 if(!vw.classList.contains('open')) return;
+/* v9.1: every closeViewer bumps the generation, and openViewer
+   captures it. A stale close (its slide-down finished late, or
+   its safety timer) must never strip .open from a viewer that
+   was re-opened meanwhile — that race left the viewer
+   displayed but not .open (touches ignored) when a photo was
+   re-opened quickly after closing. */
+const gen = ++viewerGen;
 if(viewerAnim){ try{ viewerAnim.cancel(); }catch(e){} viewerAnim = null; }
 let a = null;
 if(!reducedMotion()){
 try{ a = vw.animate([{ transform:'translateY(0%)' },{ transform:'translateY(100%)' }], { duration:250, easing:VT_EASE, fill:'both' }); }catch(e){}
 }
-const done = ()=>{ vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } };
+const done = ()=>{ if(gen !== viewerGen) return; vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } };
 if(a && a.finished){ a.finished.then(done).catch(done); setTimeout(done, 340); } else { done(); }
 }
 function viewerMove(d){
@@ -10085,13 +10094,16 @@ return st.querySelector('img.vup') || st.querySelector('img');
 }
 function vFitW(){
 const im = vDeepTopImg(); if(!im) return 0;
-const r = im.getBoundingClientRect();
-return r.width / Math.max(1, vZoom.s);
+return im.offsetWidth || 0;
 }
 function vMaxScale(){
+/* v9.1: he asked for more reach, knowing full well that past
+   the master it is interpolation ("もっと寄りたい"). The floor
+   rises to 8 and the ceiling to 24; between them the ceiling
+   still follows the real master width. */
 const im = vDeepTopImg(); const fit = vFitW();
-if(im && im.naturalWidth && fit > 0) return Math.max(4, Math.min(12, im.naturalWidth / fit));
-return 4;
+if(im && im.naturalWidth && fit > 0) return Math.max(8, Math.min(24, im.naturalWidth / fit));
+return 8;
 }
 let vDeepTimer = 0;
 function vDeepSchedule(){
@@ -10122,9 +10134,17 @@ if(probe.naturalWidth) vDeepCaps[url] = probe.naturalWidth;
 return;
 }
 vDeep.reqTier = next;
-if(top) top.src = probe.src;
 if(probe.naturalWidth < next){ vDeep.capped = true; vDeepCaps[url] = probe.naturalWidth; }
+if(vTouchCount > 0){
+/* v9.1: swapping the bitmap mid-pinch stalls frames on the
+   phone (the texture re-upload lands inside the gesture).
+   The fetch may run during the gesture; the SWAP waits for
+   the fingers to lift — vFlushPendingSwap applies it. */
+vPendingSwap = { url: url, src: probe.src, seq: seq };
+} else if(top){
+top.src = probe.src;
 vDeepCheck();
+}
 };
 probe.onerror = ()=>{ if(vDeep && vDeep.url === url){ vDeep.busy = false; vDeep.capped = true; } };
 probe.src = sizedThumbUrl(url, next);
@@ -10139,68 +10159,137 @@ probe.src = sizedThumbUrl(url, next);
    closing resets to 1x. At 1x the old swipes still hold (side =
    prev/next photo, down = close). */
 const vZoom = { s:1, x:0, y:0 };
-function vApplyZoom(){ const st = $('vstage'); if(st) st.style.transform = 'translate('+vZoom.x+'px, '+vZoom.y+'px) scale('+vZoom.s+')'; }
+/* v9.1: the zoom transform is anchored on the IMAGE, not on the
+   stage. The old scheme set transform-origin to a % of the
+   STAGE and added the raw midpoint travel to translate — but
+   the image sits contain-fit INSIDE the stage, so away from
+   the centre the fingers' point and the image's point parted
+   company: pinching near a corner scaled around the wrong
+   anchor and the clamp (a fraction of the box, regardless of
+   the image's real size) dragged the translation differently
+   per axis, so the picture lurched sideways while zooming
+   (his recording on 《星月夜》: the moon slides up-left, the
+   cypress crawls, the frame edges show on alternating sides).
+   Now: a content anchor point A (stage-centre-relative,
+   unscaled space) is held under the gesture point P:
+   translate = (P - C) - A*s. The anchor is recomputed from
+   the CURRENT transform whenever the finger count changes
+   (vAnchorFromTouch), so 1<->2 finger transitions never jump.
+   Pan clamp: the image's own scaled overflow past the stage
+   plus a margin — the same rule on both axes. */
+let vTouchCount = 0;
+let vPendingSwap = null;
+function vFlushPendingSwap(){
+if(!vPendingSwap) return;
+const p = vPendingSwap; vPendingSwap = null;
+if(p.seq !== viewerSeq || !vDeep || vDeep.url !== p.url) return;
+const top = vDeepTopImg();
+if(top){ top.src = p.src; vDeepCheck(); }
+}
+function vBoxRect(){ const box = $('vimg'); return box? box.getBoundingClientRect(): null; }
+function vApplyZoom(){ const st = $('vstage'); if(st) st.style.transform = 'translate3d('+vZoom.x+'px, '+vZoom.y+'px, 0) scale('+vZoom.s+')'; }
 function vResetZoom(){ vZoom.s = 1; vZoom.x = 0; vZoom.y = 0; const st = $('vstage'); if(st){ st.style.transformOrigin = '50% 50%'; st.style.transform = ''; } }
 function vClampPan(){
+  const st = viewerStage(); if(!st) return;
+  /* measure the FIRST image in the stage (the plate layer):
+     the upgrade layer's layout box is not meaningful until it
+     has loaded. Offset sizes are layout values — transforms
+     never touch them, so this is right even mid-gesture
+     before the new transform is applied. */
+  const im = st.querySelector('img'); if(!im) return;
+  const iw = im.offsetWidth, ih = im.offsetHeight; if(!iw) return;
+  const s = Math.max(1, vZoom.s);
   const box = $('vimg'); if(!box) return;
-  const r = box.getBoundingClientRect();
-  const mx = r.width * Math.max(0, vZoom.s - 1) * 0.75 + 60;
-  const my = r.height * Math.max(0, vZoom.s - 1) * 0.75 + 60;
+  const mx = Math.max(0, (iw * s - box.clientWidth) / 2) + 80;
+  const my = Math.max(0, (ih * s - box.clientHeight) / 2) + 80;
   vZoom.x = Math.max(-mx, Math.min(mx, vZoom.x));
   vZoom.y = Math.max(-my, Math.min(my, vZoom.y));
 }
 (function(){
   const box = $('vimg'); if(!box) return;
-  let pan0 = null, pinch0 = null, tap0 = 0;
+  let g = null; /* the live gesture baseline */
+  let tap0 = 0;
   const tdist = (a, b)=> Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
   const tmid = (a, b)=> ({ x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 });
-  const setOrigin = (pt)=>{ const st = $('vstage'); if(!st) return; const r = box.getBoundingClientRect(); st.style.transformOrigin = (((pt.x - r.left)/Math.max(1, r.width))*100)+'% '+(((pt.y - r.top)/Math.max(1, r.height))*100)+'%'; };
+  /* Derive the content anchor (unscaled, stage-centre-relative)
+     currently sitting under screen point P, from the CURRENT
+     transform — this is what makes finger-count changes and
+     off-centre pinches continuous instead of jumpy. */
+  function anchorUnder(P){
+    const r = vBoxRect(); if(!r) return { x:0, y:0 };
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    return { x: ((P.x - cx) - vZoom.x) / vZoom.s, y: ((P.y - cy) - vZoom.y) / vZoom.s };
+  }
+  function applyAnchor(A, P){
+    const r = vBoxRect(); if(!r) return;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    vZoom.x = (P.x - cx) - A.x * vZoom.s;
+    vZoom.y = (P.y - cy) - A.y * vZoom.s;
+  }
+  function baseline(e){
+    if(e.touches.length === 2){
+      const m = tmid(e.touches[0], e.touches[1]);
+      g = { n: 2, d: Math.max(1, tdist(e.touches[0], e.touches[1])), s: vZoom.s, A: anchorUnder(m), sx: m.x, sy: m.y, moved: false };
+    } else if(e.touches.length === 1){
+      const t = e.touches[0];
+      g = { n: 1, A: anchorUnder({ x: t.clientX, y: t.clientY }), sx: t.clientX, sy: t.clientY, moved: false };
+    } else g = null;
+  }
   box.addEventListener('touchstart', e=>{
     if(!$('viewer').classList.contains('open')) return;
-    if(e.touches.length === 1){ pan0 = { sx: e.touches[0].clientX, sy: e.touches[0].clientY, x: vZoom.x, y: vZoom.y }; pinch0 = null; }
-    else if(e.touches.length === 2){
-      const m = tmid(e.touches[0], e.touches[1]);
-      pinch0 = { d: Math.max(1, tdist(e.touches[0], e.touches[1])), s: vZoom.s, mx: m.x, my: m.y, x: vZoom.x, y: vZoom.y };
-      setOrigin(m);
-      pan0 = null;
-    }
+    vTouchCount = e.touches.length;
+    baseline(e);
   }, { passive:true });
   box.addEventListener('touchmove', e=>{
-    if(pinch0 && e.touches.length === 2){
+    if(!g) return;
+    if(g.n === 2 && e.touches.length === 2){
       e.preventDefault();
       const m = tmid(e.touches[0], e.touches[1]);
-      vZoom.s = Math.min(vMaxScale(), Math.max(1, pinch0.s * tdist(e.touches[0], e.touches[1]) / pinch0.d));
-      vZoom.x = pinch0.x + (m.x - pinch0.mx);
-      vZoom.y = pinch0.y + (m.y - pinch0.my);
+      if(Math.abs(m.x - g.sx) + Math.abs(m.y - g.sy) > 6) g.moved = true;
+      vZoom.s = Math.min(vMaxScale(), Math.max(1, g.s * tdist(e.touches[0], e.touches[1]) / g.d));
+      applyAnchor(g.A, m);
       vClampPan(); vApplyZoom();
       vDeepSchedule();
-    } else if(pan0 && e.touches.length === 1 && vZoom.s > 1){
+    } else if(g.n === 1 && e.touches.length === 1 && vZoom.s > 1){
       e.preventDefault();
-      vZoom.x = pan0.x + (e.touches[0].clientX - pan0.sx);
-      vZoom.y = pan0.y + (e.touches[0].clientY - pan0.sy);
+      const t = e.touches[0];
+      if(Math.abs(t.clientX - g.sx) + Math.abs(t.clientY - g.sy) > 6) g.moved = true;
+      applyAnchor(g.A, { x: t.clientX, y: t.clientY });
       vClampPan(); vApplyZoom();
     }
   }, { passive:false });
   box.addEventListener('touchend', e=>{
-    if(pinch0){ if(e.touches.length === 0){ pinch0 = null; if(vZoom.s < 1.02) vResetZoom(); else vDeepCheck(); } return; }
-    if(!pan0) return;
-    const dx = e.changedTouches[0].clientX - pan0.sx;
-    const dy = e.changedTouches[0].clientY - pan0.sy;
-    const wasZoom = vZoom.s > 1;
-    pan0 = null;
-    if(Math.abs(dx) < 10 && Math.abs(dy) < 10){
+    vTouchCount = e.touches.length;
+    if(e.touches.length > 0){ baseline(e); return; } /* a finger remains: re-baseline, no jump, no verdicts */
+    const was = g; g = null;
+    vFlushPendingSwap();
+    if(!was) return;
+    if(was.n === 2){
+      if(vZoom.s < 1.02) vResetZoom(); else vDeepCheck();
+      return;
+    }
+    const t = e.changedTouches[0];
+    const dx = t.clientX - was.sx, dy = t.clientY - was.sy;
+    if(!was.moved && Math.abs(dx) < 10 && Math.abs(dy) < 10){
       const now = Date.now();
       if(now - tap0 < 320){
         tap0 = 0;
-        if(wasZoom) vResetZoom();
-        else { setOrigin({ x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }); vZoom.s = Math.min(2.5, vMaxScale()); vZoom.x = 0; vZoom.y = 0; vApplyZoom(); vDeepCheck(); }
+        if(vZoom.s > 1) vResetZoom();
+        else {
+          const P = { x: t.clientX, y: t.clientY };
+          const A = anchorUnder(P);
+          vZoom.s = Math.min(2.5, vMaxScale());
+          applyAnchor(A, P);
+          vClampPan(); vApplyZoom(); vDeepCheck();
+        }
       } else tap0 = now;
       return;
     }
-    if(wasZoom) return; /* a pan is not a swipe */
+    if(vZoom.s > 1) return; /* a pan is not a swipe */
     if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
     if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
   });
+  box.addEventListener('touchcancel', ()=>{ vTouchCount = 0; g = null; vFlushPendingSwap(); });
   box.addEventListener('gesturestart', e=>{ e.preventDefault(); });
 })();
 
@@ -12813,7 +12902,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '9.0';
+const APP_VERSION = '9.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
