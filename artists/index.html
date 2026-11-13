@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="8.3">
+<meta name="app-version" content="8.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8179,6 +8179,12 @@ name: String(a.name||''), name_latin: String(a.name_latin||''), name_native: Str
    device sync then wrote the stripped data back over the
    canonical, erasing the harvested readings entirely). */
 name_kana: String(a.name_kana||''),
+/* v8.4: aliases （通称・別表記・別読み） — curated on the Muse
+   side, indexed for search (see artistHay). Carried here, in
+   mergeDataInto and in saveEditor from the start: the
+   name_kana lesson is that a field the app strips is a field
+   the next device sync erases from the canonical. */
+aliases: Array.isArray(a.aliases)? a.aliases.map(String).filter(Boolean): [],
 years: String(a.years||''), field: String(a.field||''), section: String(a.section||''),
 relation: String(a.relation||''), key_works: String(a.key_works||''), notes: String(a.notes||''),
 tags: Array.isArray(a.tags)? a.tags.map(String): [],
@@ -9074,8 +9080,30 @@ return out;
    section and the near-miss rescue. Work captions joined the
    index (a work's title used to be findable only when it also
    appeared in key_works/notes). */
+/* v8.4: exhibition titles linked to this person join their
+   index, so searching an exhibition's name surfaces its
+   artists. Exhibitions live in the artists dataset only; the
+   link is by artist_id, falling back to the artist name.
+   The lookup map is cached on the exhibitions array (identity
+   + length, so in-place growth also rebuilds). */
+let exHayCache = { src:null, n:-1, map:null };
+function exTitlesFor(a){
+const adb = CTX.artists && CTX.artists.DB;
+const exs = adb && Array.isArray(adb.exhibitions)? adb.exhibitions: null;
+if(!exs || !exs.length) return '';
+if(exHayCache.src !== exs || exHayCache.n !== exs.length){
+const map = {};
+exs.forEach(e=>{
+if(!e || !e.title) return;
+if(e.artist_id!=null){ const k = String(e.artist_id); map[k] = (map[k]? map[k]+'\n': '') + e.title; }
+if(e.artist_name){ const k = 'n:'+e.artist_name; map[k] = (map[k]? map[k]+'\n': '') + e.title; }
+});
+exHayCache = { src: exs, n: exs.length, map };
+}
+return (exHayCache.map[String(a.id)] || '') + (a.name? (exHayCache.map['n:'+a.name] || ''): '');
+}
 function artistHay(a){
-return normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' '),(a.works||[]).map(w=>w.caption||'').join(' ')].join('\n'));
+return normSearch([a.name,a.name_latin,a.name_native,a.name_kana,a.years,a.field,a.section,a.relation,a.key_works,a.notes,(a.tags||[]).join(' '),(a.works||[]).map(w=>w.caption||'').join(' '),(a.aliases||[]).join(' '),exTitlesFor(a)].join('\n'));
 }
 function artistMatches(a, toks){
 const hay = artistHay(a);
@@ -11537,6 +11565,8 @@ const old = DB.artists.find(a=>String(a.id)===String(id));
 if(old && old.books && old.books.length) rec.books = old.books;
 /* v4.6: nor the reading (the form has no field for it) */
 if(old && old.name_kana) rec.name_kana = old.name_kana;
+/* v8.4: nor the aliases (no form field either) */
+if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -11587,6 +11617,8 @@ function mergeDataInto(local, incoming){
     /* v2.65: books are curated wholesale on the Muse side — a
        non-empty incoming set replaces the local one. */
     if(ia.books && ia.books.length) merged.books = ia.books;
+    /* v8.4: aliases, same wholesale treatment as books. */
+    if(ia.aliases && ia.aliases.length) merged.aliases = ia.aliases;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -12626,7 +12658,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '8.3';
+const APP_VERSION = '8.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
