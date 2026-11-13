@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="11.0">
+<meta name="app-version" content="12.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12455,9 +12455,9 @@ function relayCfg(){
   try{ const r = JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.secret)? { url: r.url || RELAY_URL_DEFAULT, secret: r.secret }: null; }catch(e){ return null; }
 }
 function relayReady(){ return !!relayCfg(); }
-async function relayCall(op, name, content){
+async function relayCall(op, name, content, extra){
   const c = relayCfg(); if(!c) throw new Error('中継が未設定です');
-  const body = JSON.stringify({ secret: c.secret, op: op, name: name, content: content });
+  const body = JSON.stringify(Object.assign({ secret: c.secret, op: op, name: name, content: content }, extra || {}));
   const res = await fetchT(c.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: body }, 60000);
   if(!res.ok) throw new Error('中継 HTTP '+res.status);
   const j = JSON.parse(await res.text());
@@ -12603,6 +12603,84 @@ function refreshAfterSync(kind){
    safe, and on a marginal link (the user's 4G case, where a single
    1.5MB transfer can stall past its fuse) the second attempt is
    usually what lands. Non-timeout errors are not retried. */
+/* ---------- v12.0: fast sync over the relay ----------
+   Measured 2026-11-13: every Apps Script call costs ~1-1.5s
+   before any payload moves, and a full sync used to make ~8
+   serial calls, including two full put-backs of data that had
+   not changed at all. Three countermeasures:
+   A1  skip the put-back when the local side was untouched
+       since the last sync and the merge has nothing to push.
+   B   when the relay reports the file's update stamp (relay
+       v3+), an unchanged stamp plus an unchanged local hash
+       skips the download entirely.
+   C   when only the stamp moved, fetch a delta instead
+       (getSince: records whose updated_at beats our watermark,
+       or that carry no stamp) and merge that.
+   Anything unexpected — older relay, a delta that would shrink
+   the dataset, any error — falls back to the full get/put. */
+function syncHashOfStr(s){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i = 0; i < s.length; i++){ const ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return s.length + ':' + (h2 >>> 0).toString(16) + (h1 >>> 0).toString(16);
+}
+function syncMetaGet(prefix){ try{ const m = JSON.parse(storeGet(prefix+'syncMeta')||'null'); return (m && typeof m === 'object')? m: null; }catch(e){ return null; } }
+function syncMetaSet(prefix, data, stamp){
+  try{ storeSet(prefix+'syncMeta', JSON.stringify({ stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) })); }catch(e){}
+}
+async function syncDatasetRelay(kind, data){
+  const c = CTX[kind]; if(!c) throw new Error('対象がありません');
+  const cfg = c.cfg, prefix = cfg.prefix;
+  const meta = syncMetaGet(prefix);
+  const localHash = syncHashOfStr(JSON.stringify(data));
+  const localClean = !!(meta && meta.hash === localHash);
+  const stat = await relayCall('stat', cfg.dataFile);
+  if(!stat.exists){
+    await relayCall('put', cfg.dataFile, JSON.stringify(data));
+    syncMetaSet(prefix, data, null);
+    return data;
+  }
+  const stamp = (typeof stat.updated === 'number')? stat.updated: null;
+  /* B: nothing moved on either side — skip the download */
+  if(stamp !== null && meta && meta.stamp === stamp && localClean){
+    return data;
+  }
+  let merged = null, remoteFull = null;
+  /* C: delta first when we hold a watermark */
+  if(stamp !== null && meta && meta.maxUpd > 0){
+    try{
+      const j = await relayCall('getSince', cfg.dataFile, undefined, { since: meta.maxUpd });
+      if(j && typeof j.content === 'string'){
+        const delta = normalizeFor(kind, JSON.parse(j.content));
+        const before = (data.artists||[]).length;
+        merged = mergeDataInto(data, delta);
+        if(delta.timeline && JSON.stringify(delta.timeline) !== JSON.stringify(merged.timeline || null)) merged.timeline = delta.timeline;
+        if((merged.artists||[]).length < before) throw new Error('delta shrank the dataset');
+      }
+    }catch(e){ merged = null; }
+  }
+  if(!merged){
+    const j = await relayCall('get', cfg.dataFile);
+    if(!j || typeof j.content !== 'string') throw new Error('中継からデータを取得できませんでした');
+    remoteFull = normalizeFor(kind, JSON.parse(j.content));
+    merged = mergeDataInto(data, remoteFull);
+  }
+  /* A1: push only what the server lacks — with a full download
+     the comparison is exact; on the delta path the local
+     cleanliness flag is the evidence */
+  const needPut = remoteFull ? (JSON.stringify(merged) !== JSON.stringify(remoteFull)) : !localClean;
+  let stampAfter = stamp;
+  if(needPut){
+    await relayCall('put', cfg.dataFile, JSON.stringify(merged));
+    /* our own put moved the stamp — re-read it, so the next
+       sync can take the B shortcut instead of re-downloading
+       our own upload */
+    try{ const s2 = await relayCall('stat', cfg.dataFile); stampAfter = (typeof s2.updated === 'number')? s2.updated: null; }catch(e){ stampAfter = null; }
+  }
+  syncMetaSet(prefix, merged, stampAfter);
+  return merged;
+}
 async function syncDatasetFlow(kind, reason){
   let r = await syncDatasetOnce(kind, reason);
   if(!r.ok && r.timeout){
@@ -12624,19 +12702,30 @@ async function syncDatasetOnce(kind, reason){
     if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
     if(!data) data = c.DB;
     if(tok) data = await uploadPendingImagesFor(prefix, data, tok);
+    if(relayReady() && reason!=='wipe'){
+      /* v12.0: the fast relay path (A1/B/C — see syncDatasetRelay) */
+      data = await syncDatasetRelay(kind, data);
+    } else {
     const file = await findDataFileFor(tok, cfg.dataFile, 60000);
     if(!file){
       const created = await createDataFileFor(tok, cfg.dataFile, data);
       if(created && created.id) storeSet(prefix+'driveFileId', created.id);
     } else {
       storeSet(prefix+'driveFileId', file.id);
+      let remoteStr = null;
       if(reason!=='wipe'){
         const res = await driveReq(tok, '/files/'+encodeURIComponent(file.id)+'?alt=media', null, 60000);
         if(!res.ok) throw new Error('download HTTP '+res.status);
         const remote = normalizeFor(kind, JSON.parse(await res.text()));
+        remoteStr = JSON.stringify(remote);
         data = mergeDataInto(data, remote);
       }
-      await uploadDataUpdateFor(tok, file.id, data);
+      /* v12.0 (A1): no put-back when the merge changed nothing
+         relative to what the server already has */
+      if(reason==='wipe' || !remoteStr || JSON.stringify(data) !== remoteStr){
+        await uploadDataUpdateFor(tok, file.id, data);
+      }
+    }
     }
     storeSet(prefix+'data', JSON.stringify(data));
     c.DB = data;
@@ -12659,19 +12748,24 @@ function queueSync(task){
 }
 async function runAppSync(reason, showResults){
   appSyncRunning = true; renderSyncStatus();
+  let reqOk = false;
   try{
     /* v2.50: registration requests go FIRST, on their own — they are
        a few hundred bytes and the user's real errand. Until now they
        flushed only in the finally AFTER both ~1.5MB dataset syncs,
        un-awaited, so one bulk timeout (or closing the app right
        after the error) stranded them on the device indefinitely. */
-    try{ await flushArtistRequests(); }catch(e){}
-    for(const kind of ['artists','designers']){
-      const r = await syncDatasetFlow(kind, reason);
-      if(showResults) appendSyncLine(CTX[kind].cfg.appName, r.msg, !r.ok);
-    }
+    try{ await flushArtistRequests(); reqOk = true; }catch(e){}
+    /* v12.0 (A2): the two datasets are independent files —
+       sync them in parallel instead of one after the other */
+    const kinds = ['artists','designers'];
+    const rs = await Promise.all(kinds.map(kind=> syncDatasetFlow(kind, reason)));
+    if(showResults) kinds.forEach((kind, i)=> appendSyncLine(CTX[kind].cfg.appName, rs[i].msg, !rs[i].ok));
   }finally{
-    try{ await flushArtistRequests(); }catch(e){}
+    /* v12.0 (A3): the closing re-flush only earns its round trip
+       when the first flush failed or new requests queued up
+       while the datasets were syncing */
+    if(!reqOk || reqOutbox().length){ try{ await flushArtistRequests(); }catch(e){} }
     appSyncRunning = false; renderSyncStatus();
   }
 }
@@ -13166,7 +13260,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '11.0';
+const APP_VERSION = '12.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
