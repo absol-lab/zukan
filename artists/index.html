@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.3">
+<meta name="app-version" content="21.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9060,6 +9060,7 @@ function expandToolbar(which){
 tbSlim = false;
 if(which==='filter' && CONFIG.facets && !state.facetOpen){
 state.facetOpen = 'bunrui';
+state.facetShut = false;
 renderList();
 }
 updateToolbarSlim();
@@ -9468,7 +9469,12 @@ state.tagGroupsOpen[key] = !state.tagGroupsOpen[key];
 renderList();
 }
 function toggleFacet(f){
-state.facetOpen = (state.facetOpen===f)? null : f;
+/* v21.4 (his call): tapping the OPEN facet's header closes the
+   panel — and the selection STAYS (closing is not clearing).
+   facetShut records the explicit close so the discoverability
+   force-open below does not instantly resurrect the panel. */
+if(state.facetOpen===f){ state.facetOpen = null; state.facetShut = true; }
+else { state.facetOpen = f; state.facetShut = false; }
 renderList();
 }
 /* v2.77: loose search normalization — the SAME folding applied to
@@ -9829,7 +9835,7 @@ if(CONFIG.facets){
 const selIn = f=>tags.reduce((n,t)=>n+((tagFacet(t)===f && state.tags.has(t))?1:0),0);
 let openF = (state.facetOpen && TAG_FACET_ORDER.indexOf(state.facetOpen)>=0)? state.facetOpen : null;
 if(openF && !tags.some(t=>tagFacet(t)===openF)) openF = null;
-if(!openF){ for(const f of TAG_FACET_ORDER){ if(selIn(f)>0){ openF = f; break; } } }
+if(!openF && !state.facetShut){ for(const f of TAG_FACET_ORDER){ if(selIn(f)>0){ openF = f; break; } } }
 let bar = '<div class="facetbar" role="group" aria-label="タグの分類">';
 TAG_FACET_ORDER.forEach(f=>{
 const all = tags.filter(t=>tagFacet(t)===f);
@@ -14016,7 +14022,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.3';
+const APP_VERSION = '21.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
