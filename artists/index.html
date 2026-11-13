@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.3">
+<meta name="app-version" content="12.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -579,6 +579,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .mgrid.mini{grid-template-columns:repeat(4, 1fr); gap:8px 6px;}
 .mgrid.mini .mcap{font-size:10.5px; line-height:1.35;}
 .mgrid.mini .mart{font-size:11px;}
+.mmodes{margin:0 0 12px;}
 .mhead-r{display:inline-flex; align-items:center; gap:10px;}
 .mtile{position:relative; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
 .mtile .imgholder{display:block; aspect-ratio:4/3;}
@@ -841,7 +842,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
       <div class="modebar" id="modeseg">
         <button data-m="wide" onclick="setMode('wide')">ワイド</button>
         <button data-m="def" onclick="setMode('def')">標準</button>
-        <button data-m="compact" onclick="setMode('compact')">小</button>
+        <button data-m="compact" onclick="setMode('compact')">コンパクト</button>
         <button data-m="mini" onclick="setMode('mini')">ミニ</button>
       </div>
       <div class="slimtools" id="slimtools">
@@ -10846,7 +10847,12 @@ html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'�
 if(held.length){
 const shelfWide = (workMode==='wide');
 const shelfModeCls = shelfWide? ' wide': (workMode==='compact' || workMode==='mini')? ' '+workMode: '';
-html += '<h2 class="sechead"><span>収蔵作品</span><span class="mhead-r"><span class="cnt">'+held.length+'点</span><span class="seg mini" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')">ワイド</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')">標準</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')">コンパクト</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')">ミニ</button></span></span></h2><div class="mgrid'+shelfModeCls+'">'
+html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.length+'点</span></h2>'
+/* v12.4: the shelf switch joins the artist home's .modebar
+   language (one rounded bar, dividers, gold underline) on its
+   own full-width row — as loose pills inside the heading it
+   wrapped 3+1 and crushed the heading text. */
++ '<div class="modebar mmodes" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')">ワイド</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')">標準</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')">コンパクト</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')">ミニ</button></div><div class="mgrid'+shelfModeCls+'">'
 + held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
 + '</div>';
@@ -13335,7 +13341,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.3';
+const APP_VERSION = '12.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
