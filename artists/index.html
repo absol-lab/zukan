@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="19.7">
+<meta name="app-version" content="20.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -529,6 +529,15 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .pprice{font-size:16px; font-weight:800; margin-top:3px;}
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .bizwrap{padding:6px 2px 90px}
+.bpchart{border:1px solid var(--line); border-radius:12px; padding:8px 6px 2px; background:var(--card); margin:0 0 8px}
+.bpdetail{display:flex; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card2); margin-top:10px}
+.bplink{background:none; border:none; padding:2px 0; color:#d9a441; font-size:13.5px; font-weight:700; cursor:pointer; text-align:left}
+.bprow{display:flex; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid var(--line); cursor:pointer}
+.bprank{flex:0 0 26px; text-align:right; font-size:12px; color:var(--muted); font-weight:700}
+.bpcover{flex:0 0 44px; width:44px; height:44px; border-radius:8px; overflow:hidden}
+.bpcover img{width:100%; height:100%; object-fit:cover; display:block}
+.bpprice{margin-left:auto; text-align:right; font-weight:700; font-size:14px; white-space:nowrap}
+.bpprice .pjpy{display:block; font-weight:400}
 .biztitle{font-size:21px; font-weight:800; margin:10px 0 8px}
 .bizp{margin:0 0 12px}
 .bizchrow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin:0 0 8px; min-height:56px; color:var(--text); font-family:inherit}
@@ -955,6 +964,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewQuiz" class="hidden"></main>
 <main id="viewBiz" class="hidden"></main>
 <main id="viewBizCh" class="hidden"></main>
+<main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -8779,8 +8789,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh', bizp:'viewBizPrice' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2, bizp:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -8843,7 +8853,7 @@ const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 
    was too cramped, user's call); it stays visible on both datasets
    and opens via openTimeline(), crossing datasets like the pill did. */
 $('navTimeline').classList.toggle('on', v==='timeline');
-$('navBiz').classList.toggle('on', v==='biz' || v==='bizch');
+$('navBiz').classList.toggle('on', v==='biz' || v==='bizch' || v==='bizp');
 updatePill();
 /* v2.48: entering その他 renames the header; leaving restores it */
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
@@ -8859,6 +8869,7 @@ if(v==='era') renderEra();
 if(v==='quiz') renderQuiz();
 if(v==='biz') renderBiz();
 if(v==='bizch') renderBizCh();
+if(v==='bizp') renderBizPrice();
 if(v==='settings'){ renderSettings(); }
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(wantAnim && oldEl && newEl && oldEl!==newEl){
@@ -9134,6 +9145,110 @@ const BIZ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICON; }
 let bizData = null, bizError = false, bizChapterId = null;
 function openBiz(){ showView('biz'); bizEnsure(); }
+
+/* v20.0 (2026-11-14, his request via Art Labo): 作品価格早見表 —
+   every priced work in the encyclopedia on one year × price map.
+   Data is the prices[] the app already holds (both datasets when
+   loaded); JPY by the prices tab's FX_JPY table (概算, dated).
+   The y axis is LOG — prices span five-plus orders of magnitude,
+   a linear axis would flatten everything but the top few sales.
+   Same-work_id points are joined with a thin line so a single
+   work's repeat-sale path reads inside the whole market. */
+let bizPriceMode = 'chart', bizPriceSel = -1, bizPlot = [];
+const BPCUR = { USD: '$', GBP: '£', EUR: '€', JPY: '¥', HKD: 'HK$', CHF: 'CHF ', CNY: 'CN¥' };
+function bpFmtPrice(p){ return (BPCUR[p.currency] || (p.currency ? p.currency + ' ' : '')) + p.price.toLocaleString('en-US'); }
+function openBizPrice(){ showView('bizp'); }
+function bizPriceCollect(){
+  const pts = [];
+  for(const ds of ['artists', 'designers']){
+    const c = CTX[ds]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
+    for(const a of c.DB.artists){
+      if(!Array.isArray(a.prices)) continue;
+      for(const p of a.prices){
+        if(!p || typeof p.year !== 'number' || typeof p.price !== 'number') continue;
+        pts.push({ ds: ds, pid: a.id, artist: a.name, raw: p, jpy: jpyOf(p) });
+      }
+    }
+  }
+  return pts;
+}
+function bizScatterSVG(plot){
+  const W = 356, H = 300, mL = 48, mR = 8, mT = 10, mB = 24, pw = W - mL - mR, ph = H - mT - mB;
+  let yMin = Infinity, yMax = -Infinity, jMin = Infinity, jMax = 0;
+  for(const pt of plot){ if(pt.raw.year < yMin) yMin = pt.raw.year; if(pt.raw.year > yMax) yMax = pt.raw.year; if(pt.jpy < jMin) jMin = pt.jpy; if(pt.jpy > jMax) jMax = pt.jpy; }
+  const x0 = yMin - 1, x1 = yMax + 1;
+  const lo = Math.floor(Math.log10(jMin)), hi = Math.max(Math.ceil(Math.log10(jMax)), lo + 1);
+  const X = yr => mL + (yr - x0) / (x1 - x0) * pw;
+  const Y = j => mT + (hi - Math.log10(j)) / (hi - lo) * ph;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block" role="img" aria-label="作品価格の散布図">';
+  for(let pw10 = lo; pw10 <= hi; pw10++){
+    const v = Math.pow(10, pw10), y = Y(v);
+    s += '<line x1="' + mL + '" y1="' + y.toFixed(1) + '" x2="' + (mL + pw) + '" y2="' + y.toFixed(1) + '" stroke="var(--line)" stroke-width="1" opacity=".55"/>'
+      + '<text x="' + (mL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + esc(fmtJPYShort(v)) + '</text>';
+  }
+  const span = x1 - x0, step = span > 60 ? 20 : span > 30 ? 10 : span > 12 ? 5 : 2;
+  for(let yr = Math.ceil(x0 / step) * step; yr <= x1; yr += step){
+    s += '<text x="' + X(yr).toFixed(1) + '" y="' + (mT + ph + 15) + '" text-anchor="middle" font-size="8.5" fill="var(--muted)">' + yr + '</text>';
+  }
+  s += '<line x1="' + mL + '" y1="' + mT + '" x2="' + mL + '" y2="' + (mT + ph) + '" stroke="var(--line)"/><line x1="' + mL + '" y1="' + (mT + ph) + '" x2="' + (mL + pw) + '" y2="' + (mT + ph) + '" stroke="var(--line)"/>';
+  const groups = {};
+  for(const pt of plot){ if(pt.raw.work_id) (groups[pt.raw.work_id] = groups[pt.raw.work_id] || []).push(pt); }
+  for(const k of Object.keys(groups)){
+    const g = groups[k]; if(g.length < 2) continue;
+    const line = g.slice().sort((a, b) => a.raw.year - b.raw.year).map(pt => X(pt.raw.year).toFixed(1) + ',' + Y(pt.jpy).toFixed(1)).join(' ');
+    s += '<polyline points="' + line + '" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".5"/>';
+  }
+  plot.forEach((pt, i) => {
+    const sel = i === bizPriceSel;
+    s += '<circle cx="' + X(pt.raw.year).toFixed(1) + '" cy="' + Y(pt.jpy).toFixed(1) + '" r="' + (sel ? 5 : 3) + '" fill="' + (sel ? '#ffffff' : '#d9a441') + '" fill-opacity="' + (sel ? 1 : .78) + '"' + (pt.raw.img && pt.raw.img.url ? ' stroke="#f2ead8" stroke-width=".9"' : '') + (sel ? ' stroke="#d9a441" stroke-width="1.6"' : '') + ' onclick="bizPricePick(' + i + ')" style="cursor:pointer"/>';
+  });
+  return s + '</svg>';
+}
+function bizPricePick(i){ bizPriceSel = i; renderBizPrice(); }
+function bizPriceSetMode(m){ bizPriceMode = m; renderBizPrice(); }
+function renderBizPrice(){
+  const el = $('viewBizPrice'); if(!el) return;
+  const pts = bizPriceCollect();
+  const people = new Set(pts.map(p => p.ds + ':' + p.pid)).size;
+  let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>'
+    + '<h2 class="biztitle">作品価格早見表</h2>'
+    + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。</p>'
+    + '<div class="seg" role="tablist"><button class="' + (bizPriceMode === 'chart' ? 'on' : '') + '" onclick="bizPriceSetMode(\'chart\')">全体図</button><button class="' + (bizPriceMode === 'list' ? 'on' : '') + '" onclick="bizPriceSetMode(\'list\')">ランキング</button></div>';
+  if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
+  if(bizPriceMode === 'chart'){
+    bizPlot = pts.filter(p => p.jpy != null);
+    h += '<div class="bpchart">' + bizScatterSVG(bizPlot) + '</div>'
+      + '<p class="small">縦軸は対数スケール。白い縁の点は写真つきの作品。同じ作品の落札同士は薄い線で結んでいます。点をタップすると詳細が出ます。</p>';
+    const pt = bizPlot[bizPriceSel];
+    if(pt){
+      const p = pt.raw;
+      h += '<div class="bpdetail">'
+        + (p.img && p.img.url ? '<div class="pricecover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>' : '')
+        + '<div class="pmain"><div class="pwork">' + esc(p.work) + '</div>'
+        + '<button class="bplink" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">' + esc(pt.artist) + ' のページへ ›</button>'
+        + '<div class="phouse">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div>'
+        + '<div class="pprice">' + esc(bpFmtPrice(p)) + '</div>'
+        + (p.currency && p.currency !== 'JPY' && pt.jpy != null ? '<div class="pjpy">≈ ' + esc(fmtJPY(pt.jpy)) + '（概算）</div>' : '')
+        + '</div></div>';
+    } else {
+      h += '<p class="small" style="margin-top:8px">点は ' + bizPlot.length + ' 件（円換算できるもの）。</p>';
+    }
+  } else {
+    const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
+    h += rows.map((pt, i) => {
+      const p = pt.raw;
+      return '<div class="bprow" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
+        + '<span class="bprank">' + (i + 1) + '</span>'
+        + (p.img && p.img.url ? '<span class="bpcover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</span>' : '')
+        + '<span class="pmain"><span class="pwork">' + esc(p.work) + '</span>'
+        + '<span class="phouse">' + esc(pt.artist) + ' ・ ' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span>'
+        + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="pjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span></div>';
+    }).join('');
+  }
+  el.innerHTML = h + '</div>';
+  wireListImages(el);
+}
+
 function bizEnsure(){
   if(bizData || bizError) return;
   fetch('artbusiness.json', { cache: 'no-cache' }).then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
@@ -9163,6 +9278,7 @@ function renderBiz(){
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
+    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span><span class="bizchlead">価格がわかる全作品を、年と価格の全体図とランキングで</span></span><span class="bizchgo">›</span></button>';
     h += bizChapters().map((c, i)=> '<button class="bizchrow" onclick="openBizChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span>' + (c.lead? '<span class="bizchlead">' + esc(c.lead) + '</span>': '') + '</span><span class="bizchgo">›</span></button>').join('');
     if(bizGlossary().length) h += '<button class="bizchrow" onclick="openBizChapter(\'glossary\')"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span><span class="bizchlead">' + bizGlossary().length + '語</span></span><span class="bizchgo">›</span></button>';
   }
@@ -13687,6 +13803,7 @@ function backTarget(forSwipe){
   if(view==='era') return 'timeline';
   if(view==='news' || view==='cal') return 'ex';
   if(view==='bizch') return 'biz';
+  if(view==='bizp') return 'biz';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings' || view==='biz') return 'list';
   if(forSwipe && view==='list' && prevPill && (prevPill.view!=='list' || prevPill.ds!==DS)) return prevPill.view;
   return null;
@@ -13706,6 +13823,7 @@ function engageSwipe(st){
   if(st.target==='settings') renderSettings();
   if(st.target==='biz') renderBiz();
   if(st.target==='bizch') renderBizCh();
+  if(st.target==='bizp') renderBizPrice();
   const oldEl = $(VIEW_EL[view]), newEl = $(VIEW_EL[st.target]);
   if(!oldEl || !newEl){ st.engaged = false; return; }
   st.oldEl = oldEl; st.newEl = newEl;
@@ -13757,7 +13875,7 @@ function teardownSwipe(st, commit){
     if(view!=='settings') CTX[DS].lastView = view;
 
     $('navTimeline').classList.toggle('on', view==='timeline');
-    $('navBiz').classList.toggle('on', view==='biz' || view==='bizch');
+    $('navBiz').classList.toggle('on', view==='biz' || view==='bizch' || view==='bizp');
     /* v2.58: this hand-rolled commit used to skip the header update
        entirely, so a swipe back out of その他 landed on the list
        still titled その他. showView's chrome steps apply here too. */
@@ -13846,7 +13964,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '19.7';
+const APP_VERSION = '20.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
