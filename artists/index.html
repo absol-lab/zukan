@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="9.1">
+<meta name="app-version" content="9.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8152,6 +8152,12 @@ img: normalizeImg(w && w.img)
 };
 /* v2.52: the user's manual thumbnail pin survives normalization */
 if(w && w.pinned) o.pinned = true;
+/* v9.2: held_by （所蔵館） — curated on the data side only (the
+   museum-page / 在処マップ foundation, contract with Art Labo
+   2026-11-13). The app never edits it, but it must survive
+   normalization, merges and editor saves or a device write-back
+   would erase it — the name_kana lesson, applied in advance. */
+if(w && w.held_by) o.held_by = String(w.held_by);
 return o;
 }).filter(w=>w.file || w.caption || w.img);
 /* v2.65: books （作品集） — curated on the Muse side only; the app
@@ -11811,6 +11817,8 @@ if(old && old.books && old.books.length) rec.books = old.books;
 if(old && old.name_kana) rec.name_kana = old.name_kana;
 /* v8.4: nor the aliases (no form field either) */
 if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
+/* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
+if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -11887,7 +11895,7 @@ function mergeDataInto(local, incoming){
     otherWorks.forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
+      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
       else wkeys(w).forEach(k=>wm.set(k, w));
     });
     merged.works = Array.from(new Set(wm.values()));
@@ -12902,7 +12910,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '9.1';
+const APP_VERSION = '9.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
