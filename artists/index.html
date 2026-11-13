@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.1">
+<meta name="app-version" content="21.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9226,10 +9226,21 @@ function ptScatter(items, pickFn, selIdx){
     const line = g.slice().sort((a, b) => a.year - b.year).map(pt => X(pt.year).toFixed(1) + ',' + Y(pt.jpy).toFixed(1)).join(' ');
     s += '<polyline points="' + line + '" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".5"/>';
   }
-  items.forEach((pt, i) => {
-    const sel = i === selIdx;
-    s += '<circle cx="' + X(pt.year).toFixed(1) + '" cy="' + Y(pt.jpy).toFixed(1) + '" r="' + (sel ? 5 : 3) + '" fill="' + (sel ? '#ffffff' : '#d9a441') + '" fill-opacity="' + (sel ? 1 : .78) + '"' + (pt.img ? ' stroke="#f2ead8" stroke-width=".9"' : '') + (sel ? ' stroke="#d9a441" stroke-width="1.6"' : '') + ' onclick="' + pickFn + '(' + i + ')" style="cursor:pointer"/>';
-  });
+  const order = items.map((pt, i) => i).sort((a, b) => (a === selIdx ? 1 : 0) - (b === selIdx ? 1 : 0));
+  for(const i of order){
+    const pt = items[i], sel = i === selIdx, cx = X(pt.year), cy = Y(pt.jpy);
+    if(pt.imgUrl){
+      /* v21.2 (his request): a priced work WITH a photo sits on
+         the chart as its thumbnail, not a dot. 36px square
+         (44 selected), rounded, gold frame when selected. */
+      const sz = sel ? 44 : 36, x = cx - sz / 2, y = cy - sz / 2, cid = 'scp' + pickFn + i;
+      s += '<clipPath id="' + cid + '"><rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + sz + '" height="' + sz + '" rx="6"/></clipPath>'
+        + '<image href="' + escA(pt.imgUrl) + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + sz + '" height="' + sz + '" preserveAspectRatio="xMidYMid slice" clip-path="url(#' + cid + ')" onclick="' + pickFn + '(' + i + ')" style="cursor:pointer"/>'
+        + '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + sz + '" height="' + sz + '" rx="6" fill="none" stroke="' + (sel ? '#d9a441' : 'var(--line)') + '" stroke-width="' + (sel ? 2 : 1) + '" pointer-events="none"/>';
+    } else {
+      s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (sel ? 5 : 3) + '" fill="' + (sel ? '#ffffff' : '#d9a441') + '" fill-opacity="' + (sel ? 1 : .78) + '"' + (sel ? ' stroke="#d9a441" stroke-width="1.6"' : '') + ' onclick="' + pickFn + '(' + i + ')" style="cursor:pointer"/>';
+    }
+  }
   return s + '</svg>';
 }
 /* v21.0 (his call, 2026-11-14): the same scatter inside each
@@ -10346,7 +10357,7 @@ pricesHTML = breakthroughHTML;
 dScatterSel = -1;
 {
   const dPts = pricesArr.map(p => ({ p: p, j: jpyOf(p) })).filter(x => x.j != null);
-  dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, img: !!(x.p.img && x.p.img.url), wid: x.p.work_id || '' }));
+  dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, imgUrl: (x.p.img && x.p.img.url) ? sizedThumbUrl(x.p.img.url, 256) : '', wid: x.p.work_id || '' }));
   dScatterRecs = dPts.map(x => x.p);
   if(dScatterPlot.length){
     pricesHTML += '<h3 class="subhead">全落札の分布（年 × 価格）</h3><div id="dscatterWrap" class="bpchart">' + ptScatter(dScatterPlot, 'detailScatterPick', -1) + '</div><div id="dscatterDetail">' + detailScatterDetailHTML() + '</div>';
@@ -14002,7 +14013,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.1';
+const APP_VERSION = '21.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
