@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="19.3">
+<meta name="app-version" content="19.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -536,6 +536,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .biziconbtn{flex:1; min-height:52px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:10px; color:var(--muted)}
 .biziconbtn svg{width:26px; height:26px}
 .biziconbtn.on{color:var(--text); border-color:#d9a441; background:var(--card2)}
+.casebox{border:1px solid var(--line); border-left:3px solid #d9a441; border-radius:10px; padding:10px 12px; margin:0 0 12px; background:var(--card)}
+.casetitle{font-weight:800; margin-bottom:4px}
 .biznav{display:flex; justify-content:space-between; gap:8px; margin-top:18px}
 .biznavbtn{flex:1; min-height:48px; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; font-size:14px; font-family:inherit}
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
@@ -9156,6 +9158,13 @@ function bizTermHTML(t){
   return esc(String(t)).replace(/\[\[([^\]]+)\]\]/g, (m, term)=> '<button class="termlink" data-term="' + escA(term) + '">' + term + '</button>');
 }
 function bizParasHTML(paras){ return (paras || []).map(p=> '<p class="bodytext bizp">' + bizTermHTML(p) + '</p>').join(''); }
+/* v19.4: case boxes (事例) ride inside a section, after its
+   paragraphs — part of Art Labo's draft shape, converted into
+   artbusiness.json as sections[].cases[{title, body}]. */
+function bizCasesHTML(cases){
+  if(!Array.isArray(cases) || !cases.length) return '';
+  return cases.map(c=> '<div class="casebox"><div class="casetitle">' + esc(c.title || '') + '</div><div class="bodytext">' + bizTermHTML(c.body || '') + '</div></div>').join('');
+}
 function openBizChapter(id){ bizChapterId = id; showView('bizch'); }
 function renderBiz(){
   const el = $('viewBiz'); if(!el) return;
@@ -9180,7 +9189,7 @@ function renderBizCh(){
   if(bizChapterId === 'glossary'){
     h += '<h2 class="biztitle">用語辞典</h2>';
     const g = bizGlossary();
-    h += g.length? g.map(e=> '<div class="glossrow"><div class="glossterm">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</div><div class="bodytext">' + esc(e.def || '') + '</div></div>').join('') : '<div class="empty">用語は準備中です</div>';
+    h += g.length? g.map(e=> '<div class="glossrow"><div class="glossterm">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</div><div class="bodytext">' + esc(e.short || e.def || '') + '</div></div>').join('') : '<div class="empty">用語は準備中です</div>';
   } else {
     const chs = bizChapters(); const ix = chs.findIndex(c=> c.id === bizChapterId); const c = chs[ix];
     if(!c) h += '<div class="empty">章が見つかりません</div>';
@@ -9188,7 +9197,7 @@ function renderBizCh(){
       h += '<h2 class="biztitle">' + (ix + 1) + '. ' + esc(c.title || '') + '</h2>';
       if(c.lead) h += '<p class="bodytext">' + esc(c.lead) + '</p>';
       const secs = Array.isArray(c.sections)? c.sections: [];
-      h += secs.map(s=> (s.h? '<h3 class="subhead">' + esc(s.h) + '</h3>': '') + bizParasHTML(s.paras)).join('');
+      h += secs.map(s=> (s.h? '<h3 class="subhead">' + esc(s.h) + '</h3>': '') + bizParasHTML(s.paras) + bizCasesHTML(s.cases)).join('');
       if(!secs.length) h += '<div class="empty">本文は準備中です</div>';
       h += '<div class="biznav">';
       if(ix > 0) h += '<button class="biznavbtn" onclick="openBizChapter(\'' + escA(chs[ix - 1].id) + '\')">‹ 前の章</button>';
@@ -9205,7 +9214,7 @@ function openTerm(term){
   const e = bizGlossary().find(g=> g.term === term);
   if(!e) return;
   $('tsTerm').textContent = e.term;
-  $('tsDef').textContent = e.def || '';
+  $('tsDef').innerHTML = (e.short? '<div>' + esc(e.short) + '</div>': '') + '<div>' + esc(e.def || '') + '</div>';
   $('termsheet').classList.remove('hidden');
 }
 function closeTerm(){ const s = $('termsheet'); if(s) s.classList.add('hidden'); }
@@ -13850,7 +13859,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '19.3';
+const APP_VERSION = '19.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
