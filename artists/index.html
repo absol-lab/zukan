@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="17.0">
+<meta name="app-version" content="18.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -522,6 +522,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .phouse{font-size:12.5px; color:var(--muted); margin-top:2px;}
 .pricerow .pprice{font-size:16px; font-weight:800; margin-top:3px;}
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.btbox{border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 0 14px}
+.btperiod{font-size:17px; font-weight:800; margin-bottom:4px}
+.btms{margin-top:6px}
+.btmrow{padding:8px 0; border-top:1px solid var(--line)}
+.btchip{display:inline-block; background:#e6b93d; color:#191204; font-size:11px; font-weight:800; letter-spacing:.04em; border-radius:999px; padding:2px 8px; margin-right:6px; vertical-align:2px}
+.btkind{display:inline-block; font-size:11px; font-weight:700; border:1px solid var(--line); border-radius:999px; padding:2px 8px; margin-left:6px; vertical-align:2px}
 .pchartwrap{margin:0 0 10px}
 .pcharttitle{font-size:14px; font-weight:700; margin:8px 0 2px}
 .highchip{display:inline-block; background:#e6b93d; color:#191204; font-size:11px; font-weight:800; letter-spacing:.06em; border-radius:999px; padding:2px 8px; vertical-align:2px; margin-left:6px;}
@@ -8248,6 +8254,29 @@ if(im.fileId) o.fileId = String(im.fileId);
 if(im.url) o.url = String(im.url);
 return (o.fileId || o.url)? o: null;
 }
+/* v18.0: breakthrough （市場の転機ドシエ） — Muse-side curated
+   like prices/books, self-contained (never joined with prices[]
+   or work_id). A milestone survives only with a numeric year,
+   a numeric price and a known kind (auction/private/purchase);
+   approx is kept only when literally true. A record whose
+   period, summary and milestones are all empty is no record. */
+function normalizeBreakthrough(b){
+if(!b || typeof b !== 'object') return null;
+const KINDS = { auction: 1, private: 1, purchase: 1 };
+const ms = (Array.isArray(b.milestones)? b.milestones: []).map(m=>{
+m = m || {};
+const yr = (typeof m.year==='number' && isFinite(m.year))? m.year: parseInt(m.year, 10);
+const pr = (typeof m.price==='number' && isFinite(m.price))? m.price: (typeof m.price==='string' && m.price.trim()!==''? Number(m.price): NaN);
+const th = (typeof m.threshold_usd==='number' && isFinite(m.threshold_usd))? m.threshold_usd: (typeof m.threshold_usd==='string' && m.threshold_usd.trim()!==''? Number(m.threshold_usd): NaN);
+if(!isFinite(yr) || !isFinite(pr) || !KINDS[m.kind]) return null;
+const o = { threshold_usd: isFinite(th)? th: null, year: yr, work: String(m.work||''), price: pr, currency: String(m.currency||'').toUpperCase(), source: String(m.source||''), kind: m.kind };
+if(m.approx === true) o.approx = true;
+if(m.medium_note) o.medium_note = String(m.medium_note);
+return o;
+}).filter(Boolean);
+const out = { period: String(b.period||''), summary: String(b.summary||''), sources: (Array.isArray(b.sources)? b.sources: []).map(String).filter(Boolean), milestones: ms };
+return (out.period || out.summary || out.milestones.length)? out: null;
+}
 function normalizeArtist(a){
 a = a || {};
 const works = (Array.isArray(a.works)?a.works:[]).map(w=>{
@@ -8342,6 +8371,7 @@ work_image: String(a.work_image||''), work_caption: String(a.work_caption||''),
 works: works,
 books: books,
 prices: prices,
+breakthrough: normalizeBreakthrough(a.breakthrough),
 layer: (a.layer==='candidate')? 'candidate': 'canon',
 updated_at: String(a.updated_at||'')
 };
@@ -9939,7 +9969,7 @@ const sp = splitNotes(a.notes);
    pager panel, so DTABS indices always line up) but is only
    SHOWN for people who actually have auction records. */
 const pricesArr = Array.isArray(a.prices)? a.prices: [];
-if(state.tab==='prices' && !pricesArr.length) state.tab = 'works';
+if(state.tab==='prices' && !pricesArr.length && !a.breakthrough) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
@@ -9954,7 +9984,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
-'<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+(pricesArr.length? '': ' style="display:none"')+'>価格</button>'+
+'<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
@@ -10011,9 +10041,38 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
    (work_id) against its own history, never across works. */
 let pricesHTML = '';
 const pricesDesc = pricesArr.slice().sort((x,y)=> (y.year-x.year) || (y.price-x.price));
-if(pricesArr.length){
 const CURSYM = { USD:'$', GBP:'£', EUR:'€', JPY:'¥', HKD:'HK$', CHF:'CHF ', CNY:'CN¥' };
 const fmtPrice = p => (CURSYM[p.currency] || (p.currency? p.currency+' ': '')) + p.price.toLocaleString('en-US');
+/* v18.0: 市場の転機 — when and why this artist entered the
+   high-price band (contract 2026-11-13). Sits at the TOP of
+   the prices tab, above the repeat-sale charts. Milestones
+   render as a chronological marker list inside the frame and
+   never mix with the prices[] rows below. */
+let breakthroughHTML = '';
+if(a.breakthrough){
+const bt = a.breakthrough;
+const KINDLBL = { auction: '落札', private: '私的売却', purchase: '購入' };
+const fmtThresh = t => t == null? '': (t >= 1e8? '1億ドル超え': t >= 1e7? '1,000万ドル超え': t >= 1e6? '100万ドル超え': '$' + t.toLocaleString('en-US') + '超え');
+const msAsc = bt.milestones.slice().sort((x, y)=> x.year - y.year);
+breakthroughHTML = '<h3 class="subhead">市場の転機</h3><div class="btbox">'
++ (bt.period? '<div class="btperiod">'+esc(bt.period)+'</div>': '')
++ (bt.summary? '<div class="bodytext">'+esc(bt.summary)+'</div>': '')
++ (msAsc.length? '<div class="btms">'+msAsc.map(m=>{
+const j = jpyOf(m);
+return '<div class="btmrow">'
++ (fmtThresh(m.threshold_usd)? '<span class="btchip">'+esc(fmtThresh(m.threshold_usd))+'</span>': '')
++ '<b>'+m.year+'</b> '+esc(m.work)+' — '+esc(fmtPrice(m))
++ (m.currency && m.currency !== 'JPY' && j != null? ' <span class="small">≈ '+esc(fmtJPY(j))+'（概算）</span>': '')
++ (m.approx? ' <span class="small">（概数）</span>': '')
++ '<span class="btkind">'+esc(KINDLBL[m.kind] || m.kind)+'</span>'
++ (m.medium_note? '<div class="small">'+esc(m.medium_note)+'</div>': '')
++ (m.source? '<div style="margin-top:2px"><a href="'+escA(m.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
++ '</div>'; }).join('')+'</div>': '')
++ (bt.sources && bt.sources.length? '<div class="small" style="margin-top:8px">出典：'+bt.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>': '')
++ '</div>';
+}
+pricesHTML = breakthroughHTML;
+if(pricesArr.length){
 const ascP = pricesArr.slice().sort((x,y)=> (x.year-y.year) || (y.price-x.price));
 const bestByCur = {}; const highSet = new Set();
 ascP.forEach(p=>{
@@ -10069,7 +10128,7 @@ chartHTML = '<h3 class="subhead">同じ作品の価格推移（円換算・概�
 + '<div class="small" style="margin:-4px 0 6px">同じ作品が再販された記録だけを繋いでいます。</div>'
 + chartGroups.map(g=> '<div class="pchartwrap"><div class="pcharttitle">'+esc(g.title)+'</div>'+chartSVG(g.pts)+'</div>').join('');
 }
-pricesHTML = chartHTML + '<h3 class="subhead">最高落札額（通貨別）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; const j = (t.currency && t.currency !== 'JPY')? jpyOf(t): null; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b>'+(j != null? ' <span class="small">≈ '+esc(fmtJPY(j))+'（概算）</span>': '')+' <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
+pricesHTML += chartHTML + '<h3 class="subhead">最高落札額（通貨別）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; const j = (t.currency && t.currency !== 'JPY')? jpyOf(t): null; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b>'+(j != null? ' <span class="small">≈ '+esc(fmtJPY(j))+'（概算）</span>': '')+' <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
 pricesHTML += pricesDesc.map((p, pi)=> '<div class="pricerow">'+
 (p.img && p.img.url? '<div class="pricecover" data-pidx="'+pi+'">'+imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb)+'</div>': '')+
 '<div class="pmain">'+
@@ -12392,6 +12451,7 @@ if(old && old.name_kana) rec.name_kana = old.name_kana;
 if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
 /* v15.0: nor the auction prices (no form field either) */
 if(old && old.prices && old.prices.length) rec.prices = old.prices;
+if(old && old.breakthrough) rec.breakthrough = old.breakthrough;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 /* v10.3: nor a work's hires flag — same per-work carry.
@@ -12465,6 +12525,8 @@ function mergeDataInto(local, incoming){
     if(ia.aliases && ia.aliases.length) merged.aliases = ia.aliases;
     /* v15.0: prices, same wholesale treatment as books. */
     if(ia.prices && ia.prices.length) merged.prices = ia.prices;
+    /* v18.0: breakthrough, same wholesale treatment. */
+    if(ia.breakthrough) merged.breakthrough = ia.breakthrough;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -13654,7 +13716,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '17.0';
+const APP_VERSION = '18.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
