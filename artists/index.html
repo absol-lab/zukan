@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="20.1">
+<meta name="app-version" content="21.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9179,19 +9179,37 @@ function bizPriceCollect(){
   }
   return pts;
 }
-function bizScatterSVG(plot){
+/* ptScatter: the shared year x price scatter (v20.0's chart,
+   generalised in v21.0 for the per-person prices tab).
+   items: [{year, jpy, img, wid}]. Scale: LOG when the price
+   range spans >= 100x (the whole market; most big careers),
+   LINEAR with padded ends when the range is narrow — a log
+   axis would crush a narrow-range artist flat (his call:
+   adjust per artist when log crushes). Same-work_id items are
+   joined with a thin line. */
+function ptScatter(items, pickFn, selIdx){
   const W = 356, H = 300, mL = 48, mR = 8, mT = 10, mB = 24, pw = W - mL - mR, ph = H - mT - mB;
   let yMin = Infinity, yMax = -Infinity, jMin = Infinity, jMax = 0;
-  for(const pt of plot){ if(pt.raw.year < yMin) yMin = pt.raw.year; if(pt.raw.year > yMax) yMax = pt.raw.year; if(pt.jpy < jMin) jMin = pt.jpy; if(pt.jpy > jMax) jMax = pt.jpy; }
+  for(const pt of items){ if(pt.year < yMin) yMin = pt.year; if(pt.year > yMax) yMax = pt.year; if(pt.jpy < jMin) jMin = pt.jpy; if(pt.jpy > jMax) jMax = pt.jpy; }
   const x0 = yMin - 1, x1 = yMax + 1;
-  const lo = Math.floor(Math.log10(jMin)), hi = Math.max(Math.ceil(Math.log10(jMax)), lo + 1);
   const X = yr => mL + (yr - x0) / (x1 - x0) * pw;
-  const Y = j => mT + (hi - Math.log10(j)) / (hi - lo) * ph;
+  const logMode = jMax >= jMin * 100;
+  let Y, ticks = [];
+  if(logMode){
+    let lo = Math.floor(Math.log10(jMin)), hi = Math.ceil(Math.log10(jMax));
+    if(hi - lo < 2) hi++; if(hi - lo < 2) lo--;
+    Y = j => mT + (hi - Math.log10(j)) / (hi - lo) * ph;
+    for(let p = lo; p <= hi; p++) ticks.push({ v: Math.pow(10, p), y: Y(Math.pow(10, p)) });
+  } else {
+    const pad = (jMax - jMin) * 0.12 || jMax * 0.1 || 1;
+    const v0 = Math.max(0, jMin - pad), v1 = jMax + pad;
+    Y = j => mT + (v1 - j) / (v1 - v0) * ph;
+    for(let t = 0; t <= 4; t++){ const v = v0 + (v1 - v0) * t / 4; ticks.push({ v: v, y: Y(v) }); }
+  }
   let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; height:auto; display:block" role="img" aria-label="作品価格の散布図">';
-  for(let pw10 = lo; pw10 <= hi; pw10++){
-    const v = Math.pow(10, pw10), y = Y(v);
-    s += '<line x1="' + mL + '" y1="' + y.toFixed(1) + '" x2="' + (mL + pw) + '" y2="' + y.toFixed(1) + '" stroke="var(--line)" stroke-width="1" opacity=".55"/>'
-      + '<text x="' + (mL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + esc(fmtJPYShort(v)) + '</text>';
+  for(const tk of ticks){
+    s += '<line x1="' + mL + '" y1="' + tk.y.toFixed(1) + '" x2="' + (mL + pw) + '" y2="' + tk.y.toFixed(1) + '" stroke="var(--line)" stroke-width="1" opacity=".55"/>'
+      + '<text x="' + (mL - 4) + '" y="' + (tk.y + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + esc(fmtJPYShort(tk.v)) + '</text>';
   }
   const span = x1 - x0, step = span > 60 ? 20 : span > 30 ? 10 : span > 12 ? 5 : 2;
   for(let yr = Math.ceil(x0 / step) * step; yr <= x1; yr += step){
@@ -9199,20 +9217,47 @@ function bizScatterSVG(plot){
   }
   s += '<line x1="' + mL + '" y1="' + mT + '" x2="' + mL + '" y2="' + (mT + ph) + '" stroke="var(--line)"/><line x1="' + mL + '" y1="' + (mT + ph) + '" x2="' + (mL + pw) + '" y2="' + (mT + ph) + '" stroke="var(--line)"/>';
   const groups = {};
-  for(const pt of plot){ if(pt.raw.work_id) (groups[pt.raw.work_id] = groups[pt.raw.work_id] || []).push(pt); }
+  for(const pt of items){ if(pt.wid) (groups[pt.wid] = groups[pt.wid] || []).push(pt); }
   for(const k of Object.keys(groups)){
     const g = groups[k]; if(g.length < 2) continue;
-    const line = g.slice().sort((a, b) => a.raw.year - b.raw.year).map(pt => X(pt.raw.year).toFixed(1) + ',' + Y(pt.jpy).toFixed(1)).join(' ');
+    const line = g.slice().sort((a, b) => a.year - b.year).map(pt => X(pt.year).toFixed(1) + ',' + Y(pt.jpy).toFixed(1)).join(' ');
     s += '<polyline points="' + line + '" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".5"/>';
   }
-  plot.forEach((pt, i) => {
-    const sel = i === bizPriceSel;
-    s += '<circle cx="' + X(pt.raw.year).toFixed(1) + '" cy="' + Y(pt.jpy).toFixed(1) + '" r="' + (sel ? 5 : 3) + '" fill="' + (sel ? '#ffffff' : '#d9a441') + '" fill-opacity="' + (sel ? 1 : .78) + '"' + (pt.raw.img && pt.raw.img.url ? ' stroke="#f2ead8" stroke-width=".9"' : '') + (sel ? ' stroke="#d9a441" stroke-width="1.6"' : '') + ' onclick="bizPricePick(' + i + ')" style="cursor:pointer"/>';
+  items.forEach((pt, i) => {
+    const sel = i === selIdx;
+    s += '<circle cx="' + X(pt.year).toFixed(1) + '" cy="' + Y(pt.jpy).toFixed(1) + '" r="' + (sel ? 5 : 3) + '" fill="' + (sel ? '#ffffff' : '#d9a441') + '" fill-opacity="' + (sel ? 1 : .78) + '"' + (pt.img ? ' stroke="#f2ead8" stroke-width=".9"' : '') + (sel ? ' stroke="#d9a441" stroke-width="1.6"' : '') + ' onclick="' + pickFn + '(' + i + ')" style="cursor:pointer"/>';
   });
   return s + '</svg>';
 }
+function bizScatterSVG(plot){
+  return ptScatter(plot.map(pt => ({ year: pt.raw.year, jpy: pt.jpy, img: !!(pt.raw.img && pt.raw.img.url), wid: pt.raw.work_id || '' })), 'bizPricePick', bizPriceSel);
+}
 function bizPricePick(i){ bizPriceSel = i; renderBizPrice(); }
 function bizPriceSetMode(m){ bizPriceMode = m; renderBizPrice(); }
+/* v21.0 (his call, 2026-11-14): the same scatter inside each
+   person's prices tab, that person's sales only — few points,
+   readable. Order in the tab: 転機 -> this scatter -> per-work
+   trajectories -> history. The pick refresh touches only the
+   scatter + its detail card, never the whole detail render. */
+let dScatterSel = -1, dScatterPlot = [], dScatterRecs = [];
+function detailScatterDetailHTML(){
+  const p = dScatterRecs[dScatterSel];
+  if(!p) return '<p class="small" style="margin-top:8px">点をタップすると、その落札の詳細が出ます。</p>';
+  const j = jpyOf(p);
+  return '<div class="bpdetail">'
+    + (p.img && p.img.url ? '<div class="pricecover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>' : '')
+    + '<div class="pmain"><div class="pwork">' + esc(p.work) + '</div>'
+    + '<div class="phouse">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div>'
+    + '<div class="pprice">' + esc(bpFmtPrice(p)) + '</div>'
+    + (p.currency && p.currency !== 'JPY' && j != null ? '<div class="pjpy">≈ ' + esc(fmtJPY(j)) + '（概算）</div>' : '')
+    + '</div></div>';
+}
+function detailScatterPick(i){
+  dScatterSel = i;
+  const w = $('dscatterWrap'), d = $('dscatterDetail');
+  if(w) w.innerHTML = ptScatter(dScatterPlot, 'detailScatterPick', dScatterSel);
+  if(d) d.innerHTML = detailScatterDetailHTML();
+}
 function renderBizPrice(){
   const el = $('viewBizPrice'); if(!el) return;
   const pts = bizPriceCollect();
@@ -10321,6 +10366,15 @@ return '<div class="btmrow">'
 + '</div>';
 }
 pricesHTML = breakthroughHTML;
+dScatterSel = -1;
+{
+  const dPts = pricesArr.map(p => ({ p: p, j: jpyOf(p) })).filter(x => x.j != null);
+  dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, img: !!(x.p.img && x.p.img.url), wid: x.p.work_id || '' }));
+  dScatterRecs = dPts.map(x => x.p);
+  if(dScatterPlot.length){
+    pricesHTML += '<h3 class="subhead">全落札の分布（年 × 価格）</h3><div id="dscatterWrap" class="bpchart">' + ptScatter(dScatterPlot, 'detailScatterPick', -1) + '</div><div id="dscatterDetail">' + detailScatterDetailHTML() + '</div>';
+  }
+}
 if(pricesArr.length){
 const ascP = pricesArr.slice().sort((x,y)=> (x.year-y.year) || (y.price-x.price));
 const bestByCur = {}; const highSet = new Set();
@@ -13971,7 +14025,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '20.1';
+const APP_VERSION = '21.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
