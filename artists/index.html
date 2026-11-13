@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="19.2">
+<meta name="app-version" content="19.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -531,6 +531,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .bizchtitle{font-size:16px; font-weight:700}
 .bizchlead{font-size:13px; color:var(--muted)}
 .bizchgo{color:var(--muted); font-size:18px}
+.bizicons{border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 14px}
+.biziconrow{display:flex; gap:6px}
+.biziconbtn{flex:1; min-height:52px; display:flex; align-items:center; justify-content:center; background:var(--card); border:1px solid var(--line); border-radius:10px; color:var(--muted)}
+.biziconbtn svg{width:26px; height:26px}
+.biziconbtn.on{color:var(--text); border-color:#d9a441; background:var(--card2)}
 .biznav{display:flex; justify-content:space-between; gap:8px; margin-top:18px}
 .biznavbtn{flex:1; min-height:48px; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; font-size:14px; font-family:inherit}
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
@@ -9117,12 +9122,25 @@ function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; const 
    the app, so text updates ship as file pushes with no app
    release (the chronicle-json pattern, minus the conversion —
    Art Labo hands over this shape directly or as Markdown).
-   The entry mark was chosen by him on-device from 4 candidate
-   motifs (gavel / ¥ / price tag / line chart, presented in
-   v19.0–v19.1): the GAVEL won (decided 2026-11-13 23:49), and
-   v19.2 removed the losers and the picker. */
-const BIZ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 10)"><rect x="5" y="7" width="14" height="5" rx="1.6"/><path d="M3.4 7v5M20.6 7v5"/><path d="M12 12v6.5"/></g><path d="M4.5 21h15"/></svg>';
-function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICON; }
+   The entry MOTIF was chosen by him from 4 candidates
+   (gavel / ¥ / price tag / line chart, v19.0–v19.1): the
+   GAVEL won (2026-11-13 23:49). Per his standing method the
+   DRAWING is also chosen on-device: v19.2 briefly shipped a
+   single form, then v19.3 restored the picker with 6 gavel
+   drawing patterns (block / no block / angle / arcs / badge /
+   bold). Once he names the drawing, the losers are deleted
+   in a cleanup release. */
+const BIZ_ICONS = {
+p1: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 10)"><rect x="5" y="7" width="14" height="5" rx="1.6"/><path d="M3.4 7v5M20.6 7v5"/><path d="M12 12v6.5"/></g><path d="M4.5 21h15"/></svg>',
+p2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4.5" width="11" height="4.6" rx="1.2"/><path d="M2.8 4.5v4.6M16.2 4.5v4.6"/><path d="M9.5 9.1V17"/><path d="M6.5 17.8h6"/><path d="M4 20.5h12"/></svg>',
+p3: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 3.6l9.6 9.6-2.8 2.8L4.4 6.4z"/><path d="M11.5 11.5L19 19"/></svg>',
+p4: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 10)"><rect x="5.5" y="7" width="13" height="5" rx="2.4"/><path d="M12 12v6.5"/></g><path d="M18.8 3.8a3.4 3.4 0 011.6 2.2M20.6 2.6a5.6 5.6 0 012.4 3.6"/></svg>',
+p5: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><g transform="translate(12 12) scale(0.6) translate(-12 -12)"><g transform="rotate(45 12 10)"><rect x="5" y="7" width="14" height="5" rx="1.6"/><path d="M3.4 7v5M20.6 7v5"/><path d="M12 12v6.5"/></g><path d="M4.5 21h15"/></g></svg>',
+p6: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(45 12 10)"><rect x="5" y="7" width="14" height="5" rx="1.6"/><path d="M3.4 7v5M20.6 7v5"/><path d="M12 12v6.5"/></g><path d="M4.5 21h15"/></svg>'
+};
+const BIZ_ICON_LABELS = { p1: '斜め・台座つき', p2: '正面・台座つき', p3: '木槌のみ', p4: '響き線つき', p5: '円バッジ', p6: '太線' };
+function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICONS[ZSET.bizIcon] || BIZ_ICONS.p1; }
+function setBizIcon(id){ if(!BIZ_ICONS[id]) return; ZSET.bizIcon = id; saveZSettings(); refreshBizBtn(); if(view==='biz') renderBiz(); }
 let bizData = null, bizError = false, bizChapterId = null;
 function openBiz(){ showView('biz'); bizEnsure(); }
 function bizEnsure(){
@@ -9144,6 +9162,8 @@ function renderBiz(){
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>';
   h += '<h2 class="biztitle">' + esc((bizData && bizData.title) || 'アートビジネス') + '</h2>';
   if(bizData && bizData.intro) h += '<p class="bodytext">' + esc(bizData.intro) + '</p>';
+  h += '<div class="bizicons"><div class="small" style="margin-bottom:6px">入口のガベルの描き方（タップで切替・そのまま保存されます。決まったら他の案は消します）</div><div class="biziconrow">'
+    + Object.keys(BIZ_ICONS).map(k=> '<button class="biziconbtn' + (ZSET.bizIcon===k? ' on': '') + '" onclick="setBizIcon(\'' + k + '\')" aria-label="ガベル案 ' + BIZ_ICON_LABELS[k] + '">' + BIZ_ICONS[k] + '</button>').join('') + '</div></div>';
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
@@ -13830,7 +13850,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '19.2';
+const APP_VERSION = '19.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -14040,13 +14060,14 @@ function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHT
 
 const LS_ZSETTINGS = 'zukan.settings';
 let ZSET = (function(){
-  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard' };
+  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard', bizIcon:'p1' };
   try{ const z = JSON.parse(storeGet(LS_ZSETTINGS)||'null');
     if(z && typeof z==='object'){
       if(THEMES.some(t=>t.id===z.theme)) d.theme=z.theme;
       if(['small','standard','large','xlarge'].includes(z.fontSize)) d.fontSize=z.fontSize;
       if(FONTFAMS.some(f=>f.id===z.fontFamily)) d.fontFamily=z.fontFamily;
       if(LINEHEIGHTS.some(l=>l.id===z.lineHeight)) d.lineHeight=z.lineHeight;
+      if(['p1','p2','p3','p4','p5','p6'].includes(z.bizIcon)) d.bizIcon=z.bizIcon;
     } }catch(e){}
   return d;
 })();
