@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="8.4">
+<meta name="app-version" content="8.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9029,27 +9029,48 @@ renderList();
 /* v8.0: variant glyphs fold into one form on BOTH sides (query
    and index), so 會見 finds 会見， 齋藤 finds 斎藤， ヴァ/ヂヅ/small
    kana spellings stop mattering. */
-const KANJI_VARIANTS = { '會':'会','齋':'斎','斉':'斎','櫻':'桜','邊':'辺','髙':'高','淸':'清','瀨':'瀬','澤':'沢','廣':'広','德':'徳','眞':'真','龍':'竜','龜':'亀','亞':'亜','國':'国','圓':'円','繪':'絵','絲':'糸','黑':'黒','﨑':'崎','嶋':'島','嶌':'島','藝':'芸','檜':'桧','冨':'富','瀧':'滝' };
+const KANJI_VARIANTS = { '會':'会','齋':'斎','斉':'斎','櫻':'桜','邊':'辺','髙':'高','淸':'清','瀨':'瀬','澤':'沢','廣':'広','德':'徳','眞':'真','龍':'竜','龜':'亀','亞':'亜','國':'国','圓':'円','繪':'絵','絲':'糸','黑':'黒','﨑':'崎','嶋':'島','嶌':'島','藝':'芸','檜':'桧','冨':'富','瀧':'滝',
+/* v8.5 (search audit): the forms a Japanese speaker actually
+   types — 彌生 for 彌生 (Kusama), 齊 for the three 斎 names,
+   禮/惠/榮 and the rest of the audit's expansion list. */
+'彌':'弥','齊':'斎','禮':'礼','榮':'栄','惠':'恵','藏':'蔵','靜':'静','寬':'寛','將':'将','壽':'寿','穰':'穣','遙':'遥','凜':'凛','峯':'峰','嶽':'岳','祢':'禰','濱':'浜','曽':'曾' };
+const KANJI_VARIANT_RE = new RegExp('[' + Object.keys(KANJI_VARIANTS).join('') + ']', 'g');
+/* v8.5: Latin diacritics fold (Dali for Dalí, Cezanne,
+   Muller-Brockmann, Ōkyo) — surname-only Latin queries had no
+   rescue at all, so these were complete misses. */
+const DIACRITICS = { 'á':'a','à':'a','â':'a','ä':'a','ã':'a','å':'a','ā':'a','ă':'a','ą':'a','é':'e','è':'e','ê':'e','ë':'e','ē':'e','ĕ':'e','ė':'e','ę':'e','ě':'e','í':'i','ì':'i','î':'i','ï':'i','ī':'i','ĭ':'i','į':'i','ı':'i','ó':'o','ò':'o','ô':'o','ö':'o','õ':'o','ō':'o','ŏ':'o','ő':'o','ú':'u','ù':'u','û':'u','ü':'u','ū':'u','ŭ':'u','ů':'u','ű':'u','ų':'u','ý':'y','ÿ':'y','ñ':'n','ń':'n','ç':'c','ć':'c','č':'c','ś':'s','š':'s','ş':'s','ź':'z','ż':'z','ž':'z','ł':'l','đ':'d','ð':'d','þ':'th','æ':'ae','œ':'oe','ø':'o','ß':'ss' };
+const DIACRITIC_RE = new RegExp('[' + Object.keys(DIACRITICS).join('') + ']', 'g');
 const SMALL_KANA = { 'ァ':'ア','ィ':'イ','ゥ':'ウ','ェ':'エ','ォ':'オ','ャ':'ヤ','ュ':'ユ','ョ':'ヨ','ッ':'ツ','ヮ':'ワ','ヵ':'カ','ヶ':'ケ' };
 function normSearch(s){
 let t = String(s||'');
 t = t.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
 t = t.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
 t = t.toLowerCase();
-t = t.replace(/[會齋斉櫻邊髙淸瀨澤廣德眞龍龜亞國圓繪絲黑﨑嶋嶌藝檜冨瀧]/g, c => KANJI_VARIANTS[c] || c);
-t = t.replace(/ヴァ/g, 'バ').replace(/ヴィ/g, 'ビ').replace(/ヴェ/g, 'ベ').replace(/ヴォ/g, 'ボ').replace(/ヴ/g, 'ブ');
+t = t.replace(KANJI_VARIANT_RE, c => KANJI_VARIANTS[c] || c);
+t = t.replace(DIACRITIC_RE, c => DIACRITICS[c] || c);
+/* v8.5: long vowels fold on BOTH sides (index and query), so a
+   dropped long vowel still lands: コウジ＝コジ (koji),
+   ソウタツ＝ソタツ (sotatsu), リュウ＝リュ. The generalised
+   rules drop ウ after any o-row kana and イ after any e-row
+   kana — that is also what makes デイ＝デ, hence "deviddo"
+   reach デイヴィッド (the audit's flagship miss). */
+t = t.replace(/オウ/g, 'オ').replace(/オオ/g, 'オ').replace(/エイ/g, 'エ').replace(/エエ/g, 'エ').replace(/ウウ/g, 'ウ').replace(/イイ/g, 'イ').replace(/アア/g, 'ア').replace(/ュウ/g, 'ュ').replace(/ョウ/g, 'ョ');
+t = t.replace(/([オコソトノホモヨロヲゴゾドボポ])ウ/g, '$1').replace(/([エケセテネヘメレゲゼデベペ])イ/g, '$1');
+/* v8.5: the ヴ fold must catch ヴ + LARGE vowel too (ヴイ for
+   ヴィ) — the small-only patterns let ブイ through (audit V5c). */
+t = t.replace(/ヴ[ァア]/g, 'バ').replace(/ヴ[ィイ]/g, 'ビ').replace(/ヴ[ェエ]/g, 'ベ').replace(/ヴ[ォオ]/g, 'ボ').replace(/ヴ/g, 'ブ');
 t = t.replace(/ヂ/g, 'ジ').replace(/ヅ/g, 'ズ');
 t = t.replace(/[ァィゥェォャュョッヮヵヶ]/g, c => SMALL_KANA[c] || c);
-t = t.replace(/[・･\s　\-‐ー―–—_]/g, '');
+/* v8.5: ＝ and ＆ join the stripped separators (audit V1b:
+   14 names could not be hit with the separators dropped). */
+t = t.replace(/[・･\s　\-‐ー―–—_＝＆=&]/g, '');
 return t;
 }
 /* v4.3: romaji → kana query variants. A romaji token also matches
    its kana reading, so "gokita" finds ごきた readings (name_kana)
    as well as the Latin name — the readings themselves are data
    (collected into name_kana); this makes both directions work. */
-function romajiToKana(s){
-if(!/^[a-z]+$/.test(s)) return null;
-const MAP = { a:'あ', i:'い', u:'う', e:'え', o:'お',
+const ROMAJI_MAP = { a:'あ', i:'い', u:'う', e:'え', o:'お',
 ka:'か', ki:'き', ku:'く', ke:'け', ko:'こ', sa:'さ', shi:'し', su:'す', se:'せ', so:'そ',
 ta:'た', chi:'ち', tsu:'つ', te:'て', to:'と', na:'な', ni:'に', nu:'ぬ', ne:'ね', no:'の',
 ha:'は', hi:'ひ', fu:'ふ', he:'へ', ho:'ほ', ma:'ま', mi:'み', mu:'む', me:'め', mo:'も',
@@ -9060,19 +9081,43 @@ pa:'ぱ', pi:'ぴ', pu:'ぷ', pe:'ぺ', po:'ぽ',
 kya:'きゃ', kyu:'きゅ', kyo:'きょ', sha:'しゃ', shu:'しゅ', sho:'しょ', cha:'ちゃ', chu:'ちゅ', cho:'ちょ',
 nya:'にゃ', nyu:'にゅ', nyo:'にょ', hya:'ひゃ', hyu:'ひゅ', hyo:'ひょ', mya:'みゃ', myu:'みゅ', myo:'みょ',
 rya:'りゃ', ryu:'りゅ', ryo:'りょ', gya:'ぎゃ', gyu:'ぎゅ', gyo:'ぎょ', ja:'じゃ', ju:'じゅ', jo:'じょ',
-bya:'びゃ', byu:'びゅ', byo:'びょ', pya:'ぴゃ', pyu:'ぴゅ', pyo:'ぴょ' };
+bya:'びゃ', byu:'びゅ', byo:'びょ', pya:'ぴゃ', pyu:'ぴゅ', pyo:'ぴょ',
+/* v8.5 (search audit, the biggest hole: 143 full-name misses):
+   the loanword morae the old table lacked — ティ/ディ/トゥ/
+   ドゥ/ファ行/ヴァ行/ウィ/ウェ/シェ/ジェ/チェ/デュ/テュ/ツァ行. */
+ti:'てぃ', di:'でぃ', tu:'とぅ', du:'どぅ', si:'し', zi:'じ',
+fa:'ふぁ', fi:'ふぃ', fe:'ふぇ', fo:'ふぉ', va:'ゔぁ', vi:'ゔぃ', ve:'ゔぇ', vo:'ゔぉ',
+je:'じぇ', she:'しぇ', che:'ちぇ', dyu:'でゅ', tyu:'てゅ',
+wi:'うぃ', we:'うぇ', tsa:'つぁ', tsi:'つぃ', tse:'つぇ', tso:'つぉ',
+vya:'ゔゃ', vyu:'ゔゅ', vyo:'ゔょ' };
+function romajiParse(s, nAlt, woAlt){
+if(!/^[a-z]+$/.test(s)) return null;
+const MAP = ROMAJI_MAP;
 let out = '', i = 0;
 while(i < s.length){
 if(i + 1 < s.length && s[i] === s[i + 1] && 'aeioun'.indexOf(s[i]) < 0){ out += 'っ'; i++; continue; }
 if(s[i] === 'n'){
 const nx = s[i + 1];
-if(nx === undefined || 'aeiouy'.indexOf(nx) < 0){ out += 'ん'; i++; continue; }
+/* nAlt: also read n+vowel as ん (genichiro = ゲンイチロウ) */
+if(nx === undefined || 'aeiouy'.indexOf(nx) < 0 || nAlt){ out += 'ん'; i++; continue; }
 }
+if(woAlt && s.substr(i, 2) === 'wo'){ out += 'うぉ'; i += 2; continue; }
 let hit = null;
 for(const len of [3, 2, 1]){ const sub = s.substr(i, len); if(MAP[sub]){ hit = MAP[sub]; i += len; break; } }
 if(!hit) return null;
 out += hit;
 }
+return out;
+}
+function romajiToKana(s){ return romajiParse(s, false, false); }
+/* Ambiguous spellings get every plausible reading tried
+   (n before a vowel: に vs ん+母音; wo: ヲ vs ウォ). */
+function romajiToKanaVariants(s){
+const out = [];
+[[false, false], [true, false], [false, true], [true, true]].forEach(fl=>{
+const kv = romajiParse(s, fl[0], fl[1]);
+if(kv && out.indexOf(kv) < 0) out.push(kv);
+});
 return out;
 }
 /* v8.0: the search index/matcher as reusable units — the same
@@ -9109,8 +9154,7 @@ function artistMatches(a, toks){
 const hay = artistHay(a);
 return toks.every(tok=>{
 if(hay.indexOf(tok) >= 0) return true;
-const kv = romajiToKana(tok);
-return kv? hay.indexOf(normSearch(kv)) >= 0: false;
+return romajiToKanaVariants(tok).some(kv=> hay.indexOf(normSearch(kv)) >= 0);
 });
 }
 function queryToks(){
@@ -9166,17 +9210,25 @@ prev = cur;
 }
 return prev[b.length] <= maxD;
 }
-function kanaProximity(tok, a){
+/* v8.5: kanaDist returns the actual minimum edit distance (99
+   when beyond reach) so the rescue can RANK by closeness
+   instead of file order (the audit: Lynch sat 9th of 32
+   candidates and fell off the 8-cap). */
+function kanaDist(tok, a){
 const cands = [a.name_kana, a.name].filter(Boolean).map(normSearch).filter(x=>/[ァ-ヶ]/.test(x));
+let best = 99;
 for(const cand of cands){
 for(let L = Math.max(2, tok.length-2); L <= tok.length+2; L++){
 for(let i=0; i+L <= cand.length; i++){
-if(levWithin(tok, cand.substr(i, L), 2)) return true;
+const w = cand.substr(i, L);
+if(Math.abs(w.length - tok.length) >= best) continue;
+for(let d = 0; d < best && d <= 2; d++){ if(levWithin(tok, w, d)){ best = d; break; } }
 }
 }
 }
-return false;
+return best;
 }
+function kanaProximity(tok, a){ return kanaDist(tok, a) <= 2; }
 function nearMatches(){
 const toks = queryToks(); if(!toks.length) return [];
 const scored = [];
@@ -9184,16 +9236,20 @@ for(const kind of ['artists','designers']){
 const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
 c.DB.artists.forEach(a=>{
 const hay = artistHay(a);
-let score = 0;
+let score = 0, dist = 0;
 toks.forEach(tok=>{
 if(hay.indexOf(tok) >= 0) score += 2;
-else { const kv = romajiToKana(tok); if(kv && hay.indexOf(normSearch(kv)) >= 0) score += 2; }
+else if(romajiToKanaVariants(tok).some(kv=> hay.indexOf(normSearch(kv)) >= 0)) score += 2;
 });
-if(!score && toks.length===1 && toks[0].length>=3 && /[ァ-ヶ]/.test(toks[0]) && kanaProximity(toks[0], a)) score = 1;
-if(score > 0) scored.push({ kind, a, score });
+if(!score && toks.length===1 && toks[0].length>=3 && /[ァ-ヶ]/.test(toks[0])){
+const d = kanaDist(toks[0], a);
+if(d <= 2){ score = 1; dist = d; }
+}
+if(score > 0) scored.push({ kind, a, score, dist });
 });
 }
-return scored.sort((x, y)=> y.score - x.score).slice(0, 8);
+/* v8.5: rank by score, then by EDIT DISTANCE (not file order). */
+return scored.sort((x, y)=> (y.score - x.score) || (x.dist - y.dist)).slice(0, 8);
 }
 /* tag facets: classification / technique-material / era-country / theme (default) */
 const TAG_FACETS = {};
@@ -9401,11 +9457,24 @@ let h = '<h2 class="sechead"><span>'+label+'から</span><span class="cnt">'+cro
 cross.slice(0, 24).forEach(a=>{ h += personCardHTML(a, other); });
 return h + '</div>';
 }
-function nearSectionHTML(){
-const near = nearMatches(); if(!near.length) return '';
+function nearSectionHTML(list){
+const near = list || nearMatches(); if(!near.length) return '';
 let h = '<h2 class="sechead"><span>もしかして</span></h2><div class="grid '+state.mode+'">';
 near.forEach(({kind, a})=>{ h += personCardHTML(a, kind===DS? null: kind); });
 return h + '</div>';
+}
+/* v8.5 (audit §3): near candidates NOT already on screen — the
+   rescue used to appear only when strict search found nothing
+   at all, so one stray notes-word hit (「ビッテ・デビット」in
+   an unrelated bio) silently suppressed it. Now it appends
+   below real results too, minus anyone already shown. */
+function nearExtraHTML(shownHere, shownCross){
+if(favFilter) return '';
+const near = nearMatches().filter(x=>{
+if(x.kind===DS) return !shownHere.has(String(x.a.id));
+return !shownCross.has(String(x.a.id));
+});
+return nearSectionHTML(near);
 }
 function wireListImages(body){
 body.querySelectorAll('[data-work]').forEach(ph=>{
@@ -9425,7 +9494,8 @@ if(!arr.length){
 let html = '';
 if(favFilter) html = '<div class="empty">お気に入りはまだありません。作家のページで ★ を押すと、ここに集まります</div>';
 else if(searching){
-html = crossSectionHTML() || nearSectionHTML();
+const crossIds = new Set(crossMatches().slice(0, 24).map(a=>String(a.id)));
+html = crossSectionHTML() + nearExtraHTML(new Set(), crossIds);
 if(!html) html = '<div class="empty">該当する項目がありません</div>';
 }
 else html = '<div class="empty">該当する項目がありません</div>';
@@ -9446,7 +9516,12 @@ html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 });
-if(searching) html += crossSectionHTML();
+if(searching){
+const shownIds = new Set(arr.map(a=>String(a.id)));
+const crossIds = new Set(crossMatches().slice(0, 24).map(a=>String(a.id)));
+html += crossSectionHTML();
+html += nearExtraHTML(shownIds, crossIds);
+}
 body.innerHTML = html + reqFootHTML();
 /* attach work objects for lazy hydration */
 wireListImages(body);
@@ -12658,7 +12733,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '8.4';
+const APP_VERSION = '8.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
