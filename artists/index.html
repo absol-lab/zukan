@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="14.1">
+<meta name="app-version" content="15.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -510,6 +510,21 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .bookmeta .bt{font-size:15px; font-weight:700; line-height:1.45;}
 .bookmeta .bm{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .bookmeta .bp{font-size:15px; font-weight:700; margin-top:3px;}
+/* v15.0: prices tab — auction records. The year is the anchor
+   column (like the CV years); the record-high chip reuses the
+   v13.3 fixed gold/black pairing (contrast-safe on all themes). */
+.pricerow{display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px;}
+.pricecover{flex:none; width:64px;}
+.pricecover .imgholder{display:block; aspect-ratio:1; background:var(--bg2); border-radius:6px; overflow:hidden;}
+.pricecover .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.pricerow .pmain{flex:1 1 auto; min-width:0;}
+.pricerow .pwork{font-size:15px; font-weight:700; line-height:1.45;}
+.pricerow .phouse{font-size:12.5px; color:var(--muted); margin-top:2px;}
+.pricerow .pprice{font-size:16px; font-weight:800; margin-top:3px;}
+.pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.highchip{display:inline-block; background:#e6b93d; color:#191204; font-size:11px; font-weight:800; letter-spacing:.06em; border-radius:999px; padding:2px 8px; vertical-align:2px; margin-left:6px;}
+.psumrow{font-size:14.5px; margin-top:4px;}
+.psumrow b{font-size:16px;}
 /* v2.67: exhibition calendar — v2.68 restyled after the diary
    app's calendar (the user's reference): full-bleed month grid,
    thin lines, date number top-left (Sunday red, Saturday blue),
@@ -8262,6 +8277,31 @@ img: normalizeImg(b.img),
 note: String(b.note||'')
 };
 }).filter(b=>b.title);
+/* v15.0: prices （落札実績） — curated on the Muse side only,
+   like books. The app never edits them, but they must survive
+   normalization, merges and editor saves or the tab would
+   silently empty (the name_kana lesson). Malformed entries
+   (no work, or year/price not numeric) are dropped here so a
+   bad record can never break the tab's arithmetic. */
+const prices = (Array.isArray(a.prices)? a.prices: []).map(p=>{
+p = p || {};
+const yr = (typeof p.year==='number' && isFinite(p.year))? p.year: parseInt(p.year, 10);
+const pr = (typeof p.price==='number' && isFinite(p.price))? p.price: (typeof p.price==='string' && p.price.trim()!==''? Number(p.price): NaN);
+return {
+year: isFinite(yr)? yr: null,
+work: String(p.work||''),
+house: String(p.house||''),
+price: isFinite(pr)? pr: null,
+currency: String(p.currency||'').toUpperCase(),
+source: String(p.source||''),
+note: String(p.note||''),
+/* img: {url} is the contract shape (same as works/books);
+   a bare string URL is also accepted so staging notation
+   variance never drops a record. Missing img is fine — the
+   row simply renders without a thumbnail. */
+img: (typeof p.img==='string' && p.img)? { url: p.img }: normalizeImg(p.img)
+};
+}).filter(p=>p.work && p.year!=null && p.price!=null);
 const rec = {
 id: (a.id!=null? a.id: null),
 name: String(a.name||''), name_latin: String(a.name_latin||''), name_native: String(a.name_native||''),
@@ -8283,6 +8323,7 @@ tags: Array.isArray(a.tags)? a.tags.map(String): [],
 work_image: String(a.work_image||''), work_caption: String(a.work_caption||''),
 works: works,
 books: books,
+prices: prices,
 layer: (a.layer==='candidate')? 'candidate': 'canon',
 updated_at: String(a.updated_at||'')
 };
@@ -9656,7 +9697,7 @@ prefetchViewerImage(a);
    scrolls the pager and the pager's own scroll position is the single
    source of truth for which tab is active (wireDPager keeps state.tab
    and the .on highlight in sync with it). */
-const DTABS = ['works','books','bio','feat'];
+const DTABS = ['works','books','bio','feat','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -9889,6 +9930,11 @@ function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
 const sp = splitNotes(a.notes);
+/* v15.0: the prices tab exists (as a hidden button + an empty
+   pager panel, so DTABS indices always line up) but is only
+   SHOWN for people who actually have auction records. */
+const pricesArr = Array.isArray(a.prices)? a.prices: [];
+if(state.tab==='prices' && !pricesArr.length) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
@@ -9903,6 +9949,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
+'<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+(pricesArr.length? '': ' style="display:none"')+'>価格</button>'+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
@@ -9952,6 +9999,39 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
 '</div></div>';
 }).join('');
 }
+/* v15.0: prices tab — per-currency record highs on top, then
+   the auction history newest first. No currency conversion is
+   ever shown (prices in different currencies are not compared);
+   a row earns the 最高値更新 chip when, scanning oldest to
+   newest, it beats every earlier price IN ITS OWN CURRENCY. */
+let pricesHTML = '';
+const pricesDesc = pricesArr.slice().sort((x,y)=> (y.year-x.year) || (y.price-x.price));
+if(pricesArr.length){
+const CURSYM = { USD:'$', GBP:'£', EUR:'€', JPY:'¥', HKD:'HK$', CHF:'CHF ', CNY:'CN¥' };
+const fmtPrice = p => (CURSYM[p.currency] || (p.currency? p.currency+' ': '')) + p.price.toLocaleString('en-US');
+const ascP = pricesArr.slice().sort((x,y)=> (x.year-y.year) || (y.price-x.price));
+const bestByCur = {}; const highSet = new Set();
+/* the first record in a currency sets the baseline (no chip);
+   only a later record that strictly beats it is an update. */
+ascP.forEach(p=>{
+const c = p.currency||'';
+if(bestByCur[c]==null) bestByCur[c] = p;
+else if(p.price > bestByCur[c].price){ bestByCur[c] = p; highSet.add(p); }
+});
+const cntByCur = {}; pricesArr.forEach(p=>{ const c = p.currency||''; cntByCur[c] = (cntByCur[c]||0)+1; });
+const topCurs = Object.keys(bestByCur).sort((c1,c2)=> (cntByCur[c2]-cntByCur[c1]) || (bestByCur[c2].price - bestByCur[c1].price)).slice(0, 2);
+pricesHTML = '<h3 class="subhead">最高落札額（通貨別・換算なし）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b> <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
+pricesHTML += pricesDesc.map((p, pi)=> '<div class="pricerow">'+
+(p.img && p.img.url? '<div class="pricecover" data-pidx="'+pi+'">'+imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb)+'</div>': '')+
+'<div class="pmain">'+
+'<div class="pwork">'+esc(p.work)+(highSet.has(p)? '<span class="highchip">最高値更新</span>': '')+'</div>'+
+'<div class="phouse">'+[p.house, p.year].filter(x=>x!=='' && x!=null).map(esc).join(' ・ ')+'</div>'+
+'<div class="pprice">'+esc(fmtPrice(p))+'</div>'+
+(p.note? '<div class="pnote">'+esc(p.note)+'</div>': '')+
+(p.source? '<div style="margin-top:4px"><a href="'+escA(p.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')+
+'</div></div>').join('');
+pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出典の表記に基づきます（手数料の扱いは出典でご確認ください）。</div>';
+}
 /* v5.0: a person with a chronicle gets the chronicle as their
    biography — the CV setting and the works strip step aside. */
 const chData = chronicleFor(a);
@@ -9971,6 +10051,7 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
++'<div class="dpage" data-dtab="prices">'+pricesHTML+'</div>'
 +'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
 html += '</div>';
@@ -9979,6 +10060,10 @@ wireDPager(v);
 v.querySelectorAll('.bookcover').forEach(cv=>{
 const b = booksArr[+cv.dataset.bidx]; if(!b) return;
 const span = cv.querySelector('.imgholder'); if(span){ span._work = b; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, b); }
+});
+v.querySelectorAll('.pricecover').forEach(cv=>{
+const p = pricesDesc[+cv.dataset.pidx]; if(!p) return;
+const span = cv.querySelector('.imgholder'); if(span){ const wobj = { img: p.img, caption: p.work }; span._work = wobj; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj); }
 });
 v.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
@@ -12248,6 +12333,8 @@ if(old && old.books && old.books.length) rec.books = old.books;
 if(old && old.name_kana) rec.name_kana = old.name_kana;
 /* v8.4: nor the aliases (no form field either) */
 if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
+/* v15.0: nor the auction prices (no form field either) */
+if(old && old.prices && old.prices.length) rec.prices = old.prices;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 /* v10.3: nor a work's hires flag — same per-work carry.
@@ -12319,6 +12406,8 @@ function mergeDataInto(local, incoming){
     if(ia.books && ia.books.length) merged.books = ia.books;
     /* v8.4: aliases, same wholesale treatment as books. */
     if(ia.aliases && ia.aliases.length) merged.aliases = ia.aliases;
+    /* v15.0: prices, same wholesale treatment as books. */
+    if(ia.prices && ia.prices.length) merged.prices = ia.prices;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -13508,7 +13597,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '14.1';
+const APP_VERSION = '15.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
