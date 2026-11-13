@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="10.3">
+<meta name="app-version" content="10.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -248,6 +248,14 @@ figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); disp
    detail works tiles, museum tiles, and the viewer. */
 .hiresbadge{position:absolute; top:6px; right:6px; z-index:2; font-size:10px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:2px 8px; line-height:1.5; pointer-events:none;}
 #vhires{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 58px); right:12px; z-index:6; font-size:11px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:3px 10px; line-height:1.5; pointer-events:none;}
+/* v10.4: the badge reaches every work-tile surface. Small
+   variant for timeline strips; a gold dot for the 52px
+   biography/chronicle thumbs, where a text pill would cover
+   the whole thumb. Person-representative tiles stay clean
+   (his call). */
+.hiresbadge.sm{font-size:8.5px; padding:1px 5px; top:4px; right:4px;}
+.hiresdot{position:absolute; top:3px; right:3px; width:9px; height:9px; border-radius:50%; background:#EBCB6B; border:1px solid rgba(16,14,10,.65); z-index:2; pointer-events:none;}
+.biothumb,.tlthumb{position:relative;}
 figure.work .ph img{width:100%; height:100%; object-fit:cover; display:block;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
 figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--bg);}
@@ -9754,7 +9762,7 @@ function chronicleHTML(a, ch, ws){
       const thumbs = [];
       per.works.forEach(w=>{
         const idx = chWorkIdx(ws, w.title, w.year);
-        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+idx+', \''+escA(a.id)+'\')">'+imgHTML(work, IMG_SIZE.thumb)+'</button>'); }
+        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+idx+', \''+escA(a.id)+'\')">'+imgHTML(work, IMG_SIZE.thumb)+hiresDotHTML(work)+'</button>'); }
         else thumbs.push('<span class="chsym">《'+esc(w.title)+'》（'+w.year+'年）</span>');
       });
       h += '<div class="chworks"><div class="chwlabel">正本の代表作品</div><div class="biothumbs">'+thumbs.join('')+'</div></div>';
@@ -9813,7 +9821,7 @@ function bioWorksStrip(a, ws){
   yrs.forEach(y=>{
     const age = (birth && +y >= birth)? '（'+(+y - birth)+'歳）': '';
     h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
-      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+'</button>'; }).join('')
+      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
       + '</div></div>';
   });
   return h;
@@ -10383,8 +10391,10 @@ function vClampPan(){
    invisible on the device while the data itself was intact. Posters
    now render through the same hydrateImg path as work images (the URL
    branch with the v2.20 retry/backoff), at detail-plate size. */
-/* v10.3: the hi-res mark, shared by the photo-primary surfaces */
-function hiresBadgeHTML(w){ return (w && w.hires)? '<span class="hiresbadge">超高画質</span>': ''; }
+/* v10.3: the hi-res mark, shared by the photo-primary surfaces.
+   v10.4: small variant + a dot for the micro thumbs. */
+function hiresBadgeHTML(w, sm){ return (w && w.hires)? '<span class="hiresbadge'+(sm?' sm':'')+'">超高画質</span>': ''; }
+function hiresDotHTML(w){ return (w && w.hires)? '<span class="hiresdot"></span>': ''; }
 function exPosterHTML(e, idx){
 if(!(e && e.img && e.img.url)) return '';
 return '<div class="exposter" data-exi="'+idx+'">'+imgHTML({ caption: e.title||'', img: e.img }, IMG_SIZE.plate)+'</div>';
@@ -11595,7 +11605,7 @@ if(ew.length){
 const picks = []; const seenA = {};
 ew.forEach(c=>{ if(picks.length<3 && !seenA[c.a.id]){ seenA[c.a.id]=1; picks.push(c); } });
 if(picks.length<3) ew.forEach(c=>{ if(picks.length<3 && picks.indexOf(c)<0) picks.push(c); });
-html += '<div class="tlstrip">'+picks.map(c=>{ stripWiring.push(c.w); return '<button class="tlthumb" aria-label="'+escA(c.w.caption||'')+'" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</button>'; }).join('')+'</div>';
+html += '<div class="tlstrip">'+picks.map(c=>{ stripWiring.push(c.w); return '<button class="tlthumb" aria-label="'+escA(c.w.caption||'')+'" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+hiresBadgeHTML(c.w, true)+'</button>'; }).join('')+'</div>';
 }
 html += '<div style="margin-top:10px;"><button class="linkbtn" onclick="openEra('+i+')">詳しく見る ›</button></div>';
 html += '</div>';
@@ -11672,7 +11682,7 @@ function renderYsResults(){
   }
   if(d.works.length){
     h += '<h3 class="subhead">'+Y+'年の作品</h3><div class="gallery">'
-      + d.works.slice(0, 60).map(c=> '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'</div><div class="sub">'+esc(c.w.caption || '')+'</div></figcaption></figure>').join('')
+      + d.works.slice(0, 60).map(c=> '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+hiresBadgeHTML(c.w)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'</div><div class="sub">'+esc(c.w.caption || '')+'</div></figcaption></figure>').join('')
       + '</div>'
       + (d.works.length > 60? '<div class="small">全'+d.works.length+'点のうち60点まで表示しています</div>': '');
   } else {
@@ -11780,7 +11790,7 @@ function renderEra(){
   if(chips.length) html += '<h3 class="subhead">この時代の人々</h3><div class="tlchips" style="margin-top:4px;">'+chips.join('')+'</div>';
   if(ew.length){
     html += '<h3 class="subhead">この時代の作品（図鑑から）</h3><div class="gallery">'
-      + ew.map(c=>{ wiring.push(c.w); return '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'（'+c.y+'年）</div><div class="sub">'+esc(c.w.caption||'')+'</div></figcaption></figure>'; }).join('')
+      + ew.map(c=>{ wiring.push(c.w); return '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+hiresBadgeHTML(c.w)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'（'+c.y+'年）</div><div class="sub">'+esc(c.w.caption||'')+'</div></figcaption></figure>'; }).join('')
       + '</div>';
   }
   html += '</div>';
@@ -13145,7 +13155,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '10.3';
+const APP_VERSION = '10.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
