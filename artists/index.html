@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.2">
+<meta name="app-version" content="21.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10353,16 +10353,19 @@ return '<div class="btmrow">'
 + (bt.sources && bt.sources.length? '<div class="small" style="margin-top:8px">出典：'+bt.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>': '')
 + '</div>';
 }
-pricesHTML = breakthroughHTML;
+/* v21.3 (his call): the scatter leads the prices tab —
+   graph first, then 転機, trajectories, history. */
 dScatterSel = -1;
+let scatterStr = '';
 {
   const dPts = pricesArr.map(p => ({ p: p, j: jpyOf(p) })).filter(x => x.j != null);
   dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, imgUrl: (x.p.img && x.p.img.url) ? sizedThumbUrl(x.p.img.url, 256) : '', wid: x.p.work_id || '' }));
   dScatterRecs = dPts.map(x => x.p);
   if(dScatterPlot.length){
-    pricesHTML += '<h3 class="subhead">全落札の分布（年 × 価格）</h3><div id="dscatterWrap" class="bpchart">' + ptScatter(dScatterPlot, 'detailScatterPick', -1) + '</div><div id="dscatterDetail">' + detailScatterDetailHTML() + '</div>';
+    scatterStr = '<h3 class="subhead">全落札の分布（年 × 価格）</h3><div id="dscatterWrap" class="bpchart">' + ptScatter(dScatterPlot, 'detailScatterPick', -1) + '</div><div id="dscatterDetail">' + detailScatterDetailHTML() + '</div>';
   }
 }
+pricesHTML = scatterStr + breakthroughHTML;
 if(pricesArr.length){
 const ascP = pricesArr.slice().sort((x,y)=> (x.year-y.year) || (y.price-x.price));
 const bestByCur = {}; const highSet = new Set();
@@ -14013,7 +14016,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.2';
+const APP_VERSION = '21.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
