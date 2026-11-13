@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.0">
+<meta name="app-version" content="12.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8201,8 +8201,12 @@ if(w && w.pinned) o.pinned = true;
 if(w && w.held_by) o.held_by = String(w.held_by);
 /* v10.3: hires — the hi-res master flag (data side's
    definition: registered master long edge >= 4000px). Same
-   advance-whitelist treatment as held_by. */
-if(w && w.hires) o.hires = true;
+   advance-whitelist treatment as held_by.
+   v12.1: an EXPLICIT false is preserved as false, distinct
+   from "no key" — the data side unflags a work by writing
+   hires:false (with a fresh updated_at), and that decision
+   must be able to reach the device and clear the badge. */
+if(w && 'hires' in w) o.hires = !!w.hires;
 return o;
 }).filter(w=>w.file || w.caption || w.img);
 /* v2.65: books （作品集） — curated on the Muse side only; the app
@@ -12073,8 +12077,9 @@ if(old && old.name_kana) rec.name_kana = old.name_kana;
 if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
-/* v10.3: nor a work's hires flag — same per-work carry */
-if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.hires){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.hires) t.hires = true; } });
+/* v10.3: nor a work's hires flag — same per-work carry.
+   v12.1: the carry preserves an explicit false as well. */
+if(old && old.works) old.works.forEach(ow=>{ if(ow && 'hires' in ow){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !('hires' in t)) t.hires = !!ow.hires; } });
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -12151,7 +12156,12 @@ function mergeDataInto(local, incoming){
     otherWorks.forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v10.3: hires is sticky through merges, like pinned — the incoming side is normalized before merging, so an explicit false never reaches this point; masters only grow, so the flag never needs a merge-level clear. */ if(w.hires) ex.hires = true; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
+      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v12.1 (supersedes the v10.3 stickiness): hires follows the
+   newer side when either side states it explicitly — the
+   base record's value stands; the other side fills only a
+   base that never carried the key. An explicit false from
+   the data side therefore clears the device's flag, and a
+   stale false cannot clear a newer local true. */ if('hires' in w && !('hires' in ex)) ex.hires = !!w.hires; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
       else wkeys(w).forEach(k=>wm.set(k, w));
     });
     merged.works = Array.from(new Set(wm.values()));
@@ -13260,7 +13270,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.0';
+const APP_VERSION = '12.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
