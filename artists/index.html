@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.4">
+<meta name="app-version" content="12.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -146,6 +146,13 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .seg.mini button{padding:7px 12px; font-size:12.5px;}
 .searchrow{display:flex; gap:8px; margin-top:0; align-items:center;}
 .searchrow input[type=search]{flex:1; background:var(--card); border:1px solid var(--lineStrong); border-radius:999px; padding:11px 16px; font-size:16px; line-height:1.3; min-height:48px; color:var(--text); outline:none; -webkit-appearance:none;}
+/* v12.5: in-field clear button (his ask) — rides inside the
+   search pill's right end, visible only while text is present. */
+.searchwrap{position:relative; flex:1; display:flex; min-width:0;}
+.searchwrap input[type=search]{flex:1; padding-right:46px;}
+.searchclear{position:absolute; right:7px; top:0; bottom:0; margin:auto 0; width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--bg2); color:var(--muted); display:flex; align-items:center; justify-content:center; padding:0;}
+.searchclear svg{width:15px; height:15px;}
+.searchclear.hidden{display:none;}
 .tagrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:0;}
 .tagchip{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:7px 13px; font-size:12.5px; min-height:48px; display:inline-flex; align-items:center;}
 .tagchip:active{background:var(--card2);}
@@ -831,7 +838,10 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div class="toolbar" id="toolbar">
     <div class="tbwrap" id="tbwSearch"><div class="tbin">
       <div class="searchrow">
+        <div class="searchwrap">
         <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
+        <button id="searchclear" class="searchclear hidden" onclick="clearSearch()" aria-label="検索をクリア"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
         <button class="tbcollapse hidden" id="tbCollapse" onclick="collapseToolbar()" aria-label="ツールバーを畳む"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14.5l7-7 7 7"/></svg></button>
       </div>
     </div></div>
@@ -9078,7 +9088,10 @@ editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
 function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList(); driftIn($('listbody'), dir);}
-function onSearch(q){ state.query = q.trim(); renderListBody(); updateSlimTools();}
+function onSearch(q){ state.query = q.trim(); renderListBody(); updateSlimTools(); updateSearchClear(); }
+/* v12.5: the search field's clear (×) button */
+function updateSearchClear(){ const b = $('searchclear'), s = $('searchbox'); if(b && s) b.classList.toggle('hidden', !s.value); }
+function clearSearch(){ const s = $('searchbox'); if(!s) return; s.value = ''; onSearch(''); try{ s.focus({ preventScroll:true }); }catch(e){ try{ s.focus(); }catch(e2){} } }
 function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
 renderList();
@@ -9423,6 +9436,7 @@ function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
+updateSearchClear();
 
 /* tag chips from all artists, grouped by facet.
    v2.29: chips work on canonical tags (normTagSet merges notation
@@ -13341,7 +13355,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.4';
+const APP_VERSION = '12.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
