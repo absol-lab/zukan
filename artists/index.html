@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.0">
+<meta name="app-version" content="21.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9153,6 +9153,10 @@ function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICON; }
 let bizData = null, bizError = false, bizChapterId = null;
 function openBiz(){ showView('biz'); bizEnsure(); }
 
+/* v21.1: the whole-market scatter was withdrawn at his word
+   («全体グラフは一旦消していいよ») — the page is the ranking
+   only now; the scatter itself lives on in each person's
+   prices tab (v21.0, ptScatter). The B2 gate pins this state.
 /* v20.0 (2026-11-14, his request via Art Labo): 作品価格早見表 —
    every priced work in the encyclopedia on one year × price map.
    Data is the prices[] the app already holds (both datasets when
@@ -9161,7 +9165,6 @@ function openBiz(){ showView('biz'); bizEnsure(); }
    a linear axis would flatten everything but the top few sales.
    Same-work_id points are joined with a thin line so a single
    work's repeat-sale path reads inside the whole market. */
-let bizPriceMode = 'chart', bizPriceSel = -1, bizPlot = [];
 const BPCUR = { USD: '$', GBP: '£', EUR: '€', JPY: '¥', HKD: 'HK$', CHF: 'CHF ', CNY: 'CN¥' };
 function bpFmtPrice(p){ return (BPCUR[p.currency] || (p.currency ? p.currency + ' ' : '')) + p.price.toLocaleString('en-US'); }
 function openBizPrice(){ showView('bizp'); }
@@ -9229,11 +9232,6 @@ function ptScatter(items, pickFn, selIdx){
   });
   return s + '</svg>';
 }
-function bizScatterSVG(plot){
-  return ptScatter(plot.map(pt => ({ year: pt.raw.year, jpy: pt.jpy, img: !!(pt.raw.img && pt.raw.img.url), wid: pt.raw.work_id || '' })), 'bizPricePick', bizPriceSel);
-}
-function bizPricePick(i){ bizPriceSel = i; renderBizPrice(); }
-function bizPriceSetMode(m){ bizPriceMode = m; renderBizPrice(); }
 /* v21.0 (his call, 2026-11-14): the same scatter inside each
    person's prices tab, that person's sales only — few points,
    readable. Order in the tab: 転機 -> this scatter -> per-work
@@ -9264,39 +9262,18 @@ function renderBizPrice(){
   const people = new Set(pts.map(p => p.ds + ':' + p.pid)).size;
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>'
     + '<h2 class="biztitle">作品価格早見表</h2>'
-    + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。</p>'
-    + '<div class="seg" role="tablist"><button class="' + (bizPriceMode === 'chart' ? 'on' : '') + '" onclick="bizPriceSetMode(\'chart\')">全体図</button><button class="' + (bizPriceMode === 'list' ? 'on' : '') + '" onclick="bizPriceSetMode(\'list\')">ランキング</button></div>';
+    + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）を、円換算の高い順に並べています。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。行をタップすると作家のページへ。</p>';
   if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
-  if(bizPriceMode === 'chart'){
-    bizPlot = pts.filter(p => p.jpy != null);
-    h += '<div class="bpchart">' + bizScatterSVG(bizPlot) + '</div>'
-      + '<p class="small">縦軸は対数スケール。白い縁の点は写真つきの作品。同じ作品の落札同士は薄い線で結んでいます。点をタップすると詳細が出ます。</p>';
-    const pt = bizPlot[bizPriceSel];
-    if(pt){
-      const p = pt.raw;
-      h += '<div class="bpdetail">'
-        + (p.img && p.img.url ? '<div class="pricecover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>' : '')
-        + '<div class="pmain"><div class="pwork">' + esc(p.work) + '</div>'
-        + '<button class="bplink" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">' + esc(pt.artist) + ' のページへ ›</button>'
-        + '<div class="phouse">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div>'
-        + '<div class="pprice">' + esc(bpFmtPrice(p)) + '</div>'
-        + (p.currency && p.currency !== 'JPY' && pt.jpy != null ? '<div class="pjpy">≈ ' + esc(fmtJPY(pt.jpy)) + '（概算）</div>' : '')
-        + '</div></div>';
-    } else {
-      h += '<p class="small" style="margin-top:8px">点は ' + bizPlot.length + ' 件（円換算できるもの）。</p>';
-    }
-  } else {
-    const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
-    h += rows.map((pt, i) => {
-      const p = pt.raw;
-      return '<div class="bprow" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
-        + '<span class="bprank">' + (i + 1) + '</span>'
-        + (p.img && p.img.url ? '<span class="bpcover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</span>' : '')
-        + '<span class="pmain"><span class="pwork">' + esc(p.work) + '</span>'
-        + '<span class="phouse">' + esc(pt.artist) + ' ・ ' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span>'
-        + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="pjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span></div>';
-    }).join('');
-  }
+  const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
+  h += rows.map((pt, i) => {
+    const p = pt.raw;
+    return '<div class="bprow" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
+      + '<span class="bprank">' + (i + 1) + '</span>'
+      + (p.img && p.img.url ? '<span class="bpcover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</span>' : '')
+      + '<span class="pmain"><span class="pwork">' + esc(p.work) + '</span>'
+      + '<span class="phouse">' + esc(pt.artist) + ' ・ ' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span>'
+      + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="pjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span></div>';
+  }).join('');
   el.innerHTML = h + '</div>';
   wireListImages(el);
 }
@@ -9330,7 +9307,7 @@ function renderBiz(){
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
-    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span><span class="bizchlead">価格がわかる全作品を、年と価格の全体図とランキングで</span></span><span class="bizchgo">›</span></button>';
+    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span><span class="bizchlead">価格がわかる全作品を、高い順のランキングで</span></span><span class="bizchgo">›</span></button>';
     h += bizChapters().map((c, i)=> '<button class="bizchrow" onclick="openBizChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span>' + (c.lead? '<span class="bizchlead">' + esc(c.lead) + '</span>': '') + '</span><span class="bizchgo">›</span></button>').join('');
     if(bizGlossary().length) h += '<button class="bizchrow" onclick="openBizChapter(\'glossary\')"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span><span class="bizchlead">' + bizGlossary().length + '語</span></span><span class="bizchgo">›</span></button>';
   }
@@ -14025,7 +14002,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.0';
+const APP_VERSION = '21.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
