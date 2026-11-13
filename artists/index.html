@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="14.0">
+<meta name="app-version" content="14.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12355,9 +12355,14 @@ function mergeDataInto(local, incoming){
     local.artists[ix] = normalizeArtist(merged);
   });
   if(inc.exhibitions && inc.exhibitions.length){
+    /* v14.1: venue joins the key — the same exhibition title
+       opening the same day at two venues is two exhibitions;
+       the old title|date key collapsed them (and the totals
+       guard then tripped on the server's own file). */
     const em = new Map();
-    (local.exhibitions||[]).forEach(e=>em.set((e.title||'')+'|'+(e.start_date||''), e));
-    inc.exhibitions.forEach(e=>em.set((e.title||'')+'|'+(e.start_date||''), e));
+    const ekey = e=>(e.title||'')+'|'+(e.start_date||'')+'|'+(e.venue||'');
+    (local.exhibitions||[]).forEach(e=>em.set(ekey(e), e));
+    inc.exhibitions.forEach(e=>em.set(ekey(e), e));
     local.exhibitions = Array.from(em.values());
   }
   /* timeline / quiz: root-level dataset parts; prefer the incoming copy when its data is at least as new */
@@ -12894,17 +12899,29 @@ async function syncDatasetRelay(kind, data){
      reached with a full download in hand (v14.0 rule 1). */
   const needPut = remoteFull ? (JSON.stringify(merged) !== JSON.stringify(remoteFull)) : false;
   let stampAfter = stamp;
+  let adjusted = false;
   if(needPut){
     /* v14.0 rule 2: the totals guard — a payload smaller
-       than the server's current file is never uploaded. */
-    if(!syncTotalsOk(merged, remoteFull)) throw new Error('送信データがサーバの現在より少ないため、巻き戻し防止でアップロードを中止しました');
+       than the server's current file is never uploaded.
+       v14.1: a trip is not an error state. The device adopts
+       the merged state (the server's latest + its own edits)
+       as its new base, the upload is simply dropped, and the
+       next sync starts from a full download (stamp null) —
+       no red banner, no retry loop (the v14.0 device that
+       tripped on a same-day two-venue exhibition pair could
+       never converge while the trip threw). */
+    if(!syncTotalsOk(merged, remoteFull)){
+      adjusted = true;
+    } else {
     await relayCall('put', cfg.dataFile, JSON.stringify(merged));
     /* our own put moved the stamp — re-read it, so the next
        sync can take the B shortcut instead of re-downloading
        our own upload */
     try{ const s2 = await relayCall('stat', cfg.dataFile); stampAfter = (typeof s2.updated === 'number')? s2.updated: null; }catch(e){ stampAfter = null; }
+    }
   }
-  syncMetaSet(prefix, merged, stampAfter);
+  c.syncNote = adjusted ? 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）' : null;
+  syncMetaSet(prefix, merged, adjusted ? null : stampAfter);
   return merged;
 }
 async function syncDatasetFlow(kind, reason){
@@ -12950,9 +12967,11 @@ async function syncDatasetOnce(kind, reason){
       /* v12.0 (A1): no put-back when the merge changed nothing
          relative to what the server already has */
       if(reason==='wipe' || !remoteStr || JSON.stringify(data) !== remoteStr){
-        /* v14.0 rule 2 (token path): the same totals guard */
-        if(remoteNorm && !syncTotalsOk(data, remoteNorm)) throw new Error('送信データがサーバの現在より少ないため、巻き戻し防止でアップロードを中止しました');
-        await uploadDataUpdateFor(tok, file.id, data);
+        /* v14.0 rule 2 + v14.1 convergence (token path): a
+           shrinking payload is never uploaded; the merged
+           state is adopted locally instead of erroring. */
+        if(remoteNorm && !syncTotalsOk(data, remoteNorm)){ c.syncNote = 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）'; }
+        else await uploadDataUpdateFor(tok, file.id, data);
       }
     }
     }
@@ -12963,7 +12982,7 @@ async function syncDatasetOnce(kind, reason){
     setCtxStatus(kind, 'synced');
     refreshAfterSync(kind);
     detectNewPeople(kind);
-    return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）' };
+    return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）'+(c.syncNote ? '：'+c.syncNote : '') };
   }catch(e){
     const m = (e && e.message) ? e.message : String(e);
     return { ok:false, msg:'同期に失敗しました（'+m+'）', errMsg:m, timeout:/タイムアウト|abort/i.test(m) };
@@ -13489,7 +13508,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '14.0';
+const APP_VERSION = '14.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
