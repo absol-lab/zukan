@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="20.0">
+<meta name="app-version" content="20.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -96,17 +96,17 @@ a{color:var(--accent);}
    go position:fixed themselves with explicit tops, so nothing
    double-counts. */
 header.top{position:fixed; top:0; left:0; right:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
-.toprow{display:flex; align-items:center; gap:8px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 14px 4px; max-width:720px; margin:0 auto;}
-h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spacing:.08em; margin:0;}
+.toprow{display:flex; align-items:center; gap:8px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 12px 4px; max-width:720px; margin:0 auto;}
+h1.appname{font-family:var(--sans); font-size:18px; font-weight:700; letter-spacing:.02em; margin:0; white-space:nowrap; flex:none;}
 /* v2.49: sync status dot, the diary app's exact pattern (8px circle
    beside the title; green #46a758 = connected & no error, red
    #e5484d = disconnected or error) — always visible in the header
    so an unnoticed disconnect cannot happen again. */
 #syncdot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:7px; background:#e5484d; vertical-align:2px; flex:none;}
-.topcount{font-size:13px; color:var(--muted);}
+.topcount{font-size:12px; color:var(--muted); white-space:nowrap; flex:none;}
 .topsp{flex:1;}
 button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em; color:var(--accent); font-weight:600; padding:6px 4px;}
-#navEx, #navTimeline, #navReqNotif, #navBiz{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 14px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em;}
+#navEx, #navTimeline, #navReqNotif, #navBiz{border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 12px; font-size:12.5px; color:var(--text); font-weight:400; letter-spacing:.06em; white-space:nowrap; flex:none;}
 /* v2.93: the request-notifications door is a bell-mark button —
    icon only, with a small count badge (his call: the labelled
    button was too big). */
@@ -127,6 +127,13 @@ body.notifopen #pillnav{opacity:0; pointer-events:none;}
 #syncbar{display:block; width:100%; background:none; border:none; text-align:center; font-size:13px; color:var(--muted); padding:0 16px 6px; min-height:1.2em; letter-spacing:.03em; font-family:inherit; cursor:pointer;}
 #syncbar .err{color:var(--danger);}
 #syncbar .sbhint{color:var(--accent);}
+/* v20.1: デザイナー図鑑 (7 chars) overflowed the header row and
+   wrapped — title, count and even the 年表 label broke to two
+   lines, so the header changed height on every dataset switch
+   and the top of the screen juddered (his recording, 2026-11-14).
+   Everything in the row is now nowrap + flex:none, the title's
+   letter-spacing and the count size gave back the needed width,
+   and the row height is dataset-independent. */
 /* v2.29: facet panel group headings (filter grouping) + version badge */
 .facetgh{font-size:12px; font-weight:600; color:var(--muted); letter-spacing:.06em; margin:12px 2px 2px;}
 .facetgh:first-child{margin-top:2px;}
@@ -13964,7 +13971,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '20.0';
+const APP_VERSION = '20.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
