@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="15.0">
+<meta name="app-version" content="16.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -524,6 +524,10 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .highchip{display:inline-block; background:#e6b93d; color:#191204; font-size:11px; font-weight:800; letter-spacing:.06em; border-radius:999px; padding:2px 8px; vertical-align:2px; margin-left:6px;}
 .psumrow{font-size:14.5px; margin-top:4px;}
+.pricerow .pjpy{font-size:13px; color:var(--muted); margin-top:1px;}
+.pchart{display:block; margin-top:2px;}
+.pchart .chylab{font-size:9px; fill:var(--muted);}
+.pchart .chvlab{font-size:9.5px; font-weight:700; fill:var(--text);}
 .psumrow b{font-size:16px;}
 /* v2.67: exhibition calendar — v2.68 restyled after the diary
    app's calendar (the user's reference): full-bleed month grid,
@@ -763,10 +767,18 @@ button.blockbtn:disabled{opacity:.4;}
    The diary's identical pill never shows the bug, but the diary has
    no vt-fixed transition churn; in this app the fixed element itself
    now carries no transform at all. */
-#navind{position:absolute; top:3px; bottom:3px; left:0; width:0; border-radius:999px; pointer-events:none; transform-origin:center; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
+
 #pillnav button{position:relative; z-index:1; flex:1; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:0; border-radius:999px; font-size:12px; font-weight:500; color:var(--muted); white-space:nowrap; font-family:inherit; transition:color .3s;}
 #pillnav svg{width:21px; height:21px;}
-#pillnav button.on{color:var(--text); font-weight:600;}
+/* v16.0 DESIGN CHANGE (pill bug, 4th recurrence): the sliding
+   indicator is abolished. It was the one element inside the
+   pill that was measured, absolutely positioned and animated
+   with transforms — the whole misplacement class lived there
+   (Musilabo abolished it the same way in its v2.3 and the bug
+   never returned). The active button now carries the highlight
+   itself; nothing inside or above the pill ever transforms. */
+#pillnav button.on{color:var(--text); font-weight:600; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
+#pillnav button{border:1px solid transparent;}
 /* press feedback (diary v1.16 style): subtle brightness shift only while pressed, no layout shift */
 button:active:not(:disabled){filter:brightness(1.07);}
 /* view transitions (v2.7): a view taken out of flow while it slides */
@@ -913,7 +925,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <div id="verBadge"></div>
 <nav id="pillnav">
-  <span id="navind"></span>
   <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
   <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
@@ -8778,7 +8789,6 @@ if(v==='timeline') renderTimeline();
 if(v==='era') renderEra();
 if(v==='quiz') renderQuiz();
 if(v==='settings'){ renderSettings(); }
-moveNavInd(true);
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(wantAnim && oldEl && newEl && oldEl!==newEl){
 if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
@@ -8846,31 +8856,8 @@ if(!el || !dir || reducedMotion() || !el.animate) return;
 try{ const a = el.animate([{ transform:'translateX('+(dir*22)+'px)', opacity:.3 }, { transform:'translateX(0px)', opacity:1 }], { duration:260, easing:VT_EASE }); if(a && a.finished) a.finished.catch(()=>{}); }catch(e){}
 }
 function segDir(order, from, to){ const d = Math.sign(order.indexOf(to) - order.indexOf(from)); return d || 1; }
-/* ---------- pill nav indicator (diary moveNavInd) ---------- */
-let lastNavX = null;
-function moveNavInd(animate){
-const ind = $('navind'); if(!ind) return;
-const b = document.querySelector('#pillnav button.on'); if(!b) return;
-const x = b.offsetLeft, w = b.offsetWidth;
-if(!w) return;
-ind.style.width = w+'px';
-const from = lastNavX, to = x;
-/* v2.28: the indicator's RESTING position is its left, not a permanent
-   transform (same fixed-layer hygiene as the pill itself). The slide
-   animation still runs on transform, WAAPI-only, from the offset
-   between the old and new resting positions back to 0. */
-ind.style.left = to+'px';
-lastNavX = to;
-if(animate && !reducedMotion() && from!==null && from!==to && ind.animate){
-/* v2.11: the old cubic-bezier(.30,1.25,.35,1) overshot (a spring) — springs
-   are reserved for finger-driven surfaces, so the indicator now uses the
-   standard component curve at a component duration. */
-ind.animate([
-{ transform:'translateX('+(from-to)+'px)' },
-{ transform:'translateX(0px)' }
-], { duration:300, easing:'cubic-bezier(0.2,0,0,1)' });
-}
-}
+/* v16.0: moveNavInd is gone with the indicator it positioned.
+   updatePill() toggling .on is now the whole mechanism. */
 /* ---------- v2.28: pill anchor self-heal ----------
    The recurring iOS bug: during the full-screen fixed/transformed view
    transitions, Safari's compositor can lose the viewport anchor of the
@@ -9003,7 +8990,7 @@ if(tbRafPending) return;
 tbRafPending = true;
 requestAnimationFrame(()=>{ tbRafPending = false; updateSlimTools(); });
 }, { passive:true });
-window.addEventListener('resize', ()=>{ moveNavInd(false); fitToolbarTop(); if(view==='timeline') layoutTlSpine(); });
+window.addEventListener('resize', ()=>{ fitToolbarTop(); if(view==='timeline') layoutTlSpine(); });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
    The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
    v2.22 after the pill/FAB double-draw recurred on the user's device
@@ -9926,6 +9913,17 @@ function bioWorksStrip(a, ws){
   });
   return h;
 }
+/* v16.0: JPY conversion for foreign-currency auction prices.
+   ONE current rate table applied to every record, labelled
+   概算 with its date — consistent and honest. (Per-year
+   historical rates would be a data-side field, not an app
+   invention.) Rates verified 2026-11-13: USD/JPY ~159.9,
+   EUR/JPY ~177, GBP/JPY ~212 (multiple public rate tables). */
+const FX_JPY = { USD: 160, GBP: 212, EUR: 177, CHF: 191, HKD: 20.6, CNY: 24 };
+const FX_ASOF = '2026-11-13';
+function jpyOf(p){ if(!p || p.price == null) return null; if(!p.currency || p.currency === 'JPY') return p.price; const r = FX_JPY[p.currency]; return r ? Math.round(p.price * r) : null; }
+function fmtJPY(n){ return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+function fmtJPYShort(n){ if(n >= 1e8){ const v = n / 1e8; return '¥' + (v >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + '億'; } if(n >= 1e4){ const v = n / 1e4; return '¥' + (v >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + '万'; } return fmtJPY(n); }
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
@@ -10020,17 +10018,38 @@ else if(p.price > bestByCur[c].price){ bestByCur[c] = p; highSet.add(p); }
 });
 const cntByCur = {}; pricesArr.forEach(p=>{ const c = p.currency||''; cntByCur[c] = (cntByCur[c]||0)+1; });
 const topCurs = Object.keys(bestByCur).sort((c1,c2)=> (cntByCur[c2]-cntByCur[c1]) || (bestByCur[c2].price - bestByCur[c1].price)).slice(0, 2);
-pricesHTML = '<h3 class="subhead">最高落札額（通貨別・換算なし）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b> <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
+const chartPts = ascP.map(p=>({ p: p, j: jpyOf(p) })).filter(x=>x.j != null);
+let chartHTML = '';
+if(chartPts.length >= 2){
+const CW = 340, CH = 118, CPT = 20, CPB = 18, CPX = 12;
+const maxJ = Math.max.apply(null, chartPts.map(x=>x.j));
+const cX = i => CPX + i * (CW - 2 * CPX) / (chartPts.length - 1);
+const cY = v => (CH - CPB) - (v / (maxJ * 1.08)) * (CH - CPT - CPB);
+const maxIdx = chartPts.reduce((mi, x, i)=> x.j > chartPts[mi].j ? i : mi, 0);
+const labIdx = new Set([0, chartPts.length - 1, maxIdx]);
+const clampX = (x, m) => Math.min(Math.max(x, m), CW - m);
+chartHTML = '<h3 class="subhead">価格の推移（円換算・概算）</h3><svg class="pchart" viewBox="0 0 '+CW+' '+CH+'" width="100%" role="img" aria-label="価格の推移グラフ">'
++ '<line x1="'+CPX+'" y1="'+(CH-CPB)+'" x2="'+(CW-CPX)+'" y2="'+(CH-CPB)+'" stroke="var(--line)" stroke-width="1"/>'
++ '<polyline points="'+chartPts.map((x, i)=> cX(i).toFixed(1)+','+cY(x.j).toFixed(1)).join(' ')+'" fill="none" stroke="#d9a441" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
++ chartPts.map((x, i)=> '<circle cx="'+cX(i)+'" cy="'+cY(x.j)+'" r="3" fill="#d9a441"/>').join('')
++ chartPts.map((x, i)=> labIdx.has(i)? '<text class="chvlab" x="'+clampX(cX(i), 26)+'" y="'+(cY(x.j) - 7)+'" text-anchor="middle">'+esc(fmtJPYShort(x.j))+'</text>': '').join('')
++ chartPts.map((x, i)=> (chartPts.length <= 8 || labIdx.has(i))? '<text class="chylab" x="'+clampX(cX(i), 12)+'" y="'+(CH - 4)+'" text-anchor="middle">'+x.p.year+'</text>': '').join('')
++ '</svg>';
+}
+pricesHTML = chartHTML + '<h3 class="subhead">最高落札額（通貨別）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; const j = (t.currency && t.currency !== 'JPY')? jpyOf(t): null; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b>'+(j != null? ' <span class="small">≈ '+esc(fmtJPY(j))+'（概算）</span>': '')+' <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
 pricesHTML += pricesDesc.map((p, pi)=> '<div class="pricerow">'+
 (p.img && p.img.url? '<div class="pricecover" data-pidx="'+pi+'">'+imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb)+'</div>': '')+
 '<div class="pmain">'+
 '<div class="pwork">'+esc(p.work)+(highSet.has(p)? '<span class="highchip">最高値更新</span>': '')+'</div>'+
 '<div class="phouse">'+[p.house, p.year].filter(x=>x!=='' && x!=null).map(esc).join(' ・ ')+'</div>'+
 '<div class="pprice">'+esc(fmtPrice(p))+'</div>'+
+(p.currency && p.currency !== 'JPY' && jpyOf(p) != null? '<div class="pjpy">≈ '+esc(fmtJPY(jpyOf(p)))+'（概算）</div>': '')+
 (p.note? '<div class="pnote">'+esc(p.note)+'</div>': '')+
 (p.source? '<div style="margin-top:4px"><a href="'+escA(p.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')+
 '</div></div>').join('');
-pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出典の表記に基づきます（手数料の扱いは出典でご確認ください）。</div>';
+const usedFx = [...new Set(pricesArr.map(p=>p.currency).filter(c=>c && c !== 'JPY' && FX_JPY[c]))];
+const fxNote = usedFx.length? ' 円換算は '+FX_ASOF+' 時点のレート（'+usedFx.map(c=> c + ' = ¥' + FX_JPY[c]).join('、')+'）による概算です。': '';
+pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出典の表記に基づきます（手数料の扱いは出典でご確認ください）。'+fxNote+'</div>';
 }
 /* v5.0: a person with a chronicle gets the chronicle as their
    biography — the CV setting and the works strip step aside. */
@@ -13513,7 +13532,7 @@ function teardownSwipe(st, commit){
        entirely, so a swipe back out of その他 landed on the list
        still titled その他. showView's chrome steps apply here too. */
     updateHeader();
-    updatePill(); moveNavInd(true);
+    updatePill();
     /* v2.58: landing back on the list restores its saved scroll
        position (showView saves it when the list is left), instead of
        always resetting to the top. */
@@ -13597,7 +13616,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '15.0';
+const APP_VERSION = '16.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -14135,8 +14154,6 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   /* v7.0: catch registrations that landed in local data before
      this version existed (synced under an older app) */
   detectNewPeople('artists'); detectNewPeople('designers');
-  requestAnimationFrame(()=>moveNavInd(false));
-  window.addEventListener('load', ()=>moveNavInd(false));
   checkForUpdate();
   /* v4.1 (image-speed stage 1b): register the image-cache service
      worker — repeat views of Drive thumbnails are served from the
