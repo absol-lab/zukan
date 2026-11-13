@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="21.6">
+<meta name="app-version" content="22.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -261,6 +261,12 @@ h2.sechead .cnt{font-size:12px; color:var(--muted); font-weight:400; letter-spac
 .grid.mini{grid-template-columns:repeat(4,1fr); gap:8px;}
 figure.work{margin:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px; cursor:pointer; overflow:hidden;}
 figure.work:active{background:var(--card2);}
+/* v21.11 (his ask): a person tile says what the person IS — painter,
+   sculptor, animator — as small dark chips on the photo's corner,
+   derived from the field's discipline part. Name + photo alone did
+   not tell him. */
+.fchips{position:absolute; top:6px; left:6px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; z-index:2; pointer-events:none;}
+.fchip{background:rgba(8,8,10,.74); color:#f2ecdc; font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.07em; padding:2px 7px; border-radius:999px; line-height:1.5;}
 figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
 /* v10.3: hi-res badge — the mark for works whose registered
    master is 4000px+ (definition owned by the data side). Sits
@@ -425,8 +431,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    v2.39: compact 2-column grid (23 full rows pushed the exhibition
    list too far down — the user's on-device feedback); counts are
    always shown, 0 included, also his call. */
-.galgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;}
-.galrow{position:relative; display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 26px 9px 12px; min-height:52px; text-decoration:none; color:var(--text);}
+/* v21.10 (his call): the venue index reads as a compact list, not a
+   card wall — one line per venue, name left, counts right. The name
+   and the counts stay; only the bulk goes. */
+.galgrid{display:block; margin-top:2px;}
+.galrow{position:relative; display:flex; align-items:baseline; gap:10px; padding:10px 30px 10px 2px; min-height:40px; box-sizing:border-box; border-bottom:1px solid var(--line); text-decoration:none; color:var(--text);}
 /* v2.62: gallery section collapses to one row by default */
 .galhead{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:16.5px; font-weight:700; letter-spacing:.04em; padding:14px 2px 10px; margin-top:14px; min-height:52px; text-align:left; cursor:pointer;}
 .galhead .galcnt{font-size:12px; color:var(--muted); font-weight:400;}
@@ -440,7 +449,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .newsrow .nt{font-size:16.5px; font-weight:700; line-height:1.55;}
 .newsrow .nm{font-size:12.5px; color:var(--muted); margin-top:5px;}
 .newsrow .nm b{color:var(--text); font-weight:600;}
-.newsrow .nnote{font-size:14px; color:color-mix(in srgb, var(--text) 84%, transparent); margin-top:6px; line-height:1.8;}
+.newsrow .nnote{font-size:14px; color:color-mix(in srgb, var(--text) 84%, transparent); margin-top:6px; line-height:1.8; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
 .newsrow .nimg{flex:none; width:78px; height:78px; border-radius:10px; object-fit:cover; background:var(--card);}
 .newssec{margin-top:30px;}
 /* v2.78: update history */
@@ -659,8 +668,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .nbadge.fact{background:var(--tag); color:#fff;}
 .nbadge.reading{background:none; border:1px solid var(--muted); color:var(--muted);}
 .galrow:active{background:var(--card2);}
-.galrow .gname{display:block; font-family:var(--serif); font-size:13.5px; font-weight:600; letter-spacing:.02em; line-height:1.35;}
-.galrow .gmeta{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
+.galrow .gname{display:block; font-family:var(--serif); font-size:14px; font-weight:600; letter-spacing:.02em; line-height:1.35;}
+.galrow .gmeta{display:block; margin-left:auto; font-size:11.5px; color:var(--muted); white-space:nowrap;}
 .galrow .gext{position:absolute; top:8px; right:10px; color:var(--accent); font-size:12px; z-index:1; padding:8px; margin:-8px;}
 /* v10.0: the gallery row's body opens the in-app museum page;
    the ↗ keeps going to the official site, as before. */
@@ -686,7 +695,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .mtile .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .mtile .mcap{display:block; padding:8px 10px 9px; font-size:12.5px; line-height:1.45; color:var(--text);}
 .mcell .mart{padding:5px 2px 0; font-size:12.5px;}
-.galsub{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:16px 2px 0;}
+.galsub{font-family:var(--sans); font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:12px 2px 0;}
 /* v2.42: registration requests */
 .reqinput{width:100%; font-size:16px; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); margin-top:12px; font-family:var(--sans);}
 .reqrow{display:flex; align-items:flex-start; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line);}
@@ -836,6 +845,14 @@ button.blockbtn:disabled{opacity:.4;}
    itself; nothing inside or above the pill ever transforms. */
 #pillnav button.on{color:var(--text); font-weight:600; background:var(--card2); background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.25);}
 #pillnav button{border:1px solid transparent;}
+/* v21.9 (his call): inside Art Business the bottom bar itself changes
+   jobs — the main pill nav steps aside and the chapter pills live in
+   the same floating bar, so the thumb reaches them like any tab. */
+#bizpillbar{position:fixed; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
+#bizpillbar .bizpillscroll{display:flex; gap:6px; overflow-x:auto; height:100%; align-items:center; padding:0 2px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+#bizpillbar .bizpillscroll::-webkit-scrollbar{display:none;}
+#bizpillbar button{flex:none; height:44px; padding:0 15px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:13px; font-weight:500; font-family:inherit; white-space:nowrap;}
+#bizpillbar button.on{color:var(--text); font-weight:600; background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 10px rgba(0,0,0,.25);}
 /* press feedback (diary v1.16 style): subtle brightness shift only while pressed, no layout shift */
 button:active:not(:disabled){filter:brightness(1.07);}
 /* view transitions (v2.7): a view taken out of flow while it slides */
@@ -992,6 +1009,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
 </nav>
+<div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
 
 <div id="viewer">
   <button id="vthumb" onclick="viewerSetThumb()">サムネにする</button>
@@ -8873,8 +8891,10 @@ const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 
 $('navTimeline').classList.toggle('on', v==='timeline');
 $('navBiz').classList.toggle('on', v==='biz' || v==='bizch' || v==='bizp');
 updatePill();
+syncBizBar(v);
 /* v2.48: entering その他 renames the header; leaving restores it */
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
+else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
 else updateHeader();
 if(v==='list') renderList();
 updateToolbarSlim();
@@ -9287,7 +9307,6 @@ function renderBizPrice(){
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>'
     + '<h2 class="biztitle">作品価格早見表</h2>'
     + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）を、円換算の高い順に並べています。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。行をタップすると作家のページへ。</p>';
-  h += bizPillsHTML('price');
   if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
   const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
   h += rows.map((pt, i) => {
@@ -9301,12 +9320,13 @@ function renderBizPrice(){
   }).join('');
   el.innerHTML = h + '</div>';
   wireListImages(el);
+  renderBizPillBar();
 }
 
 function bizEnsure(){
   if(bizData || bizError) return;
   fetch('artbusiness.json', { cache: 'no-cache' }).then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
-  .then(d=>{ bizData = d; if(view==='biz') renderBiz(); if(view==='bizch') renderBizCh(); })
+  .then(d=>{ bizData = d; if(view==='biz') renderBiz(); if(view==='bizch') renderBizCh(); if(view==='bizp') renderBizPrice(); if(view==='biz' || view==='bizch' || view==='bizp') renderBizPillBar(); })
   .catch(()=>{ bizError = true; if(view==='biz') renderBiz(); });
 }
 function bizRetry(){ bizError = false; bizEnsure(); if(view==='biz') renderBiz(); }
@@ -9324,13 +9344,27 @@ function bizCasesHTML(cases){
   return cases.map(c=> '<div class="casebox"><div class="casetitle">' + esc(c.title || '') + '</div><div class="bodytext">' + bizTermHTML(c.body || '') + '</div></div>').join('');
 }
 function openBizChapter(id){ bizChapterId = id; showView('bizch'); }
-function bizPillsHTML(active){
-  if(!bizData) return '';
-  let h = '<div class="bizpills">';
-  h += '<button data-bizpill="price" class="' + (active === 'price'? 'on': '') + '" onclick="openBizPrice()">早見表</button>';
+/* v21.9: the chapter pills moved into the bottom floating bar.
+   The bar takes the main pill nav's place while any Art Business
+   view is open (syncBizBar, called from showView); on the index no
+   pill is active, on a chapter/price page that pill is. */
+function renderBizPillBar(){
+  const bar = $('bizpillbar'); if(!bar) return;
+  const sc = bar.querySelector('.bizpillscroll'); if(!sc) return;
+  if(!bizData){ sc.innerHTML = ''; return; }
+  const active = view === 'bizp'? 'price': (view === 'bizch'? bizChapterId: '');
+  let h = '<button data-bizpill="price" class="' + (active === 'price'? 'on': '') + '" onclick="openBizPrice()">早見表</button>';
   h += bizChapters().map((c, i)=> '<button data-bizpill="' + escA(c.id) + '" class="' + (active === c.id? 'on': '') + '" onclick="openBizChapter(\'' + escA(c.id) + '\')">第' + (i + 1) + '章</button>').join('');
   if(bizGlossary().length) h += '<button data-bizpill="glossary" class="' + (active === 'glossary'? 'on': '') + '" onclick="openBizChapter(\'glossary\')">用語辞典</button>';
-  return h + '</div>';
+  sc.innerHTML = h;
+  const on = sc.querySelector('button.on');
+  if(on) sc.scrollLeft = Math.max(0, on.offsetLeft - 60);
+}
+function syncBizBar(v){
+  const biz = (v === 'biz' || v === 'bizch' || v === 'bizp');
+  const nav = $('pillnav'), bar = $('bizpillbar');
+  if(nav) nav.style.display = biz? 'none': '';
+  if(bar){ bar.style.display = biz? 'block': 'none'; if(biz) renderBizPillBar(); }
 }
 function renderBiz(){
   const el = $('viewBiz'); if(!el) return;
@@ -9340,19 +9374,18 @@ function renderBiz(){
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
-    h += bizPillsHTML('');
-    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span><span class="bizchlead">価格がわかる全作品を、高い順のランキングで</span></span><span class="bizchgo">›</span></button>';
-    h += bizChapters().map((c, i)=> '<button class="bizchrow" onclick="openBizChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span>' + (c.lead? '<span class="bizchlead">' + esc(c.lead) + '</span>': '') + '</span><span class="bizchgo">›</span></button>').join('');
-    if(bizGlossary().length) h += '<button class="bizchrow" onclick="openBizChapter(\'glossary\')"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span><span class="bizchlead">' + bizGlossary().length + '語</span></span><span class="bizchgo">›</span></button>';
+    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span></span><span class="bizchgo">›</span></button>';
+    h += bizChapters().map((c, i)=> '<button class="bizchrow" onclick="openBizChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span></span><span class="bizchgo">›</span></button>').join('');
+    if(bizGlossary().length) h += '<button class="bizchrow" onclick="openBizChapter(\'glossary\')"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span></span><span class="bizchgo">›</span></button>';
   }
   h += '</div>';
   el.innerHTML = h;
+  renderBizPillBar();
 }
 function renderBizCh(){
   const el = $('viewBizCh'); if(!el) return;
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>';
   if(!bizData){ h += '<div class="empty">読み込み中…</div></div>'; el.innerHTML = h; bizEnsure(); return; }
-  h += bizPillsHTML(bizChapterId);
   if(bizChapterId === 'glossary'){
     h += '<h2 class="biztitle">用語辞典</h2>';
     const g = bizGlossary();
@@ -9375,6 +9408,7 @@ function renderBizCh(){
   }
   h += '</div>';
   el.innerHTML = h;
+  renderBizPillBar();
   window.scrollTo(0, 0);
 }
 function openTerm(term){
@@ -9399,6 +9433,7 @@ function updateHeader(){
    path refreshes the header. */
 syncTimelineBtn();
 if(view==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; return; }
+if(view==='biz' || view==='bizch' || view==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; return; }
 $('appname').textContent = CONFIG.appName;
 /* v2.30: the header count is shared chrome too. It used to be written
    only by renderList, so a dataset switch landing directly on a
@@ -9736,6 +9771,8 @@ const TAG_FACETS = {};
 ['絵画','彫刻','ドローイング','写真','映像','インスタレーション','版画','日本画','パフォーマンス','水彩','木彫','陶','コラージュ','アニメーション','ランドアート','社会彫刻','彫刻家の素描','半立体','レリーフ','ネガティブ彫刻','写真ベース','イラストレーション','コンピュータ絵画','ライブペインティング','マルチメディア'].forEach(t=>TAG_FACETS[t]='bunrui');
 ['油彩','アクリル','薄塗り','厚塗り','滲み','染み','エアブラシ','スフマート','ステイニング','グレーズ','ドリッピング','スプレー','木炭','パステル','エンコスティック','転写','デコラージュ','自作絵の具','古典技法','拭う','拭き取り','消去','削る','切る','流す','引きずり','手で塗る','素手','指で描く','工業素材','大理石粉','蝋','紙','布','鉄','ガラス','石','綿布','モスリン','平塗り','鋳造','切断','粉','筆触','筆致','速い筆','ジェスチャー','ぼかし','ブラー','素材の混入','素材','金地','枡目描き','アレブレボケ','タイル','織物','投影','最小素材','古いキャンバス','白亜地','支持体','水','釘','積層','刺繍'].forEach(t=>TAG_FACETS[t]='gihou');
 ['現代','現代日本','日本','江戸','近代','ルネサンス','日本の戦後','戦後日本','ポーランド','ドイツ','ドイツ戦後','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','九州派','琳派','具体','もの派','ハイレッド・センター','印象派','キュビスム','シュプレマティスム','空間主義','カラーフィールド','アクション・ペインティング','抽象表現主義への橋','スーパーフラット','ミニマリズム','ポップアート','ネオ・ジオ','ZERO','アール・ブリュット','アウトサイダー','YBA','ライプツィヒ','浮世絵','バンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
+/* v21.8: country tags (added to the data from each person's field) belong to the 年代・国 facet — before this they fell into テーマ・概念, which is why アメリカ never showed under 国. */
+['アメリカ','イギリス','フランス','イタリア','スペイン','オランダ','ベルギー','オーストリア','チェコ','ロシア','ソ連','中国','韓国','メキシコ','アルゼンチン','キューバ','カナダ','南アフリカ','イスラエル','アイルランド','デンマーク','ノルウェー','ポルトガル','ギリシャ','ルーマニア','ブルガリア','スコットランド','ロンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
 const TAG_FACET_ORDER = ['bunrui','gihou','jidaikuni','theme'];
 const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', jidaikuni:'年代・国', theme:'テーマ・概念'};
 /* designers tag facets (curated 2026-11-11 to mirror the artists system) */
@@ -9788,13 +9825,41 @@ artists: ['現代','現代日本','日本の戦後','戦後日本','江戸','近
 designers: ['近代','戦後','現代','古典','五輪','東京五輪']
 };
 const TAG_KUNI = {
-artists: ['日本','ポーランド','ドイツ','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','バンドン','オーストラリア','東北'],
+artists: ['日本','アメリカ','イギリス','フランス','ドイツ','イタリア','スペイン','オランダ','ベルギー','オーストリア','スイス','ポーランド','チェコ','ロシア','ソ連','中国','韓国','タイ','ブラジル','メキシコ','アルゼンチン','キューバ','カナダ','オーストラリア','南アフリカ','エチオピア','イスラエル','アイルランド','デンマーク','ノルウェー','ポルトガル','ギリシャ','ルーマニア','ブルガリア','スコットランド'],
 designers: ['日本','イギリス','フランス','アメリカ','イタリア','デンマーク','オランダ','ドイツ','ロシア','スイス','スペイン','チェコ','パリ','フィンランド','ブラジル','ベルギー','北欧','アイルランド','オーストリア','スウェーデン','スコットランド','ハンガリー']
+};
+/* v21.8: cities/regions are their own group — 福岡 is not a country. */
+const TAG_TOSHI = {
+artists: ['ニューヨーク','ロンドン','パリ','東京','福岡','東北','バンドン'],
+designers: ['パリ']
 };
 function tagHidden(t){ return t==='正典' || t==='試験対策' || t.indexOf('収穫：')===0; }
 function normTag(t){ const m = TAG_NORM[DS]; return (m && m[t]) || t; }
 function normTagSet(a){ const s = new Set(); (a.tags||[]).forEach(t=>{ if(!tagHidden(t)) s.add(normTag(t)); }); return s; }
-function chipLabel(t){ return t.replace(/^時代：/,'').replace(/^領域：/,''); }
+/* v21.8 (his ask): era chips carry their Gregorian span; major
+   movements keep theirs too, where the dates are well established. */
+const ERA_RANGE = {'ルネサンス':'1400〜1600','江戸':'1603〜1868','近代':'1868〜1945','日本の戦後':'1945〜1970','戦後日本':'1945〜1970','ドイツ戦後':'1945〜1990','現代':'1945〜','現代日本':'1945〜','戦後':'1945〜1970','東京五輪':'1964','琳派':'1600〜1868','浮世絵':'1600〜1868','印象派':'1860〜1890','キュビスム':'1907〜1914','シュプレマティスム':'1915〜','空間主義':'1946〜','カラーフィールド':'1940〜1960','アクション・ペインティング':'1940〜1950','ポップアート':'1955〜1970','ミニマリズム':'1960〜1970','ZERO':'1957〜1966','具体':'1954〜1972','もの派':'1968〜1975','ハイレッド・センター':'1963〜1966','九州派':'1957〜1968','中国現代美術':'1979〜','ネオ・ジオ':'1980〜','YBA':'1988〜','スーパーフラット':'2000〜'};
+function chipLabel(t){ const b = t.replace(/^時代：/,'').replace(/^領域：/,''); const r = ERA_RANGE[b]; return r? b+' '+r : b; }
+/* v21.8: chips inside a facet group follow a curated order (medium
+   families together, eras chronological, countries by region) instead
+   of raw frequency, which read as disorder. Unlisted tags follow by
+   count, as before. */
+const TAG_CHIP_ORDER = {
+'jidaikuni:年代':['ルネサンス','江戸','近代','日本の戦後','戦後日本','ドイツ戦後','現代日本','現代','戦後','古典','五輪','東京五輪'],
+'jidaikuni:国・地域':['日本','韓国','中国','タイ','インドネシア','インド','イスラエル','トルコ','イラン','アメリカ','カナダ','メキシコ','キューバ','ブラジル','アルゼンチン','イギリス','アイルランド','スコットランド','フランス','ベルギー','オランダ','ドイツ','オーストリア','スイス','イタリア','スペイン','ポルトガル','ギリシャ','デンマーク','ノルウェー','スウェーデン','フィンランド','ポーランド','チェコ','ハンガリー','ルーマニア','ブルガリア','ロシア','ソ連','南アフリカ','エチオピア','オーストラリア','北欧'],
+'jidaikuni:運動・様式':['琳派','浮世絵','印象派','キュビスム','シュプレマティスム','空間主義','カラーフィールド','アクション・ペインティング','抽象表現主義への橋','ポップアート','ミニマリズム','ZERO','具体','もの派','ハイレッド・センター','九州派','中国現代美術','ネオ・ジオ','YBA','ライプツィヒ','スーパーフラット','アール・ブリュット','アウトサイダー','構成主義','バウハウス','モダニズム','スイス・スタイル','アーツ・アンド・クラフツ','アール・デコ','シュルレアリスム','デ・ステイル','ポストモダン','メンフィス','具体芸術','民藝'],
+'gihou:絵画技法':['油彩','アクリル','エンコスティック','古典技法','薄塗り','厚塗り','平塗り','グレーズ','スフマート','滲み','染み','ステイニング','ドリッピング','スプレー','エアブラシ','ぼかし','ブラー','筆触','筆致','速い筆','ジェスチャー','アレブレボケ','枡目描き','転写','デコラージュ','投影','刺繍'],
+'gihou:描画・消去':['木炭','パステル','拭う','拭き取り','消去','削る','切る','流す','引きずり','手で塗る','素手','指で描く'],
+'gihou:立体の技法':['鋳造','切断','積層'],
+'bunrui:絵画':['絵画','日本画','水彩','ドローイング','版画','コラージュ','イラストレーション','コンピュータ絵画','ライブペインティング','彫刻家の素描'],
+'bunrui:立体':['彫刻','木彫','半立体','レリーフ','ネガティブ彫刻','社会彫刻','インスタレーション','ランドアート','陶'],
+'bunrui:映像・写真':['写真','写真ベース','映像','アニメーション','マルチメディア']
+};
+function chipComparator(f, g, counts){
+const ord = TAG_CHIP_ORDER[f+':'+g] || [];
+const ix = t=>{ const i = ord.indexOf(t); return i<0? 9999: i; };
+return (x,y)=> (ix(x)-ix(y)) || ((counts[y]||0)-(counts[x]||0));
+}
 function tagFacet(t){
 if(t.indexOf('時代：')===0) return 'jidaikuni';
 if(t.indexOf('領域：')===0) return 'bunrui';
@@ -9802,23 +9867,50 @@ const ov = TAG_OVR[DS]; if(ov && ov[t]) return ov[t];
 return DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme');
 }
 /* subgroup inside a facet panel (null = no grouping for this facet) */
+const TAG_EGAKU = ['木炭','パステル','拭う','拭き取り','消去','削る','切る','流す','引きずり','手で塗る','素手','指で描く'];
+const TAG_TATE = ['鋳造','切断','積層'];
+const TAG_BUNRUI_E = ['絵画','日本画','水彩','ドローイング','版画','コラージュ','コンピュータ絵画','ライブペインティング','イラストレーション','彫刻家の素描'];
+const TAG_BUNRUI_R = ['彫刻','木彫','半立体','レリーフ','ネガティブ彫刻','社会彫刻','インスタレーション','ランドアート','陶'];
+const TAG_BUNRUI_V = ['写真','写真ベース','映像','アニメーション','マルチメディア'];
 function tagGroup(f, t){
 if(f==='gihou'){
+if(DS==='artists'){
+if(['油彩','アクリル','エンコスティック','オイルスティック'].indexOf(t)>=0) return '絵画技法';
+if(TAG_EGAKU.indexOf(t)>=0) return '描画・消去';
+if(TAG_TATE.indexOf(t)>=0) return '立体の技法';
+if(TAG_SOZAI[DS].indexOf(t)>=0) return '素材・支持体';
+return '絵画技法';
+}
 if(TAG_SOZAI[DS].indexOf(t)>=0) return '素材';
 if(DS==='designers' && TAG_SHOTAI_D.indexOf(t)>=0) return '書体';
 return '技法';
 }
 if(f==='jidaikuni'){
 if(t.indexOf('時代：')===0 || TAG_NENDAI[DS].indexOf(t)>=0) return '年代';
+if(TAG_TOSHI[DS] && TAG_TOSHI[DS].indexOf(t)>=0) return '都市・地域';
 if(TAG_KUNI[DS].indexOf(t)>=0) return '国・地域';
 return '運動・様式';
 }
 if(f==='bunrui' && DS==='designers'){
 return t.indexOf('領域：')===0? '領域': '分類';
 }
+if(f==='bunrui' && DS==='artists'){
+if(TAG_BUNRUI_E.indexOf(t)>=0) return '絵画';
+if(TAG_BUNRUI_R.indexOf(t)>=0) return '立体';
+if(TAG_BUNRUI_V.indexOf(t)>=0) return '映像・写真';
+return '行為・その他';
+}
 return null;
 }
-const TAG_GROUP_ORDER = { gihou:['技法','素材','書体'], jidaikuni:['年代','国・地域','運動・様式'], bunrui:['領域','分類'] };
+/* v21.8: group order inside a facet panel depends on the dataset for
+   gihou/bunrui (artists got finer subgroups); groups with no member
+   tags present are skipped by the panel builder. */
+function facetGroupOrder(f){
+if(f==='gihou' && DS==='artists') return ['絵画技法','描画・消去','立体の技法','素材・支持体'];
+if(f==='bunrui' && DS==='artists') return ['絵画','立体','映像・写真','行為・その他'];
+return TAG_GROUP_ORDER[f];
+}
+const TAG_GROUP_ORDER = { gihou:['技法','素材','書体'], jidaikuni:['年代','国・地域','都市・地域','運動・様式'], bunrui:['領域','分類'] };
 function renderAbout(){
 const vb = $('verBadge'); if(vb) vb.textContent = 'v'+APP_VERSION;
 const el = $('aboutbox'); if(!el) return;
@@ -9894,8 +9986,9 @@ panel += '<div class="facetgh">'+esc(g.label)+'</div><div class="taggrouprow">'+
 });
 if(hiddenN>0 || state.tagsOpen) toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
 } else {
-const order = TAG_GROUP_ORDER[openF];
+const order = facetGroupOrder(openF);
 const byG = {}; if(order) all.forEach(t=>{ const g = tagGroup(openF,t); (byG[g]=byG[g]||[]).push(t); });
+if(order) Object.keys(byG).forEach(g=>{ byG[g].sort(chipComparator(openF, g, counts)); });
 const present = order? order.filter(g=>byG[g] && byG[g].length): [];
 if(present.length>1){
 present.forEach(g=>{ panel += '<div class="facetgh">'+esc(g)+'</div><div class="taggrouprow">'+byG[g].map(tagChip).join('')+'</div>'; });
@@ -9925,10 +10018,23 @@ updateSlimTools();
 /* v8.0: one card builder for list / cross-dataset / near-miss
    cards. Cross cards carry data-ds so the hydration wiring can
    resolve the record in the other dataset's store. */
+/* v21.11: discipline chips from field ("国、分野" — the part after
+   、, split on ／, at most two). Oil/watercolor read as 絵画 (the
+   marker answers "what kind of maker", not "which medium"); long
+   discipline names get their short everyday form. */
+const FIELD_SHORT = {'アニメーション':'アニメ','油彩':'絵画','水彩':'絵画','グラフィックデザイン':'グラフィック','プロダクトデザイン':'プロダクト','ファッションデザイン':'ファッション','タイプデザイン':'タイプ','インテリアデザイン':'インテリア','工業デザイン':'工業','テキスタイルデザイン':'テキスタイル','ブックデザイン':'ブック','エディトリアルデザイン':'エディトリアル'};
+function fieldChipsHTML(a){
+const f = String(a.field || '');
+const ix = f.indexOf('、');
+if(ix < 0) return '';
+const parts = f.slice(ix + 1).split('／').map(x => x.trim()).filter(Boolean).slice(0, 2);
+if(!parts.length) return '';
+return '<span class="fchips">' + parts.map(x => '<span class="fchip">' + esc(FIELD_SHORT[x] || x) + '</span>').join('') + '</span>';
+}
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+fieldChipsHTML(a)+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -10476,10 +10582,9 @@ bioHTML = sp.bio? cvBioHTML(sp.bio): '<div class="bodytext">（来歴の記載�
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
-if(a.relation) featHTML += '<h3 class="subhead">翔万との関係・取り入れられる部分</h3><div class="bodytext">'+esc(a.relation)+'</div>';
+if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3><div class="bodytext">'+esc(a.relation)+'</div>';
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+esc(sp.tech)+'</div>';
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+esc(sp.rest)+'</div>';
-if(a.key_works) featHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+esc(a.key_works)+'</div>';
 if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
@@ -11193,15 +11298,48 @@ function exNavHTML(){
     + '<button class="exnavcard" onclick="openNews()">'+news+'<span><span class="exnavt">時事</span><span class="exnavs">ニュースと相関</span></span></button>'
     + '</div>';
 }
+/* v21.7: region filter for exhibitions — 日本 / 海外 pill tabs,
+   shared by the exhibitions list and the calendar (his ask).
+   Classification: the city field is primary (every current
+   record carries one, and it names the place unambiguously);
+   coords are the fallback, then venue-name markers. A plain
+   Japan bounding box is NOT used as the primary test: it
+   swallows Seoul (lng 127), which the city field gets right. */
+let exRegion = 'all';
+try{ const r0 = localStorage.getItem('zukan.exRegion'); if(r0 === 'jp' || r0 === 'world') exRegion = r0; }catch(e){}
+const JP_CITY_RE = /(東京|大阪|京都|名古屋|横浜|福岡|札幌|仙台|広島|神戸|金沢|奈良|水戸|直島|松山|高松|高崎|那覇|取手|葉山|北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|兵庫|和歌山|鳥取|島根|岡山|山口|徳島|香川|愛媛|高知|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄|Tokyo|Kyoto|Osaka|Nagoya|Yokohama|Fukuoka|Sapporo|Sendai|Hiroshima|Kobe|Kanazawa|Nara|Mito|Hayama|Naoshima|Takamatsu|Takasaki|Matsuyama|Naha|Toride|Kumamoto|Kagoshima|Okayama|Nagasaki)/i;
+function exRegionOf(e){
+  const city = String((e && e.city) || '');
+  if(city) return JP_CITY_RE.test(city)? 'jp': 'world';
+  const lat = parseFloat(e && e.lat), lng = parseFloat(e && e.lng);
+  if(isFinite(lat) && isFinite(lng)) return (lat >= 24 && lat <= 46.5 && lng >= 122.5 && lng <= 147.5)? 'jp': 'world';
+  const v = String((e && e.venue) || '');
+  if(/(ハーシュホーン|ポンピドゥー|テート|メトロポリタン|ホイットニー|グッゲンハイム|ルーヴル|オルセー|プラド)/.test(v)) return 'world';
+  if(/[一-鿿ぁ-んァ-ヶ]/.test(v)) return 'jp';
+  return 'world';
+}
+function exRegionSegHTML(){
+  return '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;"><span class="small">地域</span><span class="seg mini">'
+  + '<button class="' + (exRegion === 'all'? 'on': '') + '" onclick="setExRegion(\'all\')">全部</button>'
+  + '<button class="' + (exRegion === 'jp'? 'on': '') + '" onclick="setExRegion(\'jp\')">日本</button>'
+  + '<button class="' + (exRegion === 'world'? 'on': '') + '" onclick="setExRegion(\'world\')">海外</button>'
+  + '</span></div>';
+}
+function setExRegion(r){
+  exRegion = r;
+  try{ localStorage.setItem('zukan.exRegion', r); }catch(e){}
+  if(view === 'cal') renderCal(); else if(view === 'ex') renderEx();
+}
 function renderExArtists(){
-const exs = (DB.exhibitions||[]).slice();
+let exs = (DB.exhibitions||[]).slice();
+if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
 let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
-+ exNavHTML()
++ exNavHTML() + exRegionSegHTML()
 +'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
 +'<button class="'+(exSortMode==='end'?'on':'')+'" onclick="setExSort(\'end\')">終了が早い順</button>'
@@ -11213,7 +11351,7 @@ if(exSortMode==='near'){
   else if(!exUserPos) html += '<div class="note">現在地を取得しています…</div>';
 }
 html += galleryLinksHTML(exs);
-if(!exs.length){ v.innerHTML = html + '<div class="empty">展示データはまだありません</div>'; return;}
+if(!exs.length){ v.innerHTML = html + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; return;}
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr))).sort(cmp);
 const up = exs.filter(e=>!(cur.indexOf(e)>=0)).sort(cmp);
 const item = (e)=>{
@@ -11248,10 +11386,11 @@ hydrateExPosters(v, exs);
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
 function renderExDesigners(){
-const exs = (DB.exhibitions||[]).slice();
+let exs = (DB.exhibitions||[]).slice();
+if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
-const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>' + exNavHTML();
-if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">展示データはまだありません</div>'; return;}
+const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>' + exNavHTML() + exRegionSegHTML();
+if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
@@ -11432,6 +11571,12 @@ hydrateExPosters(v, museumExList);
    note once it is more than 3 days old. */
 let newsData = null;
 let newsFetching = false;
+/* v22.0: the news view is a small news app now — pill tabs
+   (トップ/社会/アート/相関) over a lead story + headline wire,
+   instead of every section stacked into one long scroll. */
+let newsTab = 'top';
+try{ const nt = localStorage.getItem('zukan.newsTab'); if(nt === 'society' || nt === 'art' || nt === 'corr') newsTab = nt; }catch(e){}
+function setNewsTab(t){ newsTab = t; try{ localStorage.setItem('zukan.newsTab', t); }catch(e){} renderNews(); }
 function newsCacheLoad(){ try{ const j = JSON.parse(storeGet('zukan.news')||'null'); return (j && typeof j==='object')? j: null; }catch(e){ return null; } }
 async function fetchNews(){
   if(newsFetching) return;
@@ -11925,40 +12070,60 @@ function renderNews(){
   const age = newsAgeDays(d.updatedAt);
   html += '<div class="small" style="margin-top:8px">'+newsDateLabel(d.updatedAt)+' 更新'+(age!=null && age>=1 ? '（'+age+'日前）': '')+'</div>';
   if(age!=null && age > 3) html += '<div class="note">この情報は '+age+' 日前のものです。最新の状況は出典で確認してください。</div>';
+  const soc = Array.isArray(d.society)? d.society: [];
+  const art = Array.isArray(d.art)? d.art: [];
+  const c = d.correlation;
+  const hasCorr = !!(c && (c.summary || (c.points||[]).length));
+  const tabs = [['top','トップ']];
+  if(soc.length) tabs.push(['society','社会']);
+  if(art.length) tabs.push(['art','アート']);
+  if(hasCorr) tabs.push(['corr','相関']);
+  if(!tabs.some(t => t[0] === newsTab)) newsTab = 'top';
+  html += '<div class="bizpills" style="margin-top:10px">' + tabs.map(t => '<button data-newstab="' + t[0] + '" class="' + (newsTab === t[0]? 'on': '') + '" onclick="setNewsTab(\'' + t[0] + '\')">' + t[1] + '</button>').join('') + '</div>';
+  /* rows: source/date first (the wire look), then the headline,
+     then a two-line excerpt. */
   const item = (n) =>
-    '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nmain"><span class="nt">'+esc(n.title||'')+'</span>' +
-    '<div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>' +
+    '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nmain"><div class="nm" style="margin:0 0 5px"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div><span class="nt">'+esc(n.title||'')+'</span>' +
     (n.note? '<div class="nnote">'+esc(n.note)+'</div>': '') + '</span>' +
     (n.img && n.img.url? '<img class="nimg" src="'+escA(sizedThumbUrl(n.img.url, 400))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">': '') +
     '</a>';
-  const c = d.correlation;
-  if(c && (c.summary || (c.points||[]).length)){
-    html += '<div class="corwrap"><h2 class="sechead"><span>相関を読む</span></h2>';
-    if(c.summary) html += '<div class="corlead">'+esc(c.summary)+'</div>';
+  const hero = (n) =>
+    '<a class="newshero" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><img class="himg" src="'+escA(sizedThumbUrl(n.img.url, 800))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="nt">'+esc(n.title||'')+'</span><div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>'+(n.note? '<div class="nnote">'+esc(n.note)+'</div>': '')+'</a>';
+  const corrHTML = () => {
+    let h = '<div class="corwrap">';
+    if(c.summary) h += '<div class="corlead">'+esc(c.summary)+'</div>';
     (c.points||[]).forEach(p => {
       const kind = p.kind === 'fact'? 'fact': 'reading';
-      html += '<div class="corpoint '+kind+'"><span class="nbadge '+kind+'">'+(kind==='fact'? '接点（確認済み）': '読み（解釈）')+'</span>' +
+      h += '<div class="corpoint '+kind+'"><span class="nbadge '+kind+'">'+(kind==='fact'? '接点（確認済み）': '読み（解釈）')+'</span>' +
         (p.title? '<div class="ct">'+esc(p.title)+'</div>': '') +
         (p.body? '<div class="cb">'+esc(p.body)+'</div>': '') + '</div>';
     });
-    html += '</div>';
-  }
-  const soc = Array.isArray(d.society)? d.society: [];
-  const art = Array.isArray(d.art)? d.art: [];
-  if(soc.length) html += '<h2 class="sechead newssec"><span>社会の時事</span><span class="cnt">'+soc.length+'件</span></h2>' + soc.map(item).join('');
-  if(art.length){
-    /* v2.73: the first imaged art story leads as a hero — one
-       decisive large surface above the wire of rows. */
+    return h + '</div>';
+  };
+  if(newsTab === 'corr' && hasCorr){
+    html += corrHTML();
+  } else if(newsTab === 'society'){
+    html += soc.length? soc.map(item).join('') : '<div class="empty" style="margin-top:26px">社会の時事はまだありません。</div>';
+  } else if(newsTab === 'art'){
     const hi = art.findIndex(n => n.img && n.img.url);
     let artHtml = '';
-    art.forEach((n, i) => {
-      if(i === hi){
-        artHtml += '<a class="newshero" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><img class="himg" src="'+escA(sizedThumbUrl(n.img.url, 800))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="nt">'+esc(n.title||'')+'</span><div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>'+(n.note? '<div class="nnote">'+esc(n.note)+'</div>': '')+'</a>';
-      } else artHtml += item(n);
-    });
-    html += '<h2 class="sechead newssec"><span>アートの時事</span><span class="cnt">'+art.length+'件</span></h2>' + artHtml;
+    art.forEach((n, i) => { artHtml += (i === hi)? hero(n) : item(n); });
+    html += art.length? artHtml : '<div class="empty" style="margin-top:26px">アートの時事はまだありません。</div>';
+  } else {
+    /* トップ: one lead story, then the newest headlines across both
+       wires (date order), then the correlation lead as a door. */
+    const all = art.map(n => ({ n, k: 'アート' })).concat(soc.map(n => ({ n, k: '社会' })));
+    all.sort((x, y) => String(y.n.date || '').localeCompare(String(x.n.date || '')));
+    const hi = all.findIndex(x => x.n.img && x.n.img.url);
+    if(hi >= 0){ html += hero(all[hi].n); }
+    const rest = all.filter((x, i) => i !== hi).slice(0, 10);
+    if(rest.length) html += rest.map(x => item(x.n)).join('');
+    if(hasCorr && c.summary){
+      html += '<div class="corwrap"><h2 class="sechead"><span>相関を読む</span></h2><div class="corlead">'+esc(c.summary)+'</div>'
+        + '<button class="txtbtn" style="margin-top:8px" onclick="setNewsTab(\'corr\')">相関をくわしく ›</button></div>';
+    }
+    if(!all.length && !hasCorr) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
   }
-  if(!soc.length && !art.length && !c) html += '<div class="empty" style="margin-top:26px">今回の配信に項目はありません。</div>';
   v.innerHTML = html;
 }
 
@@ -12096,7 +12261,7 @@ function renderCal(){
   const tstr = calDayStr(now);
   const adb = liveDB('artists');
   const all = (adb && adb.exhibitions) || [];
-  const exs = all.filter(e=> e.start_date);
+  const exs = all.filter(e=> e.start_date && (exRegion === 'all' || exRegionOf(e) === exRegion));
   const noDate = all.length - exs.length;
   const selEx = calSelId!=null? exs.find(e=> String(e.id)===String(calSelId)): null;
   const hdr = document.querySelector('header.top');
@@ -12120,6 +12285,7 @@ function renderCal(){
   let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
   html += '<div class="calsticky" style="top:'+hdrH+'px"><div class="calnav" style="margin-top:0"><button class="btn" onclick="calJump(-1)">‹</button><span class="caltitle" id="calTitle">'+now.getFullYear()+'年'+(now.getMonth()+1)+'月</span><button class="btn" onclick="calJump(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
   html += '<div style="display:flex; align-items:center; gap:10px; margin-top:8px"><span class="seg"><button class="'+(calMode==='grid'?'on':'')+'" onclick="calSetMode(\'grid\')">カレンダー</button><button class="'+(calMode==='bars'?'on':'')+'" onclick="calSetMode(\'bars\')">会期</button></span><span class="small">'+(calMode==='bars'? '期間そのものを横棒で見る': '初日・最終日をチップで見る')+'</span></div>';
+  html += exRegionSegHTML();
   html += '<div class="callegend" style="margin-top:6px"><span><i style="background:var(--tag)"></i>開催中</span><span><i style="background:var(--danger)"></i>まもなく終了</span><span><i style="background:rgba(255,255,255,.18)"></i>これから</span>'+(calMode==='grid'? '<span>「終」は最終日</span>': '')+'</div>';
   html += '<div class="calgrid calwdrow">';
   ['日','月','火','水','木','金','土'].forEach((wd, i)=>{ html += '<div class="calwdcell'+(i===0?' sun': i===6?' sat': '')+'">'+wd+'</div>'; });
@@ -12706,7 +12872,7 @@ F('分類（section）', I('ef_section', a?a.section:'') + '<div class="small">�
 F('タグ（カンマ区切り）', I('ef_tags', a?(a.tags||[]).join(', '):''))+
 F('代表作ファイル名', I('ef_wimg', a?a.work_image:''))+
 F('代表作キャプション', I('ef_wcap', a?a.work_caption:''))+
-F('翔万との関係・取り入れられる部分', '<textarea class="textin" id="ef_relation">'+esc(a?a.relation:'')+'</textarea>')+
+F('見どころ', '<textarea class="textin" id="ef_relation">'+esc(a?a.relation:'')+'</textarea>')+
 F('見るべき代表作', '<textarea class="textin" id="ef_keyworks">'+esc(a?a.key_works:'')+'</textarea>')+
 F('本文（来歴・技法・特徴メモ）', '<textarea class="textin" id="ef_notes" style="min-height:180px;">'+esc(a?a.notes:'')+'</textarea><div class="small">「【来歴】」「【技法・メディウム】」の見出しで区切ると、詳細画面のタブに振り分けられます。</div>')+
 '<div class="setrow"><div class="setlabel">作品（works）</div><div id="ef_works"></div>'+
@@ -14046,7 +14212,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '21.6';
+const APP_VERSION = '22.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
