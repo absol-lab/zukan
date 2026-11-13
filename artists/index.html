@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="8.5">
+<meta name="app-version" content="9.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9981,6 +9981,7 @@ const w = viewerWorks[viewerIdx]; if(!w) return;
 updateVThumbBtn();
 syncVFavBtn();
 const seq = ++viewerSeq;
+vDeepReset(w);
 const box = $('vimg'); box.innerHTML = '<div class="vstage" id="vstage"></div>';
 const stage = box.firstChild;
 vResetZoom();
@@ -10042,13 +10043,91 @@ if(settled) return; settled = true;
 up.remove();
 if(attemptNo <= WAITS.length && seq === viewerSeq) setTimeout(attempt, WAITS[attemptNo-1] + Math.floor(Math.random()*250));
 };
-up.onload = ()=>{ if(settled) return; settled = true; if(seq !== viewerSeq){ up.remove(); return; } requestAnimationFrame(()=> up.classList.add('on')); };
+up.onload = ()=>{ if(settled) return; settled = true; if(seq !== viewerSeq){ up.remove(); return; } requestAnimationFrame(()=> up.classList.add('on'));
+/* v9.0: a w1600 answer narrower than 1600 IS the master —
+   remember it, and deep zoom never probes this work. */
+if(w.img && w.img.url && up.naturalWidth && up.naturalWidth < IMG_SIZE.viewer) vDeepCaps[String(w.img.url)] = up.naturalWidth;
+if(vDeep && vDeep.url && w.img && String(w.img.url) === vDeep.url && vDeepCaps[vDeep.url]) vDeep.capped = true;
+vDeepCheck();
+};
 up.onerror = fail;
 box.appendChild(up);
 up.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
 setTimeout(()=>{ if(!settled && !up.complete) fail(); }, 7000);
 };
 attempt();
+}
+/* v9.0: DEEP ZOOM — staged resolution inside the viewer only.
+   His ask after seeing gigapixel sites (Google Arts & Culture,
+   Haltadefinizione, e国宝): "図鑑でも超高画質で見たい".
+   The list and detail paths are untouched (their speed is a
+   standing absolute). The viewer still opens exactly as before
+   (plate instantly, w1600 behind it); only when the reader
+   zooms past what the current layer can resolve does the next
+   tier load, swapping in place — the deeper he pinches, the
+   sharper it gets. Stop rule: a fetch that comes back no wider
+   than what is already shown IS the master; the work is capped
+   (remembered per URL for the session) and never probed again.
+   A 1200px master therefore costs at most ONE extra fetch, and
+   only when he actually zooms deep. The zoom ceiling follows
+   the real master width once known. */
+const VDEEP_TIERS = [1600, 2560, 4096, 7680];
+const vDeepCaps = {};
+let vDeep = null;
+function vDeepReset(w){
+const url = (w && w.img && w.img.url)? String(w.img.url): null;
+vDeep = { url: url, reqTier: IMG_SIZE.viewer, capped: !url, busy: false, fetches: 0 };
+if(url && vDeepCaps[url]) vDeep.capped = true;
+}
+function vDeepTopImg(){
+const st = viewerStage(); if(!st) return null;
+return st.querySelector('img.vup') || st.querySelector('img');
+}
+function vFitW(){
+const im = vDeepTopImg(); if(!im) return 0;
+const r = im.getBoundingClientRect();
+return r.width / Math.max(1, vZoom.s);
+}
+function vMaxScale(){
+const im = vDeepTopImg(); const fit = vFitW();
+if(im && im.naturalWidth && fit > 0) return Math.max(4, Math.min(12, im.naturalWidth / fit));
+return 4;
+}
+let vDeepTimer = 0;
+function vDeepSchedule(){
+if(vDeepTimer) return;
+vDeepTimer = setTimeout(()=>{ vDeepTimer = 0; vDeepCheck(); }, 180);
+}
+function vDeepCheck(){
+if(!vDeep || vDeep.capped || vDeep.busy || !vDeep.url) return;
+const im = vDeepTopImg();
+if(!im || !im.complete || !im.naturalWidth) return;
+const fit = vFitW(); if(!fit) return;
+const need = fit * vZoom.s * Math.min(2, window.devicePixelRatio || 1);
+if(need <= im.naturalWidth * 1.05) return;
+const next = VDEEP_TIERS.find(t => t > vDeep.reqTier);
+if(next === undefined){ vDeep.capped = true; return; }
+const seq = viewerSeq;
+const url = vDeep.url;
+vDeep.busy = true; vDeep.fetches++;
+const probe = new Image();
+probe.onload = ()=>{
+if(seq !== viewerSeq || !vDeep || vDeep.url !== url){ return; }
+vDeep.busy = false;
+const top = vDeepTopImg();
+const curNW = top? top.naturalWidth: 0;
+if(!probe.naturalWidth || probe.naturalWidth <= curNW){
+vDeep.capped = true;
+if(probe.naturalWidth) vDeepCaps[url] = probe.naturalWidth;
+return;
+}
+vDeep.reqTier = next;
+if(top) top.src = probe.src;
+if(probe.naturalWidth < next){ vDeep.capped = true; vDeepCaps[url] = probe.naturalWidth; }
+vDeepCheck();
+};
+probe.onerror = ()=>{ if(vDeep && vDeep.url === url){ vDeep.busy = false; vDeep.capped = true; } };
+probe.src = sizedThumbUrl(url, next);
 }
 /* v2.82: the viewer's own zoom. Before, the viewer had no zoom of
    its own, so a pinch fell through to the browser's page zoom —
@@ -10090,10 +10169,11 @@ function vClampPan(){
     if(pinch0 && e.touches.length === 2){
       e.preventDefault();
       const m = tmid(e.touches[0], e.touches[1]);
-      vZoom.s = Math.min(4, Math.max(1, pinch0.s * tdist(e.touches[0], e.touches[1]) / pinch0.d));
+      vZoom.s = Math.min(vMaxScale(), Math.max(1, pinch0.s * tdist(e.touches[0], e.touches[1]) / pinch0.d));
       vZoom.x = pinch0.x + (m.x - pinch0.mx);
       vZoom.y = pinch0.y + (m.y - pinch0.my);
       vClampPan(); vApplyZoom();
+      vDeepSchedule();
     } else if(pan0 && e.touches.length === 1 && vZoom.s > 1){
       e.preventDefault();
       vZoom.x = pan0.x + (e.touches[0].clientX - pan0.sx);
@@ -10102,7 +10182,7 @@ function vClampPan(){
     }
   }, { passive:false });
   box.addEventListener('touchend', e=>{
-    if(pinch0){ if(e.touches.length === 0){ pinch0 = null; if(vZoom.s < 1.02) vResetZoom(); } return; }
+    if(pinch0){ if(e.touches.length === 0){ pinch0 = null; if(vZoom.s < 1.02) vResetZoom(); else vDeepCheck(); } return; }
     if(!pan0) return;
     const dx = e.changedTouches[0].clientX - pan0.sx;
     const dy = e.changedTouches[0].clientY - pan0.sy;
@@ -10113,7 +10193,7 @@ function vClampPan(){
       if(now - tap0 < 320){
         tap0 = 0;
         if(wasZoom) vResetZoom();
-        else { setOrigin({ x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }); vZoom.s = 2.5; vZoom.x = 0; vZoom.y = 0; vApplyZoom(); }
+        else { setOrigin({ x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }); vZoom.s = Math.min(2.5, vMaxScale()); vZoom.x = 0; vZoom.y = 0; vApplyZoom(); vDeepCheck(); }
       } else tap0 = now;
       return;
     }
@@ -12733,7 +12813,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '8.5';
+const APP_VERSION = '9.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
