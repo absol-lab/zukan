@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="9.2">
+<meta name="app-version" content="10.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -537,7 +537,17 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galrow:active{background:var(--card2);}
 .galrow .gname{display:block; font-family:var(--serif); font-size:13.5px; font-weight:600; letter-spacing:.02em; line-height:1.35;}
 .galrow .gmeta{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
-.galrow .gext{position:absolute; top:8px; right:10px; color:var(--accent); font-size:12px;}
+.galrow .gext{position:absolute; top:8px; right:10px; color:var(--accent); font-size:12px; z-index:1; padding:8px; margin:-8px;}
+/* v10.0: the gallery row's body opens the in-app museum page;
+   the ↗ keeps going to the official site, as before. */
+.galhit{position:absolute; inset:0; background:none; border:none; padding:0; cursor:pointer;}
+/* v10.0: museum page holdings grid */
+.mgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; margin-top:8px;}
+.mtile{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
+.mtile .imgholder{display:block; aspect-ratio:4/3;}
+.mtile .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.mtile .mcap{display:block; padding:8px 10px 9px; font-size:12.5px; line-height:1.45; color:var(--text);}
+.mcell .mart{padding:5px 2px 0; font-size:12.5px;}
 .galsub{font-family:var(--sans); font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:16px 2px 0;}
 /* v2.42: registration requests */
 .reqinput{width:100%; font-size:16px; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); margin-top:12px; font-family:var(--sans);}
@@ -809,6 +819,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <main id="viewDetail" class="hidden"></main>
 <main id="viewEx" class="hidden"></main>
+<main id="viewMuseum" class="hidden"></main>
 <main id="viewNews" class="hidden"></main>
 <main id="viewCal" class="hidden"></main>
 <main id="viewTimeline" class="hidden"></main>
@@ -8566,8 +8577,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2, cal:2, era:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, quiz:2, news:2, cal:2, era:2, museum:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -8637,6 +8648,7 @@ else updateHeader();
 if(v==='list') renderList();
 updateToolbarSlim();
 if(v==='ex') renderEx();
+if(v==='museum') renderMuseum();
 if(v==='news') renderNews();
 if(v==='cal') renderCal();
 if(v==='timeline') renderTimeline();
@@ -10442,11 +10454,16 @@ try{ galOpen = storeGet('zukan.galOpen')==='1'; }catch(e){}
 function toggleGal(){ galOpen = !galOpen; try{ storeSet('zukan.galOpen', galOpen? '1': '0'); }catch(e){} renderEx(); }
 function galleryLinksHTML(exs){
   const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  const hIdx = buildHoldingsIndex();
   const row = (g) => {
     const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && (!e.end_date || e.end_date >= tstr)).length;
-    return '<a class="galrow" href="'+g.url+'" target="_blank" rel="noopener"><span class="gname">'+esc(g.name)+'</span>' +
-      '<span class="gmeta">図鑑の展示 '+n+'件</span>' +
-      '<span class="gext">↗</span></a>';
+    const held = holdingsFor(g.name, hIdx).length;
+    /* v10.0: the row's body opens the museum page in-app; only
+       the ↗ goes out to the official site (as before). */
+    return '<div class="galrow"><span class="gname">'+esc(g.name)+'</span>' +
+      '<span class="gmeta">図鑑の展示 '+n+'件'+(held? ' ・ 収蔵 '+held+'点': '')+'</span>' +
+      '<button class="galhit" onclick="openMuseum(\''+escA(g.name)+'\')" aria-label="'+escA(g.name)+'のページ"></button>' +
+      '<a class="gext" href="'+g.url+'" target="_blank" rel="noopener" aria-label="公式サイト">↗</a></div>';
   };
   const total = GAL_GROUPS.reduce((n, gr) => n + gr.items.length, 0);
   let html = '<button class="galhead" onclick="toggleGal()"><span>ギャラリー・美術館</span><span class="galcnt">'+total+'件</span><span class="galchev">'+(galOpen? '▾': '▸')+'</span></button>';
@@ -10507,7 +10524,7 @@ if(dlabel){
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
 return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
+'<div class="em">'+esc(e.artist_name||'')+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
 '<div class="edates">'+esc(dates)+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
@@ -10545,7 +10562,7 @@ if(dlabel){
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
 return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="em">'+esc(e.artist_name||'')+(meta?'　'+esc(meta):'')+'</div>'+
+'<div class="em">'+esc(e.artist_name||'')+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
 '<div class="edates">'+esc(dates)+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
@@ -10561,6 +10578,132 @@ hydrateExPosters(v, exs);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
+
+/* ---------- museum page (v10.0) ----------
+   His ask: opening a museum jumped straight to its exhibitions;
+   he wanted one stage before that — the museum's own page, with
+   the works the encyclopedia registers as held there
+   （収蔵作品） first and the exhibitions below. This is a NEW
+   separated view; the exhibitions view itself is untouched
+   apart from two entry points (gallery rows and the venue name
+   on exhibition cards). Rules:
+   - Holdings come ONLY from the structured work field held_by
+     (Art Labo's verified, name-normalized data). Captions are
+     never parsed into holdings here — no guessing.
+   - A venue with no held_by works shows no 収蔵 section at all
+     (no empty shelves); sections light up as data lands.
+   - Holdings and exhibitions aggregate BOTH datasets.
+   Matching is deterministic string logic over curated names:
+   exact, the GAL entry's match string, or containment between
+   the page name and a held_by / venue string. */
+let museumName = null;
+let museumWiring = [];
+let museumExList = [];
+function openMuseum(name){ museumName = String(name||''); showView('museum'); }
+function galEntryFor(name){
+for(const gr of GAL_GROUPS){ const g = gr.items.find(x=>x.name===name); if(g) return { g: g, label: gr.label }; }
+return null;
+}
+function buildHoldingsIndex(){
+const idx = new Map();
+for(const kind of ['artists','designers']){
+const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
+for(const a of c.DB.artists){
+(a.works||[]).forEach((w, wi)=>{ if(w && w.held_by){ if(!idx.has(w.held_by)) idx.set(w.held_by, []); idx.get(w.held_by).push({ kind: kind, artist: a, work: w, wi: wi }); } });
+}
+}
+return idx;
+}
+function museumNameMatch(name, key, gal){
+if(!key) return false;
+if(key === name) return true;
+if(gal && (key === gal.g.name || key.indexOf(gal.g.match) >= 0 || gal.g.name.indexOf(key) >= 0)) return true;
+if(key.indexOf(name) >= 0 || name.indexOf(key) >= 0) return true;
+return false;
+}
+function holdingsFor(name, idx){
+idx = idx || buildHoldingsIndex();
+const gal = galEntryFor(name);
+const out = []; const seen = new Set();
+for(const k of idx.keys()){
+if(!museumNameMatch(name, k, gal)) continue;
+for(const e of idx.get(k)){ const id = e.kind+'|'+e.artist.id+'|'+e.wi; if(!seen.has(id)){ seen.add(id); out.push(e); } }
+}
+return out;
+}
+function museumExhibitions(name){
+const gal = galEntryFor(name);
+const out = []; const seen = new Set();
+for(const kind of ['artists','designers']){
+const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.exhibitions)) continue;
+for(const e of c.DB.exhibitions){
+if(!e || !e.venue) continue;
+if(!museumNameMatch(name, e.venue, gal)) continue;
+const id = (e.title||'')+'|'+(e.start_date||'')+'|'+e.venue;
+if(seen.has(id)) continue;
+seen.add(id); out.push(e);
+}
+}
+out.sort((a, b)=> String(a.start_date||'') < String(b.start_date||'')? -1: 1);
+return out;
+}
+function museumExItemHTML(e, i){
+const dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+let artistLink = '';
+if(e.artist_id != null){
+for(const kind of ['artists','designers']){
+const c = CTX[kind];
+if(c && c.DB && c.DB.artists.some(a=>String(a.id)===String(e.artist_id))){ artistLink = '<button class="linkbtn" onclick="openCrossDetail(\''+kind+'\', \''+escA(e.artist_id)+'\')">図鑑で見る</button>'; break; }
+}
+}
+return '<div class="exitem">'+exPosterHTML(e, i)+'<div class="et">'+esc(e.title||'')+'</div>'
++'<div class="em">'+esc(e.artist_name||'')+(e.city?'　'+esc(e.city):'')+'</div>'
++'<div class="edates">'+esc(dates)+'</div>'
++(e.note? '<div class="em">'+esc(e.note)+'</div>': '')
++'<div style="margin-top:4px; display:flex; gap:16px;">'
++(e.url? '<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
++artistLink
++'</div></div>';
+}
+function openMuseumWork(i){
+const e = museumWiring[i]; if(!e) return;
+const go = ()=>{
+const a = artistById(e.artist.id);
+if(!a){ toast('この端末にはまだ届いていません'); return; }
+const ws = displayWorks(a);
+let ix = ws.indexOf(e.work);
+if(ix < 0) ix = Math.min(e.wi, ws.length - 1);
+if(ix >= 0) openViewer(ws, ix, a.id);
+};
+if(e.kind !== DS) switchDataset(e.kind);
+go();
+}
+function renderMuseum(){
+const v = $('viewMuseum'); if(!v) return;
+const name = museumName || '';
+const galE = galEntryFor(name);
+const held = holdingsFor(name);
+museumWiring = held;
+museumExList = museumExhibitions(name);
+const city = (museumExList.find(e=>e.city)||{}).city || (galE? galE.label: '');
+let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
+if(held.length){
+html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.length+'点</span></h2><div class="mgrid">'
++ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, IMG_SIZE.thumb)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
++ '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
++ '</div>';
+}
+html += '<h2 class="sechead"><span>展示情報</span><span class="cnt">'+museumExList.length+'件</span></h2>';
+html += museumExList.length? museumExList.map((e, i)=> museumExItemHTML(e, i)).join(''): '<div class="empty">この美術館の展示データはまだありません</div>';
+v.innerHTML = html;
+v.querySelectorAll('.mtile .imgholder').forEach((span, i)=>{
+const e = museumWiring[i]; if(!e) return;
+span._work = e.work;
+if(imgObserver) imgObserver.observe(span); else hydrateImg(span, e.work);
+});
+hydrateExPosters(v, museumExList);
+}
 
 /* ---------- news （時事）: v2.62 ----------
    Content is harvested on the Muse side into news.json, published
@@ -12910,7 +13053,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '9.2';
+const APP_VERSION = '10.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
