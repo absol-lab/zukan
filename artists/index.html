@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="12.2">
+<meta name="app-version" content="12.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -386,6 +386,7 @@ h3.subhead:first-child{margin-top:8px;}
 /* v2.45: long captions scroll inside their own capped band — they used
    to grow the column until the caption text ran over the button row. */
 #viewer .vcap{flex:none; max-height:24vh; overflow-y:auto; color:var(--text); font-size:14px; padding:10px 16px; line-height:1.6; font-family:var(--serif);}
+#viewer .vdeep{flex:none; text-align:center; color:var(--muted); font-size:11px; letter-spacing:.05em; padding:0 16px 6px; font-family:var(--sans);}
 #viewer .vbar{flex:none; display:flex; justify-content:space-between; align-items:center; padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
 #viewer .vbar button{background:none; border:1px solid var(--lineStrong); color:var(--text); padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
 #viewer .vcount{color:var(--muted); font-size:13px;}
@@ -881,6 +882,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div id="vhires" hidden>超高画質</div>
   <div class="vimg" id="vimg"></div>
   <div class="vcap" id="vcap"></div>
+  <div class="vdeep" id="vdeep" hidden></div>
   <div class="vbar">
     <button onclick="viewerMove(-1)">‹ 前</button>
     <span class="vcount" id="vcount"></span>
@@ -9984,6 +9986,7 @@ try{ viewerAnim = vw.animate([{ transform:'translateY(100%)' },{ transform:'tran
 function closeViewer(){
 const vw = $('viewer');
 if(!vw.classList.contains('open')) return;
+vDeepNoteSave();
 /* v9.1: every closeViewer bumps the generation, and openViewer
    captures it. A stale close (its slide-down finished late, or
    its safety timer) must never strip .open from a viewer that
@@ -10156,7 +10159,7 @@ const vDeepCaps = {};
 let vDeep = null;
 function vDeepReset(w){
 const url = (w && w.img && w.img.url)? String(w.img.url): null;
-vDeep = { url: url, reqTier: IMG_SIZE.viewer, capped: !url, busy: false, fetches: 0 };
+vDeep = { url: url, reqTier: IMG_SIZE.viewer, capped: !url, busy: false, fetches: 0, fails: 0, retryAt: 0 };
 if(url && vDeepCaps[url]) vDeep.capped = true;
 }
 function vDeepTopImg(){
@@ -10178,30 +10181,55 @@ return 8;
 }
 let vDeepTimer = 0;
 function vDeepSchedule(){
+vDeepRenderNote();
 if(vDeepTimer) return;
 vDeepTimer = setTimeout(()=>{ vDeepTimer = 0; vDeepCheck(); }, 180);
 }
+/* v12.3: a failed or stalled tier fetch must not end the
+   climb. Before, one error set capped=true and the viewer sat
+   at w1600 for the whole session, silently — on 4G a multi-MB
+   fetch failing once is ordinary, and his 《最後の晩餐》 test
+   hit exactly that. Now: backoff retries (1.2s/2.4s/4.8s), a
+   45s watchdog against stalls, and giving up only after 4
+   failures for the same hop — keeping the sharpest layer
+   already on screen. */
+function vDeepFail(url, seq){
+if(seq !== viewerSeq || !vDeep || vDeep.url !== url) return;
+vDeep.busy = false;
+vDeep.fails = (vDeep.fails || 0) + 1;
+if(vDeep.fails >= 4){ vDeep.capped = true; vDeep.retryAt = 0; vDeepNoteSave(); vDeepRenderNote(); return; }
+const wait = Math.min(12000, 1200 * Math.pow(2, vDeep.fails - 1));
+vDeep.retryAt = Date.now() + wait;
+vDeepRenderNote();
+setTimeout(()=>{ if(vDeep && vDeep.url === url && seq === viewerSeq) vDeepCheck(); }, wait + 80);
+}
 function vDeepCheck(){
 if(!vDeep || vDeep.capped || vDeep.busy || !vDeep.url) return;
+if(vDeep.retryAt && Date.now() < vDeep.retryAt) return; /* cooling down; the retry timer re-checks */
 const im = vDeepTopImg();
 if(!im || !im.complete || !im.naturalWidth) return;
 const fit = vFitW(); if(!fit) return;
 const need = fit * vZoom.s * Math.min(2, window.devicePixelRatio || 1);
 if(need <= im.naturalWidth * 1.05) return;
 const next = VDEEP_TIERS.find(t => t > vDeep.reqTier);
-if(next === undefined){ vDeep.capped = true; return; }
+if(next === undefined){ vDeep.capped = true; vDeepNoteSave(); return; }
 const seq = viewerSeq;
 const url = vDeep.url;
 vDeep.busy = true; vDeep.fetches++;
+vDeepRenderNote();
 const probe = new Image();
+let settled = false;
+const wd = setTimeout(()=>{ if(settled) return; settled = true; try{ probe.src = ''; }catch(e){} vDeepFail(url, seq); }, 45000);
 probe.onload = ()=>{
+if(settled) return; settled = true; clearTimeout(wd);
 if(seq !== viewerSeq || !vDeep || vDeep.url !== url){ return; }
-vDeep.busy = false;
+vDeep.busy = false; vDeep.fails = 0; vDeep.retryAt = 0;
 const top = vDeepTopImg();
 const curNW = top? top.naturalWidth: 0;
 if(!probe.naturalWidth || probe.naturalWidth <= curNW){
 vDeep.capped = true;
 if(probe.naturalWidth) vDeepCaps[url] = probe.naturalWidth;
+vDeepNoteSave(); vDeepRenderNote();
 return;
 }
 vDeep.reqTier = next;
@@ -10214,11 +10242,37 @@ if(vTouchCount > 0){
 vPendingSwap = { url: url, src: probe.src, seq: seq };
 } else if(top){
 top.src = probe.src;
+vDeepNoteSave(); vDeepRenderNote();
 vDeepCheck();
 }
 };
-probe.onerror = ()=>{ if(vDeep && vDeep.url === url){ vDeep.busy = false; vDeep.capped = true; } };
+probe.onerror = ()=>{ if(settled) return; settled = true; clearTimeout(wd); vDeepFail(url, seq); };
 probe.src = sizedThumbUrl(url, next);
+}
+/* v12.3: the viewer's live layer readout (shown while zoomed
+   or once a deep layer is on screen) + a persisted record the
+   画像診断 panel can show afterwards — his "which tier am I
+   actually seeing" question, answered in the app. */
+function vDeepRenderNote(){
+const el = $('vdeep'); if(!el) return;
+if(!vDeep || !vDeep.url){ el.hidden = true; return; }
+const im = vDeepTopImg();
+const nw = im? (im.naturalWidth || 0): 0;
+const show = vZoom.s > 1.02 || nw > IMG_SIZE.viewer || vDeep.busy || (vDeep.fails || 0) > 0;
+if(!show){ el.hidden = true; return; }
+let t = 'レイヤー ' + (nw? nw + 'px': '—');
+if(vDeep.busy) t += '・上位を取得中';
+else if(vDeep.retryAt && Date.now() < vDeep.retryAt) t += '・取得失敗、再試行待ち';
+else if(vDeep.capped) t += (vDeep.fails >= 4)? '・取得できず現在画質で固定': '・マスター到達';
+el.textContent = t;
+el.hidden = false;
+}
+function vDeepNoteSave(){
+try{
+const w = viewerWorks[viewerIdx];
+const im = vDeepTopImg();
+storeSet('zukan.deepdiag', JSON.stringify({ at: new Date().toISOString(), caption: (w && w.caption) || '', reqTier: vDeep? vDeep.reqTier: 0, topNW: im? (im.naturalWidth || 0): 0, capped: !!(vDeep && vDeep.capped), fetches: vDeep? vDeep.fetches: 0, fails: vDeep? (vDeep.fails || 0): 0 }));
+}catch(e){}
 }
 /* v2.82: the viewer's own zoom. Before, the viewer had no zoom of
    its own, so a pinch fell through to the browser's page zoom —
@@ -13281,7 +13335,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '12.2';
+const APP_VERSION = '12.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -13599,6 +13653,12 @@ async function runImgDiagnostics(){
   if(!w0){ put('サンプル作品（img.url 持ち）が見つかりません'); put('=== 終了 ==='); return; }
   put('サンプル: ' + gogh.name + ' / ' + (w0.caption || ''));
   put('保存URL: ' + w0.img.url);
+  /* v12.3: the last viewer session's deep-zoom record */
+  try{
+    const dd = JSON.parse(storeGet('zukan.deepdiag') || 'null');
+    if(dd) put('深ズーム到達記録: ' + (dd.caption || '(無題)') + ' / 表示レイヤー ' + dd.topNW + 'px / 要求 ' + dd.reqTier + 'px / 取得 ' + dd.fetches + '回 / 失敗 ' + dd.fails + '回 / ' + (dd.capped ? '上限到達' : '継続可') + ' (' + (dd.at || '') + ')');
+    else put('深ズーム到達記録: なし（ビューアで拡大すると記録されます）');
+  }catch(e){}
   const fid = (/[?&]id=([^&]+)/.exec(w0.img.url) || [])[1] || '';
   const tiles = document.querySelectorAll('#listbody .imgholder');
   let withImg = 0, decoded = 0;
