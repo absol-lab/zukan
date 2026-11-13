@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="10.2">
+<meta name="app-version" content="10.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -241,7 +241,13 @@ h2.sechead .cnt{font-size:12px; color:var(--muted); font-weight:400; letter-spac
 .grid.mini{grid-template-columns:repeat(4,1fr); gap:8px;}
 figure.work{margin:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px; cursor:pointer; overflow:hidden;}
 figure.work:active{background:var(--card2);}
-figure.work .ph{aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
+figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
+/* v10.3: hi-res badge — the mark for works whose registered
+   master is 4000px+ (definition owned by the data side). Sits
+   at the photo's top-right on the photo-primary surfaces:
+   detail works tiles, museum tiles, and the viewer. */
+.hiresbadge{position:absolute; top:6px; right:6px; z-index:2; font-size:10px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:2px 8px; line-height:1.5; pointer-events:none;}
+#vhires{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 58px); right:12px; z-index:6; font-size:11px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:3px 10px; line-height:1.5; pointer-events:none;}
 figure.work .ph img{width:100%; height:100%; object-fit:cover; display:block;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
 figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--bg);}
@@ -552,7 +558,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galhit{position:absolute; inset:0; background:none; border:none; padding:0; cursor:pointer;}
 /* v10.0: museum page holdings grid */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; margin-top:8px;}
-.mtile{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
+.mtile{position:relative; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
 .mtile .imgholder{display:block; aspect-ratio:4/3;}
 .mtile .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .mtile .mcap{display:block; padding:8px 10px 9px; font-size:12.5px; line-height:1.45; color:var(--text);}
@@ -851,6 +857,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <div id="viewer">
   <button id="vthumb" onclick="viewerSetThumb()">サムネにする</button>
+  <div id="vhires" hidden>超高画質</div>
   <div class="vimg" id="vimg"></div>
   <div class="vcap" id="vcap"></div>
   <div class="vbar">
@@ -8178,6 +8185,10 @@ if(w && w.pinned) o.pinned = true;
    normalization, merges and editor saves or a device write-back
    would erase it — the name_kana lesson, applied in advance. */
 if(w && w.held_by) o.held_by = String(w.held_by);
+/* v10.3: hires — the hi-res master flag (data side's
+   definition: registered master long edge >= 4000px). Same
+   advance-whitelist treatment as held_by. */
+if(w && w.hires) o.hires = true;
 return o;
 }).filter(w=>w.file || w.caption || w.img);
 /* v2.65: books （作品集） — curated on the Muse side only; the app
@@ -9832,7 +9843,7 @@ if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありませ
 else{
 worksHTML = '<div class="gallery wm-'+workMode+'">';
 ws.forEach((w,i)=>{
-worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 worksHTML += '</div>';
 }
@@ -10016,6 +10027,7 @@ function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
 updateVThumbBtn();
 syncVFavBtn();
+{ const hb = $('vhires'); if(hb) hb.hidden = !w.hires; }
 const seq = ++viewerSeq;
 vDeepReset(w);
 const box = $('vimg'); box.innerHTML = '<div class="vstage" id="vstage"></div>';
@@ -10371,6 +10383,8 @@ function vClampPan(){
    invisible on the device while the data itself was intact. Posters
    now render through the same hydrateImg path as work images (the URL
    branch with the v2.20 retry/backoff), at detail-plate size. */
+/* v10.3: the hi-res mark, shared by the photo-primary surfaces */
+function hiresBadgeHTML(w){ return (w && w.hires)? '<span class="hiresbadge">超高画質</span>': ''; }
 function exPosterHTML(e, idx){
 if(!(e && e.img && e.img.url)) return '';
 return '<div class="exposter" data-exi="'+idx+'">'+imgHTML({ caption: e.title||'', img: e.img }, IMG_SIZE.plate)+'</div>';
@@ -10743,7 +10757,7 @@ let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
 html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.length+'点</span></h2><div class="mgrid">'
-+ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, IMG_SIZE.thumb)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
++ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
 + '</div>';
 }
@@ -12038,6 +12052,8 @@ if(old && old.name_kana) rec.name_kana = old.name_kana;
 if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
+/* v10.3: nor a work's hires flag — same per-work carry */
+if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.hires){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.hires) t.hires = true; } });
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -12114,7 +12130,7 @@ function mergeDataInto(local, incoming){
     otherWorks.forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
+      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v10.3: hires is sticky through merges, like pinned — the incoming side is normalized before merging, so an explicit false never reaches this point; masters only grow, so the flag never needs a merge-level clear. */ if(w.hires) ex.hires = true; if(w.img){ /* img upgrade: union of both sides; the newer/base side's fields win (local-base keeps the historical incoming-wins rule) */ ex.img = normalizeImg(useRemoteBase ? Object.assign({}, w.img, ex.img||{}) : Object.assign({}, ex.img||{}, w.img)) || ex.img || w.img; } wkeys(w).forEach(k=>wm.set(k, ex)); }
       else wkeys(w).forEach(k=>wm.set(k, w));
     });
     merged.works = Array.from(new Set(wm.values()));
@@ -13129,7 +13145,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '10.2';
+const APP_VERSION = '10.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
