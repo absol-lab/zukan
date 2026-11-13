@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="16.1">
+<meta name="app-version" content="17.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -522,6 +522,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .phouse{font-size:12.5px; color:var(--muted); margin-top:2px;}
 .pricerow .pprice{font-size:16px; font-weight:800; margin-top:3px;}
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.pchartwrap{margin:0 0 10px}
+.pcharttitle{font-size:14px; font-weight:700; margin:8px 0 2px}
 .highchip{display:inline-block; background:#e6b93d; color:#191204; font-size:11px; font-weight:800; letter-spacing:.06em; border-radius:999px; padding:2px 8px; vertical-align:2px; margin-left:6px;}
 .psumrow{font-size:14.5px; margin-top:4px;}
 .pricerow .pjpy{font-size:13px; color:var(--muted); margin-top:1px;}
@@ -8301,6 +8303,11 @@ const pr = (typeof p.price==='number' && isFinite(p.price))? p.price: (typeof p.
 return {
 year: isFinite(yr)? yr: null,
 work: String(p.work||''),
+/* v17.0: work_id — the repeat-sale group key (opaque string,
+   data-side curated: same physical work only). Carried here
+   from the start, like every other prices field, or the next
+   device sync would strip it from the canonical. */
+work_id: String(p.work_id||''),
 house: String(p.house||''),
 price: isFinite(pr)? pr: null,
 currency: String(p.currency||'').toUpperCase(),
@@ -9997,11 +10004,11 @@ return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img?
 '</div></div>';
 }).join('');
 }
-/* v15.0: prices tab — per-currency record highs on top, then
-   the auction history newest first. No currency conversion is
-   ever shown (prices in different currencies are not compared);
-   a row earns the 最高値更新 chip when, scanning oldest to
-   newest, it beats every earlier price IN ITS OWN CURRENCY. */
+/* prices tab — per-currency record highs on top, then the
+   auction history newest first. v16.0 added JPY conversions
+   (one dated rate table, labelled 概算). v17.0: chart lines
+   and 最高値更新 chips are repeat-sale only — the same work
+   (work_id) against its own history, never across works. */
 let pricesHTML = '';
 const pricesDesc = pricesArr.slice().sort((x,y)=> (y.year-x.year) || (y.price-x.price));
 if(pricesArr.length){
@@ -10009,32 +10016,58 @@ const CURSYM = { USD:'$', GBP:'£', EUR:'€', JPY:'¥', HKD:'HK$', CHF:'CHF ', 
 const fmtPrice = p => (CURSYM[p.currency] || (p.currency? p.currency+' ': '')) + p.price.toLocaleString('en-US');
 const ascP = pricesArr.slice().sort((x,y)=> (x.year-y.year) || (y.price-x.price));
 const bestByCur = {}; const highSet = new Set();
-/* the first record in a currency sets the baseline (no chip);
-   only a later record that strictly beats it is an update. */
 ascP.forEach(p=>{
 const c = p.currency||'';
-if(bestByCur[c]==null) bestByCur[c] = p;
-else if(p.price > bestByCur[c].price){ bestByCur[c] = p; highSet.add(p); }
+if(bestByCur[c]==null || p.price > bestByCur[c].price) bestByCur[c] = p;
+});
+/* v17.0: the 最高値更新 chip is a repeat-sale notion — a work
+   beating ITS OWN earlier price (same work_id, same currency),
+   its first sale being the baseline. Cross-work comparisons
+   were the flaw he called out in the chart, so they no longer
+   earn chips either; records without a work_id never chip. */
+const bestByWork = {};
+ascP.forEach(p=>{
+if(!p.work_id) return;
+const k = p.work_id + '|' + (p.currency||'');
+if(bestByWork[k]==null) bestByWork[k] = p;
+else if(p.price > bestByWork[k].price){ bestByWork[k] = p; highSet.add(p); }
 });
 const cntByCur = {}; pricesArr.forEach(p=>{ const c = p.currency||''; cntByCur[c] = (cntByCur[c]||0)+1; });
 const topCurs = Object.keys(bestByCur).sort((c1,c2)=> (cntByCur[c2]-cntByCur[c1]) || (bestByCur[c2].price - bestByCur[c1].price)).slice(0, 2);
-const chartPts = ascP.map(p=>({ p: p, j: jpyOf(p) })).filter(x=>x.j != null);
-let chartHTML = '';
-if(chartPts.length >= 2){
+/* v17.0: charts are REPEAT SALES only — records sharing a
+   work_id are the same physical work resold; connecting
+   different works into one line was meaningless (his call,
+   2026-11-13 23:01). Records without a work_id are never
+   connected. One wide line per tracked work, JPY-converted,
+   the most valuable tracked work first. */
+const chartSVG = pts => {
 const CW = 340, CH = 118, CPT = 20, CPB = 18, CPX = 12;
-const maxJ = Math.max.apply(null, chartPts.map(x=>x.j));
-const cX = i => CPX + i * (CW - 2 * CPX) / (chartPts.length - 1);
+const maxJ = Math.max.apply(null, pts.map(x=>x.j));
+const cX = i => CPX + i * (CW - 2 * CPX) / (pts.length - 1);
 const cY = v => (CH - CPB) - (v / (maxJ * 1.08)) * (CH - CPT - CPB);
-const maxIdx = chartPts.reduce((mi, x, i)=> x.j > chartPts[mi].j ? i : mi, 0);
-const labIdx = new Set([0, chartPts.length - 1, maxIdx]);
+const maxIdx = pts.reduce((mi, x, i)=> x.j > pts[mi].j ? i : mi, 0);
+const labIdx = new Set([0, pts.length - 1, maxIdx]);
 const clampX = (x, m) => Math.min(Math.max(x, m), CW - m);
-chartHTML = '<h3 class="subhead">価格の推移（円換算・概算）</h3><svg class="pchart" viewBox="0 0 '+CW+' '+CH+'" width="100%" role="img" aria-label="価格の推移グラフ">'
+return '<svg class="pchart" viewBox="0 0 '+CW+' '+CH+'" width="100%" role="img" aria-label="同じ作品の価格推移グラフ">'
 + '<line x1="'+CPX+'" y1="'+(CH-CPB)+'" x2="'+(CW-CPX)+'" y2="'+(CH-CPB)+'" stroke="var(--line)" stroke-width="1"/>'
-+ '<polyline points="'+chartPts.map((x, i)=> cX(i).toFixed(1)+','+cY(x.j).toFixed(1)).join(' ')+'" fill="none" stroke="#d9a441" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-+ chartPts.map((x, i)=> '<circle cx="'+cX(i)+'" cy="'+cY(x.j)+'" r="3" fill="#d9a441"/>').join('')
-+ chartPts.map((x, i)=> labIdx.has(i)? '<text class="chvlab" x="'+clampX(cX(i), 26)+'" y="'+(cY(x.j) - 7)+'" text-anchor="middle">'+esc(fmtJPYShort(x.j))+'</text>': '').join('')
-+ chartPts.map((x, i)=> (chartPts.length <= 8 || labIdx.has(i))? '<text class="chylab" x="'+clampX(cX(i), 12)+'" y="'+(CH - 4)+'" text-anchor="middle">'+x.p.year+'</text>': '').join('')
++ '<polyline points="'+pts.map((x, i)=> cX(i).toFixed(1)+','+cY(x.j).toFixed(1)).join(' ')+'" fill="none" stroke="#d9a441" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
++ pts.map((x, i)=> '<circle cx="'+cX(i)+'" cy="'+cY(x.j)+'" r="3" fill="#d9a441"/>').join('')
++ pts.map((x, i)=> labIdx.has(i)? '<text class="chvlab" x="'+clampX(cX(i), 26)+'" y="'+(cY(x.j) - 7)+'" text-anchor="middle">'+esc(fmtJPYShort(x.j))+'</text>': '').join('')
++ pts.map((x, i)=> (pts.length <= 8 || labIdx.has(i))? '<text class="chylab" x="'+clampX(cX(i), 12)+'" y="'+(CH - 4)+'" text-anchor="middle">'+x.p.year+'</text>': '').join('')
 + '</svg>';
+};
+const byWork = {};
+ascP.forEach(p=>{ if(p.work_id) (byWork[p.work_id] = byWork[p.work_id] || []).push(p); });
+const chartGroups = Object.keys(byWork).map(k=>{
+const recs = byWork[k];
+const pts = recs.map(p=>({ p: p, j: jpyOf(p) })).filter(x=>x.j != null);
+return { title: recs[recs.length - 1].work, pts: pts, maxJ: pts.length? Math.max.apply(null, pts.map(x=>x.j)): 0 };
+}).filter(g=> g.pts.length >= 2).sort((a, b)=> b.maxJ - a.maxJ);
+let chartHTML = '';
+if(chartGroups.length){
+chartHTML = '<h3 class="subhead">同じ作品の価格推移（円換算・概算）</h3>'
++ '<div class="small" style="margin:-4px 0 6px">同じ作品が再販された記録だけを繋いでいます。</div>'
++ chartGroups.map(g=> '<div class="pchartwrap"><div class="pcharttitle">'+esc(g.title)+'</div>'+chartSVG(g.pts)+'</div>').join('');
 }
 pricesHTML = chartHTML + '<h3 class="subhead">最高落札額（通貨別）</h3>' + topCurs.map(c=>{ const t = bestByCur[c]; const j = (t.currency && t.currency !== 'JPY')? jpyOf(t): null; return '<div class="psumrow"><b>'+esc(fmtPrice(t))+'</b>'+(j != null? ' <span class="small">≈ '+esc(fmtJPY(j))+'（概算）</span>': '')+' <span class="small">'+esc(t.work)+' ・ '+t.year+'</span></div>'; }).join('');
 pricesHTML += pricesDesc.map((p, pi)=> '<div class="pricerow">'+
@@ -13621,7 +13654,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '16.1';
+const APP_VERSION = '17.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
