@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="10.4">
+<meta name="app-version" content="11.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -566,6 +566,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .galhit{position:absolute; inset:0; background:none; border:none; padding:0; cursor:pointer;}
 /* v10.0: museum page holdings grid */
 .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px 10px; margin-top:8px;}
+/* v11.0: wide shelf — one large tile per row, fed with the
+   plate-size image so it holds up at full width. */
+.mgrid.wide{grid-template-columns:1fr; gap:18px;}
+.mgrid.wide .mtile .imgholder{aspect-ratio:3/2;}
+.mgrid.wide .mcap{font-size:13.5px;}
+.mhead-r{display:inline-flex; align-items:center; gap:10px;}
 .mtile{position:relative; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; text-align:left; padding:0; width:100%; cursor:pointer; display:block;}
 .mtile .imgholder{display:block; aspect-ratio:4/3;}
 .mtile .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
@@ -8338,7 +8344,11 @@ function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
    artist list). Device-local, shared across datasets. */
 let workMode = 'def';
 try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
-function setWorkMode(m){ workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} renderDetail(); }
+function setWorkModeCore(m){ workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
+function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
+/* v11.0: the museum shelf shares the works display mode —
+   'wide' there means one large tile per row. */
+function setMuseumWide(w){ setWorkModeCore(w? 'wide': 'def'); renderMuseum(); }
 function workKeysOf(x){ return [ (x.img && x.img.fileId), (x.img && x.img.url), x.file, x.caption? ('cap:' + x.caption): '' ].filter(Boolean); }
 
 /* ---------- notes splitting (来歴 / 技法 / その他) ---------- */
@@ -10766,8 +10776,9 @@ const city = (museumExList.find(e=>e.city)||{}).city || (galE? galE.label: '');
 let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
-html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.length+'点</span></h2><div class="mgrid">'
-+ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
+const shelfWide = (workMode==='wide');
+html += '<h2 class="sechead"><span>収蔵作品</span><span class="mhead-r"><span class="cnt">'+held.length+'点</span><span class="seg mini" role="group" aria-label="表示"><button class="'+(shelfWide?'':'on')+'" onclick="setMuseumWide(false)">標準</button><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumWide(true)">ワイド</button></span></span></h2><div class="mgrid'+(shelfWide?' wide':'')+'">'
++ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
 + '</div>';
 }
@@ -13155,7 +13166,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '10.4';
+const APP_VERSION = '11.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
