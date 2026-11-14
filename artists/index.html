@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.7">
+<meta name="app-version" content="29.8">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -325,10 +325,28 @@ figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{color:var(--te
    replaces the holder's content wholesale (label included), so
    the failure plate is untouched. A cached image never shows it. */
 .imgholder{position:relative;}
-.imgload{font-family:var(--sans); font-size:11px; color:var(--muted); letter-spacing:.05em; line-height:1.5; padding:4px; text-align:center;}
+.imgload{font-family:var(--sans); font-size:11px; color:var(--muted); letter-spacing:.05em; line-height:1.5; padding:4px; text-align:center; white-space:nowrap;}
 .imgload.ov{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:1; pointer-events:none;}
-.biothumb .imgload, .tlthumb .imgload{font-size:9px;}
-.ysthumb .imgload{font-size:8.5px;}
+/* v29.8 (his device report, 2026-11-14 23:44): on narrow tiles the
+   label wrapped one character per line and read as vertical text.
+   The label NEVER wraps now (white-space:nowrap on the base rule
+   above and on the viewer's .vload below), and each narrow surface
+   shrinks the type to fit its narrowest tile instead: the fixed
+   micro thumbs (.biothumb 52px, .bookcover 72px) get fixed small
+   sizes, the timeline strip thumbs scale with the viewport, and
+   the 3-/4-column grid modes (whose tile width is a fixed
+   fraction of the viewport) scale the same way; wide surfaces
+   keep their readable sizes. Tile geometry is untouched — the
+   box was and stays aspect-ratio fixed, so a loading tile is
+   exactly the size of the landed tile. Measured per surface in
+   validate_v29_8.js (one text line, no spill outside the holder,
+   at 320/360/393px viewports). */
+.biothumb .imgload{font-size:5px; letter-spacing:0; padding:1px;}
+.tlthumb .imgload{font-size:min(9px, 2.35vw);}
+.ysthumb .imgload{font-size:min(8.5px, 2.35vw);}
+.grid.compact figure.work .ph .imgload, .gallery.wm-compact figure.work .ph .imgload, .mgrid.compact .mtile .imgload{font-size:min(11px, 2.3vw); letter-spacing:.03em; padding:2px 3px;}
+.grid.mini figure.work .ph .imgload, .gallery.wm-mini figure.work .ph .imgload, .mgrid.mini .mtile .imgload{font-size:min(11px, 1.6vw); letter-spacing:.02em; padding:2px;}
+.bookcover .imgload{font-size:6.5px; letter-spacing:.02em; padding:2px;}
 .exposter .imgload{font-size:12px;}
 .intvthumb .imgload{font-size:8.5px; padding:2px;}
 figure.work .ph .imgload{color:var(--ink35);}
@@ -340,7 +358,7 @@ figure.work .ph:not(.platefail):has(> .imgholder > .imgload) .imgload{color:var(
 @media (prefers-reduced-motion: reduce){ #viewDetail figure.work .ph .imgload{animation:none;} }
 /* the viewer's loading label lives on the stage, over the plate
    area, until the plate image lands (see renderViewer) */
-#viewer .vload{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-family:var(--sans); font-size:13px; letter-spacing:.08em; pointer-events:none; z-index:5;}
+#viewer .vload{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-family:var(--sans); font-size:13px; letter-spacing:.08em; pointer-events:none; z-index:5; white-space:nowrap;}
 /* the viewer's no-url hydration span takes the whole stage so the
    shared hydrateImg label (and failure plate) centre properly */
 #viewer .vstage .vhyd{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;}
@@ -17551,7 +17569,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.7';
+const APP_VERSION = '29.8';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
