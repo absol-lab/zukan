@@ -13695,7 +13695,17 @@ sndNoiseBuf = buf; return buf;
 }
 function playPageTurn(rev){
 if(!sndEnabled()) return;
-const vol = sndVolume(); if(vol <= 0.001) return;
+/* v29.10 (his call, 2026-11-15 — 「音量設定ちょっとおかしい。
+   もっとバランスよく割り振って」): the stored value stays the
+   slider position (0..1), but the gain follows a square curve
+   (gain = pos^2; position 60% -> gain 0.36). Hearing is
+   roughly logarithmic, so the old linear map bunched the
+   audible change into part of the slider's travel; the curve
+   spreads it evenly — the same slide distance, the same
+   loudness step, anywhere on the slider. Both previews (the
+   on-toggle and slider-commit test plays) route through this
+   function, so they follow the same curve. */
+const pos = sndVolume(); const vol = pos * pos; if(vol <= 0.001) return;
 const ac = sndCtx(); if(!ac) return;
 try{
   const t0 = ac.currentTime + 0.02;
