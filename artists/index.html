@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.2">
+<meta name="app-version" content="27.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -359,6 +359,11 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .intvtitle{font-size:14.5px; line-height:1.45;}
 .intvmeta{font-size:12.5px; color:var(--muted);}
 .intvnote{font-size:12.5px; color:var(--muted); line-height:1.5;}
+/* v27.3: video thumbnails + the in-app Japanese summary */
+.intvthumb{position:relative; flex:none; width:92px; aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:var(--bg2); margin-top:1px;}
+.intvthumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.intvplay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; background:rgba(0,0,0,.22); text-shadow:0 1px 4px rgba(0,0,0,.8);}
+.intvsum{font-size:12.5px; color:var(--muted); line-height:1.6; margin-top:2px;}
 /* v27.0: 影響 tab rows — the interviews row's compact form; a
    resolvable influence is a full-width button with a chevron,
    an unregistered one sits as plain text in the same row shape. */
@@ -8482,10 +8487,25 @@ type: iv.type === 'video'? 'video': 'article',
 source: String(iv.source||''),
 date: String(iv.date||''),
 url: String(iv.url||''),
-note: String(iv.note||'')
+note: String(iv.note||''),
+/* v27.3: a video's thumbnail (data-side backfilled) and a
+   Japanese summary he can read without opening the source —
+   both curated on the data side, both optional: an entry
+   without them renders exactly as before. */
+thumb: String(iv.thumb||''),
+summary_ja: String(iv.summary_ja||'')
 };
 return (o.title && o.url)? o: null;
 }).filter(Boolean);
+}
+/* v27.3: a video row's thumbnail — the curated thumb wins;
+   a YouTube watch / share / embed / shorts URL derives its
+   hqdefault frame; anything else gets no thumbnail. */
+function intvThumbURL(iv){
+if(!iv || iv.type !== 'video') return '';
+if(iv.thumb) return iv.thumb;
+const m = /(?:youtube\.com\/(?:watch\?[^#]*v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/.exec(iv.url||'');
+return m? 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg': '';
 }
 /* v27.0: influences （影響を受けた作家) — Muse-side curated;
    each entry names an artist who shaped this one, carrying the
@@ -10481,7 +10501,7 @@ let symFilter = '';
 try{ symFilter = storeGet('zukan.symFilter') || ''; }catch(e){}
 function symSecBtnHTML(){
 const cur = SYM_TABS.find(([g]) => g === symFilter);
-return '<button class="symsecbtn' + (cur? ' on': '') + '" onclick="openSymSheet()">' + (cur? cur[0] + ' ' + cur[1] : '分野 ▾') + '</button>';
+return '<button class="symsecbtn' + (cur? ' on': '') + '" onclick="openSymSheet()">' + (cur? cur[0] + ' ' + cur[1] : 'すべて ▾') + '</button>';
 }
 function renderSymFilter(){
 const present = new Set();
@@ -10489,7 +10509,7 @@ DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
 if(symFilter && !present.has(symFilter)){ symFilter = ''; try{ storeSet('zukan.symFilter', ''); }catch(e){} }
 const cur = SYM_TABS.find(([g]) => g === symFilter);
 document.querySelectorAll('.symsecbtn').forEach(el => {
-  el.textContent = cur? (cur[0] + ' ' + cur[1]) : '分野 ▾';
+  el.textContent = cur? (cur[0] + ' ' + cur[1]) : 'すべて ▾';
   el.classList.toggle('on', !!cur);
 });
 }
@@ -11212,13 +11232,22 @@ if(procObj.sources && procObj.sources.length) processHTML += '<div class="small"
    a ▶ 動画 chip, articles a 記事 chip. */
 let interviewsHTML = '';
 if(intvArr.length){
-interviewsHTML = intvArr.map(iv=>
-'<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
+interviewsHTML = intvArr.map(iv=>{
+/* v27.3: video rows lead with a small 16:9 thumbnail (▶
+   overlaid); a summary_ja rides under the meta line in full —
+   the reading he does in-app before deciding to open the
+   (often English) source. Rows without either render as in
+   v27.0. */
+const th = intvThumbURL(iv);
+return '<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
++(th? '<span class="intvthumb"><img src="'+escA(th)+'" alt="" loading="lazy"><span class="intvplay">▶</span></span>': '')
 +'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
 +'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
 +([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
 +(iv.note? '<span class="intvnote">'+esc(iv.note)+'</span>': '')
-+'</span></a>').join('');
++(iv.summary_ja? '<span class="intvsum">'+esc(iv.summary_ja)+'</span>': '')
++'</span></a>';
+}).join('');
 }
 /* v27.0: 影響 tab — the artists who shaped this one (data-side
    curated). A row whose id resolves in the current dataset
@@ -12397,7 +12426,10 @@ function renderUpdateList(){
   const el = $('updatelist'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
   if(!d || !d.entries.length){ el.innerHTML = '<div class="empty">更新履歴はまだ読み込めていません</div>'; return; }
-  el.innerHTML = d.entries.map(e => {
+  /* v27.3: newest first by the actual instant — the file order
+     alone let a mis-stamped entry sit out of order (v26.0/v26.1);
+     the sort is stable, so equal stamps keep the file order. */
+  el.innerHTML = [...d.entries].sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0)).map(e => {
     const rt = ratingOf(e.v);
     return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
       + '<span class="ratebtns"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span></div>'
@@ -12417,8 +12449,12 @@ function reqResolvedName(r){
   return r.name;
 }
 function reqDoneItems(){
+  /* v27.3: order by the parsed instant, never the raw string —
+     the writers stamp resolved_at in mixed ISO forms (+09:00 /
+     Z / +00:00) and a lexicographic sort let the +09:00 rows
+     masquerade as up-to-9-hours newer than they are. */
   return reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
-    .sort((a, b) => String(b.resolved_at||'').localeCompare(String(a.resolved_at||'')));
+    .sort((a, b) => (Date.parse(b.resolved_at||'')||0) - (Date.parse(a.resolved_at||'')||0));
 }
 /* v2.82: the door lives in the top header, left of the 年表
    button (his corrected placement — NOT beside the updates). It
@@ -12427,7 +12463,10 @@ function reqDoneItems(){
    v2.95: the badge counts UNSEEN completions — opening the
    notifications marks them seen and the badge clears (his ask);
    it returns when new completions arrive. And the panel's back
-   returns to the screen he opened it from, not to その他. */
+   returns to the screen he opened it from, not to その他.
+   v27.3: the v2.95 read rule is superseded at his new ask —
+   opening marks nothing; an item turns read only when he
+   follows it into the artist's detail (see reqMarkOneRead). */
 const LS_REQ_SEEN = 'zukan.reqSeen';
 function reqSeenCount(){ const n = parseInt(storeGet(LS_REQ_SEEN)||'0', 10); return isNaN(n)? 0: n; }
 /* v13.1 (his correction): notifications belong to ONE book at
@@ -12465,12 +12504,23 @@ function reqSeenIdsLoad(){
 }
 function reqDoneForDS(k){ return reqDoneItems().filter(r=> reqItemDatasets(r).includes(k)); }
 function reqUnseenForDS(k){ const seen = new Set(reqSeenIdsLoad()[k] || []); return reqDoneForDS(k).filter(r=> !seen.has(r.id)).length; }
-function reqMarkSeen(){
+/* v27.3 (his ask): read state is PER ITEM. Nothing is marked
+   read by opening the panel, switching tabs or re-rendering —
+   an item turns read only when he actually follows it into the
+   artist's detail (or, for rows that cannot navigate —
+   declined requests — when he expands the row's detail). The
+   store is the same zukan.reqSeenIds set the badge already
+   counts from, so everything marked seen by the old bulk
+   behaviour stays read: nothing resurrects as NEW. */
+function reqMarkOneRead(r){
+  if(!r || r.id == null) return;
   try{
-    const d = reqSeenIdsLoad(); const set = new Set(d[DS] || []);
-    reqDoneForDS(DS).forEach(r=> set.add(r.id));
-    d[DS] = [...set].slice(-300);
-    storeSet(LS_REQ_SEEN2, JSON.stringify(d));
+    const d = reqSeenIdsLoad(); let ch = false;
+    reqItemDatasets(r).forEach(k=>{
+      const set = new Set(d[k] || []);
+      if(!set.has(r.id)){ set.add(r.id); d[k] = [...set].slice(-300); ch = true; }
+    });
+    if(ch) storeSet(LS_REQ_SEEN2, JSON.stringify(d));
   }catch(e){}
   refreshReqNotifBtn();
 }
@@ -12501,7 +12551,15 @@ const LS_REGNOTIFS = 'zukan.regNotifs';
 function regNotifsLoad(){ try{ const d = JSON.parse(storeGet(LS_REGNOTIFS)||'[]'); return Array.isArray(d)? d: []; }catch(e){ return []; } }
 function regNotifsSave(a){ try{ storeSet(LS_REGNOTIFS, JSON.stringify(a.slice(0, 60))); }catch(e){} }
 function regUnseenCount(k){ return regNotifsLoad().filter(n=>!n.seen && n.dataset === (k || DS)).length; }
-function regMarkSeen(){ const a = regNotifsLoad(); let ch = false; a.forEach(n=>{ if(!n.seen && n.dataset === DS){ n.seen = true; ch = true; } }); if(ch) regNotifsSave(a); }
+/* v27.3: the registration notes follow the same per-item rule
+   as reqMarkOneRead — one note at a time, on navigation (or,
+   for the summary note, on tap: the tap IS its fullest view). */
+function regMarkOneSeen(nid){
+  const a = regNotifsLoad(); const n = a.find(x=>x.id===nid);
+  if(n && !n.seen){ n.seen = true; regNotifsSave(a); }
+  refreshReqNotifBtn();
+}
+function regSummarySeen(nid){ regMarkOneSeen(nid); renderRequestNotifs('reqnotiflist'); }
 let knownInitPromise = null;
 function ensureKnownIds(){
   if(storeGet(LS_KNOWN)) return Promise.resolve(true);
@@ -12568,33 +12626,23 @@ async function detectNewPeople(kind){
 }
 function regNotifJump(nid){
   const n = regNotifsLoad().find(x=>x.id===nid); if(!n || n.summary) return;
-  if(n.dataset === DS){ const a = artistById(n.personId); if(a){ openDetail(a.id); return; } }
+  if(n.dataset === DS){ const a = artistById(n.personId); if(a){ regMarkOneSeen(n.id); openDetail(a.id); return; } }
   else{
     const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
     let found = null;
     try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(n.personId)); }catch(e){}
-    if(found){ switchDataset(n.dataset); openDetail(found.id); return; }
+    if(found){ regMarkOneSeen(n.id); switchDataset(n.dataset); openDetail(found.id); return; }
   }
   toast('この端末にはまだ届いていません');
 }
 let reqNotifReturn = null;
-/* v10.2: the set of notification ids that are NEW for this
-   panel opening — exactly what the bell badge counts (the
-   newest (done − seen) request completions, plus registration
-   notes with seen=false). Captured at open time, BEFORE the
-   render's mark-seen runs, and kept for the whole opening so
-   the panel's background re-render cannot strip the tags
-   while he is still looking at them. */
-let notifNewSet = null;
-function computeNotifNewSet(){
-  const s = new Set();
-  try{
-    const seen = new Set(reqSeenIdsLoad()[DS] || []);
-    reqDoneForDS(DS).forEach(r=>{ if(!seen.has(r.id)) s.add('req:' + r.id); });
-    regNotifsLoad().forEach(n=>{ if(!n.seen && n.dataset === DS) s.add('reg:' + n.id); });
-  }catch(e){}
-  return s;
-}
+/* v10.2–v27.2: NEW was a snapshot taken when the panel
+   opened, because the render itself marked everything seen.
+   v27.3: the render no longer marks anything, so NEW is
+   judged LIVE at each render — an item is NEW exactly while
+   its id is outside the read set (requests) or its note is
+   unseen (registrations). Tab switches and re-renders can
+   no longer strip tags he has not acted on. */
 /* v13.2: notification rows are compact (name + kind + time);
    the detail (original request, full note, person-page button)
    expands in place. Expansion state lives for one panel
@@ -12602,6 +12650,14 @@ function computeNotifNewSet(){
 let notifOpen = {};
 function toggleNotifDetail(key){
   notifOpen[key] = !notifOpen[key];
+  /* v27.3: a row that cannot navigate anywhere (a declined
+     request) is read once he has expanded it — the fullest
+     view that row offers. Navigable rows stay unread here;
+     they turn read in reqNotifJump / regNotifJump only. */
+  if(notifOpen[key] && key.indexOf('req:') === 0){
+    const r = reqAllItems().find(x=> 'req:' + x.id === key);
+    if(r && r.status === 'declined') reqMarkOneRead(r);
+  }
   renderRequestNotifs('reqnotiflist');
 }
 /* v16.1: the bell panel also carries the update history
@@ -12609,7 +12665,6 @@ function toggleNotifDetail(key){
 let bellTab = 'notifs';
 function setBellTab(t){ bellTab = t; renderSettingsPanel(); }
 function openRequestNotifs(){
-  notifNewSet = computeNotifNewSet();
   notifOpen = {};
   bellTab = 'notifs';
   reqNotifReturn = (view!=='settings')? view : null;
@@ -12638,24 +12693,24 @@ function reqNotifJump(id){
   if(r.kind==='works' && r.dataset && r.dataset!==DS){
     const oid = reqFindIn(r.dataset, r);
     switchDataset(r.dataset);
-    if(oid!=null) openDetail(oid); else toast('この端末にはまだ届いていません');
+    if(oid!=null){ reqMarkOneRead(r); openDetail(oid); } else toast('この端末にはまだ届いていません');
     return;
   }
-  if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ openDetail(a.id); return; } }
+  if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); openDetail(a.id); return; } }
   const here = DB.artists.find(x=>x.name===nm);
-  if(here){ openDetail(here.id); return; }
+  if(here){ reqMarkOneRead(r); openDetail(here.id); return; }
   const other = DS==='artists'? 'designers':'artists';
   const oid = reqFindIn(other, r);
-  if(oid!=null){ switchDataset(other); openDetail(oid); return; }
+  if(oid!=null){ reqMarkOneRead(r); switchDataset(other); openDetail(oid); return; }
   toast('この端末にはまだ届いていません');
 }
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
-  if(!notifNewSet) notifNewSet = computeNotifNewSet();
   const done = reqDoneForDS(DS);
+  const readIds = new Set(reqSeenIdsLoad()[DS] || []);
   const doneRows = done.map(r => {
     const resolved = reqResolvedName(r);
-    const isNew = notifNewSet.has('req:' + r.id);
+    const isNew = !readIds.has(r.id);
     /* v13.2 compact row: name + kind chip + time only. */
     const kindLabel = r.status==='declined'? '見送り': (r.kind==='works'? '更新': '登録');
     const dispName = r.kind==='works'? r.name: (resolved || r.name);
@@ -12670,7 +12725,7 @@ function renderRequestNotifs(targetId){
       if(r.status!=='declined') d += '<button class="npagebtn" onclick="event.stopPropagation(); reqNotifJump(\''+escA(r.id)+'\')">その人のページへ ›</button>';
       detail = '<div class="ndetail">'+d+'</div>';
     }
-    return { t: String(r.resolved_at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
+    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
       + '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>'
       + (isNew? '<span class="newtag">NEW</span>': '')
       + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
@@ -12680,8 +12735,8 @@ function renderRequestNotifs(targetId){
      the same panel. v13.1: only the current book's notes are
      mapped in (the filter above), matching the per-book badge. */
   const regRows = regNotifsLoad().filter(n => n.dataset === DS).map(n => {
-    const isNew = notifNewSet.has('reg:' + n.id);
-    if(n.summary) return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow'+(isNew?' hasnew':'')+'"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
+    const isNew = !n.seen;
+    if(n.summary) return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regSummarySeen(\''+escA(n.id)+'\')"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
     const key = 'reg:' + n.id;
     const open = !!notifOpen[key];
     let detail = '';
@@ -12689,17 +12744,23 @@ function renderRequestNotifs(targetId){
       detail = '<div class="ndetail"><div class="upat">'+(n.dataset==='designers'? 'デザイナー図鑑': '作家図鑑')+'への登録を検知</div>'
         + '<button class="npagebtn" onclick="event.stopPropagation(); regNotifJump(\''+escA(n.id)+'\')">その人のページへ ›</button></div>';
     }
-    return { ds: n.dataset, t: String(n.at||''), html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>'
+    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>'
       + detail + '</div>' };
   });
   /* v13.1: one chronological stream again, but only THIS
      book's rows reach it (the v13.0 sections mixed both books
      into one panel — not what he meant by 分ける). */
-  const all = doneRows.concat(regRows).sort((a, b)=> b.t.localeCompare(a.t));
+  /* v27.3: t is an epoch number on both streams — a plain
+     numeric descent is the true timeline whatever ISO form
+     each writer stamped. */
+  const all = doneRows.concat(regRows).sort((a, b)=> b.t - a.t);
   if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
   else el.innerHTML = all.map(x=>x.html).join('');
-  /* v2.95: he is looking at them — mark seen, badge clears */
-  reqMarkSeen(); regMarkSeen(); refreshReqNotifBtn();
+  /* v27.3: rendering marks NOTHING read (the v2.95 bulk
+     mark-seen that lived here is gone). Read state changes
+     only in reqNotifJump / regNotifJump / the expansion of a
+     non-navigable row — one item at a time. */
+  refreshReqNotifBtn();
   /* refresh the requests file in the background; re-render on arrival */
   if(getValidToken() || relayReady()){
     flushArtistRequests().then(()=>{ refreshReqNotifBtn(); if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist'); }).catch(()=>{});
@@ -14885,7 +14946,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.2';
+const APP_VERSION = '27.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
