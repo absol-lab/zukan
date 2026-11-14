@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.6">
+<meta name="app-version" content="29.7">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -548,20 +548,12 @@ h3.subhead:first-child{margin-top:8px;}
    paper — slightly translucent, slightly dark. */
 #viewer .vcast{position:absolute; inset:0; z-index:1; pointer-events:none; opacity:0;}
 #viewer .vflex{position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;}
-/* v29.2: the sheet is no longer one flat plane. During a turn the
-   stage is re-built as a chain of VCURL_N vertical strips nested
-   inside each other (preserve-3d), each hinged to the previous
-   strip's far edge, so the paper takes a real geometric curl —
-   a cylinder roll travelling toward the spine (see vCurlApply).
-   .vcurl carries the chain; each .vseg is one strip; .vsegwin
-   clips that strip's slice of a full-size stage clone; .vsegshade
-   paints the strip's light / paper-back veil per frame. The flat
-   v29.0 turn remains as the fallback path (zoom, video, or a
-   failed 3D probe). */
-#viewer .vcurl{position:absolute; inset:0; z-index:2; pointer-events:none; transform-style:preserve-3d;}
-#viewer .vseg{position:absolute; top:0; height:100%; transform-style:preserve-3d; will-change:transform;}
-#viewer .vsegwin{position:absolute; inset:0; overflow:hidden; background:var(--bg);}
-#viewer .vsegshade{position:absolute; inset:0; pointer-events:none;}
+/* v29.7: the turn is painted by ONE canvas overlay (see
+   vCanvasDraw): the revealed page, the cast shadow and the
+   curling sheet itself are all drawn in 2D while a turn runs.
+   The strip chain's styles (.vcurl/.vseg/.vsegwin/.vsegshade)
+   are gone with the chain — nothing can build it any more. */
+#viewer .vturncv{position:absolute; inset:0; width:100%; height:100%; z-index:5; pointer-events:none;}
 /* v27.8: the work's official video, under the caption. The embed
    iframe is created only when the reader taps the facade — nothing
    third-party loads from the grid or the detail page. */
@@ -13156,300 +13148,275 @@ if(w.img && w.img.url){ const u = sizedThumbUrl(String(w.img.url), IMG_SIZE.plat
 if(w.img && w.img.fileId) return driveImgCache[w.img.fileId] || null;
 return null;
 }
-const vTurn = { active: false, dir: 0, p: 0, samples: [], animating: false, mode: 'flat' };
+const vTurn = { active: false, dir: 0, p: 0, samples: [], animating: false, mode: '' };
 function vTurnSetup(dir){
 const n = viewerWorks.length; if(n < 2) return false;
 const nw = viewerWorks[(viewerIdx + dir + n) % n];
 const url = turnPlateOf(nw); if(!url) return false;
-const under = $('vunder'), page = $('vpage'), shade = $('vshade');
+const under = $('vunder'), page = $('vpage');
 if(!under || !page) return false;
 under.innerHTML = '';
 const im = document.createElement('img'); im.alt = nw.caption || ''; im.src = url;
 under.appendChild(im);
 vTurn.dir = dir;
-/* v29.2: the segmented curl is the primary path now; the flat
-   v29.0 turn stays as the fallback (zoomed stage, playing video,
-   or an engine that fails the preserve-3d probe). */
-vTurn.mode = vCurlBuild(dir)? 'curl': 'flat';
-if(vTurn.mode === 'flat'){
-page.style.transformOrigin = dir > 0? '0% 50%': '100% 50%';
-if(shade) shade.style.background = dir > 0? 'linear-gradient(90deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5))': 'linear-gradient(270deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5))';
-}
+/* v29.7: the canvas turn (below) is the ONLY turn. If it
+   cannot be built — zoomed stage, a playing video, a plate
+   not yet decoded, an exception — setup fails and the
+   gesture / button falls back to the plain instant move.
+   There is no strip chain and no flat turn to fall into. */
+if(!vCanvasBuild(dir, url)){ vTurn.mode = ''; return false; }
+vTurn.mode = 'canvas';
 return true;
 }
-/* v29.0: the bend is computed, not faked. The sheet rotates
-   around its spine to at most 88° — it never crosses 90°, so
-   the front face (backface-visibility:hidden) stays the only
-   face, and the "back of the paper" is painted by the .vflex
-   veil instead of a mirrored image. Everything derives from
-   the fold fraction cos(angle): the free edge's distance from
-   the spine. The light crest rides just spine-side of the
-   fold and travels with it; the cast shadow on the revealed
-   page sits just beyond the fold and softens as the sheet
-   rises; past p≈0.45 the warm veil grows over the sheet —
-   the far half reads as paper seen from behind. Gradients
-   are written in spine coordinates (90deg for 次, hinge at
-   the left; 270deg for 前， hinge at the right), so one
-   formula serves both directions. */
-const VTURN_MAXANG = 88;
-/* v29.2: SEGMENTED PAPER CURL (his verdict on v29.0, 2026-11-14
-   21:16: 「紙っぽくなってる！でもまだいける！もっと紙っぽく」).
-   The flat sheet + travelling gradients still read as a board,
-   so the SHAPE changes: the stage is cloned into VCURL_N
-   vertical strips, nested so each strip hinges on the previous
-   strip's far edge (preserve-3d chain), and a cylinder-roll
-   model gives every strip its own cumulative angle — the free
-   edge lags, the bend's curvature travels toward the spine as
-   p grows, and the roll tightens. Past ~92° a strip shows the
-   back of the paper: a warm veil over the mirrored image, i.e.
-   show-through （裏写り）, not a clean mirrored picture. A
-   slight sag grows toward the tip (the sheet's own weight;
-   v29.3: a per-strip skewY shear — see the VCURL_N note).
-   The .vcast shadow is recomputed from the roll's
-   ground contact + free-edge height. Fallbacks stay honest:
-   zoomed stage, a playing video, or a failed 3D probe all use
-   the flat v29.0 path untouched. */
-/* v29.3: 24 strips (his ask, 2026-11-14 21:56 — more strips,
-   smoother curl), with two measured fixes (diag_v293 / _d4):
-   boundaries land on whole CSS pixels (fractional ones made
-   the sheet paint ~1% wide, the error accumulating from the
-   spine), and the tip droop is a per-strip skewY shear, not a
-   translateY (the nested translateY stepped at every seam by
-   exactly its own value — up to 9.4px — and sank the tip
-   ~54px instead of the intended 12; a rotateZ tilt was tried
-   first and measured worse — exact at mid-height but tearing
-   up to 9.5px at the seams' top and bottom ends — while the
-   shear keeps the hinge line invariant at every height). */
-/* v29.5: 48 strips (his ask, 2026-11-14 22:46 — 「倍に増やして」).
-   Nothing else changes: the boundaries are still whole CSS
-   pixels by the same Math.round distribution (the last strip
-   absorbs the remainder), the droop is still the skewY shear,
-   and the fallbacks / kill switch are untouched. validate_v29_5
-   re-measures seam continuity over all 47 seams and the p=0
-   pixel identity, and benchmarks the per-frame cost against
-   the 24-strip build. */
-/* v29.6: 192 strips (his ask, 2026-11-14 23:14 — at 48 the
-   facets still showed on his device: 「まだ捲るときに角張が
-   見える」; the page turn was prioritised over the timeline
-   fixes). Structure unchanged again: whole-pixel boundaries
-   by the same distribution (at 192 strips on a 393px page,
-   strips are 2–3px wide and the per-strip angle step is a
-   quarter of the 48-strip build), skewY droop, same fallbacks
-   and kill switch. validate_v29_6 re-measures all 191 seams,
-   the p=0 pixel identity, and benchmarks against the 48-strip
-   build (and extrapolates the 384-strip cost). */
-/* v29.6 comparison tiers (his ask, 2026-11-14 23:18/23:19 —
-   judge 192 vs 384 vs 480 side by side on his own device,
-   then standardise on the winner): the standard is 192, but
-   two artists turn at higher counts — Jan van Eyck at 384,
-   Dürer at 480. The count is chosen at build time from the
-   viewer session's artist (plate -> work -> artist, via
-   viewerArtistId / artistById). At 480 strips on a ~393px
-   page a strip is narrower than 1px, so the whole-pixel
-   boundaries can no longer be strictly increasing: the
-   Math.round distribution stays (boundaries are still whole
-   pixels, some strips are 0px wide and several strips share
-   one pixel column) — the chain still carries all 480
-   segments and the angle model still samples 480 material
-   points. validate_v29_6 measures that path's seams and
-   p=0 identity on its own terms and reports the numbers. */
-const VCURL_N = 192;
-const VCURL_N_BY_ARTIST = { 'jan-van-eyck': 384, 'ヤン・ファン・エイク': 384, 'albrecht-durer': 480, 'アルブレヒト・デューラー': 480 };
-function vCurlStripCount(){
-  try{
-    const a = artistById(viewerArtistId);
-    if(a){ const n = VCURL_N_BY_ARTIST[a.id] || VCURL_N_BY_ARTIST[a.name]; if(n) return n; }
-  }catch(e){}
-  return VCURL_N;
-}
-const vCurl = { ok: null, segs: [], built: false, W: 0, bnd: null, N: 0 };
-function vCurlProbe(){
-if(vCurl.ok !== null) return vCurl.ok;
-let ok = false;
-try{
-  ok = !!(window.CSS && CSS.supports && CSS.supports('transform-style', 'preserve-3d'));
-  if(ok){
-    const host = document.createElement('div');
-    host.style.cssText = 'position:fixed; left:0; top:-9999px; width:220px; height:50px; perspective:800px; visibility:hidden;';
-    const a = document.createElement('div');
-    a.style.cssText = 'position:absolute; left:0; top:0; width:100px; height:50px; transform-style:preserve-3d;';
-    const b = document.createElement('div');
-    b.style.cssText = 'position:absolute; left:100%; top:0; width:100px; height:50px; transform-origin:0% 50%; transform:rotateY(-60deg);';
-    a.appendChild(b); host.appendChild(a); document.body.appendChild(host);
-    const r = b.getBoundingClientRect();
-    host.remove();
-    /* a strip rotated -60° about its hinge edge projects to
-       100·cos60° = 50px wide, starting where its parent ends */
-    ok = r.width > 36 && r.width < 66 && r.left > 60;
-  }
-}catch(e){ ok = false; }
-vCurl.ok = ok;
-return ok;
-}
-function vCurlBuild(dir){
-const stage = $('vstage'), box = $('vimg');
-if(!stage || !box) return false;
-if(vZoom.s > 1.02) return false;                 /* zoomed: flat path */
-if(stage.querySelector('iframe')) return false;  /* playing video: flat path */
-if(!vCurlProbe()) return false;
-const r = vBoxRect(); if(!r || !r.width || !r.height) return false;
-try{
-const W = r.width, H = r.height, N = vCurlStripCount();
-/* strip boundaries in spine coordinates, whole CSS pixels
-   (the last strip absorbs the sub-pixel remainder): window
-   positions and clone offsets stay on the device-pixel grid
-   at DPR 2 and 3 — see the VCURL_N note above */
-const bnd = []; for(let i = 0; i <= N; i++) bnd.push(Math.round(i * W / N)); bnd[N] = W;
-const curl = document.createElement('div'); curl.className = 'vcurl'; curl.id = 'vcurl';
-let parent = curl; const segs = [];
-for(let i = 0; i < N; i++){
-  const sw = bnd[i + 1] - bnd[i];
-  const seg = document.createElement('div'); seg.className = 'vseg';
-  seg.style.width = sw + 'px';
-  if(dir > 0){ seg.style.left = (i === 0? '0px': '100%'); seg.style.transformOrigin = '0% 50%'; }
-  else { seg.style.right = (i === 0? '0px': '100%'); seg.style.transformOrigin = '100% 50%'; }
-  const win = document.createElement('div'); win.className = 'vsegwin';
-  const clone = stage.cloneNode(true);
-  clone.removeAttribute('id');
-  clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-  const flatLeft = dir > 0? bnd[i]: W - bnd[i + 1];
-  clone.style.width = W + 'px'; clone.style.height = H + 'px';
-  clone.style.left = (-flatLeft) + 'px'; clone.style.top = '0px';
-  clone.style.right = 'auto'; clone.style.bottom = 'auto';
-  win.appendChild(clone);
-  const shade = document.createElement('div'); shade.className = 'vsegshade';
-  win.appendChild(shade);
-  seg.appendChild(win);
-  parent.appendChild(seg);
-  segs.push({ el: seg, shade: shade, w: sw });
-  parent = seg;
-}
-box.appendChild(curl);
-const page = $('vpage'); if(page) page.style.visibility = 'hidden';
-vCurl.segs = segs; vCurl.built = true; vCurl.W = W; vCurl.bnd = bnd; vCurl.N = N;
-return true;
-}catch(e){
-const c = $('vcurl'); if(c) c.remove();
-const page = $('vpage'); if(page) page.style.visibility = '';
-vCurl.segs = []; vCurl.built = false; vCurl.bnd = null; vCurl.N = 0;
-return false;
-}
-}
-function vCurlTeardown(){
-const c = $('vcurl'); if(c) c.remove();
-vCurl.segs = []; vCurl.built = false; vCurl.bnd = null; vCurl.N = 0;
-const page = $('vpage'); if(page) page.style.visibility = '';
-}
-/* the roll model, in spine coordinates (u = arc length from the
-   spine, page width W): material up to `a` still lies flat; past
-   it the sheet wraps a cylinder of radius R. Both retreat as the
-   turn progresses — a = W(1-p)^1.5, R = W(0.40-0.20p) — so the
-   bend front travels to the spine and the roll tightens. Wrap
-   angle caps at 168°: paper folds back over itself, it never
-   wraps under the book. Returns each strip's cumulative angle
-   (degrees) at its material midpoint, plus the model's moving
-   parts for the cast shadow. */
-function vCurlModel(p){
-const W = vCurl.W || 300, N = vCurl.N || VCURL_N, bnd = vCurl.bnd;
+/* v29.7: CANVAS PAGE TURN (his asks, 2026-11-14 23:44-23:54 —
+   the strip chain read as slices and black gaps on his device
+   at every count, and his own hypothesis that splitting the
+   turn per artist was itself the bug source:
+   「分けようとするからバグるのか」). The turn is now ONE
+   renderer for every artist and every work: while a turn runs,
+   a single <canvas> 2D overlay paints the whole stage — the
+   revealed page lying flat, the cast shadow, and the turning
+   sheet as ~2px vertical slices of the current plate mapped
+   through the same cylinder-roll model the strips used (flat
+   run a = W(1-p)^1.5, radius R = W(0.40-0.20p), wrap capped
+   at 168°). A slice whose material angle passes 90° paints
+   the sheet's BACK: the same material column under a warm
+   translucent veil (裏写り — the print ghosting through the
+   paper), never a clean mirror. The tip droop is the same u³
+   curve the nested chain actually produced (~54px at full
+   sag), applied here as a per-slice vertical shift — exact
+   by construction, with no seams left to step. The strip
+   chain (vCurl*) is DELETED, not parked: nothing in this
+   build can construct it, and the escapes (zoomed stage,
+   playing video, kill switch, an undecoded plate, a canvas
+   failure) all land on the plain instant move — there is no
+   second turn path. Captions and the page counter still
+   update only when the turn completes (viewerMove ->
+   renderViewer), never mid-turn. */
+const vCv = { el: null, ctx: null, built: false, dpr: 1, BW: 0, BH: 0,
+  curImg: null, curR: null, nxtImg: null, nxtR: null, bg: '',
+  sheet: null, nxtCv: null };
+function vCanvasModel(p, W){
 const R = W * (0.40 - 0.20 * p);
 const a = W * Math.pow(1 - p, 1.5);
 const cap = 168 * Math.PI / 180;
-const phi = u => (u <= a)? 0: Math.min((u - a) / R, cap);
-const angles = [];
-for(let i = 0; i < N; i++) angles.push(phi(bnd? (bnd[i] + bnd[i + 1]) / 2: (i + 0.5) * (W / N)) * 180 / Math.PI);
-const pe = phi(W);
-return { angles: angles, a: a, edgeX: (W <= a)? W: a + R * Math.sin(pe), edgeZ: (W <= a)? 0: R * (1 - Math.cos(pe)) };
+const thE = Math.min((W - a) / R, cap);
+return { R: R, a: a, cap: cap, edge: a + R * Math.sin(thE), edgeZ: R * (1 - Math.cos(thE)), sil: a + R * Math.sin(Math.min(thE, Math.PI / 2)) };
 }
-function vCurlShade(seg, thetaDeg, p){
-const th = thetaDeg * Math.PI / 180;
+function vFitRect(nw, nh, BW, BH){
+const s = Math.min(BW / nw, BH / nh);
+const w = nw * s, h = nh * s;
+return { x: (BW - w) / 2, y: (BH - h) / 2, w: w, h: h };
+}
+function vCanvasBuild(dir, url){
+const stage = $('vstage'), box = $('vimg');
+if(!stage || !box) return false;
+if(vZoom.s > 1.02) return false;                 /* zoomed: no turn */
+if(stage.querySelector('iframe')) return false;  /* playing video: no turn */
+const br = box.getBoundingClientRect();
+if(!br.width || !br.height) return false;
+try{
+/* the current plate: the deepest decoded layer on the stage */
+let curImg = null;
+stage.querySelectorAll('img').forEach(im=>{ if(im.complete && im.naturalWidth > 0){ if(!curImg || im.classList.contains('vup')) curImg = im; } });
+if(!curImg) return false;
+const ir = curImg.getBoundingClientRect();
+const curR = { x: ir.left - br.left, y: ir.top - br.top, w: ir.width, h: ir.height };
+if(curR.w < 10 || curR.h < 10) return false;
+/* the neighbour plate (turnPlateOf already proved it loaded;
+   the same cached Image must be decoded before it can paint) */
+const nxtImg = vWarmImage(url);
+if(!nxtImg || !nxtImg.complete || !nxtImg.naturalWidth) return false;
+const nxtR = vFitRect(nxtImg.naturalWidth, nxtImg.naturalHeight, br.width, br.height);
+const cv = document.createElement('canvas');
+cv.className = 'vturncv'; cv.id = 'vturncv';
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+cv.width = Math.round(br.width * dpr); cv.height = Math.round(br.height * dpr);
+box.appendChild(cv);
+let bg = '';
+try{ bg = getComputedStyle($('viewer')).backgroundColor || ''; }catch(e){}
+vCv.el = cv; vCv.ctx = cv.getContext('2d'); vCv.built = true; vCv.dpr = dpr;
+vCv.BW = br.width; vCv.BH = br.height;
+vCv.curImg = curImg; vCv.curR = curR; vCv.nxtImg = nxtImg; vCv.nxtR = nxtR;
+vCv.bg = bg;
+/* both plates are pre-rendered once, at the exact size they
+   occupy on stage: the per-frame slices then sample a
+   display-size raster instead of re-scaling the full source
+   image strip by strip (the crest strips compress hardest
+   and were the frame cost) */
+const sheet = document.createElement('canvas');
+sheet.width = Math.max(2, Math.round(curR.w * dpr)); sheet.height = Math.max(2, Math.round(curR.h * dpr));
+sheet.getContext('2d').drawImage(curImg, 0, 0, sheet.width, sheet.height);
+vCv.sheet = sheet;
+const ncv = document.createElement('canvas');
+ncv.width = Math.max(2, Math.round(nxtR.w * dpr)); ncv.height = Math.max(2, Math.round(nxtR.h * dpr));
+ncv.getContext('2d').drawImage(nxtImg, 0, 0, ncv.width, ncv.height);
+vCv.nxtCv = ncv;
+const page = $('vpage'); if(page) page.style.visibility = 'hidden';
+return true;
+}catch(e){
+vCanvasTeardown();
+return false;
+}
+}
+function vCanvasTeardown(){
+if(vCv.el){ try{ vCv.el.remove(); }catch(e){} }
+vCv.el = null; vCv.ctx = null; vCv.built = false;
+vCv.curImg = null; vCv.curR = null; vCv.nxtImg = null; vCv.nxtR = null;
+vCv.sheet = null; vCv.nxtCv = null;
+const page = $('vpage'); if(page) page.style.visibility = '';
+}
+function vCanvasShade(ctx, x, y, w, h, thetaDeg, p){
+/* the strip path's light, kept: diffuse falloff plus the
+   crest ridge on the front; a warm veil on the back, so the
+   print ghosts through instead of mirroring clean */
 let black = 0, white = 0, veil = 0;
 if(thetaDeg < 92){
-  /* front face: diffuse falloff as the strip turns away, plus
-     the light ridge that rides the crest of the bend (~40°) */
-  black = 0.36 * Math.pow(1 - Math.cos(th), 1.15);
+  black = 0.36 * Math.pow(1 - Math.cos(thetaDeg * Math.PI / 180), 1.15);
   white = 0.34 * Math.exp(-Math.pow((thetaDeg - 40) / 19, 2)) * Math.min(1, p * 3);
 } else {
-  /* the back of the paper: warm, slightly translucent — the
-     mirrored print ghosts through under the veil */
   veil = Math.min(0.94, 0.55 + 0.45 * (thetaDeg - 92) / 76);
   black = 0.10;
 }
-seg.shade.style.background =
-  'linear-gradient(0deg, rgba(246,238,222,' + veil.toFixed(3) + '), rgba(246,238,222,' + veil.toFixed(3) + ')), ' +
-  'linear-gradient(0deg, rgba(255,244,214,' + white.toFixed(3) + '), rgba(255,244,214,' + white.toFixed(3) + ')), ' +
-  'linear-gradient(0deg, rgba(10,8,6,' + black.toFixed(3) + '), rgba(10,8,6,' + black.toFixed(3) + '))';
+if(black > 0.003){ ctx.fillStyle = 'rgba(10,8,6,' + black.toFixed(3) + ')'; ctx.fillRect(x, y, w, h); }
+if(white > 0.003){ ctx.fillStyle = 'rgba(255,244,214,' + white.toFixed(3) + ')'; ctx.fillRect(x, y, w, h); }
+if(veil > 0.003){ ctx.fillStyle = 'rgba(246,238,222,' + veil.toFixed(3) + ')'; ctx.fillRect(x, y, w, h); }
 }
-function vCurlApply(){
-if(!vCurl.built || !vCurl.segs.length || !vCurl.segs[0].el.isConnected) return false;
-const p = vTurn.p, sgn = vTurn.dir > 0? -1: 1;
-const W = vCurl.W || 300, N = vCurl.segs.length, bnd = vCurl.bnd;
-const m = vCurlModel(p);
+function vCanvasDraw(){
+if(!vCv.built || !vCv.el || !vCv.el.isConnected || !vCv.ctx) return false;
+const ctx = vCv.ctx, BW = vCv.BW, BH = vCv.BH, p = vTurn.p, dir = vTurn.dir;
+const m = vCanvasModel(p, BW);
+const SL = 3; /* slice width in CSS px: ~130 slices per frame at
+   phone width — far finer than the 48-strip layout (8px steps)
+   the device already approved, and a third fewer draw calls */
+ctx.setTransform(vCv.dpr, 0, 0, vCv.dpr, 0, 0);
+/* 1. the stage ground, then the revealed page lying flat */
+ctx.fillStyle = vCv.bg || '#000';
+ctx.fillRect(0, 0, BW, BH);
+const nr = vCv.nxtR;
+if(nr && vCv.nxtCv) ctx.drawImage(vCv.nxtCv, nr.x, nr.y, nr.w, nr.h);
+/* 2. the cast shadow the lifted sheet throws on that page —
+   the same stops the strip path's .vcast gradient used */
+if(p > 0){
+  const c0 = Math.max(0, (m.a / BW) * 100 - 3);
+  const c1 = Math.min(100, (m.a / BW) * 100 + 5);
+  const c2 = Math.min(100, Math.max((m.edge / BW) * 100, (m.a / BW) * 100 + 12) + (m.edgeZ / BW) * 26);
+  const cs = (0.42 * (0.25 + 0.75 * p)).toFixed(3), csS = (0.13 * p).toFixed(3);
+  const gr = ctx.createLinearGradient(dir > 0? 0: BW, 0, dir > 0? BW: 0, 0);
+  gr.addColorStop(c0 / 100, 'rgba(10,8,6,0)');
+  gr.addColorStop(c1 / 100, 'rgba(10,8,6,' + cs + ')');
+  gr.addColorStop(Math.min(1, ((c1 + c2) / 2) / 100), 'rgba(10,8,6,' + csS + ')');
+  gr.addColorStop(c2 / 100, 'rgba(10,8,6,0)');
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, BW, BH);
+}
+/* 3. the turning sheet, slice by slice. t = a screen slice's
+   distance from the spine edge; a slice can carry the flat
+   run (angle 0), the roll's front (0-90°) and the roll's
+   back (90-168°), painted in that order so the folded-back
+   part lies on top. The sheet is the whole stage raster:
+   ground + the current plate at its own rect. */
 const sag = Math.sin(Math.min(1, p * 1.15) * Math.PI * 0.5);
-for(let i = 0; i < N; i++){
-  const rel = m.angles[i] - (i? m.angles[i - 1]: 0);
-  /* v29.3: the droop is a SHEAR, not an offset and not a tilt
-     (see the VCURL_N note). skewY leaves the strip's hinge
-     line (x = 0) untouched at EVERY height, so the next
-     strip's near edge and this strip's far edge stay the same
-     line all the way up and down the seam — continuous by
-     construction. Each strip's shear is the SLOPE INCREMENT
-     of the droop curve at its span, because a strip's shear
-     tilts everything nested beyond it (the lever is the
-     remaining sheet): with increments of D(u) = 54·sag·u³ the
-     hinge line follows the curve v29.2 actually shipped with
-     (its nested translateY quietly summed to ~54px at the
-     tip — the look he praised — not the 12px its formula
-     suggested), now without the steps. */
-  const u0 = bnd? bnd[i] / W: i / N, u1 = bnd? bnd[i + 1] / W: (i + 1) / N;
-  const tanB = (162 * sag / W) * (u1 * u1 - u0 * u0);
-  const beta = Math.atan(tanB) * 180 / Math.PI * (vTurn.dir > 0? 1: -1);
-  vCurl.segs[i].el.style.transform = 'rotateY(' + (sgn * rel).toFixed(2) + 'deg) skewY(' + beta.toFixed(2) + 'deg)';
-  vCurlShade(vCurl.segs[i], m.angles[i], p);
+const cr = vCv.curR, img = vCv.sheet;
+if(!img) return false;
+const nw = img.width, nh = img.height;
+/* draw ops: flat slices whose droop rounds to the same device
+   pixel merge into one run (one image draw instead of ~100);
+   roll slices stay per-slice, their angle changes every step */
+const ops = [];
+let run = null;
+const flushRun = ()=>{ if(run){ ops.push(run); run = null; } };
+const Xof = s => m.a + m.R * Math.sin((s - m.a) / m.R);
+const sFof = x => m.a + m.R * Math.asin(Math.max(-1, Math.min(1, (x - m.a) / m.R)));
+const sBof = x => m.a + m.R * (Math.PI - Math.asin(Math.max(-1, Math.min(1, (x - m.a) / m.R))));
+for(let t = 0; t < BW; t += SL){
+  const w = Math.min(SL, BW - t), tm = t + w / 2;
+  if(tm < m.a){
+    const dy = 54 * sag * Math.pow(tm / BW, 3);
+    const dyR = Math.round(dy * vCv.dpr);
+    if(run && run.dyR === dyR) run.t1 = t + w;
+    else{ flushRun(); run = { flat: true, t0: t, t1: t + w, dy: dy, dyR: dyR }; }
+    continue;
+  }
+  if(t >= m.a + m.R) continue;  /* past the silhouette: revealed page */
+  flushRun();
+  const thC = Math.asin(Math.min(1, (tm - m.a) / m.R));
+  /* roll parts carry their exact material interval (the inverse
+     model of this screen slice, clipped to the sheet) and the
+     screen extent that interval maps to: consecutive slices
+     tile with no gap, and the last one stops at the sheet's
+     true edge instead of leaving an unpainted black sliver */
+  const f0 = Math.min(sFof(t), BW), f1 = Math.min(sFof(t + w), BW);
+  if(f1 > f0 + 0.01) ops.push({ flat: false, ms0: f0, ms1: f1, dx0: Xof(f0), dx1: Xof(f1), th: thC * 180 / Math.PI, dy: 54 * sag * Math.pow((f0 + f1) / 2 / BW, 3) });
+  const thB = Math.PI - thC;
+  if(thB <= m.cap){
+    const b0 = sBof(t + w), b1 = Math.min(sBof(t), Math.min(BW, m.a + m.R * m.cap));
+    if(b1 > b0 + 0.01){ const xa = Xof(b0), xb = Xof(b1); ops.push({ flat: false, ms0: b0, ms1: b1, dx0: Math.min(xa, xb), dx1: Math.max(xa, xb), th: thB * 180 / Math.PI, dy: 54 * sag * Math.pow((b0 + b1) / 2 / BW, 3) }); }
+  }
 }
-const cast = $('vcast');
-if(cast){
-  /* the shadow hugs the ground just past the roll's contact
-     line, as wide and soft as the lifted sheet is tall; the
-     spine root stays pinched dark */
-  const ax = vTurn.dir > 0? '90deg': '270deg';
-  const c0 = Math.max(0, (m.a / W) * 100 - 3).toFixed(1);
-  const c1 = Math.min(100, (m.a / W) * 100 + 5).toFixed(1);
-  const c2 = Math.min(100, Math.max((m.edgeX / W) * 100, (m.a / W) * 100 + 12) + (m.edgeZ / W) * 26).toFixed(1);
-  const cs = (0.42 * (0.25 + 0.75 * p)).toFixed(3), csSoft = (0.13 * p).toFixed(3);
-  cast.style.background = 'linear-gradient(' + ax + ', rgba(10,8,6,0) ' + c0 + '%, rgba(10,8,6,' + cs + ') ' + c1 + '%, rgba(10,8,6,' + csSoft + ') ' + ((+c1 + +c2) / 2).toFixed(1) + '%, rgba(10,8,6,0) ' + c2 + '%)';
-  cast.style.opacity = p > 0? '1': '0';
+flushRun();
+for(const op of ops){
+  if(op.flat){
+    const rw = op.t1 - op.t0;
+    const dx = dir > 0? op.t0: BW - op.t1;
+    const gx0 = dir > 0? op.t0: BW - op.t1, gx1 = dir > 0? op.t1: BW - op.t0;
+    ctx.fillStyle = vCv.bg || '#000';
+    ctx.fillRect(dx, op.dy, rw, BH);
+    const ix0 = Math.max(gx0, cr.x), ix1 = Math.min(gx1, cr.x + cr.w);
+    if(ix1 > ix0){
+      const sx = (ix0 - cr.x) / cr.w * nw, sw = (ix1 - ix0) / cr.w * nw;
+      ctx.drawImage(img, sx, 0, sw, nh, dx + (ix0 - gx0), cr.y + op.dy, ix1 - ix0, cr.h);
+    }
+    vCanvasShade(ctx, dx, op.dy, rw, BH, 0, p);
+  } else {
+    const dw = op.dx1 - op.dx0;
+    const dx = dir > 0? op.dx0: BW - op.dx1;
+    const gx0 = dir > 0? op.ms0: BW - op.ms1, gx1 = dir > 0? op.ms1: BW - op.ms0;
+    const sc = dw / Math.max(0.01, gx1 - gx0);
+    ctx.fillStyle = vCv.bg || '#000';
+    ctx.fillRect(dx, op.dy, dw, BH);
+    const ix0 = Math.max(gx0, cr.x), ix1 = Math.min(gx1, cr.x + cr.w);
+    if(ix1 > ix0){
+      const sx = (ix0 - cr.x) / cr.w * nw, sw = (ix1 - ix0) / cr.w * nw;
+      ctx.drawImage(img, sx, 0, sw, nh, dx + (ix0 - gx0) * sc, cr.y + op.dy, (ix1 - ix0) * sc, cr.h);
+    }
+    vCanvasShade(ctx, dx, op.dy, dw, BH, op.th, p);
+  }
+}
+/* 4. the flap: material past the wrap cap leaves the roll
+   tangentially at the cap angle and folds back over the page
+   (the strip chain rendered this too). It is the sheet's
+   back (veiled), it floats above everything beneath, and it
+   exists only late in the turn, when (W-a)/R > cap. */
+const sCap = m.a + m.R * m.cap;
+if(sCap < BW - 0.001){
+  const x0 = m.a + m.R * Math.sin(m.cap), dirX = Math.cos(m.cap);
+  for(let s = sCap; s < BW; s += SL){
+    const w = Math.min(SL, BW - s);
+    const xa = x0 + (s - sCap) * dirX, xb = x0 + (s + w - sCap) * dirX;
+    const t = Math.min(xa, xb), tw = Math.max(0.7, Math.abs(xb - xa));
+    const stageX = dir > 0? s + w / 2: BW - (s + w / 2);
+    const dx = dir > 0? t: BW - t - tw;
+    const dy = 54 * sag * Math.pow((s + w / 2) / BW, 3);
+    ctx.fillStyle = vCv.bg || '#000';
+    ctx.fillRect(dx, dy, tw, BH);
+    const lx = stageX - tw / 2;
+    const ix0 = Math.max(lx, cr.x), ix1 = Math.min(lx + tw, cr.x + cr.w);
+    if(ix1 > ix0){
+      const sx = (ix0 - cr.x) / cr.w * nw, sw = (ix1 - ix0) / cr.w * nw;
+      ctx.drawImage(img, sx, 0, sw, nh, dx + (ix0 - lx), cr.y + dy, ix1 - ix0, cr.h);
+    }
+    vCanvasShade(ctx, dx, dy, tw, BH, m.cap * 180 / Math.PI, p);
+  }
 }
 return true;
 }
 function vTurnApply(){
-const page = $('vpage'), shade = $('vshade'), flex = $('vflex'), cast = $('vcast'); if(!page) return;
-if(vTurn.mode === 'curl'){
-  if(vCurlApply()) return;
-  /* the chain vanished mid-turn (DOM rebuilt): fall through to
-     the flat path for this frame instead of freezing */
-  vCurlTeardown(); vTurn.mode = 'flat';
-}
-const p = vTurn.p, sgn = vTurn.dir > 0? -1: 1;
-const ang = p * VTURN_MAXANG * sgn;
-page.style.transform = 'rotateY(' + ang.toFixed(1) + 'deg)';
-if(shade) shade.style.opacity = String(Math.min(.85, p * 1.15));
-const ax = vTurn.dir > 0? '90deg': '270deg';
-const foldPct = Math.cos(p * VTURN_MAXANG * Math.PI / 180) * 100; /* free edge, % from the spine */
-if(flex){
-  const ridge = Math.max(6, foldPct - 5);
-  const shSpine = (0.30 * p).toFixed(3), hi = (0.36 * p).toFixed(3), shEdge = (0.18 * p).toFixed(3);
-  const veil = p <= 0.45? 0: ((p - 0.45) / 0.55 * 0.45);
-  flex.style.background =
-    'linear-gradient(0deg, rgba(48,40,29,' + veil.toFixed(3) + '), rgba(48,40,29,' + veil.toFixed(3) + ')), ' +
-    'linear-gradient(' + ax + ', rgba(12,10,8,' + shSpine + ') 0%, rgba(12,10,8,0) ' + Math.max(4, ridge - 30).toFixed(1) + '%, rgba(255,246,228,' + hi + ') ' + ridge.toFixed(1) + '%, rgba(12,10,8,' + shEdge + ') 100%)';
-  flex.style.opacity = String(Math.min(1, p * 4));
-}
-if(cast){
-  const cs = (0.40 * (0.25 + 0.75 * p)).toFixed(3), csSoft = (0.14 * p).toFixed(3);
-  const f0 = Math.max(0, foldPct - 3).toFixed(1), f1 = Math.min(100, foldPct + 2).toFixed(1), f2 = Math.min(100, foldPct + 30).toFixed(1);
-  cast.style.background = 'linear-gradient(' + ax + ', rgba(10,8,6,0) ' + f0 + '%, rgba(10,8,6,' + cs + ') ' + f1 + '%, rgba(10,8,6,' + csSoft + ') ' + ((+f1 + +f2) / 2).toFixed(1) + '%, rgba(10,8,6,0) ' + f2 + '%)';
-  cast.style.opacity = p > 0? '1': '0';
-}
+if(vTurn.mode !== 'canvas') return;
+if(vCanvasDraw()) return;
+/* the canvas vanished mid-turn (DOM rebuilt): tear down and
+   show the plain page for the remaining frames instead of
+   freezing on a stale sheet */
+vCanvasTeardown(); vTurn.mode = '';
 }
 function vTurnFollow(t, g){
 if(!pageTurnOn || vTurn.animating || reducedMotion()) return;
@@ -13519,18 +13486,14 @@ requestAnimationFrame(step);
 setTimeout(fin, dur + 250); /* stall backstop, as before */
 }
 function vTurnComplete(dir){
-vTurnAnimateTo(1, 250 * (1 - vTurn.p) + 70, ()=>{ vTurn.p = 0; viewerMove(dir); });
+vTurnAnimateTo(1, 250 * (1 - vTurn.p) + 70, ()=>{ vTurn.p = 0; vCanvasTeardown(); vTurn.mode = ''; viewerMove(dir); });
 }
 function vTurnSnapBack(){
 vTurnAnimateTo(0, 190, ()=>{ vTurnReset(); });
 }
 function vTurnReset(){
-vCurlTeardown(); vTurn.mode = 'flat';
-const page = $('vpage'), shade = $('vshade'), under = $('vunder'), flex = $('vflex'), cast = $('vcast');
-if(page) page.style.transform = '';
-if(shade) shade.style.opacity = '0';
-if(flex){ flex.style.opacity = '0'; flex.style.background = ''; }
-if(cast){ cast.style.opacity = '0'; cast.style.background = ''; }
+vCanvasTeardown(); vTurn.mode = '';
+const under = $('vunder');
 if(under) under.innerHTML = '';
 vTurn.p = 0; vTurn.active = false; vTurn.samples = [];
 }
@@ -17588,7 +17551,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.6';
+const APP_VERSION = '29.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
