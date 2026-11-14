@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="22.0">
+<meta name="app-version" content="22.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -265,8 +265,9 @@ figure.work:active{background:var(--card2);}
    sculptor, animator — as small dark chips on the photo's corner,
    derived from the field's discipline part. Name + photo alone did
    not tell him. */
-.fchips{position:absolute; top:6px; left:6px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; z-index:2; pointer-events:none;}
-.fchip{background:rgba(8,8,10,.74); color:#f2ecdc; font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.07em; padding:2px 7px; border-radius:999px; line-height:1.5;}
+.fsyms{font-size:12px; line-height:1.35; color:var(--sub); letter-spacing:.28em; margin-top:1px;}
+.symlegend{padding:10px 14px; font-size:12.5px; color:var(--sub); line-height:2;}
+.symlegend b{display:inline-block; min-width:26px; color:var(--ink); font-weight:600; font-size:13px;}
 figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
 /* v10.3: hi-res badge — the mark for works whose registered
    master is 4000px+ (definition owned by the data side). Sits
@@ -10022,19 +10023,50 @@ updateSlimTools();
    、, split on ／, at most two). Oil/watercolor read as 絵画 (the
    marker answers "what kind of maker", not "which medium"); long
    discipline names get their short everyday form. */
-const FIELD_SHORT = {'アニメーション':'アニメ','油彩':'絵画','水彩':'絵画','グラフィックデザイン':'グラフィック','プロダクトデザイン':'プロダクト','ファッションデザイン':'ファッション','タイプデザイン':'タイプ','インテリアデザイン':'インテリア','工業デザイン':'工業','テキスタイルデザイン':'テキスタイル','ブックデザイン':'ブック','エディトリアルデザイン':'エディトリアル'};
-function fieldChipsHTML(a){
+/* v22.1: discipline marks as SYMBOLS only, under the name (he
+   rejected word chips over the photo in v21.11). fieldSym maps a
+   discipline token to one glyph by family; unmapped tokens (studio
+   names, handles) get no mark. The legend lives in the settings
+   view (FIELD_LEGEND). */
+function fieldSym(tok){
+const t = String(tok || '').replace(/（.*?）/g, '').replace(/ほか$/, '').trim();
+if(!t) return '';
+if(t.indexOf('万能人') >= 0) return '✺';
+if(/アニメ/.test(t)) return '✦';
+if(/映像|映画|ビデオ|モーション/.test(t)) return '▶';
+if(/写真/.test(t)) return '◎';
+if(/音楽|サウンド/.test(t)) return '♪';
+if(/数学|統計|疫学/.test(t)) return 'π';
+if(/哲学|思想|理論|科学|批評|評論/.test(t)) return 'φ';
+if(/文学|詩/.test(t)) return '¶';
+if(/建築|ランドスケープ|造園|庭園|作庭|植栽|インテリア|空間|環境|店舗|展示/.test(t)) return '⌂';
+if(/彫刻|立体|インスタレーション|ランドアート|アッサンブラージュ/.test(t)) return '◆';
+if(/工芸|陶|ガラス|金属|染色|染織|型染|テキスタイル/.test(t)) return '◈';
+if(/パフォーマンス|演劇|舞台/.test(t)) return '◉';
+if(/コンセプチュアル|もの派|具体|構成主義|シュルレアリスム|ポップアート|ミニマリズム/.test(t)) return '✧';
+if(/コンピュータ|ジェネラティブ|コーディング|インタラクション|インターフェース|ユーザビリティ|デザイン思考/.test(t)) return '⌘';
+if(/ファッション/.test(t)) return '◇';
+if(/家具|プロダクト|工業|照明/.test(t)) return '■';
+if(/版画|浮世絵/.test(t)) return '▦';
+if(/絵画|油彩|水彩|日本画|画家|ドローイング|イラスト|コラージュ|琳派|美術|絵本/.test(t)) return '▣';
+if(/デザイン|グラフィック|タイポ|タイプ|書体|カリグラフィ|ロゴ|サイン|ポスター|広告|印刷|パッケージ|ブック|ピクトグラム|インフォグラフィックス|データ|ジャーナリズム|Web|UI|UX|アイコン|タイトル|レコードジャケット|ブランド|ブランディング|アートディレクション|エディトリアル|情報|CI|地図/.test(t)) return '◐';
+return '';
+}
+const FIELD_LEGEND = [['▣','絵画'],['◆','彫刻・立体'],['◎','写真'],['▶','映像・映画'],['✦','アニメ'],['⌂','建築・空間'],['■','家具・プロダクト'],['◐','デザイン'],['◇','ファッション'],['◈','工芸・テキスタイル'],['◉','パフォーマンス・舞台'],['✧','コンセプチュアル'],['⌘','コンピュータ'],['▦','版画'],['♪','音楽'],['π','数学・統計'],['φ','哲学・思想'],['¶','文学'],['✺','万能人']];
+function fieldSymsHTML(a){
 const f = String(a.field || '');
 const ix = f.indexOf('、');
 if(ix < 0) return '';
-const parts = f.slice(ix + 1).split('／').map(x => x.trim()).filter(Boolean).slice(0, 2);
-if(!parts.length) return '';
-return '<span class="fchips">' + parts.map(x => '<span class="fchip">' + esc(FIELD_SHORT[x] || x) + '</span>').join('') + '</span>';
+const toks = f.slice(ix + 1).split(/[／\/]/).flatMap(x => x.split('・')).map(x => x.trim()).filter(Boolean).slice(0, 3);
+const syms = [];
+toks.forEach(t => { const g = fieldSym(t); if(g && !syms.includes(g)) syms.push(g); });
+if(!syms.length) return '';
+return '<div class="fsyms">' + syms.slice(0, 2).join(' ') + '</div>';
 }
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+fieldChipsHTML(a)+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div><div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div></figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -11254,9 +11286,6 @@ const GAL_GROUPS = [
   ]},
   { label: 'チューリッヒ', items: [
     { name: 'Hauser & Wirth', match: 'Hauser & Wirth', url: 'https://www.hauserwirth.com/exhibitions/' }
-  ]},
-  { label: 'オンライン', items: [
-    { name: 'WikiArt', match: 'WikiArt', url: 'https://www.wikiart.org/' }
   ]}
 ];
 /* v2.62: the gallery block is collapsed by default (one header row);
@@ -14212,7 +14241,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '22.0';
+const APP_VERSION = '22.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -14503,7 +14532,8 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.cloud, '画像診断（不具合調査用）', '', "openSettingsPanel('diag')")+
-    '</div>';
+    '</div>'+
+    '<div class="groupcard"><div class="symlegend"><div style="font-weight:700;color:var(--ink);margin-bottom:2px;">分野マークの凡例</div>' + FIELD_LEGEND.map(p => '<span style="display:inline-block;margin-right:14px;white-space:nowrap;"><b>' + p[0] + '</b>' + p[1] + '</span>').join('') + '</div></div>';
 }
 /* v2.34: on-device image diagnostics. The user's iPhone showed every
    list tile as a black box while every off-device check passed, so the
