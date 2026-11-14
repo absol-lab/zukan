@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.9">
+<meta name="app-version" content="29.10">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1011,6 +1011,18 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
    the bar + year readout follow manual scrolling. The knob is
    deliberately large (36px) on a 48px tall touch track. */
 .tlbar{position:sticky; top:var(--hdrh, 0px); z-index:26; display:flex; align-items:center; gap:12px; margin-top:12px; padding:8px 2px 10px; background:var(--bg); border-bottom:1px solid var(--line);}
+/* v29.10: the region tabs （西洋/日本） ride INSIDE the sticky
+   block. Through v29.9 the seg sat in normal flow above the
+   sticky bar, so any scroll — manual, or the bar's own
+   drag-driven scroll — slid it up under the fixed header and
+   it vanished, and the layout visibly shifted as it left.
+   The wrapper sticks as one piece: tabs + bar always on
+   screen, never moving. #tlbar (id scope: the timeline bar
+   only — exhibition schedule bars share the .tlbar class and
+   keep their own rules) is un-stuck inside it. */
+.tlstick{position:sticky; top:var(--hdrh, 0px); z-index:26; background:var(--bg); margin-top:12px; border-bottom:1px solid var(--line);}
+.tlsegrow{padding:2px 0 8px;}
+#tlbar{position:static; margin-top:0; padding:2px 2px 10px; background:transparent; border-bottom:none;}
 .tlbar-lab{flex:none; width:104px; min-width:0;}
 .tlbar-year{font-family:var(--serif); font-size:19px; font-weight:700; letter-spacing:.02em; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .tlbar-title{font-size:11px; color:var(--muted); font-family:var(--sans); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
@@ -15769,7 +15781,38 @@ const japan = Array.isArray(t.japan)? t.japan: [];
 if(!west.length && !japan.length) return null;
 return { west:west, japan:japan };
 }
-function setTlRegion(r){ const dir = segDir(['west','japan'], tlRegion, r); tlRegion = r; renderTimeline(); window.scrollTo(0, 0); /* v29.2: a different region is a different timeline — start at its first entry, and the year bar with it */ driftIn($('viewTimeline'), dir); }
+/* v29.10: switching regions no longer throws the reader back
+   to the top (his report, 2026-11-14 23:10 — he compares the
+   Western and Japanese lines side by side). The switch lands
+   on the entry nearest the year currently in view, and a
+   round trip restores the exact entry left behind: the
+   departure index is kept in tlAnchor and honoured when the
+   switch back happens with the landing entry untouched. Any
+   movement inside the visited region (scroll-spy or drag)
+   clears the anchor, and the return then uses nearest-year
+   from wherever the reader now is. */
+function setTlRegion(r){
+if(r === tlRegion) return;
+const oldItems = tlBarItems, oldN = oldItems.length;
+const curIdx = oldN > 1? Math.max(0, Math.min(oldN - 1, Math.round(tlBar.frac * (oldN - 1)))): 0;
+const curYear = oldN? tlBigYearNum(oldItems[curIdx]): null;
+const dir = segDir(['west','japan'], tlRegion, r);
+let backIdx = -1;
+if(tlAnchor && tlAnchor.region === r && tlAnchor.landedRegion === tlRegion && curIdx === tlAnchor.landedIdx) backIdx = tlAnchor.idx;
+const fromRegion = tlRegion, fromIdx = curIdx;
+tlRegion = r;
+renderTimeline();
+const items = tlBarItems, n = items.length;
+let target = 0;
+if(backIdx >= 0 && backIdx < n) target = backIdx;
+else if(curYear != null){
+  let bd = Infinity;
+  items.forEach((e, i)=>{ const y = tlBigYearNum(e); if(y == null) return; const d = Math.abs(y - curYear); if(d < bd || (d === bd && i > target)){ bd = d; target = i; } });
+} else if(n > 1 && oldN > 1) target = Math.round((curIdx / (oldN - 1)) * (n - 1));
+tlAnchor = backIdx >= 0? null: { region: fromRegion, idx: fromIdx, landedRegion: r, landedIdx: target };
+tlBarGoTo(target);
+driftIn($('viewTimeline'), dir);
+}
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
@@ -15777,7 +15820,7 @@ let html = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表'
 +'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>'
-+'<div style="margin-top:12px;"><span class="seg">'
++'<div class="tlstick" id="tlstick"><div class="tlsegrow"><span class="seg">'
 +'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">'+(DS==='designers'? '世界': '西洋')+'</button>'
 +'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
 +'</span></div>';
@@ -15788,7 +15831,7 @@ if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データは
 /* v29.2: the year bar sits between the region segment and the
    cards, sticky under the app header (see tlBarWire). */
 html += '<div class="tlbar" id="tlbar"><div class="tlbar-lab"><div class="tlbar-year" id="tlbarYear"></div><div class="tlbar-title" id="tlbarTitle"></div></div>'
-+'<div class="tlbar-track" id="tlbarTrack"><div class="tlbar-ticks" id="tlbarTicks"></div><div class="tlbar-fill" id="tlbarFill"></div><div class="tlbar-knob" id="tlbarKnob"></div></div></div>';
++'<div class="tlbar-track" id="tlbarTrack"><div class="tlbar-ticks" id="tlbarTicks"></div><div class="tlbar-fill" id="tlbarFill"></div><div class="tlbar-knob" id="tlbarKnob"></div></div></div></div>';
 html += '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
 const spans = tlEraSpans(entries);
 const stripWiring = [];
@@ -15852,7 +15895,9 @@ requestAnimationFrame(layoutTlSpine);
    card). Region switches re-range it, because renderTimeline
    rebuilds tlBarItems for the new region. */
 let tlBarItems = [];
-const tlBar = { frac: 0, drag: false, raf: 0 };
+let tlCardsCache = null; /* .tlcard elements of the current render; dropped by tlBarWire on every render */
+let tlAnchor = null; /* v29.10: region-switch return anchor (see setTlRegion) */
+const tlBar = { frac: 0, drag: false, raf: 0, draf: 0, geom: null, pendX: null, settleIdx: -1, settleUntil: 0, lastY: 0 };
 function tlBarYearLabel(e){
 if(!e) return '';
 if(e.bigYear) return String(e.bigYear);
@@ -15914,18 +15959,58 @@ placed.sort((a, b) => a.frac - b.frac).forEach(t => {
   host.appendChild(d);
 });
 }
-function tlBarCards(){ const wrap = $('tlwrap'); return wrap? Array.from(wrap.querySelectorAll('.tlcard')): []; }
+function tlBarCards(){
+if(tlCardsCache) return tlCardsCache;
+const wrap = $('tlwrap');
+tlCardsCache = wrap? Array.from(wrap.querySelectorAll('.tlcard')): [];
+return tlCardsCache;
+}
 function tlBarStickyH(){
 const hdr = document.querySelector('header.top');
-const bar = $('tlbar');
-return (hdr? hdr.offsetHeight: 0) + (bar? bar.offsetHeight: 0);
+const stick = $('tlstick') || $('tlbar');
+return (hdr? hdr.offsetHeight: 0) + (stick? stick.offsetHeight: 0);
 }
-function tlBarScrollToFrac(){
-const cards = tlBarCards(); if(!cards.length) return;
-const i = Math.round(tlBar.frac * (cards.length - 1));
-const c = cards[i]; if(!c) return;
+/* v29.10: drag geometry is measured ONCE per gesture. Through
+   v29.9 every pointermove re-queried the card list, re-read
+   the track rect, the target card's rect and two offsetHeights,
+   then forced a scroll — several layout reads per move, and
+   the layout itself moves while timeline photos are still
+   loading (.tlphoto reserves only a 120px minimum; the image
+   takes its natural height up to 340px), so the landing was
+   computed against positions that had already shifted. Now:
+   one measurement at pointerdown, moves served from the cache
+   at most once per frame, a fresh-measured final landing on
+   release, and a short settle window that re-lands on the
+   same entry if a photo finishes loading just after release
+   (cancelled by any touch or wheel — the reader taking over). */
+function tlBarMeasure(){
+const track = $('tlbarTrack');
+const r = track? track.getBoundingClientRect(): { left: 0, width: 0 };
+const y = window.scrollY;
+return { left: r.left, width: r.width, stickyH: tlBarStickyH(), tops: tlBarCards().map(c => c.getBoundingClientRect().top + y) };
+}
+function tlBarApplyX(x){
+const g = tlBar.geom; if(!g || !g.width) return;
+tlBar.frac = Math.max(0, Math.min(1, (x - g.left) / g.width));
+tlBarPaint();
+const n = tlBarItems.length; if(n < 2) return;
+const idx = Math.round(tlBar.frac * (n - 1));
+if(g.tops[idx] == null) return;
+tlBar.lastY = Math.max(0, g.tops[idx] - g.stickyH - 2);
+window.scrollTo(0, tlBar.lastY);
+}
+function tlBarLand(idx){
+const cards = tlBarCards(); const c = cards[idx]; if(!c) return;
 const top = c.getBoundingClientRect().top + window.scrollY - tlBarStickyH() - 2;
-window.scrollTo(0, Math.max(0, top));
+tlBar.lastY = Math.max(0, top);
+window.scrollTo(0, tlBar.lastY);
+}
+function tlBarGoTo(idx){
+const n = tlBarItems.length; if(!n) return;
+idx = Math.max(0, Math.min(n - 1, idx));
+tlBar.frac = n > 1? idx / (n - 1): 0;
+tlBarPaint();
+tlBarLand(idx);
 }
 function tlBarSyncFromScroll(){
 if(tlBar.drag) return;
@@ -15938,26 +16023,37 @@ for(let i = 0; i < cards.length; i++){
   if(docTop <= line) idx = i; else break;
 }
 tlBar.frac = idx / (cards.length - 1);
+if(tlAnchor && tlRegion === tlAnchor.landedRegion && idx !== tlAnchor.landedIdx) tlAnchor = null;
 tlBarPaint();
 }
 function tlBarWire(){
 const track = $('tlbarTrack'); if(!track) return;
-tlBar.frac = 0; tlBar.drag = false;
+tlBar.frac = 0; tlBar.drag = false; tlBar.geom = null; tlBar.pendX = null; tlBar.settleIdx = -1;
+tlCardsCache = null;
 tlBarTicks();
 tlBarPaint();
-const setFromX = x => {
-  const r = track.getBoundingClientRect(); if(!r.width) return;
-  tlBar.frac = Math.max(0, Math.min(1, (x - r.left) / r.width));
-  tlBarPaint(); tlBarScrollToFrac();
-};
 track.addEventListener('pointerdown', ev => {
-  tlBar.drag = true;
+  tlBar.drag = true; tlBar.settleIdx = -1;
+  tlBar.geom = tlBarMeasure();
   try{ track.setPointerCapture(ev.pointerId); }catch(e){}
-  setFromX(ev.clientX);
+  tlBarApplyX(ev.clientX);
   ev.preventDefault();
 });
-track.addEventListener('pointermove', ev => { if(tlBar.drag) setFromX(ev.clientX); });
-const end = () => { tlBar.drag = false; };
+track.addEventListener('pointermove', ev => {
+  if(!tlBar.drag) return;
+  tlBar.pendX = ev.clientX;
+  if(tlBar.draf) return;
+  tlBar.draf = requestAnimationFrame(()=>{ tlBar.draf = 0; if(tlBar.drag && tlBar.pendX != null){ const x = tlBar.pendX; tlBar.pendX = null; tlBarApplyX(x); } });
+});
+const end = () => {
+  if(!tlBar.drag) return;
+  tlBar.drag = false; tlBar.pendX = null; tlBar.geom = null;
+  const n = tlBarItems.length; if(!n) return;
+  const idx = Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))));
+  tlBarLand(idx);
+  tlBar.settleIdx = idx; tlBar.settleUntil = performance.now() + 2500;
+  if(tlAnchor && tlRegion === tlAnchor.landedRegion && idx !== tlAnchor.landedIdx) tlAnchor = null;
+};
 track.addEventListener('pointerup', end);
 track.addEventListener('pointercancel', end);
 requestAnimationFrame(()=> tlBarSyncFromScroll());
@@ -15968,6 +16064,20 @@ if(typeof view === 'undefined' || view !== 'timeline') return;
 if(!$('tlbarTrack')) return;
 tlBar.raf = requestAnimationFrame(()=>{ tlBar.raf = 0; tlBarSyncFromScroll(); });
 }, { passive: true });
+/* v29.10: settle re-anchor — if a timeline photo finishes
+   loading within the settle window after a drag and the
+   reader has not scrolled away from the landed position,
+   re-land on the same entry against the fresh layout. Any
+   touch or wheel input cancels: the reader has taken over. */
+document.addEventListener('load', ()=>{
+if(tlBar.settleIdx < 0 || tlBar.drag) return;
+if(performance.now() > tlBar.settleUntil){ tlBar.settleIdx = -1; return; }
+if(typeof view === 'undefined' || view !== 'timeline') return;
+if(Math.abs((window.scrollY || 0) - tlBar.lastY) > 3){ tlBar.settleIdx = -1; return; }
+tlBarLand(tlBar.settleIdx);
+}, true);
+window.addEventListener('touchstart', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
+window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
 /* v3.3: era detail — the timeline stops being a list of labels.
    Each era card carries photos (the encyclopedia's own verified
    works made in that era) and opens a detail page: a hero work,
@@ -17763,7 +17873,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.9';
+const APP_VERSION = '29.10';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
