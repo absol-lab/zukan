@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.1">
+<meta name="app-version" content="30.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -16233,7 +16233,7 @@ tlMapBits = bytes;
 return bytes;
 }
 function tlMapLand(i){ const b = tlMapDecodeBits(); return (b[i >> 3] >> (7 - (i & 7))) & 1; }
-function tlMapXY(lat, lon, w, h){ return [(((lon - 150) % 360 + 360) % 360) / 360 * w, (85 - lat) / 145 * h]; }
+function tlMapXY(lat, lon, w, h){ return [(((lon + 30) % 360 + 360) % 360) / 360 * w, (85 - lat) / 145 * h]; }
 function tlPinState(pin, year){
 let o = 0; const lit = [];
 (pin.targets || []).forEach(t => {
@@ -18217,7 +18217,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.1';
+const APP_VERSION = '30.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
