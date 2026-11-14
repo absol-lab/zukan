@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.2">
+<meta name="app-version" content="29.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1008,6 +1008,15 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .tlbar-track::before{content:''; position:absolute; left:0; right:0; top:50%; height:6px; margin-top:-3px; border-radius:3px; background:var(--lineStrong);}
 .tlbar-fill{position:absolute; left:0; top:50%; height:6px; margin-top:-3px; border-radius:3px; background:var(--accent); width:0;}
 .tlbar-knob{position:absolute; top:50%; left:0; width:36px; height:36px; border-radius:50%; background:var(--text); border:3px solid var(--bg); box-shadow:0 2px 10px rgba(0,0,0,.45); transform:translate(-50%, -50%);}
+/* v29.3: year ticks on the bar (his ask — with no scale marks
+   the bar gave no way to aim at a year). The bar is index-based,
+   so each tick sits at the position of the entry nearest to a
+   round year; crowded candidates are thinned by priority. */
+.tlbar-ticks{position:absolute; inset:0; pointer-events:none;}
+.tlbar-tick{position:absolute; top:50%; width:2px; height:10px; margin-top:5px; background:var(--muted); opacity:.55; border-radius:1px; transform:translateX(-50%);}
+.tlbar-tick span{position:absolute; top:11px; left:50%; transform:translateX(-50%); font-family:var(--sans); font-size:9px; line-height:1; color:var(--muted); white-space:nowrap;}
+.tlbar-tick.edge-l span{left:0; transform:none;}
+.tlbar-tick.edge-r span{left:auto; right:0; transform:none;}
 .tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
 .tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
 button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
@@ -13194,13 +13203,25 @@ const VTURN_MAXANG = 88;
    p grows, and the roll tightens. Past ~92° a strip shows the
    back of the paper: a warm veil over the mirrored image, i.e.
    show-through （裏写り）, not a clean mirrored picture. A
-   slight translateY sag grows toward the tip (the sheet's own
-   weight). The .vcast shadow is recomputed from the roll's
+   slight sag grows toward the tip (the sheet's own weight;
+   v29.3: a per-strip skewY shear — see the VCURL_N note).
+   The .vcast shadow is recomputed from the roll's
    ground contact + free-edge height. Fallbacks stay honest:
    zoomed stage, a playing video, or a failed 3D probe all use
    the flat v29.0 path untouched. */
-const VCURL_N = 12;
-const vCurl = { ok: null, segs: [], built: false, W: 0 };
+/* v29.3: 24 strips (his ask, 2026-11-14 21:56 — more strips,
+   smoother curl), with two measured fixes (diag_v293 / _d4):
+   boundaries land on whole CSS pixels (fractional ones made
+   the sheet paint ~1% wide, the error accumulating from the
+   spine), and the tip droop is a per-strip skewY shear, not a
+   translateY (the nested translateY stepped at every seam by
+   exactly its own value — up to 9.4px — and sank the tip
+   ~54px instead of the intended 12; a rotateZ tilt was tried
+   first and measured worse — exact at mid-height but tearing
+   up to 9.5px at the seams' top and bottom ends — while the
+   shear keeps the hinge line invariant at every height). */
+const VCURL_N = 24;
+const vCurl = { ok: null, segs: [], built: false, W: 0, bnd: null };
 function vCurlProbe(){
 if(vCurl.ok !== null) return vCurl.ok;
 let ok = false;
@@ -13232,19 +13253,25 @@ if(stage.querySelector('iframe')) return false;  /* playing video: flat path */
 if(!vCurlProbe()) return false;
 const r = vBoxRect(); if(!r || !r.width || !r.height) return false;
 try{
-const W = r.width, H = r.height, N = VCURL_N, w = W / N;
+const W = r.width, H = r.height, N = VCURL_N;
+/* strip boundaries in spine coordinates, whole CSS pixels
+   (the last strip absorbs the sub-pixel remainder): window
+   positions and clone offsets stay on the device-pixel grid
+   at DPR 2 and 3 — see the VCURL_N note above */
+const bnd = []; for(let i = 0; i <= N; i++) bnd.push(Math.round(i * W / N)); bnd[N] = W;
 const curl = document.createElement('div'); curl.className = 'vcurl'; curl.id = 'vcurl';
 let parent = curl; const segs = [];
 for(let i = 0; i < N; i++){
+  const sw = bnd[i + 1] - bnd[i];
   const seg = document.createElement('div'); seg.className = 'vseg';
-  seg.style.width = w + 'px';
+  seg.style.width = sw + 'px';
   if(dir > 0){ seg.style.left = (i === 0? '0px': '100%'); seg.style.transformOrigin = '0% 50%'; }
   else { seg.style.right = (i === 0? '0px': '100%'); seg.style.transformOrigin = '100% 50%'; }
   const win = document.createElement('div'); win.className = 'vsegwin';
   const clone = stage.cloneNode(true);
   clone.removeAttribute('id');
   clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-  const flatLeft = dir > 0? i * w: W - (i + 1) * w;
+  const flatLeft = dir > 0? bnd[i]: W - bnd[i + 1];
   clone.style.width = W + 'px'; clone.style.height = H + 'px';
   clone.style.left = (-flatLeft) + 'px'; clone.style.top = '0px';
   clone.style.right = 'auto'; clone.style.bottom = 'auto';
@@ -13253,23 +13280,23 @@ for(let i = 0; i < N; i++){
   win.appendChild(shade);
   seg.appendChild(win);
   parent.appendChild(seg);
-  segs.push({ el: seg, shade: shade });
+  segs.push({ el: seg, shade: shade, w: sw });
   parent = seg;
 }
 box.appendChild(curl);
 const page = $('vpage'); if(page) page.style.visibility = 'hidden';
-vCurl.segs = segs; vCurl.built = true; vCurl.W = W;
+vCurl.segs = segs; vCurl.built = true; vCurl.W = W; vCurl.bnd = bnd;
 return true;
 }catch(e){
 const c = $('vcurl'); if(c) c.remove();
 const page = $('vpage'); if(page) page.style.visibility = '';
-vCurl.segs = []; vCurl.built = false;
+vCurl.segs = []; vCurl.built = false; vCurl.bnd = null;
 return false;
 }
 }
 function vCurlTeardown(){
 const c = $('vcurl'); if(c) c.remove();
-vCurl.segs = []; vCurl.built = false;
+vCurl.segs = []; vCurl.built = false; vCurl.bnd = null;
 const page = $('vpage'); if(page) page.style.visibility = '';
 }
 /* the roll model, in spine coordinates (u = arc length from the
@@ -13282,13 +13309,13 @@ const page = $('vpage'); if(page) page.style.visibility = '';
    (degrees) at its material midpoint, plus the model's moving
    parts for the cast shadow. */
 function vCurlModel(p){
-const W = vCurl.W || 300, N = VCURL_N, w = W / N;
+const W = vCurl.W || 300, N = VCURL_N, bnd = vCurl.bnd;
 const R = W * (0.40 - 0.20 * p);
 const a = W * Math.pow(1 - p, 1.5);
 const cap = 168 * Math.PI / 180;
 const phi = u => (u <= a)? 0: Math.min((u - a) / R, cap);
 const angles = [];
-for(let i = 0; i < N; i++) angles.push(phi((i + 0.5) * w) * 180 / Math.PI);
+for(let i = 0; i < N; i++) angles.push(phi(bnd? (bnd[i] + bnd[i + 1]) / 2: (i + 0.5) * (W / N)) * 180 / Math.PI);
 const pe = phi(W);
 return { angles: angles, a: a, edgeX: (W <= a)? W: a + R * Math.sin(pe), edgeZ: (W <= a)? 0: R * (1 - Math.cos(pe)) };
 }
@@ -13314,12 +13341,28 @@ seg.shade.style.background =
 function vCurlApply(){
 if(!vCurl.built || !vCurl.segs.length || !vCurl.segs[0].el.isConnected) return false;
 const p = vTurn.p, sgn = vTurn.dir > 0? -1: 1;
+const W = vCurl.W || 300, N = vCurl.segs.length, bnd = vCurl.bnd;
 const m = vCurlModel(p);
 const sag = Math.sin(Math.min(1, p * 1.15) * Math.PI * 0.5);
-for(let i = 0; i < vCurl.segs.length; i++){
+for(let i = 0; i < N; i++){
   const rel = m.angles[i] - (i? m.angles[i - 1]: 0);
-  const ty = 12 * sag * Math.pow((i + 1) / vCurl.segs.length, 2);
-  vCurl.segs[i].el.style.transform = 'translateY(' + ty.toFixed(1) + 'px) rotateY(' + (sgn * rel).toFixed(2) + 'deg)';
+  /* v29.3: the droop is a SHEAR, not an offset and not a tilt
+     (see the VCURL_N note). skewY leaves the strip's hinge
+     line (x = 0) untouched at EVERY height, so the next
+     strip's near edge and this strip's far edge stay the same
+     line all the way up and down the seam — continuous by
+     construction. Each strip's shear is the SLOPE INCREMENT
+     of the droop curve at its span, because a strip's shear
+     tilts everything nested beyond it (the lever is the
+     remaining sheet): with increments of D(u) = 54·sag·u³ the
+     hinge line follows the curve v29.2 actually shipped with
+     (its nested translateY quietly summed to ~54px at the
+     tip — the look he praised — not the 12px its formula
+     suggested), now without the steps. */
+  const u0 = bnd? bnd[i] / W: i / N, u1 = bnd? bnd[i + 1] / W: (i + 1) / N;
+  const tanB = (162 * sag / W) * (u1 * u1 - u0 * u0);
+  const beta = Math.atan(tanB) * 180 / Math.PI * (vTurn.dir > 0? 1: -1);
+  vCurl.segs[i].el.style.transform = 'rotateY(' + (sgn * rel).toFixed(2) + 'deg) skewY(' + beta.toFixed(2) + 'deg)';
   vCurlShade(vCurl.segs[i], m.angles[i], p);
 }
 const cast = $('vcast');
@@ -13328,7 +13371,6 @@ if(cast){
      line, as wide and soft as the lifted sheet is tall; the
      spine root stays pinched dark */
   const ax = vTurn.dir > 0? '90deg': '270deg';
-  const W = vCurl.W || 300;
   const c0 = Math.max(0, (m.a / W) * 100 - 3).toFixed(1);
   const c1 = Math.min(100, (m.a / W) * 100 + 5).toFixed(1);
   const c2 = Math.min(100, Math.max((m.edgeX / W) * 100, (m.a / W) * 100 + 12) + (m.edgeZ / W) * 26).toFixed(1);
@@ -14689,8 +14731,8 @@ function renderUpdateList(){
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
 const ROADMAP_FALLBACK = [
-  { v: '29.2', label: '', lines: ['ページめくりの紙化を強化 — 1枚の板ではなく、紙が実際に反ってめくれる形にします', '美術史年表に年代バー — 上に固定されたバーを横に動かすと、その年代まで年表が流れます（「年代で絞る」はなくなります）'] },
-  { v: '29.3', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
+  { v: '29.3', label: '', lines: ['ページめくりをもっと滑らかに — 紙の帯を24本に増やし、めくる途中で絵がずれる問題を直します', '美術史年表の年代バーに目盛りを追加 — 狙った年代に合わせやすくし、バーを動かした時の表示の乱れも直します'] },
+  { v: '29.4', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
   { v: null, label: 'データの更新予定', lines: ['作家の発言の日本語訳（残り262件）を順に進めます', '作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします'] },
   { v: null, label: 'その先', lines: ['「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
 ];
@@ -15532,7 +15574,7 @@ if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データは
 /* v29.2: the year bar sits between the region segment and the
    cards, sticky under the app header (see tlBarWire). */
 html += '<div class="tlbar" id="tlbar"><div class="tlbar-lab"><div class="tlbar-year" id="tlbarYear"></div><div class="tlbar-title" id="tlbarTitle"></div></div>'
-+'<div class="tlbar-track" id="tlbarTrack"><div class="tlbar-fill" id="tlbarFill"></div><div class="tlbar-knob" id="tlbarKnob"></div></div></div>';
++'<div class="tlbar-track" id="tlbarTrack"><div class="tlbar-ticks" id="tlbarTicks"></div><div class="tlbar-fill" id="tlbarFill"></div><div class="tlbar-knob" id="tlbarKnob"></div></div></div>';
 html += '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
 const spans = tlEraSpans(entries);
 const stripWiring = [];
@@ -15613,6 +15655,51 @@ const e = tlBarItems[Math.round(tlBar.frac * (n - 1))] || tlBarItems[0];
 if(yv) yv.textContent = tlBarYearLabel(e);
 if(tv) tv.textContent = (e && e.title) || '';
 }
+/* v29.3: round-year ticks on the bar (his ask, 2026-11-14
+   22:02 — 「バーの部分にメモリがないから年代が合わせにくい」).
+   The bar assigns equal width per entry, so a tick for a round
+   year sits at the position of the entry nearest that year —
+   dragging the knob onto the tick lands on that entry. When
+   two candidate years claim the same entry the closer one
+   wins; the rest are thinned by priority so labels never
+   collide. Rebuilt by tlBarWire on every render, so region
+   switches re-range the ticks with everything else. */
+const TL_TICK_YEARS = [
+  { y: 1900, lab: '1900' }, { y: 1500, lab: '1500' }, { y: 1000, lab: '1000' },
+  { y: 2000, lab: '2000' }, { y: 1800, lab: '1800' }, { y: 1950, lab: '1950' },
+  { y: 1, lab: '1' }, { y: 500, lab: '500' },
+  { y: -1000, lab: '前1000' }, { y: -5000, lab: '前5000' }, { y: -10000, lab: '前10000' }
+];
+function tlBarTicks(){
+const host = $('tlbarTicks'); if(!host) return;
+host.innerHTML = '';
+const n = tlBarItems.length; if(n < 2) return;
+const years = tlBarItems.map(tlBigYearNum);
+const claim = {};
+TL_TICK_YEARS.forEach((c, pri) => {
+  let bi = -1, bd = Infinity;
+  /* ties go to the LATER entry (e.g. 1950 is 5 from both 1945
+     and 1955 — the tick belongs on 1955, clear of 1900's) */
+  years.forEach((y, i) => { if(y == null) return; const d = Math.abs(y - c.y); if(d < bd || (d === bd && i > bi)){ bd = d; bi = i; } });
+  if(bi < 0) return;
+  if(!claim[bi] || bd < claim[bi].d) claim[bi] = { c: c, pri: pri, d: bd, frac: bi / (n - 1) };
+});
+const placed = [];
+Object.keys(claim).map(k => claim[k]).sort((a, b) => a.pri - b.pri).forEach(t => {
+  if(placed.some(p => Math.abs(p.frac - t.frac) < 0.08)) return;
+  placed.push(t);
+});
+placed.sort((a, b) => a.frac - b.frac).forEach(t => {
+  const d = document.createElement('div');
+  d.className = 'tlbar-tick' + (t.frac < 0.07? ' edge-l': t.frac > 0.93? ' edge-r': '');
+  d.style.left = (t.frac * 100).toFixed(2) + '%';
+  d.setAttribute('data-year', String(t.c.y));
+  d.setAttribute('data-idx', String(Math.round(t.frac * (n - 1))));
+  const s = document.createElement('span'); s.textContent = t.c.lab;
+  d.appendChild(s);
+  host.appendChild(d);
+});
+}
 function tlBarCards(){ const wrap = $('tlwrap'); return wrap? Array.from(wrap.querySelectorAll('.tlcard')): []; }
 function tlBarStickyH(){
 const hdr = document.querySelector('header.top');
@@ -15642,6 +15729,7 @@ tlBarPaint();
 function tlBarWire(){
 const track = $('tlbarTrack'); if(!track) return;
 tlBar.frac = 0; tlBar.drag = false;
+tlBarTicks();
 tlBarPaint();
 const setFromX = x => {
   const r = track.getBoundingClientRect(); if(!r.width) return;
@@ -17394,6 +17482,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
+    if(e.target && e.target.closest && e.target.closest('#tlbar')) return; /* v29.3: the timeline year bar is a drag control — horizontal drags on it scrub the timeline and never arm the swipe-back (his 2026-11-14 video: bar drags engaged this gesture, the view slid to the list and back, and the engage/teardown churn — pin, WAAPI, un-pin — ghosted the card text into double print). The bar's own handler is Pointer Events; this exclusion is the same treatment #bizpillbar gets. */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
        showing — the native scroller moves between tabs and this handler
@@ -17460,7 +17549,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.2';
+const APP_VERSION = '29.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
