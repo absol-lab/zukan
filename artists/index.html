@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.6">
+<meta name="app-version" content="27.7">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8483,7 +8483,29 @@ async function storeInit(){
    retries once. Even a persistent failure blocks nothing: the
    canonical data lives on Drive, the session runs on the
    in-memory DB, and every small critical state is in IDB now. */
+/* v27.7: the list is KEPT ALIVE across detail visits (diagnosis
+   §6.2). listDirty means "the rendered list may no longer match
+   the data/state". It starts dirty (nothing rendered yet),
+   renderListBody() clears it (every list rebuild funnels through
+   there), and it is set again by anything that can change what
+   the list shows WITHOUT re-rendering it: any DB mirror write
+   (this funnel — edits, sync applies, seeds), a dataset bind,
+   a favorites save (stars + the ★ filter read it) and a request
+   cache save (the list footer renders from it). Conservative by
+   design: a spurious dirty costs one re-render on return; a
+   missed one would show a stale list. */
+let listDirty = true;
+function markListDirty(){ listDirty = true; }
+/* v27.7: belt-and-braces for the one list-state field that code
+   (and the regression gate's probes) can write directly without
+   going through a rendering handler: the search query.
+   renderListBody records the query it rendered with; showView
+   re-renders if the live query no longer matches it, so a
+   behind-the-back query change can never strand a filtered
+   list under a "clean" flag. */
+let listRenderedQuery = null;
 function dataSave(prefix, str){
+  markListDirty();
   if(storeSet(prefix + 'data', str)) return true;
   const other = (prefix === CFG_ARTISTS.prefix)? CFG_DESIGNERS.prefix: CFG_ARTISTS.prefix;
   storeDel(other + 'data');
@@ -8564,6 +8586,7 @@ LS_PENDING = CONFIG.prefix+'pendingAuth'; LS_AUTHERR = CONFIG.prefix+'authError'
 SS_TOKEN = CONFIG.prefix+'token';
 syncStatus = c.syncStatus; syncMsg = c.syncMsg; lastSyncAt = c.lastSyncAt;
 pendingImages = c.pendingImages;
+markListDirty(); /* v27.7: a dataset bind swaps the data under the shared list DOM */
 }
 
 function emptyData(){ return { kind: CONFIG.kind, version: 1, sections: [], artists: [], exhibitions: []};}
@@ -9182,6 +9205,15 @@ const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 const PRM_Q = (typeof window!=='undefined' && window.matchMedia)? window.matchMedia('(prefers-reduced-motion: reduce)'): null;
 function reducedMotion(){ try{ return !!(PRM_Q && PRM_Q.matches); }catch(e){ return false; } }
 let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null, vtForceDir = 0, vtAfterFinish = null;
+/* v27.7 (diagnosis §6.3): ONE-SWITCH FALLBACK for the forward
+   slide. It is kept because it provably shares none of the
+   return path's failure axes (both views pinned, scroll
+   pre-settled, no rebuild underneath — §5). If a forward slide
+   ever garbles on the real device, set FORWARD_ANIM = false:
+   wantAnim collapses and EVERY view switch becomes an instant
+   cut (list returns are already synchronous by design; the
+   finger-follow swipe gesture is unaffected). */
+const FORWARD_ANIM = true;
 /* v2.58: restore the list's saved scroll position, then re-assert it
    twice over the next half second: the sticky toolbar changes height
    as it slims/expands around the restored offset, which shifts the
@@ -9197,6 +9229,38 @@ function restoreListScroll(y){
     if(listRestoreToken !== tk || view !== 'list') return;
     if(Math.abs((window.scrollY || 0) - y) > 4) window.scrollTo(0, y);
   }, ms));
+}
+/* v27.7: BACK-TO-LIST IS A SYNCHRONOUS CUT (return-transition
+   diagnosis §6.1 — the v27.5 reveal failed on the real device).
+   The reveal's three premises were all false in the shipped code:
+   the "snapshot" was the live detail node still hydrating, the
+   list underneath was being fully rebuilt by showView's
+   unconditional renderList() (the placeholder flood), and the
+   single scrollTo landed on a just-rebuilt document whose
+   toolbar fold had been computed from the DETAIL's scroll
+   position. This function removes the mechanisms instead of
+   compensating for them — one synchronous task, no animation:
+   (1) freeze the toolbar fold change (tbnoanim) so its .26s
+   height transition cannot shift the list mid-frame; (2) swap
+   visibility — the list element was never destroyed, and when
+   it is not dirty its DOM is byte-for-byte the one the user
+   left, images included; (3) ONE scrollTo onto that settled
+   document (heights identical to save time, so no re-assertion
+   timers — restoreListScroll stays for the swipe-teardown path
+   only); (4) compute the toolbar fold from the RESTORED
+   position, still inside the same task, so the first painted
+   frame is already the final state. No vtSlide, no vt-fixed, no
+   body overflow toggle, no WAAPI on this path — there is
+   nothing left that can double-paint or drift. */
+function backToListSync(){
+  const y = CTX[DS].scrollY || 0;
+  const tb = $('toolbar');
+  if(tb) tb.classList.add('tbnoanim');
+  Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!=='list'); });
+  window.scrollTo(0, y);
+  updateToolbarSlim();
+  requestAnimationFrame(()=>{ const t2 = $('toolbar'); if(t2) t2.classList.remove('tbnoanim'); });
+  ensurePillAnchor();
 }
 /* v27.2: one-step-back stack for person→person hops inside the
    detail view (influence rows and their derived reverse rows).
@@ -9241,7 +9305,7 @@ let dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[
    or a plain forward slide. */
 if(!dir && prev!==v) dir = vtForceDir || 1;
 vtForceDir = 0;
-const wantAnim = !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
+const wantAnim = FORWARD_ANIM && !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
 if(v!=='settings') CTX[DS].lastView = v;
 /* v2.58: leaving the list saves its scroll position; entering it
@@ -9251,6 +9315,10 @@ if(v!=='settings') CTX[DS].lastView = v;
    (vtAfterFinish) or applied directly on the instant path. */
 if(prev==='list' && v!=='list') CTX[DS].scrollY = window.scrollY || 0;
 const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 0): 0;
+/* v27.7: EVERY arrival at the list from another view takes the
+   synchronous return path below (backToListSync) — the slide /
+   reveal machinery no longer serves list returns at all. */
+const isListReturn = v==='list' && !!prev && prev!=='list';
 /* (restoreListScroll itself is defined with the transition helpers) */
 
 /* v2.36: the timeline is a header button again (the 5-segment pill
@@ -9264,15 +9332,11 @@ syncBizBar(v);
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
 else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
 else updateHeader();
-if(v==='list') renderList();
-/* v27.5: an animated return to the list freezes the toolbar's
-   fold for the duration — updateToolbarSlim re-applies the slim
-   class the list was left with, and its .26s grid-rows
-   transition otherwise animates the list's head mid-slide and
-   shifts everything under it (one of the return ガクン's
-   ingredients). vtSlide's finish removes the class. */
-const listReturnAnim = wantAnim && v==='list' && prev && prev!=='list' && dir<0;
-if(listReturnAnim){ const tb = $('toolbar'); if(tb) tb.classList.add('tbnoanim'); }
+if(v==='list' && (listDirty || listRenderedQuery !== state.query)) renderList(); /* v27.7: a clean list is reused exactly as left — nodes, images, heights */
+/* v27.7: for a list return, the toolbar fold is (re)computed
+   inside backToListSync AFTER the scroll restore; this early
+   call serves the other views. For a return it is superseded
+   before anything can paint — the switch is one task. */
 updateToolbarSlim();
 if(v==='ex') renderEx();
 if(v==='museum') renderMuseum();
@@ -9286,13 +9350,11 @@ if(v==='bizch') renderBizCh();
 if(v==='bizp') renderBizPrice();
 if(v==='settings'){ renderSettings(); }
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
-if(wantAnim && oldEl && newEl && oldEl!==newEl){
-/* v27.5: vtSlide reports whether it consumed the list's scroll
-   restore itself (the back-to-list reveal restores BEFORE the
-   first frame, hidden under the outgoing view); only an
-   unconsumed restore keeps the old deferred path. */
-const vtConsumed = vtSlide(oldEl, newEl, dir, restoreListY);
-if(restoreListY && !vtConsumed) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
+if(isListReturn){
+backToListSync();
+} else if(wantAnim && oldEl && newEl && oldEl!==newEl){
+vtSlide(oldEl, newEl, dir, restoreListY);
+if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
 } else {
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 const tb0 = $('toolbar'); if(tb0) tb0.classList.remove('tbnoanim');
@@ -9306,36 +9368,17 @@ const hdr = document.querySelector('header.top');
 const H = hdr? hdr.offsetHeight: 0;
 const y = window.scrollY || 0;
 newEl.classList.remove('hidden');
-/* v27.5: BACK-TO-LIST IS A REVEAL, not a two-layer slide (his
-   2026-11-14 recording: 作家から一覧に戻る時にガクン — the list
-   and the detail painted over each other, card names doubled,
-   then the whole list jumped). Root causes, all in the old back
-   branch: (1) the incoming list stayed IN FLOW under a WAAPI
-   transform — the one arrangement this app's history says
-   iOS double-paints (the forward branch pins both views; the
-   back branch pinned only the outgoing one); (2) the saved
-   scroll position was restored only AFTER the slide
-   (vtAfterFinish → restoreListScroll), so the list slid in at
-   its top and then teleported, with further re-assert scrolls
-   at +160/+420ms; (3) the toolbar's fold transition ran
-   mid-slide (frozen now — see showView's tbnoanim). The reveal
-   removes all three structurally: the outgoing detail is
-   pinned as a frozen, opaque, non-interactive snapshot; while
-   it covers the screen the already fully-rendered list is
-   scrolled to its saved position — invisible, pre-first-frame;
-   then ONLY the snapshot slides away. The list itself never
-   transforms, never re-renders and never moves again. Returns
-   true when the restore was consumed here. */
-const reveal = dir<0 && restoreY!=null && newEl === $(VIEW_EL.list);
+/* v27.7: the v27.5 back-to-list REVEAL branch is REMOVED. Its
+   premises were false in the shipped code (the "snapshot" was
+   the live detail node; the list underneath was being rebuilt;
+   the toolbar fold was computed from the detail's scroll), and
+   it failed on the real device. List returns no longer reach
+   this function at all — showView diverts them to
+   backToListSync. What remains here serves forward slides
+   (dir>0) and same/back-depth slides between non-list views,
+   the paths §5 of the diagnosis cleared. */
 let aIn = null, aOut = null;
-if(reveal){
-oldEl.classList.add('vt-fixed');
-oldEl.style.top = (H - y)+'px';
-oldEl.style.height = '100dvh';
-window.scrollTo(0, restoreY);
-document.body.classList.add('vt-run');
-aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(102%)' }], { duration:310, easing:VT_EASE, fill:'both' });
-} else if(dir > 0){
+if(dir > 0){
 document.body.classList.add('vt-run');
 /* v2.18: the outgoing view is ALSO pinned at its scrolled offset (the
    back branch already did this). It used to stay in flow while the code
@@ -9376,7 +9419,6 @@ ensurePillAnchor();
 vtFinish = finish;
 Promise.all([aIn, aOut].filter(Boolean).map(a=>a.finished.catch(()=>{}))).then(finish);
 setTimeout(finish, 480);
-return reveal;
 }
 /* v2.23: content-level segment switches (mode / ex sort /
    timeline / quiz region) re-render in place; the new content drifts in
@@ -10841,6 +10883,8 @@ const span = ph.querySelector('.imgholder'); if(span){ span._work = ph._work; if
 });
 }
 function renderListBody(){
+listDirty = false; /* v27.7: the list DOM now matches data+state (see markListDirty) */
+listRenderedQuery = state.query;
 syncFavFilterBtn();
 const arr = filteredArtists();
 const body = $('listbody');
@@ -12640,6 +12684,7 @@ function favFailNote(what, err){
 }
 function favFailClear(){ if(kvRaw(LS_FAVFAIL) != null) kvDel(LS_FAVFAIL); }
 async function favsSave(m){
+  markListDirty(); /* v27.7: list cards + the ★ filter read favorites */
   FAVS_MEM = m;
   const s = JSON.stringify(m);
   FAVS_SRC = s;
@@ -14971,7 +15016,7 @@ function reqCache(){
   REQCACHE_SRC = raw;
   return REQCACHE_MEM;
 }
-function reqSaveCache(d){ REQCACHE_MEM = d; const s = JSON.stringify(d); REQCACHE_SRC = s; kvSet(LS_REQ_CACHE, s); }
+function reqSaveCache(d){ markListDirty(); REQCACHE_MEM = d; const s = JSON.stringify(d); REQCACHE_SRC = s; kvSet(LS_REQ_CACHE, s); } /* v27.7: the list footer renders from the request cache */
 function reqAllItems(){
   const remote = reqCache().requests || [];
   const ids = {}; remote.forEach(r=>{ ids[r.id]=1; });
@@ -15282,7 +15327,7 @@ function engageSwipe(st){
      other context). Swap the dataset context first so the target
      renders with its own data; a cancel swaps back in teardown. */
   if(st.trail && st.tds && st.tds !== DS){ st.fromDs = DS; stashCtx(); DS = st.tds; bindCtx(); st.swapped = true; }
-  if(st.target==='list') renderList();
+  if(st.target==='list' && listDirty) renderList(); /* v27.7: same keep-alive guard as showView */
   if(st.target==='timeline') renderTimeline();
   if(st.target==='ex') renderEx();
   if(st.target==='settings') renderSettings();
@@ -15432,7 +15477,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.6';
+const APP_VERSION = '27.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
