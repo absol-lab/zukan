@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.10">
+<meta name="app-version" content="27.11">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8548,12 +8548,20 @@ function markListDirty(){ listDirty = true; }
    behind-the-back query change can never strand a filtered
    list under a "clean" flag. */
 let listRenderedQuery = null;
+const DATA_SAVE_FAIL = {};
 function dataSave(prefix, str){
   markListDirty();
-  if(storeSet(prefix + 'data', str)) return true;
-  const other = (prefix === CFG_ARTISTS.prefix)? CFG_DESIGNERS.prefix: CFG_ARTISTS.prefix;
-  storeDel(other + 'data');
-  return storeSet(prefix + 'data', str);
+  /* v27.11 D1: the cross-dataset pressure valve is REMOVED —
+     a failed save never deletes the OTHER dataset's mirror
+     (a stale mirror is recoverable; a deleted one falls back
+     to the seed/empty). D2: the failure is recorded and shown
+     in the sync summary (renderSyncStatus) until a save of
+     the same dataset succeeds again. */
+  const okSave = storeSet(prefix + 'data', str);
+  if(okSave){ if(DATA_SAVE_FAIL[prefix]){ delete DATA_SAVE_FAIL[prefix]; renderSyncStatus(); } return true; }
+  DATA_SAVE_FAIL[prefix] = Date.now();
+  renderSyncStatus();
+  return false;
 }
 function fmtBytes(n){
   if(n == null || isNaN(n)) return '不明';
@@ -8901,10 +8909,18 @@ function normalizeFor(kind, d){ const out = normalizeData(d); out.kind = kind; r
 function loadCtxData(kind){
 const c = CTX[kind];
 const raw = storeGet(c.cfg.prefix+'data');
-if(raw){ try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; return; }catch(e){} }
+if(raw){ try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; return; }catch(e){
+/* v27.11 D3: a store that EXISTS but does not parse is not
+   the same as no store. The original bytes are stashed under
+   a backup key and KEPT in place — the seed runs in memory
+   only and is never written back over them (the old code
+   overwrote the store with the 186-name seed). */
+try{ storeSet(c.cfg.prefix+'data.corrupt', raw); }catch(_){}
+c.storeUnreadable = true;
+} }
 if(kind==='artists'){
 c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)));
-dataSave(c.cfg.prefix, JSON.stringify(c.DB));
+if(!raw) dataSave(c.cfg.prefix, JSON.stringify(c.DB));
 return;
 }
 c.DB = { kind:kind, version:1, sections:[], artists:[], exhibitions:[] };
@@ -14826,7 +14842,7 @@ function renderSyncStatus(){
     }
     bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>'+hint;
   }
-  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>'; }
+  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>' + ((DATA_SAVE_FAIL[CFG_ARTISTS.prefix] || DATA_SAVE_FAIL[CFG_DESIGNERS.prefix])? '<div class="syncline err">端末への保存ができませんでした（保存容量の上限のため）</div>': ''); }
   const dv = $('driveval'); if(dv) dv.textContent = driveVal();
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
@@ -14955,11 +14971,36 @@ function relayReady(){ return !!relayCfg(); }
 async function relayCall(op, name, content, extra){
   const c = relayCfg(); if(!c) throw new Error('中継が未設定です');
   const body = JSON.stringify(Object.assign({ secret: c.secret, op: op, name: name, content: content }, extra || {}));
-  const res = await fetchT(c.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: body }, 60000);
-  if(!res.ok) throw new Error('中継 HTTP '+res.status);
-  const j = JSON.parse(await res.text());
-  if(!j || !j.ok) throw new Error('中継エラー：'+((j && j.error) || 'unknown'));
-  return j;
+  let healed = false;
+  for(;;){
+    const res = await fetchT(c.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: body }, 60000);
+    if(!res.ok) throw new Error('中継 HTTP '+res.status);
+    const text = await res.text();
+    const ctype = (res.headers && res.headers.get) ? (res.headers.get('content-type') || '') : '';
+    const trimmed = text.replace(/^\s+/, '');
+    /* v27.11 B (sentinel self-heal): a body opening with the
+       relay's doGet text — or any text/plain body that is not
+       JSON — proves the POST was re-driven as a GET somewhere
+       in the Apps Script redirect chain (the 2026-11-14 16:14
+       incident). Re-issue the POST ONCE, silently, right here;
+       the incident then never reaches the user. */
+    const sentinel = trimmed.indexOf('Muse relay is alive') === 0 || (/^text\/plain/i.test(ctype) && trimmed.charAt(0) !== '{');
+    if(sentinel && !healed){ healed = true; continue; }
+    let j = null;
+    try{ j = JSON.parse(text); }catch(e){}
+    if(!j || typeof j !== 'object' || typeof j.ok === 'undefined'){
+      /* v27.11 A (envelope discipline): a body that is not the
+         JSON envelope is a TRANSPORT error, classified as
+         RELAY_BAD_BODY — never surfaced raw. The incident
+         banner showed the raw engine text (JSON Parse error:
+         Unexpected identifier "Muse") for exactly this case. */
+      const err = new Error('中継の応答が正しく届きませんでした');
+      err.code = 'RELAY_BAD_BODY';
+      throw err;
+    }
+    if(!j.ok) throw new Error('中継エラー：'+((j && j.error) || 'unknown'));
+    return j;
+  }
 }
 function relaySave(url, secret){
   url = String(url||'').trim() || RELAY_URL_DEFAULT; secret = String(secret||'').trim();
@@ -15221,7 +15262,7 @@ async function syncDatasetRelay(kind, data){
 }
 async function syncDatasetFlow(kind, reason){
   let r = await syncDatasetOnce(kind, reason);
-  if(!r.ok && r.timeout){
+  if(!r.ok && (r.timeout || r.badBody)){
     await new Promise(res=>setTimeout(res, 1500));
     r = await syncDatasetOnce(kind, reason);
   }
@@ -15270,7 +15311,15 @@ async function syncDatasetOnce(kind, reason){
       }
     }
     }
-    dataSave(prefix, JSON.stringify(data));
+    /* v27.11 D2: a failed device save is surfaced in the sync
+       result instead of being silently ignored (the frozen
+       430-artist mirror of 2026-11-14 stayed invisible exactly
+       because this return value was dropped). */
+    const saveOk = dataSave(prefix, JSON.stringify(data));
+    if(!saveOk){
+      const note = '端末への保存ができませんでした（保存容量の上限のため）';
+      c.syncNote = c.syncNote ? c.syncNote + '／' + note : note;
+    }
     c.DB = data;
     if(kind===DS) DB = data;
     c.lastSyncAt = Date.now();
@@ -15280,7 +15329,13 @@ async function syncDatasetOnce(kind, reason){
     return { ok:true, msg:'同期しました（'+hhmm(new Date())+'）'+(c.syncNote ? '：'+c.syncNote : '') };
   }catch(e){
     const m = (e && e.message) ? e.message : String(e);
-    return { ok:false, msg:'同期に失敗しました（'+m+'）', errMsg:m, timeout:/タイムアウト|abort/i.test(m) };
+    /* v27.11 A/C: classify transport bad-body failures (the
+       relayCall code, or any layer whose raw text is a JSON
+       engine error) — the banner gets the human message, never
+       the engine's parse text, and the flow auto-retries. */
+    const badBody = !!((e && e.code === 'RELAY_BAD_BODY') || /JSON Parse error|Unexpected (token|identifier|EOF|end of)|is not valid JSON/i.test(m));
+    const shown = badBody ? '中継の応答が正しく届きませんでした' : m;
+    return { ok:false, msg:'同期に失敗しました（'+shown+'）', errMsg:shown, timeout:/タイムアウト|abort/i.test(m), badBody:badBody };
   }
 }
 function queueSync(task){
@@ -15873,7 +15928,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.10';
+const APP_VERSION = '27.11';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
