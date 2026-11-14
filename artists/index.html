@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.3">
+<meta name="app-version" content="27.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -531,6 +531,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
  in every theme. */
 .newtag{position:absolute; top:13px; right:2px; font-size:11px; font-weight:800; letter-spacing:.1em; color:#191204; background:#e6b93d; border-radius:999px; padding:2px 8px; line-height:1.5;}
 .uprow.tap .newtag{right:24px;}
+/* v27.4: the compact history rows carry their NEW inline in
+   the head (the absolute corner slot belongs to the rate
+   buttons there), and the bell panel's history tab gets the
+   same gold pill as an unseen count. */
+.newtag.inl{position:static; flex:none; align-self:center;}
+.belldot{display:inline-block; min-width:17px; height:17px; padding:0 4px; margin-left:6px; border-radius:999px; background:#e6b93d; color:#191204; font-size:10.5px; font-weight:800; line-height:17px; text-align:center; box-sizing:border-box; vertical-align:2px;}
 .uphead{display:flex; align-items:baseline; gap:9px;}
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
@@ -9045,6 +9051,15 @@ function restoreListScroll(y){
    machinery (the ググン family) — the gesture still returns
    to the list, which clears the stack like the button does. */
 let detailStack = [];
+/* v27.4: the stack's bottom frame can be an ORIGIN frame —
+   {panel:'reqnotif', bellTab, ds, openKeys} — recorded by the
+   notification panel's jump functions (armPanelOrigin) just
+   before they call openDetail, and consumed by openDetail's
+   fresh-entry branch below. ‹ 前へ then unwinds person hops
+   first and finally reopens the panel as it was; the panel's
+   own 戻る still follows reqNotifReturn, so the chain stays
+   detail → panel → the screen the panel was opened from. */
+let pendingPanelOrigin = null;
 function showView(v){
 if(v === 'list') detailStack = [];
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
@@ -10696,7 +10711,11 @@ const a = artistById(id); if(!a) return;
 if(view === 'detail' && state.detailId != null && String(state.detailId) !== String(a.id)){
 detailStack.push({ id: state.detailId, ds: DS, tab: state.tab });
 } else if(view !== 'detail'){
-detailStack = [];
+/* v27.4: a fresh entry normally starts an empty stack; a
+   panel jump that armed an origin frame starts with that
+   frame at the bottom instead. */
+detailStack = pendingPanelOrigin? [pendingPanelOrigin] : [];
+pendingPanelOrigin = null;
 }
 state.detailId = a.id; state.tab = 'works';
 renderDetail(); showView('detail');
@@ -10707,6 +10726,7 @@ prefetchViewerImage(a);
 function detailBack(){
 const prev = detailStack.pop();
 if(!prev) return;
+if(prev.panel){ restorePanelOrigin(prev); return; }
 const rest = detailStack;
 if(prev.ds && prev.ds !== DS) switchDataset(prev.ds);
 detailStack = rest; /* the dataset switch lands on the list, whose showView clears the stack — reinstate the chain */
@@ -10716,6 +10736,20 @@ state.detailId = a.id;
 state.tab = DTABS.indexOf(prev.tab) >= 0? prev.tab: 'works';
 renderDetail(); showView('detail');
 prefetchViewerImage(a);
+}
+/* v27.4: the bottom of the chain — reopen the notification
+   panel exactly as it was left (its tab, its expanded rows,
+   the book it belonged to). Deliberately NOT openRequestNotifs:
+   that would reset the expansion state and overwrite
+   reqNotifReturn with the detail view; the return target the
+   panel remembered must survive the detour. */
+function restorePanelOrigin(f){
+detailStack = [];
+if(f.ds && f.ds !== DS) switchDataset(f.ds);
+bellTab = f.bellTab || 'notifs';
+notifOpen = f.openKeys || {};
+showView('settings');
+openSettingsPanel('reqnotif');
 }
 /* v2.23: the detail tabs are a scroll-snap pager, not a re-render switch.
    All three panels are always in the DOM side by side; setTab smooth-
@@ -12358,21 +12392,54 @@ function favsLoad(){
              works: (d && d.works && typeof d.works==='object' && !Array.isArray(d.works))? d.works: {} };
   }catch(e){ return { people:{}, works:{} }; }
 }
-function favsSave(m){ try{ storeSet(LS_FAVS, JSON.stringify(m)); }catch(e){} }
+/* v27.4 (his words: 嘘はなし): a favorites save either lands and
+   is VERIFIED by re-reading the store, or it is reported as a
+   failure — never toasted as a success/removal that did not
+   happen. favsSave returns the storeSet verdict; on failure it
+   leaves a diagnostic record under zukan.favFail (and the next
+   successful save clears it). Diagnosis:
+   art-labo/favorites-bug-diagnosis.md §7. */
+const LS_FAVFAIL = 'zukan.favFail';
+function favFailNote(what, err){
+  try{ storeSet(LS_FAVFAIL, JSON.stringify({ at: new Date().toISOString(), what: what, err: String((err && err.message) || err || 'verify-mismatch') })); }catch(e){}
+}
+function favsSave(m){
+  let ok = false;
+  try{ ok = storeSet(LS_FAVS, JSON.stringify(m)); }catch(e){ ok = false; }
+  if(ok){ try{ storeDel(LS_FAVFAIL); }catch(e){} }
+  else favFailNote('favsSave', 'storeSet returned false');
+  return ok;
+}
 function favPersonKey(kind, id){ return kind+':'+id; }
 function favWorkKey(kind, id, caption){ return kind+':'+id+'|'+caption; }
 function isFavPerson(kind, id){ const e = favsLoad().people[favPersonKey(kind,id)]; return !!(e && e.fav); }
 function isFavWork(kind, id, caption){ const e = favsLoad().works[favWorkKey(kind,id,caption)]; return !!(e && e.fav); }
 function favPeopleCount(kind){ const m = favsLoad().people; return Object.keys(m).filter(k=> k.indexOf(kind+':')===0 && m[k].fav).length; }
 function setFavPerson(a, on){
-  const m = favsLoad();
-  m.people[favPersonKey(DS, a.id)] = { fav: !!on, at: new Date().toISOString(), name: a.name };
-  favsSave(m); flushArtistRequests();
+  const k = favPersonKey(DS, a.id);
+  for(let attempt = 0; attempt < 2; attempt++){
+    const m = favsLoad();
+    m.people[k] = { fav: !!on, at: new Date().toISOString(), name: a.name };
+    if(favsSave(m)){
+      const chk = favsLoad().people[k];
+      if(chk && chk.fav === !!on){ flushArtistRequests(); return true; }
+    }
+    favFailNote('setFavPerson:' + k, attempt? 'verify failed after retry': 'verify mismatch, retrying');
+  }
+  return false;
 }
 function setFavWork(a, w, on){
-  const m = favsLoad();
-  m.works[favWorkKey(DS, a.id, w.caption||'')] = { fav: !!on, at: new Date().toISOString(), name: a.name, caption: w.caption||'' };
-  favsSave(m); flushArtistRequests();
+  const k = favWorkKey(DS, a.id, w.caption||'');
+  for(let attempt = 0; attempt < 2; attempt++){
+    const m = favsLoad();
+    m.works[k] = { fav: !!on, at: new Date().toISOString(), name: a.name, caption: w.caption||'' };
+    if(favsSave(m)){
+      const chk = favsLoad().works[k];
+      if(chk && chk.fav === !!on){ flushArtistRequests(); return true; }
+    }
+    favFailNote('setFavWork:' + k, attempt? 'verify failed after retry': 'verify mismatch, retrying');
+  }
+  return false;
 }
 function favsMerge(fileFavs){
   const m = favsLoad();
@@ -12400,8 +12467,11 @@ function syncFavFilterBtn(){
 }
 function toggleFavPerson(){
   const a = artistById(state.detailId); if(!a) return;
-  setFavPerson(a, !isFavPerson(DS, a.id));
+  const okSave = setFavPerson(a, !isFavPerson(DS, a.id));
   syncFavBtn(); syncFavFilterBtn();
+  /* v27.4: the toast follows the VERIFIED post-write state; an
+     unverified write is reported as what it is — a save failure. */
+  if(!okSave){ toast('お気に入りを保存できませんでした', 2600); return; }
   toast(isFavPerson(DS, a.id)? 'お気に入りに追加しました': 'お気に入りから外しました', 1600);
 }
 function syncFavBtn(){
@@ -12412,8 +12482,10 @@ function syncFavBtn(){
 function toggleFavWork(){
   const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
   if(!a || !w){ toast('この作品はお気に入りにできません', 1600); return; }
-  setFavWork(a, w, !isFavWork(DS, a.id, w.caption||''));
+  const okSave = setFavWork(a, w, !isFavWork(DS, a.id, w.caption||''));
   syncVFavBtn();
+  /* v27.4: same honesty rule as the person star (see toggleFavPerson). */
+  if(!okSave){ toast('お気に入りを保存できませんでした', 2600); return; }
   toast(isFavWork(DS, a.id, w.caption||'')? '作品をお気に入りに追加しました': '作品のお気に入りを外しました', 1600);
 }
 function syncVFavBtn(){
@@ -12422,6 +12494,50 @@ function syncVFavBtn(){
   const on = !!(a && w && isFavWork(DS, a.id, w.caption||''));
   b.classList.toggle('on', on); b.textContent = on? '★': '☆';
 }
+/* v27.4: the history list is COMPACT — version + date (+ NEW)
+   per row; the notes live behind a tap (single-open accordion)
+   and never render in the collapsed list. NEW follows the
+   history's own rule (NOT the notifications' per-item one):
+   judged from the device seen set (zukan.changelogSeen, keys
+   = version|at) at render, then the listed entries are marked
+   seen — the history IS the destination, so the first open
+   shows the NEWs and the next open shows none. The visit set
+   keeps the tags on screen across this visit's re-renders
+   (the changelog fetch landing, an accordion toggle, a rating
+   tap). First run: the seen set is seeded with every entry
+   except the newest, so exactly one entry lights up — the
+   new version's own. */
+const LS_CHANGELOG_SEEN = 'zukan.changelogSeen';
+let changelogOpen = {};
+let changelogVisitNew = {};
+function changelogEntryKey(e){ return String(e.v||'') + '|' + String(e.at||''); }
+function changelogSeenLoad(entries){
+  try{ const d = JSON.parse(storeGet(LS_CHANGELOG_SEEN)||'null'); if(Array.isArray(d)) return d; }catch(e){}
+  if(!entries || !entries.length) return [];
+  const sorted = entries.slice().sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0));
+  const seed = sorted.slice(1).map(changelogEntryKey);
+  try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seed)); }catch(e){}
+  return seed;
+}
+function changelogUnseenCount(){
+  const d = changelogData || changelogCacheLoad();
+  if(!d || !d.entries.length) return 0;
+  let seen = null;
+  try{ const j = JSON.parse(storeGet(LS_CHANGELOG_SEEN)||'null'); if(Array.isArray(j)) seen = j; }catch(e){}
+  if(!seen) return 1; /* unseeded: only the newest entry will be NEW */
+  const s = new Set(seen);
+  return d.entries.filter(e=> !s.has(changelogEntryKey(e))).length;
+}
+function changelogTabBadge(){
+  const n = changelogUnseenCount();
+  return n? '<span class="belldot">'+n+'</span>': '';
+}
+function toggleChangelogDetail(k){
+  const was = !!changelogOpen[k];
+  changelogOpen = {};
+  if(!was) changelogOpen[k] = true;
+  renderUpdateList();
+}
 function renderUpdateList(){
   const el = $('updatelist'); if(!el) return;
   const d = changelogData || changelogCacheLoad();
@@ -12429,12 +12545,33 @@ function renderUpdateList(){
   /* v27.3: newest first by the actual instant — the file order
      alone let a mis-stamped entry sit out of order (v26.0/v26.1);
      the sort is stable, so equal stamps keep the file order. */
-  el.innerHTML = [...d.entries].sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0)).map(e => {
+  const entries = [...d.entries].sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0));
+  /* v27.4: NEW is computed from the seen set FIRST (the badges
+     render for this visit), then the listed entries join the
+     seen set for the next one. Late arrivals within the visit
+     (the fetch landing mid-view) take the same path once. */
+  const seen = changelogSeenLoad(entries);
+  const seenSet = new Set(seen);
+  let dirty = false;
+  entries.forEach(e=>{
+    const k = changelogEntryKey(e);
+    if(!seenSet.has(k)){ changelogVisitNew[k] = 1; seenSet.add(k); seen.push(k); dirty = true; }
+  });
+  if(dirty){ try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seen)); }catch(e){} }
+  el.innerHTML = entries.map(e => {
+    const k = changelogEntryKey(e);
+    const open = !!changelogOpen[k];
     const rt = ratingOf(e.v);
-    return '<div class="uprow"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
-      + '<span class="ratebtns"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span></div>'
-      + '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
+    return '<div class="uprow tap" onclick="toggleChangelogDetail(\''+escA(k)+'\')"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
+      + (changelogVisitNew[k]? '<span class="newtag inl">NEW</span>': '')
+      + '<span class="ratebtns" onclick="event.stopPropagation()"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span>'
+      + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
+      + (open? '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul>': '')
+      + '</div>';
   }).join('');
+  /* the listed history has now been seen — a tab dot the shell
+     rendered before this list (from the pre-visit store) goes. */
+  const bd = document.querySelector('#settingspanel .belldot'); if(bd) bd.remove();
 }
 /* v2.81: a completed registration is announced under the name it
    was actually registered as — his request text is often a vague
@@ -12626,16 +12763,25 @@ async function detectNewPeople(kind){
 }
 function regNotifJump(nid){
   const n = regNotifsLoad().find(x=>x.id===nid); if(!n || n.summary) return;
-  if(n.dataset === DS){ const a = artistById(n.personId); if(a){ regMarkOneSeen(n.id); openDetail(a.id); return; } }
+  const panelDs = DS;
+  if(n.dataset === DS){ const a = artistById(n.personId); if(a){ regMarkOneSeen(n.id); armPanelOrigin(panelDs); openDetail(a.id); return; } }
   else{
     const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
     let found = null;
     try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(n.personId)); }catch(e){}
-    if(found){ regMarkOneSeen(n.id); switchDataset(n.dataset); openDetail(found.id); return; }
+    if(found){ regMarkOneSeen(n.id); switchDataset(n.dataset); armPanelOrigin(panelDs); openDetail(found.id); return; }
   }
   toast('この端末にはまだ届いていません');
 }
 let reqNotifReturn = null;
+/* v27.4: called by the panel's jump functions at the moment a
+   jump is certain, with the dataset the PANEL belongs to
+   (captured before any switchDataset the jump performs).
+   openDetail consumes the armed frame as the detail stack's
+   bottom, so ‹ 前へ from the person returns here. */
+function armPanelOrigin(panelDs){
+  pendingPanelOrigin = { panel: 'reqnotif', bellTab: bellTab, ds: panelDs, openKeys: Object.assign({}, notifOpen) };
+}
 /* v10.2–v27.2: NEW was a snapshot taken when the panel
    opened, because the render itself marked everything seen.
    v27.3: the render no longer marks anything, so NEW is
@@ -12663,9 +12809,10 @@ function toggleNotifDetail(key){
 /* v16.1: the bell panel also carries the update history
    (his ask — the history no longer lives in the settings list). */
 let bellTab = 'notifs';
-function setBellTab(t){ bellTab = t; renderSettingsPanel(); }
+function setBellTab(t){ bellTab = t; changelogVisitNew = {}; renderSettingsPanel(); }
 function openRequestNotifs(){
   notifOpen = {};
+  changelogVisitNew = {}; changelogOpen = {};
   bellTab = 'notifs';
   reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
@@ -12690,18 +12837,19 @@ function reqFindIn(kind, r){
 function reqNotifJump(id){
   const r = reqAllItems().find(x=>x.id===id); if(!r || r.status==='declined') return;
   const nm = reqResolvedName(r);
+  const panelDs = DS;
   if(r.kind==='works' && r.dataset && r.dataset!==DS){
     const oid = reqFindIn(r.dataset, r);
     switchDataset(r.dataset);
-    if(oid!=null){ reqMarkOneRead(r); openDetail(oid); } else toast('この端末にはまだ届いていません');
+    if(oid!=null){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(oid); } else toast('この端末にはまだ届いていません');
     return;
   }
-  if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); openDetail(a.id); return; } }
+  if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(a.id); return; } }
   const here = DB.artists.find(x=>x.name===nm);
-  if(here){ reqMarkOneRead(r); openDetail(here.id); return; }
+  if(here){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(here.id); return; }
   const other = DS==='artists'? 'designers':'artists';
   const oid = reqFindIn(other, r);
-  if(oid!=null){ reqMarkOneRead(r); switchDataset(other); openDetail(oid); return; }
+  if(oid!=null){ reqMarkOneRead(r); switchDataset(other); armPanelOrigin(panelDs); openDetail(oid); return; }
   toast('この端末にはまだ届いていません');
 }
 function renderRequestNotifs(targetId){
@@ -14946,7 +15094,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.3';
+const APP_VERSION = '27.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -15399,7 +15547,7 @@ function renderSettingsPanel(){
     p.innerHTML = panelShell('通知',
       '<div class="seg" role="group" aria-label="通知と更新履歴" style="margin-bottom:12px">'
       + '<button class="'+(bellTab==='notifs'? 'on': '')+'" onclick="setBellTab(\'notifs\')">通知</button>'
-      + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴</button></div>'
+      + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴'+changelogTabBadge()+'</button></div>'
       + '<div id="reqnotiflist"'+(bellTab==='notifs'? '': ' style="display:none"')+'></div>'
       + '<div id="updatelist"'+(bellTab==='history'? '': ' style="display:none"')+'></div>');
     if(bellTab==='notifs') renderRequestNotifs('reqnotiflist');
@@ -15473,6 +15621,10 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
   DS = startDS; bindCtx();
   applyAppearance();
+  /* v27.4: a leftover favorites-save diagnostic stays silent for
+     the user (the failing tap already told him) but visible in
+     the console for support. */
+  try{ const ff = storeGet('zukan.favFail'); if(ff) console.warn('[zukan] favFail:', ff); }catch(e){}
   /* 表示モードのアプリ共通化：共通キーが無ければ開始データセットの既存値を初期値として移行し、両データセットへ統一する */
   const uniMode = storeGet(LS_APP_MODE) || storeGet(CTX[startDS].cfg.prefix+'mode') || storeGet(CTX[startDS==='artists'?'designers':'artists'].cfg.prefix+'mode') || 'def';
   Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = uniMode; });
