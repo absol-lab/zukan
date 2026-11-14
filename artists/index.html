@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="22.2">
+<meta name="app-version" content="22.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -266,10 +266,7 @@ figure.work:active{background:var(--card2);}
    derived from the field's discipline part. Name + photo alone did
    not tell him. */
 .fsyms{font-size:12px; line-height:1.35; color:var(--sub); letter-spacing:.28em; margin-top:1px;}
-.symrow{display:flex; gap:6px; overflow-x:auto; padding-top:8px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
-.symrow::-webkit-scrollbar{display:none;}
-.symtab{flex:none;}
-.symtab .symg{margin-right:2px; font-size:13px;}
+.symrow{padding-top:8px;}
 .symlegend{padding:10px 14px; font-size:12.5px; color:var(--sub); line-height:2;}
 .symlegend b{display:inline-block; min-width:26px; color:var(--ink); font-weight:600; font-size:13px;}
 figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
@@ -580,8 +577,16 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
 .glossterm{font-size:16px; font-weight:800; margin-bottom:2px}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
-#termsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
-#termsheet.hidden{display:none}
+#termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
+#termsheet.hidden,#symsheet.hidden{display:none}
+.symbtn{display:flex; align-items:center; width:100%; min-height:44px; padding:8px 12px; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; font-size:13.5px; text-align:left;}
+.symbtn .symg{margin-right:7px; font-size:14px;}
+.symbtn .symchev{margin-left:auto; color:var(--muted); font-size:12px;}
+.symopt{display:flex; align-items:center; width:100%; min-height:48px; padding:8px 6px; border:0; border-bottom:1px solid var(--line); background:none; color:var(--text); font-size:14.5px; text-align:left;}
+.symopt .symg{display:inline-block; width:30px; font-size:15px;}
+.symopt .symcnt{margin-left:auto; color:var(--muted); font-size:12.5px;}
+.symopt.on{font-weight:700;}
+.symopt.on .symcnt{color:var(--accent);}
 .tscard{background:var(--card); border-radius:16px 16px 0 0; padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); width:100%; max-width:560px; max-height:70dvh; overflow:auto}
 .tsterm{font-size:18px; font-weight:800; margin-bottom:6px}
 .tsclose{margin-top:14px; width:100%; min-height:48px; border:1px solid var(--line); background:var(--card2); color:var(--text); border-radius:10px; font-size:15px; font-family:inherit}
@@ -1004,6 +1009,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizCh" class="hidden"></main>
 <main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
+<div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 
 <main id="viewSettings" class="hidden">
   <div id="settingsmain"></div>
@@ -10089,13 +10095,23 @@ const el = $('symrow'); if(!el) return;
 const present = new Set();
 DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
 if(symFilter && !present.has(symFilter)){ symFilter = ''; try{ storeSet('zukan.symFilter', ''); }catch(e){} }
-let h = '<button class="tagchip symtab' + (symFilter? '' : ' on') + '" onclick="setSymFilter(\'\')">すべて</button>';
-SYM_TABS.forEach(([g, label]) => { if(present.has(g)) h += '<button class="tagchip symtab' + (symFilter === g? ' on' : '') + '" onclick="setSymFilter(\'' + g + '\')"><span class="symg">' + g + '</span> ' + label + '</button>'; });
-el.innerHTML = h;
+const cur = SYM_TABS.find(([g]) => g === symFilter);
+el.innerHTML = '<button class="symbtn" onclick="openSymSheet()">' + (cur? '<span class="symg">' + cur[0] + '</span>' + cur[1] : 'すべての分野') + '<span class="symchev">分野を選ぶ ▾</span></button>';
 }
+function openSymSheet(){
+const list = $('symlist'); if(!list) return;
+const counts = {};
+DB.artists.forEach(a => fieldSymsList(a).forEach(g => { counts[g] = (counts[g] || 0) + 1; }));
+let h = '<button class="symopt' + (symFilter? '' : ' on') + '" onclick="setSymFilter(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (symFilter? '' : ' ✓') + '</span></button>';
+SYM_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (symFilter === g? ' on' : '') + '" onclick="setSymFilter(\'' + g + '\')"><span class="symg">' + g + '</span>' + label + '<span class="symcnt">' + counts[g] + '名' + (symFilter === g? ' ✓' : '') + '</span></button>'; });
+list.innerHTML = h;
+$('symsheet').classList.remove('hidden');
+}
+function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); }
 function setSymFilter(g){
 symFilter = (symFilter === g)? '' : g;
 try{ storeSet('zukan.symFilter', symFilter); }catch(e){}
+closeSymSheet();
 renderList();
 }
 function personCardHTML(a, kind){
@@ -14276,7 +14292,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '22.2';
+const APP_VERSION = '22.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
