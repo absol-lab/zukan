@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.8">
+<meta name="app-version" content="29.9">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1060,6 +1060,12 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 .setrow{margin-top:14px;}
 .setrow:first-child{margin-top:0;}
 .setlabel{font-size:13px; color:var(--muted); margin-bottom:6px; letter-spacing:.04em;}
+/* v29.9: the sound panel's volume slider (continuous, diary-style thumb) */
+input[type=range].sndvol{-webkit-appearance:none; appearance:none; width:100%; height:30px; background:transparent; margin:0; padding:0;}
+input[type=range].sndvol::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:var(--line);}
+input[type=range].sndvol::-webkit-slider-thumb{-webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:var(--accent); margin-top:-10px;}
+input[type=range].sndvol::-moz-range-track{height:4px; border-radius:2px; background:var(--line);}
+input[type=range].sndvol::-moz-range-thumb{width:24px; height:24px; border:none; border-radius:50%; background:var(--accent);}
 input.textin, select.textin, textarea.textin{width:100%; background:var(--bg2); border:1px solid var(--lineStrong); padding:11px 12px; border-radius:10px; color:var(--text); outline:none; -webkit-appearance:none; font-size:16px;}
 input.textin, select.textin{min-height:48px;}
 textarea.textin{min-height:110px; line-height:1.7;}
@@ -13304,9 +13310,9 @@ function vCanvasDraw(){
 if(!vCv.built || !vCv.el || !vCv.el.isConnected || !vCv.ctx) return false;
 const ctx = vCv.ctx, BW = vCv.BW, BH = vCv.BH, p = vTurn.p, dir = vTurn.dir;
 const m = vCanvasModel(p, BW);
-const SL = 3; /* slice width in CSS px: ~130 slices per frame at
-   phone width — far finer than the 48-strip layout (8px steps)
-   the device already approved, and a third fewer draw calls */
+const SL = 3; /* flat-run grid in CSS px (flat slices merge by
+   droop, so the grid costs nothing there); v29.9: the roll
+   and the flap step 1px instead — see the ops loop below */
 ctx.setTransform(vCv.dpr, 0, 0, vCv.dpr, 0, 0);
 /* 1. the stage ground, then the revealed page lying flat */
 ctx.fillStyle = vCv.bg || '#000';
@@ -13339,23 +13345,36 @@ if(!img) return false;
 const nw = img.width, nh = img.height;
 /* draw ops: flat slices whose droop rounds to the same device
    pixel merge into one run (one image draw instead of ~100);
-   roll slices stay per-slice, their angle changes every step */
+   roll slices stay per-slice, their angle changes every step.
+   v29.9 (his device report 2026-11-15 00:33: the turned page's
+   edge line rippled, and fine vertical lines ran down the
+   pale back): in v29.7 every roll slice was 3px wide and
+   carried ONE droop value and ONE shade value, so the sheet's
+   contours stepped at every slice boundary and the back's
+   veil alpha stepped with it (gradient banding). The roll
+   now steps 1px; below, each layer's droop is smoothed into
+   a continuous function of screen position, the roll's
+   shading is painted as continuous gradients (section 5),
+   and each slice is painted with a slight overdraw so no
+   hairline seam can open (the paint loop below). */
 const ops = [];
+const frontOps = [], backOps = [];
 let run = null;
 const flushRun = ()=>{ if(run){ ops.push(run); run = null; } };
 const Xof = s => m.a + m.R * Math.sin((s - m.a) / m.R);
 const sFof = x => m.a + m.R * Math.asin(Math.max(-1, Math.min(1, (x - m.a) / m.R)));
 const sBof = x => m.a + m.R * (Math.PI - Math.asin(Math.max(-1, Math.min(1, (x - m.a) / m.R))));
-for(let t = 0; t < BW; t += SL){
-  const w = Math.min(SL, BW - t), tm = t + w / 2;
+for(let t = 0; t < BW; ){
+  const w = Math.min(t + SL <= m.a? SL: 1, BW - t), tm = t + w / 2;
   if(tm < m.a){
     const dy = 54 * sag * Math.pow(tm / BW, 3);
     const dyR = Math.round(dy * vCv.dpr);
     if(run && run.dyR === dyR) run.t1 = t + w;
     else{ flushRun(); run = { flat: true, t0: t, t1: t + w, dy: dy, dyR: dyR }; }
+    t += w;
     continue;
   }
-  if(t >= m.a + m.R) continue;  /* past the silhouette: revealed page */
+  if(t >= m.a + m.R){ t += w; continue; }  /* past the silhouette: revealed page */
   flushRun();
   const thC = Math.asin(Math.min(1, (tm - m.a) / m.R));
   /* roll parts carry their exact material interval (the inverse
@@ -13364,14 +13383,31 @@ for(let t = 0; t < BW; t += SL){
      tile with no gap, and the last one stops at the sheet's
      true edge instead of leaving an unpainted black sliver */
   const f0 = Math.min(sFof(t), BW), f1 = Math.min(sFof(t + w), BW);
-  if(f1 > f0 + 0.01) ops.push({ flat: false, ms0: f0, ms1: f1, dx0: Xof(f0), dx1: Xof(f1), th: thC * 180 / Math.PI, dy: 54 * sag * Math.pow((f0 + f1) / 2 / BW, 3) });
+  if(f1 > f0 + 0.01){ const op = { flat: false, bk: 0, ms0: f0, ms1: f1, dx0: Xof(f0), dx1: Xof(f1), dy: 54 * sag * Math.pow((f0 + f1) / 2 / BW, 3) }; ops.push(op); frontOps.push(op); }
   const thB = Math.PI - thC;
   if(thB <= m.cap){
     const b0 = sBof(t + w), b1 = Math.min(sBof(t), Math.min(BW, m.a + m.R * m.cap));
-    if(b1 > b0 + 0.01){ const xa = Xof(b0), xb = Xof(b1); ops.push({ flat: false, ms0: b0, ms1: b1, dx0: Math.min(xa, xb), dx1: Math.max(xa, xb), th: thB * 180 / Math.PI, dy: 54 * sag * Math.pow((b0 + b1) / 2 / BW, 3) }); }
+    if(b1 > b0 + 0.01){ const xa = Xof(b0), xb = Xof(b1); const op = { flat: false, bk: 1, ms0: b0, ms1: b1, dx0: Math.min(xa, xb), dx1: Math.max(xa, xb), dy: 54 * sag * Math.pow((b0 + b1) / 2 / BW, 3) }; ops.push(op); backOps.push(op); }
   }
+  t += w;
 }
 flushRun();
+/* v29.9: smooth each roll layer's droop into a continuous
+   function of screen position. The raw per-op value is taken
+   at the op's material midpoint; where the inverse map runs
+   fast (near the crest) neighbouring midpoints race, and the
+   carried droop — hence every contour the sheet paints —
+   steps. Two [1 2 1]/4 passes plus a 0.8px-per-column slope
+   limit keep the shape and remove the steps. */
+const smoothDy = arr => {
+  for(let pass = 0; pass < 2; pass++){
+    const src = arr.map(o => o.dy);
+    for(let k = 0; k < arr.length; k++) arr[k].dy = (src[Math.max(0, k - 1)] + 2 * src[k] + src[Math.min(arr.length - 1, k + 1)]) / 4;
+  }
+  for(let k = 1; k < arr.length; k++){ const d = arr[k].dy - arr[k - 1].dy; if(d > 0.8) arr[k].dy = arr[k - 1].dy + 0.8; else if(d < -0.8) arr[k].dy = arr[k - 1].dy - 0.8; }
+  for(let k = arr.length - 2; k >= 0; k--){ const d = arr[k].dy - arr[k + 1].dy; if(d > 0.8) arr[k].dy = arr[k + 1].dy + 0.8; else if(d < -0.8) arr[k].dy = arr[k + 1].dy - 0.8; }
+};
+smoothDy(frontOps); smoothDy(backOps);
 for(const op of ops){
   if(op.flat){
     const rw = op.t1 - op.t0;
@@ -13386,10 +13422,27 @@ for(const op of ops){
     }
     vCanvasShade(ctx, dx, op.dy, rw, BH, 0, p);
   } else {
-    const dw = op.dx1 - op.dx0;
-    const dx = dir > 0? op.dx0: BW - op.dx1;
-    const gx0 = dir > 0? op.ms0: BW - op.ms1, gx1 = dir > 0? op.ms1: BW - op.ms0;
-    const sc = dw / Math.max(0.01, gx1 - gx0);
+    /* v29.9: the slice is painted a hair wider than its exact
+       interval, toward the next slice of its layer: the
+       material interval grows by the same screen amount
+       (converted at the slice's own scale), so the sampling
+       stays exact and the neighbour's own paint lands on
+       identical content — no hairline can open between
+       slices. The growth is capped at the layer's material
+       end, so nothing ever paints past the sheet's true edge.
+       No per-slice shade here: the roll's light is painted
+       as continuous gradients in section 5. */
+    const dw0 = op.dx1 - op.dx0;
+    let gx0 = dir > 0? op.ms0: BW - op.ms1, gx1 = dir > 0? op.ms1: BW - op.ms0;
+    const sc = dw0 / Math.max(0.01, gx1 - gx0);
+    const matHi = op.bk? Math.min(BW, m.a + m.R * m.cap): BW;
+    /* the overdraw also stops at the silhouette: the free
+       edge stays exactly the model's edge */
+    const extM = Math.min(0.6, Math.max(0, m.sil - op.dx1)) / Math.max(0.05, sc);
+    let dx = dir > 0? op.dx0: BW - op.dx1;
+    if(dir > 0) gx1 = Math.min(gx1 + extM, matHi);
+    else { const g0 = Math.max(gx0 - extM, BW - matHi); dx -= (gx0 - g0) * sc; gx0 = g0; }
+    const dw = (gx1 - gx0) * sc;
     ctx.fillStyle = vCv.bg || '#000';
     ctx.fillRect(dx, op.dy, dw, BH);
     const ix0 = Math.max(gx0, cr.x), ix1 = Math.min(gx1, cr.x + cr.w);
@@ -13397,7 +13450,6 @@ for(const op of ops){
       const sx = (ix0 - cr.x) / cr.w * nw, sw = (ix1 - ix0) / cr.w * nw;
       ctx.drawImage(img, sx, 0, sw, nh, dx + (ix0 - gx0) * sc, cr.y + op.dy, (ix1 - ix0) * sc, cr.h);
     }
-    vCanvasShade(ctx, dx, op.dy, dw, BH, op.th, p);
   }
 }
 /* 4. the flap: material past the wrap cap leaves the roll
@@ -13408,12 +13460,16 @@ for(const op of ops){
 const sCap = m.a + m.R * m.cap;
 if(sCap < BW - 0.001){
   const x0 = m.a + m.R * Math.sin(m.cap), dirX = Math.cos(m.cap);
-  for(let s = sCap; s < BW; s += SL){
-    const w = Math.min(SL, BW - s);
+  for(let s = sCap; s < BW; s += 1){
+    const w = Math.min(1, BW - s);
     const xa = x0 + (s - sCap) * dirX, xb = x0 + (s + w - sCap) * dirX;
-    const t = Math.min(xa, xb), tw = Math.max(0.7, Math.abs(xb - xa));
+    const t = Math.min(xa, xb), tw0 = Math.max(0.7, Math.abs(xb - xa));
     const stageX = dir > 0? s + w / 2: BW - (s + w / 2);
-    const dx = dir > 0? t: BW - t - tw;
+    /* v29.9: 1px steps (was the 3px grid), and the slice is
+       painted a hair wider than its extent, centred, so no
+       seam opens inside the flap either */
+    const tw = tw0 + 0.5;
+    const dx = (dir > 0? t: BW - t - tw0) - 0.25;
     const dy = 54 * sag * Math.pow((s + w / 2) / BW, 3);
     ctx.fillStyle = vCv.bg || '#000';
     ctx.fillRect(dx, dy, tw, BH);
@@ -13425,6 +13481,76 @@ if(sCap < BW - 0.001){
     }
     vCanvasShade(ctx, dx, dy, tw, BH, m.cap * 180 / Math.PI, p);
   }
+}
+/* 5. v29.9: the roll's shading as CONTINUOUS gradients. In
+   v29.7 each slice filled its own shade step; on the back's
+   pale veil the alpha stepped about a percent every 3px —
+   visible as fine vertical stripes (gradient banding). Here
+   the exact shade functions of the roll angle become canvas
+   gradients (stops placed adaptively, tracking the function
+   to 0.002 alpha) filled once, clipped
+   to the sheet region under each layer's smoothed droop
+   curve: the front's diffuse falloff and crest ridge where
+   the front faces the reader, the back's warm veil where
+   the sheet has folded over. Same functions vCanvasShade
+   applied per slice — now continuous in screen position. */
+const thDegOf = mx => Math.asin(Math.max(0, Math.min(1, (mx - m.a) / m.R))) * 180 / Math.PI;
+const gradFor = (x0m, x1m, rgb, fn) => {
+  const gr = ctx.createLinearGradient(dir > 0? x0m: BW - x0m, 0, dir > 0? x1m: BW - x1m, 0);
+  /* stop placement is adaptive: subdivide until the linear
+     ramp tracks fn within 0.002 alpha at every midpoint (the
+     veil's slope runs away near the silhouette, where evenly
+     spaced stops would round the edge's brightness off) */
+  const pts = [[0, fn(x0m)]];
+  const sub = (o0, v0, o1, v1, depth) => {
+    const om = (o0 + o1) / 2, vm = fn(x0m + (x1m - x0m) * om);
+    if(depth > 0){
+      /* probe the chord deviation at the quarter points too:
+         a midpoint-only test waves through steep S-curves
+         (the ridge highlight's falling flank) whose chord
+         error sits at the quarter points */
+      const chord = o => v0 + (v1 - v0) * ((o - o0) / (o1 - o0));
+      const q1 = o0 + (o1 - o0) / 4, q3 = o0 + (o1 - o0) * 3 / 4;
+      const dev = Math.max(Math.abs(vm - chord(om)),
+        Math.abs(fn(x0m + (x1m - x0m) * q1) - chord(q1)),
+        Math.abs(fn(x0m + (x1m - x0m) * q3) - chord(q3)));
+      if(dev > 0.002){ sub(o0, v0, om, vm, depth - 1); pts.push([om, vm]); sub(om, vm, o1, v1, depth - 1); }
+    }
+  };
+  const vEnd = fn(x1m);
+  sub(0, pts[0][1], 1, vEnd, 9);
+  pts.push([1, vEnd]);
+  for(const pt of pts) gr.addColorStop(pt[0], 'rgba(' + rgb + ',' + pt[1].toFixed(3) + ')');
+  return gr;
+};
+const clipLayer = (x0m, x1m, layerOps) => {
+  const X0 = dir > 0? x0m: BW - x1m, X1 = dir > 0? x1m: BW - x0m;
+  const pts = [];
+  for(const o of layerOps){
+    const cx = dir > 0? (o.dx0 + o.dx1) / 2: BW - (o.dx0 + o.dx1) / 2;
+    if(cx >= X0 - 1 && cx <= X1 + 1) pts.push([cx, o.dy]);
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  ctx.beginPath();
+  ctx.moveTo(X0, pts.length? pts[0][1]: 0);
+  for(const pt of pts) ctx.lineTo(pt[0], pt[1]);
+  ctx.lineTo(X1, pts.length? pts[pts.length - 1][1]: 0);
+  ctx.lineTo(X1, BH); ctx.lineTo(X0, BH); ctx.closePath(); ctx.clip();
+};
+if(frontOps.length && m.edge > m.a + 0.25){
+  ctx.save(); clipLayer(m.a, m.edge, frontOps);
+  ctx.fillStyle = gradFor(m.a, m.edge, '10,8,6', mx => 0.36 * Math.pow(1 - Math.cos(thDegOf(mx) * Math.PI / 180), 1.15));
+  ctx.fillRect(0, 0, BW, BH);
+  ctx.fillStyle = gradFor(m.a, m.edge, '255,244,214', mx => 0.34 * Math.exp(-Math.pow((thDegOf(mx) - 40) / 19, 2)) * Math.min(1, p * 3));
+  ctx.fillRect(0, 0, BW, BH);
+  ctx.restore();
+}
+if(backOps.length && m.sil > m.edge + 0.25){
+  ctx.save(); clipLayer(m.edge, m.sil, backOps);
+  ctx.fillStyle = 'rgba(10,8,6,0.100)'; ctx.fillRect(0, 0, BW, BH);
+  ctx.fillStyle = gradFor(m.edge, m.sil, '246,238,222', mx => Math.min(0.94, 0.55 + 0.45 * ((180 - thDegOf(mx)) - 92) / 76));
+  ctx.fillRect(0, 0, BW, BH);
+  ctx.restore();
 }
 return true;
 }
@@ -13504,9 +13630,11 @@ requestAnimationFrame(step);
 setTimeout(fin, dur + 250); /* stall backstop, as before */
 }
 function vTurnComplete(dir){
+playPageTurn(false);
 vTurnAnimateTo(1, 250 * (1 - vTurn.p) + 70, ()=>{ vTurn.p = 0; vCanvasTeardown(); vTurn.mode = ''; viewerMove(dir); });
 }
 function vTurnSnapBack(){
+playPageTurn(true);
 vTurnAnimateTo(0, 190, ()=>{ vTurnReset(); });
 }
 function vTurnReset(){
@@ -13516,6 +13644,72 @@ if(under) under.innerHTML = '';
 vTurn.p = 0; vTurn.active = false; vTurn.samples = [];
 }
 function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack(); } }
+/* v29.9: the page-turn sound (his asks 2026-11-15 00:34-35 —
+   a REAL thin sheet's light ペラッ, not a thick book's thud:
+   short, light, bright). Synthesized with WebAudio, no audio
+   file: a breath of white noise through a band-pass that
+   sweeps down (5400 -> 2300 Hz) with a soft high-pass floor,
+   in two strokes — the lift, then a quieter landing flutter
+   a beat later. Length, sweep and rate jitter a few percent
+   per play so repeats never sound stamped. The snap-back is
+   one shorter, half-volume stroke. Settings live in ZSET
+   (soundOn / soundVol, panel 'sound'); when off, no
+   AudioContext is ever created. The diary app's recipe is
+   followed for iOS: the context is created/resumed from a
+   user gesture, and navigator.audioSession is set to
+   'playback' so the sound is not held by the silent switch. */
+let sndAC = null, sndNoiseBuf = null;
+function sndEnabled(){ return ZSET.soundOn !== false; }
+function sndVolume(){ const v = (typeof ZSET.soundVol === 'number' && isFinite(ZSET.soundVol))? ZSET.soundVol: 0.6; return Math.min(1, Math.max(0, v)); }
+function sndCtx(){
+if(!sndEnabled()) return null;
+if(!sndAC){
+  try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
+  try{ sndAC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; }
+}
+if(sndAC.state !== 'running'){ try{ sndAC.resume(); }catch(e){} }
+return sndAC;
+}
+function sndNoise(ac){
+if(sndNoiseBuf && sndNoiseBuf.sampleRate === ac.sampleRate) return sndNoiseBuf;
+const len = Math.max(1, Math.floor(ac.sampleRate * 0.5));
+const buf = ac.createBuffer(1, len, ac.sampleRate);
+const d = buf.getChannelData(0);
+for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+sndNoiseBuf = buf; return buf;
+}
+function playPageTurn(rev){
+if(!sndEnabled()) return;
+const vol = sndVolume(); if(vol <= 0.001) return;
+const ac = sndCtx(); if(!ac) return;
+try{
+  const t0 = ac.currentTime + 0.02;
+  const jit = ()=> 1 + (Math.random() * 2 - 1) * 0.07;
+  const master = ac.createGain(); master.gain.value = (rev? 0.5: 1) * vol; master.connect(ac.destination);
+  const stroke = (start, dur, f0, f1, peak)=>{
+    const src = ac.createBufferSource(); src.buffer = sndNoise(ac);
+    src.playbackRate.value = 0.9 + Math.random() * 0.2;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.85;
+    bp.frequency.setValueAtTime(Math.max(300, f0 * jit()), start);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(300, f1 * jit()), start + dur);
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), start + dur * 0.30);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak * 0.55, 0.0002), start + dur * 0.62);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(master);
+    src.start(start, Math.random() * 0.2); src.stop(start + dur + 0.05);
+  };
+  if(rev) stroke(t0, 0.16 * jit(), 4200, 2100, 0.42);
+  else {
+    const dur = 0.27 * jit();
+    stroke(t0, dur, 5400, 2300, 0.50);                    /* the lift: ペラッ */
+    stroke(t0 + dur * 0.72, dur * 0.42, 3400, 1700, 0.20); /* the landing touch */
+  }
+}catch(e){}
+}
+document.addEventListener('pointerdown', ()=>{ if(sndEnabled()) sndCtx(); }, true);
 /* the ‹ › buttons turn the page too; anything that cannot turn
    (switch off, reduced motion, plate not ready) moves instantly */
 function viewerTurn(d){
@@ -17569,7 +17763,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.8';
+const APP_VERSION = '29.9';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -17789,13 +17983,15 @@ function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHT
 
 const LS_ZSETTINGS = 'zukan.settings';
 let ZSET = (function(){
-  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard' };
+  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard', soundOn:true, soundVol:0.6 };
   try{ const z = JSON.parse(storeGet(LS_ZSETTINGS)||'null');
     if(z && typeof z==='object'){
       if(THEMES.some(t=>t.id===z.theme)) d.theme=z.theme;
       if(['small','standard','large','xlarge'].includes(z.fontSize)) d.fontSize=z.fontSize;
       if(FONTFAMS.some(f=>f.id===z.fontFamily)) d.fontFamily=z.fontFamily;
       if(LINEHEIGHTS.some(l=>l.id===z.lineHeight)) d.lineHeight=z.lineHeight;
+      if(typeof z.soundOn==='boolean') d.soundOn=z.soundOn;
+      if(typeof z.soundVol==='number' && isFinite(z.soundVol)) d.soundVol=Math.min(1, Math.max(0, z.soundVol));
     } }catch(e){}
   return d;
 })();
@@ -17822,6 +18018,7 @@ const SICON = {
   palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
+  speaker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.6V5.4L7.5 9.5H4z"/><path d="M15.5 9.2a4 4 0 010 5.6"/><path d="M18 6.8a7.4 7.4 0 010 10.4"/></svg>',
   aaBig: '<span style="font-weight:600; line-height:1"><span style="font-size:14px">A</span><span style="font-size:21px">A</span></span>',
   aa: '<span style="font-size:19px; line-height:1">Aa</span>',
   leading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="9.5" y1="6" x2="21" y2="6"/><line x1="9.5" y1="12" x2="21" y2="12"/><line x1="9.5" y1="18" x2="21" y2="18"/><line x1="4" y1="3.5" x2="4" y2="20.5"/><polyline points="1.9,6.2 4,3.8 6.1,6.2"/><polyline points="1.9,17.8 4,20.2 6.1,17.8"/></svg>'
@@ -17861,6 +18058,7 @@ function renderSettingsMain(){
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
       srow(SICON.aa, 'フォントスタイル', famName(), "openSettingsPanel('font')")+
       srow(SICON.leading, '行間', lhName(), "openSettingsPanel('leading')")+
+      srow(SICON.speaker, 'サウンド', ZSET.soundOn? 'オン': 'オフ', "openSettingsPanel('sound')")+
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
@@ -18031,6 +18229,22 @@ function renderSettingsPanel(){
     p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">作家の説明文・年表・クイズなどの本文に適用されます。</div></div>');
     $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="zseg'+(ZSET.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
   }
+  else if(settingsPanel==='sound'){
+    p.innerHTML = panelShell('サウンド',
+      '<div class="setbox">'+
+      '<div class="setlabel">ページを捲る音</div>'+
+      '<div class="segrow" id="sndseg"></div>'+
+      '<div class="setlabel" style="margin-top:16px">音量　<span id="sndvolval">'+Math.round(sndVolume()*100)+'%</span></div>'+
+      '<input type="range" class="sndvol" id="sndvol" min="0" max="100" step="1" value="'+Math.round(sndVolume()*100)+'">'+
+      '<div class="note">作品ビューワーでページを捲る時に、薄い紙がめくれる音が鳴ります。設定はその場で保存されます。音量を決めると、確認のため一度だけ音が鳴ります。</div>'+
+      '</div>');
+    $('sndseg').innerHTML = [['on','オン'],['off','オフ']].map(o=>'<button class="zseg'+((ZSET.soundOn!==false)===(o[0]==='on')?' on':'')+'" onclick="setSoundOn('+(o[0]==='on')+')">'+o[1]+'</button>').join('');
+    const sl = $('sndvol');
+    if(sl){
+      sl.addEventListener('input', ()=>{ setSoundVol(sl.value/100, false); });
+      sl.addEventListener('change', ()=>{ setSoundVol(sl.value/100, true); });
+    }
+  }
   else if(settingsPanel==='drive'){
     p.innerHTML = panelShell('Google Drive 同期',
       '<div class="setbox">'+
@@ -18127,6 +18341,15 @@ function renderSettingsPanel(){
     p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="small" id="aboutbox"></div></div>');
     renderAbout();
   }
+}
+function setSoundOn(onOff){
+  ZSET.soundOn = !!onOff; saveZSettings(); renderSettings();
+  if(ZSET.soundOn) playPageTurn(false);
+}
+function setSoundVol(v, preview){
+  ZSET.soundVol = Math.min(1, Math.max(0, +v || 0)); saveZSettings();
+  const el = $('sndvolval'); if(el) el.textContent = Math.round(ZSET.soundVol * 100) + '%';
+  if(preview) playPageTurn(false);
 }
 function setTheme(id){ ZSET.theme = id; saveZSettings(); applyAppearance(); renderSettings(); }
 function setFontSize(id){ ZSET.fontSize = id; saveZSettings(); applyAppearance(); renderSettings(); }
