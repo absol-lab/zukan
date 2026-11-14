@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.4">
+<meta name="app-version" content="27.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -537,6 +537,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    same gold pill as an unseen count. */
 .newtag.inl{position:static; flex:none; align-self:center;}
 .belldot{display:inline-block; min-width:17px; height:17px; padding:0 4px; margin-left:6px; border-radius:999px; background:#e6b93d; color:#191204; font-size:10.5px; font-weight:800; line-height:17px; text-align:center; box-sizing:border-box; vertical-align:2px;}
+/* v27.5: inside the history list the accordion is INSTANT —
+   no transition runs in the toggle path at all (the toggle is
+   surgical DOM work; a repaint race on device once drew the
+   notes over the rows below for a few frames). */
+#updatelist .nexp{transition:none;}
 .uphead{display:flex; align-items:baseline; gap:9px;}
 .upv{font-size:15px; font-weight:800;}
 .upv.now{color:var(--tag);}
@@ -9105,6 +9110,14 @@ if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textCo
 else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
 else updateHeader();
 if(v==='list') renderList();
+/* v27.5: an animated return to the list freezes the toolbar's
+   fold for the duration — updateToolbarSlim re-applies the slim
+   class the list was left with, and its .26s grid-rows
+   transition otherwise animates the list's head mid-slide and
+   shifts everything under it (one of the return ガクン's
+   ingredients). vtSlide's finish removes the class. */
+const listReturnAnim = wantAnim && v==='list' && prev && prev!=='list' && dir<0;
+if(listReturnAnim){ const tb = $('toolbar'); if(tb) tb.classList.add('tbnoanim'); }
 updateToolbarSlim();
 if(v==='ex') renderEx();
 if(v==='museum') renderMuseum();
@@ -9119,23 +9132,56 @@ if(v==='bizp') renderBizPrice();
 if(v==='settings'){ renderSettings(); }
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(wantAnim && oldEl && newEl && oldEl!==newEl){
-if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
-vtSlide(oldEl, newEl, dir);
+/* v27.5: vtSlide reports whether it consumed the list's scroll
+   restore itself (the back-to-list reveal restores BEFORE the
+   first frame, hidden under the outgoing view); only an
+   unconsumed restore keeps the old deferred path. */
+const vtConsumed = vtSlide(oldEl, newEl, dir, restoreListY);
+if(restoreListY && !vtConsumed) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
 } else {
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
+const tb0 = $('toolbar'); if(tb0) tb0.classList.remove('tbnoanim');
 if(restoreListY) restoreListScroll(restoreListY); else window.scrollTo(0,0);
 ensurePillAnchor();
 }
 }
-function vtSlide(oldEl, newEl, dir){
+function vtSlide(oldEl, newEl, dir, restoreY){
 vtBusy = true;
 const hdr = document.querySelector('header.top');
 const H = hdr? hdr.offsetHeight: 0;
 const y = window.scrollY || 0;
 newEl.classList.remove('hidden');
+/* v27.5: BACK-TO-LIST IS A REVEAL, not a two-layer slide (his
+   2026-11-14 recording: 作家から一覧に戻る時にガクン — the list
+   and the detail painted over each other, card names doubled,
+   then the whole list jumped). Root causes, all in the old back
+   branch: (1) the incoming list stayed IN FLOW under a WAAPI
+   transform — the one arrangement this app's history says
+   iOS double-paints (the forward branch pins both views; the
+   back branch pinned only the outgoing one); (2) the saved
+   scroll position was restored only AFTER the slide
+   (vtAfterFinish → restoreListScroll), so the list slid in at
+   its top and then teleported, with further re-assert scrolls
+   at +160/+420ms; (3) the toolbar's fold transition ran
+   mid-slide (frozen now — see showView's tbnoanim). The reveal
+   removes all three structurally: the outgoing detail is
+   pinned as a frozen, opaque, non-interactive snapshot; while
+   it covers the screen the already fully-rendered list is
+   scrolled to its saved position — invisible, pre-first-frame;
+   then ONLY the snapshot slides away. The list itself never
+   transforms, never re-renders and never moves again. Returns
+   true when the restore was consumed here. */
+const reveal = dir<0 && restoreY!=null && newEl === $(VIEW_EL.list);
+let aIn = null, aOut = null;
+if(reveal){
+oldEl.classList.add('vt-fixed');
+oldEl.style.top = (H - y)+'px';
+oldEl.style.height = '100dvh';
+window.scrollTo(0, restoreY);
 document.body.classList.add('vt-run');
-let aIn, aOut;
-if(dir > 0){
+aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(102%)' }], { duration:310, easing:VT_EASE, fill:'both' });
+} else if(dir > 0){
+document.body.classList.add('vt-run');
 /* v2.18: the outgoing view is ALSO pinned at its scrolled offset (the
    back branch already did this). It used to stay in flow while the code
    scrolled to 0, so a deep-scrolled list visibly teleported to its top
@@ -9151,6 +9197,7 @@ aIn = newEl.animate([{ transform:'translateX(102%)' },{ transform:'translateX(0%
 aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(-26%)' }], { duration:330, easing:VT_EASE, fill:'both' });
 window.scrollTo(0,0);
 } else {
+document.body.classList.add('vt-run');
 oldEl.classList.add('vt-fixed');
 oldEl.style.top = (H - y)+'px';
 oldEl.style.height = '100dvh';
@@ -9161,18 +9208,20 @@ aOut = oldEl.animate([{ transform:'translateX(0%)' },{ transform:'translateX(102
 let done = false;
 const finish = ()=>{
 if(done) return; done = true;
-[aIn, aOut].forEach(a=>{ try{ a.cancel(); }catch(e){} });
+[aIn, aOut].forEach(a=>{ if(a){ try{ a.cancel(); }catch(e){} } });
 [oldEl, newEl].forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; el.style.zIndex=''; });
 document.querySelectorAll('main.vt-fixed').forEach(el=>{ el.classList.remove('vt-fixed'); el.style.top=''; el.style.height=''; el.style.transform=''; el.style.zIndex=''; });
 oldEl.classList.add('hidden');
 document.body.classList.remove('vt-run');
+const tb = $('toolbar'); if(tb) tb.classList.remove('tbnoanim');
 vtBusy = false; vtFinish = null;
 if(vtAfterFinish){ const f = vtAfterFinish; vtAfterFinish = null; f(); }
 ensurePillAnchor();
 };
 vtFinish = finish;
-Promise.all([aIn.finished.catch(()=>{}), aOut.finished.catch(()=>{})]).then(finish);
+Promise.all([aIn, aOut].filter(Boolean).map(a=>a.finished.catch(()=>{}))).then(finish);
 setTimeout(finish, 480);
+return reveal;
 }
 /* v2.23: content-level segment switches (mode / ex sort /
    timeline / quiz region) re-render in place; the new content drifts in
@@ -12335,7 +12384,10 @@ async function fetchChangelog(){
     if(!changelogData) changelogData = changelogCacheLoad();
   }
   changelogFetching = false;
-  if(settingsPanel === 'reqnotif' && bellTab === 'history') renderUpdateList();
+  /* v27.5: the tab pill counts THIS data — refresh it whenever
+     a fetch lands while the panel is open (on a cold cache the
+     shell rendered the pill before any data existed). */
+  if(settingsPanel === 'reqnotif'){ changelogRefreshTabPill(); if(bellTab === 'history') renderUpdateList(); }
 }
 function notifWhen(iso){
   const dt = iso? new Date(iso): null;
@@ -12496,20 +12548,28 @@ function syncVFavBtn(){
 }
 /* v27.4: the history list is COMPACT — version + date (+ NEW)
    per row; the notes live behind a tap (single-open accordion)
-   and never render in the collapsed list. NEW follows the
-   history's own rule (NOT the notifications' per-item one):
-   judged from the device seen set (zukan.changelogSeen, keys
-   = version|at) at render, then the listed entries are marked
-   seen — the history IS the destination, so the first open
-   shows the NEWs and the next open shows none. The visit set
-   keeps the tags on screen across this visit's re-renders
-   (the changelog fetch landing, an accordion toggle, a rating
-   tap). First run: the seen set is seeded with every entry
-   except the newest, so exactly one entry lights up — the
-   new version's own. */
+   and never render in the collapsed list.
+   v27.5 (his ask, 2026-11-14 14:17: 詳細開いたらNEWが
+   消えるようにして): NEW now follows the NOTIFICATIONS' per-item
+   rule — opening the history view marks NOTHING seen; an
+   entry's NEW clears only when he expands THAT entry
+   (expanding is the read act), and collapsing never brings
+   it back. The 更新履歴 tab pill counts the still-unseen, so
+   it falls one entry at a time. The store (zukan.changelogSeen,
+   keys = version|at) and the v27.4 first-run seeding (every
+   entry but the newest joins the set) are unchanged — only
+   the marking trigger moved.
+   The toggle itself is surgical DOM work: only the rows that
+   change gain or lose their notes node, the list is never
+   rebuilt for a toggle, and NO transition runs in this path
+   (.nexp is transition:none inside #updatelist) — on his
+   iPhone the notes once painted over the rows below for a
+   few frames mid-"animation"; with no animation and no
+   rebuild there is nothing left to race. Full renders still
+   happen when the panel/tab opens, when the changelog fetch
+   lands, and on a rating tap. */
 const LS_CHANGELOG_SEEN = 'zukan.changelogSeen';
 let changelogOpen = {};
-let changelogVisitNew = {};
 function changelogEntryKey(e){ return String(e.v||'') + '|' + String(e.at||''); }
 function changelogSeenLoad(entries){
   try{ const d = JSON.parse(storeGet(LS_CHANGELOG_SEEN)||'null'); if(Array.isArray(d)) return d; }catch(e){}
@@ -12532,11 +12592,61 @@ function changelogTabBadge(){
   const n = changelogUnseenCount();
   return n? '<span class="belldot">'+n+'</span>': '';
 }
+function changelogMarkSeen(k){
+  const d = changelogData || changelogCacheLoad();
+  const seen = changelogSeenLoad(d? d.entries: null);
+  if(seen.indexOf(k) >= 0) return;
+  seen.push(k);
+  try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seen)); }catch(e){}
+}
+function changelogRefreshTabPill(){
+  const btns = document.querySelectorAll('#settingspanel .seg button');
+  for(const b of btns){
+    if(b.getAttribute('onclick') === "setBellTab('history')"){ b.innerHTML = '更新履歴' + changelogTabBadge(); return; }
+  }
+}
+function changelogNotesEl(e){
+  const ul = document.createElement('ul');
+  ul.className = 'upnotes';
+  (e.notes || []).forEach(n=>{ const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+  return ul;
+}
 function toggleChangelogDetail(k){
   const was = !!changelogOpen[k];
+  const prevOpen = Object.keys(changelogOpen).filter(x=>changelogOpen[x]);
   changelogOpen = {};
   if(!was) changelogOpen[k] = true;
-  renderUpdateList();
+  const el = $('updatelist');
+  const rowOf = key => {
+    if(!el) return null;
+    const rows = el.querySelectorAll('.uprow');
+    for(const r of rows){ if(r.getAttribute('data-ck') === key) return r; }
+    return null;
+  };
+  let surgical = !!el;
+  /* close whatever was open — only those rows lose their notes */
+  prevOpen.forEach(key=>{
+    const r = rowOf(key); if(!r){ surgical = false; return; }
+    const ul = r.querySelector('.upnotes'); if(ul) ul.remove();
+    const nx = r.querySelector('.nexp'); if(nx) nx.classList.remove('open');
+  });
+  if(!was){
+    /* expanding IS the read act (v27.5): this one entry is seen
+       from now on — its NEW goes, the tab pill steps down. */
+    changelogMarkSeen(k);
+    const r = rowOf(k);
+    if(r){
+      const d = changelogData || changelogCacheLoad();
+      const e = d? d.entries.find(x=>changelogEntryKey(x) === k): null;
+      if(e) r.appendChild(changelogNotesEl(e)); else surgical = false;
+      const nx = r.querySelector('.nexp'); if(nx) nx.classList.add('open');
+      const nt = r.querySelector('.newtag'); if(nt) nt.remove();
+    } else surgical = false;
+    changelogRefreshTabPill();
+  }
+  /* any drift between the surgical result and the state of
+     record falls back to one full render (panel-open path) */
+  if(!surgical) renderUpdateList();
 }
 function renderUpdateList(){
   const el = $('updatelist'); if(!el) return;
@@ -12546,32 +12656,22 @@ function renderUpdateList(){
      alone let a mis-stamped entry sit out of order (v26.0/v26.1);
      the sort is stable, so equal stamps keep the file order. */
   const entries = [...d.entries].sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0));
-  /* v27.4: NEW is computed from the seen set FIRST (the badges
-     render for this visit), then the listed entries join the
-     seen set for the next one. Late arrivals within the visit
-     (the fetch landing mid-view) take the same path once. */
-  const seen = changelogSeenLoad(entries);
-  const seenSet = new Set(seen);
-  let dirty = false;
-  entries.forEach(e=>{
-    const k = changelogEntryKey(e);
-    if(!seenSet.has(k)){ changelogVisitNew[k] = 1; seenSet.add(k); seen.push(k); dirty = true; }
-  });
-  if(dirty){ try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seen)); }catch(e){} }
+  /* v27.5: NEW is judged live from the seen set — rendering
+     marks NOTHING. An entry joins the set only when it is
+     expanded (toggleChangelogDetail), so the tab pill the
+     shell rendered from the same store stays truthful. */
+  const seenSet = new Set(changelogSeenLoad(entries));
   el.innerHTML = entries.map(e => {
     const k = changelogEntryKey(e);
     const open = !!changelogOpen[k];
     const rt = ratingOf(e.v);
-    return '<div class="uprow tap" onclick="toggleChangelogDetail(\''+escA(k)+'\')"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
-      + (changelogVisitNew[k]? '<span class="newtag inl">NEW</span>': '')
+    return '<div class="uprow tap" data-ck="'+escA(k)+'" onclick="toggleChangelogDetail(\''+escA(k)+'\')"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
+      + (seenSet.has(k)? '': '<span class="newtag inl">NEW</span>')
       + '<span class="ratebtns" onclick="event.stopPropagation()"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span>'
       + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
       + (open? '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul>': '')
       + '</div>';
   }).join('');
-  /* the listed history has now been seen — a tab dot the shell
-     rendered before this list (from the pre-visit store) goes. */
-  const bd = document.querySelector('#settingspanel .belldot'); if(bd) bd.remove();
 }
 /* v2.81: a completed registration is announced under the name it
    was actually registered as — his request text is often a vague
@@ -12809,10 +12909,10 @@ function toggleNotifDetail(key){
 /* v16.1: the bell panel also carries the update history
    (his ask — the history no longer lives in the settings list). */
 let bellTab = 'notifs';
-function setBellTab(t){ bellTab = t; changelogVisitNew = {}; renderSettingsPanel(); }
+function setBellTab(t){ bellTab = t; renderSettingsPanel(); }
 function openRequestNotifs(){
   notifOpen = {};
-  changelogVisitNew = {}; changelogOpen = {};
+  changelogOpen = {};
   bellTab = 'notifs';
   reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
@@ -15094,7 +15194,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.4';
+const APP_VERSION = '27.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
