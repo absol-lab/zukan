@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="28.1">
+<meta name="app-version" content="28.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -707,6 +707,7 @@ mark.hl{background:#e6b93d; color:#191204; border-radius:2px; padding:0 1px;}
 .gsecrow{display:flex; gap:6px; overflow-x:auto; padding:8px 0 2px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
 .gsecrow::-webkit-scrollbar{display:none;}
 .gsec{flex:0 0 auto; background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12px; cursor:pointer;}
+.gsec.on{color:var(--text); font-weight:600; background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 10px rgba(0,0,0,.25);}
 .gcal{margin:6px 0 14px; border:1px solid var(--line); border-radius:14px; padding:10px 10px 12px; background:var(--card);}
 .gcalmonths{display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;}
 .gcalmonths::-webkit-scrollbar{display:none;}
@@ -10022,6 +10023,7 @@ let guideData = null, guideError = false, guideView = 'howto', guideMajorId = nu
    landing mechanism, positioned up front, no timers, no second
    path that could land differently. */
 let guideStack = [], guideScrollRestore = null;
+let guideSecSel = {};   /* v28.2: chapterId -> selected section-group index (true section tabs) */
 let guideCalMonth = null, guideCalSel = null;
 /* v25.0 (his restructuring): five majors over the same 10 chapters.
    Chapters are cross-listed by reference — ch1 is both プロセスの下地づくり
@@ -10084,7 +10086,7 @@ function guideCasesHTML(cases){
 }
 function guideSnapshot(){
   const b = $('gpbody');
-  return { view: guideView, majorId: guideMajorId, chapterId: guideChapterId, termName: guideTermName, dictQ: guideDictQ, scroll: b? b.scrollTop: 0 };
+  return { view: guideView, majorId: guideMajorId, chapterId: guideChapterId, termName: guideTermName, dictQ: guideDictQ, scroll: b? b.scrollTop: 0, secIdx: (guideChapterId != null && guideSecSel[guideChapterId] != null)? guideSecSel[guideChapterId]: null };
 }
 function guideJumpTerm(term){
   guideStack.push(guideSnapshot());
@@ -10102,24 +10104,65 @@ function guideGoBack(){
   if(!s){ if(guideView === 'term'){ guideView = 'dict'; renderGuide(); } return; }
   guideView = s.view; guideMajorId = s.majorId; guideChapterId = s.chapterId;
   guideTermName = s.termName; guideDictQ = s.dictQ || '';
+  if(s.secIdx != null && guideChapterId != null) guideSecSel[guideChapterId] = s.secIdx;
   guideScrollRestore = s.scroll || 0;
   renderGuide();
 }
-function guideJumpSection(i){
-  const body = $('gpbody'), el = document.getElementById('gsec' + i);
-  if(!body || !el) return;
-  body.scrollTop += el.getBoundingClientRect().top - body.getBoundingClientRect().top - 6;
+/* v28.2: section tabs are TRUE tabs (his 2026-11-14 19:15 video:
+   tapping a tab rebuilt the whole guide screen, jumped back to
+   the top, and a low section — 換算の構造 — dropped him deep
+   inside one long page). A chapter's sections are grouped: a
+   headed section starts a group, unheaded sections join the
+   group above them, and unheaded sections before the first
+   heading stay with the lead. With 3+ headed groups only the
+   selected group is in the DOM, inside #gsecbody; switching
+   swaps that one region's innerHTML in a single synchronous
+   assignment — no renderGuide, the outer scroll is never
+   touched, and the old body stays painted until the swap, so
+   a doubled frame (calendar + text overlap) cannot occur. */
+function guideSecGroups(c){
+  const secs = (c && Array.isArray(c.sections))? c.sections: [];
+  const groups = [];
+  secs.forEach((sec, i)=>{
+    if(sec.h || !groups.length) groups.push({ head: sec.h? i: null, items: [i] });
+    else groups[groups.length - 1].items.push(i);
+  });
+  return groups;
+}
+function guideSecSelIdx(c){
+  const groups = guideSecGroups(c);
+  const headed = groups.map((g, gi)=> g.head != null? gi: -1).filter(gi=> gi >= 0);
+  if(!headed.length) return -1;
+  const sel = guideSecSel[c.id];
+  return headed.indexOf(sel) >= 0? sel: headed[0];
+}
+function guideSecGroupHTML(c, gi){
+  const secs = (c && Array.isArray(c.sections))? c.sections: [];
+  const g = guideSecGroups(c)[gi]; if(!g) return '';
+  return g.items.map(i=> (secs[i].h? '<h3 class="subhead" id="gsec' + i + '">' + esc(secs[i].h) + '</h3>': '') + guideParasHTML(secs[i].paras) + guideCasesHTML(secs[i].cases)).join('');
+}
+function guideSetSection(gi){
+  const c = guideChapterById(guideChapterId); if(!c) return;
+  guideSecSel[c.id] = gi;
+  const row = document.querySelector('#gpbody .gsecrow');
+  if(row) row.querySelectorAll('.gsec').forEach(b=> b.classList.toggle('on', +b.dataset.gsec === gi));
+  const host = $('gsecbody');
+  if(host) host.innerHTML = guideSecGroupHTML(c, gi);
 }
 function guideJumpRoadmap(ref){
   const m = String(ref || '').match(/フェーズ\s*([0-9０-９]+)/);
   if(!m) return;
   const token = 'フェーズ' + m[1];
   guideChapterId = 'exam-ch2';
-  renderGuide();
   const c = guideChapterById('exam-ch2');
   const secs = (c && Array.isArray(c.sections))? c.sections: [];
   const ix = secs.findIndex(s=> (s.h || '').includes(token));
-  if(ix >= 0) guideJumpSection(ix);
+  if(ix >= 0){
+    const groups = guideSecGroups(c);
+    const gi = groups.findIndex(g=> g.items.indexOf(ix) >= 0);
+    if(gi >= 0) guideSecSel['exam-ch2'] = gi;
+  }
+  renderGuide();
 }
 /* ---- exam calendar (v28.0) ---- */
 function guideCalData(){ return (guideData && guideData.examCalendar)? guideData.examCalendar: null; }
@@ -10131,16 +10174,26 @@ function guideCalMonths(){
   while(y < ey || (y === ey && mo <= em)){ out.push(y + '-' + String(mo).padStart(2, '0')); mo++; if(mo > 12){ mo = 1; y++; } }
   return out;
 }
-function guideCalSetMonth(ym){ guideCalMonth = ym; renderGuide(); }
+/* v28.2: calendar-internal taps swap ONLY the calendar region
+   (#gcalwrap) in one synchronous assignment — the pills, the
+   chapter below and the outer scroll position are untouched,
+   so a month switch can no longer rebuild the whole guide
+   screen or flash a doubled calendar over the chapter text. */
+function guideCalRefresh(){
+  const w = $('gcalwrap');
+  if(w && guideView === 'major' && guideMajorId === 'exam'){ w.innerHTML = guideCalHTML(); return; }
+  renderGuide();
+}
+function guideCalSetMonth(ym){ guideCalMonth = ym; guideCalRefresh(); }
 function guideCalTapDay(ds){
   guideCalSel = { kind: 'date', id: ds };
-  renderGuide();
+  guideCalRefresh();
   const d = $('gcaldetail'); const b = $('gpbody');
   if(d && b) b.scrollTop += d.getBoundingClientRect().top - b.getBoundingClientRect().top - 40;
 }
 function guideCalTapPhase(id){
   guideCalSel = { kind: 'phase', id: id };
-  renderGuide();
+  guideCalRefresh();
   const d = $('gcaldetail'); const b = $('gpbody');
   if(d && b) b.scrollTop += d.getBoundingClientRect().top - b.getBoundingClientRect().top - 40;
 }
@@ -10270,7 +10323,7 @@ function renderGuide(){
   }
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
-    if(m.id === 'exam') h += guideCalHTML();
+    if(m.id === 'exam') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
     h += '<div class="gsubpills">' + m.subs.map(s=> '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + '</button>').join('') + '</div>';
     const c = guideChapterById(guideChapterId);
     if(!c) h += '<div class="empty">章が見つかりません</div>';
@@ -10278,14 +10331,22 @@ function renderGuide(){
       h += '<h2 class="biztitle">' + esc(c.title || '') + '</h2>';
       if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
       const secs = Array.isArray(c.sections)? c.sections: [];
-      /* v28.0: section-switch tabs — a chapter with several
-         headed sections gets a tab row that jumps straight to
-         the section inside the panel's own scroll box. */
-      const headed = secs.map((sec, i)=> sec.h? i: -1).filter(i=> i >= 0);
+      /* v28.2: true section tabs — with 3+ headed groups only
+         the selected group renders (inside #gsecbody) and the
+         tab row swaps it in place (guideSetSection). Chapters
+         below that bar keep the plain all-sections layout. Any
+         unheaded lead-in group stays with the lead, above the
+         tab row, exactly where it sat in the old layout. */
+      const groups = guideSecGroups(c);
+      const headed = groups.map((g, gi)=> g.head != null? gi: -1).filter(gi=> gi >= 0);
       if(headed.length >= 3){
-        h += '<div class="gsecrow">' + headed.map(i=> '<button class="gsec" onclick="guideJumpSection(' + i + ')">' + esc(String(secs[i].h).split('——')[0].slice(0, 14)) + '</button>').join('') + '</div>';
+        if(groups[0] && groups[0].head == null) h += guideSecGroupHTML(c, 0);
+        const sel = guideSecSelIdx(c);
+        h += '<div class="gsecrow">' + headed.map(gi=> '<button class="gsec' + (gi === sel? ' on': '') + '" data-gsec="' + gi + '" onclick="guideSetSection(' + gi + ')">' + esc(String(secs[groups[gi].head].h).split('——')[0].slice(0, 14)) + '</button>').join('') + '</div>';
+        h += '<div id="gsecbody">' + guideSecGroupHTML(c, sel) + '</div>';
+      } else {
+        h += groups.map((g, gi)=> guideSecGroupHTML(c, gi)).join('');
       }
-      h += secs.map((sec, i)=> (sec.h? '<h3 class="subhead" id="gsec' + i + '">' + esc(sec.h) + '</h3>': '') + guideParasHTML(sec.paras) + guideCasesHTML(sec.cases)).join('');
     }
   }
   else if(guideView === 'dict'){
@@ -16748,7 +16809,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '28.1';
+const APP_VERSION = '28.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
