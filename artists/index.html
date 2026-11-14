@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="23.3">
+<meta name="app-version" content="24.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -555,7 +555,18 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .pricerow .pnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .pbuyer{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
 .pbuyer b{color:var(--text); font-weight:600;}
-.bizwrap{padding:6px 2px 90px}
+.bizwrap{padding:6px 2px calc(104px + env(safe-area-inset-bottom, 0px))}
+#guidepanel{position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.55);}
+.gpcard{background:var(--bg); width:100%; max-width:720px; height:100dvh; margin:0 auto; display:flex; flex-direction:column;}
+.gphead{flex:none; display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top, 0px) + 12px) 16px 6px;}
+.gptitle{font-size:17px; font-weight:700; letter-spacing:.04em;}
+.gpclose{margin-left:auto; flex:none; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:7px 14px; font-size:13px; min-height:36px;}
+.gppills{flex:none; display:flex; gap:5px; overflow-x:auto; padding:4px 12px 10px; scrollbar-width:none;}
+.gppills::-webkit-scrollbar{display:none;}
+.gppills button{flex:none; height:40px; padding:0 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
+.gppills button.on{color:var(--text); font-weight:600; border-color:color-mix(in srgb, var(--text) 30%, transparent); background:var(--card2);}
+.gpbody{flex:1; overflow-y:auto; padding:2px 16px calc(28px + env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling:touch;}
+.gpbody .bizchrow{width:100%;}
 .bpchart{border:1px solid var(--line); border-radius:12px; padding:8px 6px 2px; background:var(--card); margin:0 0 8px}
 .bpdetail{display:flex; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card2); margin-top:10px}
 .bplink{background:none; border:none; padding:2px 0; color:#d9a441; font-size:13.5px; font-weight:700; cursor:pointer; text-align:left}
@@ -862,9 +873,9 @@ button.blockbtn:disabled{opacity:.4;}
    jobs — the main pill nav steps aside and the chapter pills live in
    the same floating bar, so the thumb reaches them like any tab. */
 #bizpillbar{position:fixed; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
-#bizpillbar .bizpillscroll{display:flex; gap:6px; overflow-x:auto; height:100%; align-items:center; padding:0 2px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+#bizpillbar .bizpillscroll{display:flex; gap:5px; overflow-x:auto; height:100%; align-items:center; padding:0 2px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 #bizpillbar .bizpillscroll::-webkit-scrollbar{display:none;}
-#bizpillbar button{flex:none; height:44px; padding:0 15px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:13px; font-weight:500; font-family:inherit; white-space:nowrap;}
+#bizpillbar button{flex:none; height:40px; padding:0 10px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
 #bizpillbar button.on{color:var(--text); font-weight:600; background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 10px rgba(0,0,0,.25);}
 /* press feedback (diary v1.16 style): subtle brightness shift only while pressed, no layout shift */
 button:active:not(:disabled){filter:brightness(1.07);}
@@ -1012,6 +1023,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
+<div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gppills" id="gppills"></div><div class="gpbody" id="gpbody"></div></div></div>
 
 <main id="viewSettings" class="hidden">
   <div id="settingsmain"></div>
@@ -8905,13 +8917,12 @@ const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 
    was too cramped, user's call); it stays visible on both datasets
    and opens via openTimeline(), crossing datasets like the pill did. */
 $('navTimeline').classList.toggle('on', v==='timeline');
-$('navBiz').classList.toggle('on', (v==='biz' || v==='bizch' || v==='bizp') && bizBook==='biz');
-$('navGuide').classList.toggle('on', (v==='biz' || v==='bizch' || v==='bizp') && bizBook==='guide');
+$('navBiz').classList.toggle('on', v==='biz' || v==='bizch' || v==='bizp');
 updatePill();
 syncBizBar(v);
 /* v2.48: entering その他 renames the header; leaving restores it */
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
-else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = bizBookLabel(); $('topcount').textContent = ''; }
+else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
 const nsv = $('navSym'); if(nsv) nsv.style.display = (v === 'list')? '' : 'none';
 else updateHeader();
 if(v==='list') renderList();
@@ -9205,27 +9216,79 @@ function refreshGuideBtn(){ const b = $('navGuide'); if(b) b.innerHTML = GUIDE_I
 const TL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><circle cx="7.5" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="12.3" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="17.1" cy="12" r="1.9" fill="currentColor" stroke="none"/></svg>';
 function refreshTlBtn(){ const b = $('navTimeline'); if(b) b.innerHTML = TL_ICON; }
 let bizData = null, bizError = false, bizChapterId = null;
-/* v23.0: the reading section holds TWO books. bizData always
-   points at the ACTIVE book's data so every biz renderer works
-   unchanged; bookCache keeps each book's fetched JSON. */
-const BIZ_BOOKS = { biz: { file: 'artbusiness.json', label: 'アートビジネス' }, guide: { file: 'production.json', label: '制作ガイド' } };
-const bookCache = { biz: null, guide: null };
-const bookError = { biz: false, guide: false };
-let bizBook = 'biz';
-function bizBookLabel(){ return BIZ_BOOKS[bizBook].label; }
-function setBizBook(b){
-  if(!BIZ_BOOKS[b]) return;
-  bizBook = b;
-  bizData = bookCache[b] || null;
-  bizError = !!bookError[b];
-  bizChapterId = null;
-  showView('biz');
-  bizEnsure();
-  renderBiz();
-  renderBizPillBar();
+function openBiz(){ showView('biz'); bizEnsure(); }
+/* v24.0: the Production Guide was rebuilt per his call — it no
+   longer lives in the view system at all. It is a self-contained
+   overlay panel (its own scroll box, content swapped in place)
+   opened from the header brush icon on ANY screen, so the view
+   slide transitions can never overlap two chapters in it. The
+   Art Business book keeps the view-based reader. */
+let guideData = null, guideError = false, guideMode = 'index', guideChapterId = null, guideTermName = null;
+function guideEnsure(){
+  if(guideData || guideError) return;
+  fetch('production.json', { cache: 'no-cache' }).then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+  .then(d=>{ guideData = d; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); })
+  .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
-function openBiz(){ setBizBook('biz'); }
-function openGuide(){ setBizBook('guide'); }
+function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
+function openGuide(){ guideMode = 'index'; guideChapterId = null; $('guidepanel').classList.remove('hidden'); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
+function closeGuide(){ $('guidepanel').classList.add('hidden'); const b = $('navGuide'); if(b) b.classList.remove('on'); }
+function guideChapters(){ return (guideData && Array.isArray(guideData.chapters))? guideData.chapters: []; }
+function guideGlossary(){ return (guideData && Array.isArray(guideData.glossary))? guideData.glossary: []; }
+function openGuideChapter(id){ guideMode = 'chapter'; guideChapterId = id; renderGuide(); }
+function openGuideIndex(){ guideMode = 'index'; renderGuide(); }
+function openGuideGlossary(){ guideMode = 'glossary'; renderGuide(); }
+function openGuideTerm(t){ guideMode = 'term'; guideTermName = t; renderGuide(); }
+function renderGuide(){
+  const pills = $('gppills'), body = $('gpbody'); if(!pills || !body) return;
+  let ph = '<button class="' + (guideMode === 'index'? 'on': '') + '" onclick="openGuideIndex()">目次</button>';
+  ph += guideChapters().map(c=> '<button class="' + (guideMode === 'chapter' && guideChapterId === c.id? 'on': '') + '" onclick="openGuideChapter(\'' + escA(c.id) + '\')">' + esc(c.pill || c.title || '') + '</button>').join('');
+  if(guideGlossary().length) ph += '<button class="' + (guideMode === 'glossary' || guideMode === 'term'? 'on': '') + '" onclick="openGuideGlossary()">用語辞典</button>';
+  pills.innerHTML = ph;
+  let h = '';
+  if(!guideData && !guideError) h = '<div class="empty">読み込み中…</div>';
+  else if(guideError && !guideData) h = '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="guideRetry()">再試行</button></div>';
+  else if(guideMode === 'index'){
+    if(guideData.intro) h += '<p class="bodytext">' + esc(guideData.intro) + '</p>';
+    h += guideChapters().map((c, i)=> '<button class="bizchrow" onclick="openGuideChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span></span><span class="bizchgo">›</span></button>').join('');
+    if(guideGlossary().length) h += '<button class="bizchrow" onclick="openGuideGlossary()"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span></span><span class="bizchgo">›</span></button>';
+  }
+  else if(guideMode === 'chapter'){
+    const chs = guideChapters(); const ix = chs.findIndex(c=> c.id === guideChapterId); const c = chs[ix];
+    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 目次へ戻る</button>';
+    if(!c) h += '<div class="empty">章が見つかりません</div>';
+    else {
+      h += '<h2 class="biztitle">' + (ix + 1) + '. ' + esc(c.title || '') + '</h2>';
+      if(c.lead) h += '<p class="bodytext">' + esc(c.lead) + '</p>';
+      const secs = Array.isArray(c.sections)? c.sections: [];
+      h += secs.map(sec=> (sec.h? '<h3 class="subhead">' + esc(sec.h) + '</h3>': '') + bizParasHTML(sec.paras) + bizCasesHTML(sec.cases)).join('');
+      h += '<div class="biznav">';
+      if(ix > 0) h += '<button class="biznavbtn" onclick="openGuideChapter(\'' + escA(chs[ix - 1].id) + '\')">‹ 前の章</button>';
+      if(ix < chs.length - 1) h += '<button class="biznavbtn" onclick="openGuideChapter(\'' + escA(chs[ix + 1].id) + '\')">次の章 ›</button>';
+      else if(guideGlossary().length) h += '<button class="biznavbtn" onclick="openGuideGlossary()">用語辞典 ›</button>';
+      h += '</div>';
+    }
+  }
+  else if(guideMode === 'glossary'){
+    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 目次へ戻る</button><h2 class="biztitle">用語辞典</h2>';
+    const g = guideGlossary();
+    h += g.length? g.map(e=> '<div class="glossrow" onclick="openGuideTerm(\'' + escA(e.term) + '\')"><div class="glossterm">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</div><div class="bodytext">' + esc(e.short || e.def || '') + '</div></div>').join('') : '<div class="empty">用語は準備中です</div>';
+  }
+  else if(guideMode === 'term'){
+    const e = guideGlossary().find(g=> g.term === guideTermName);
+    h += '<button class="backbtn" onclick="openGuideGlossary()">‹ 用語辞典へ戻る</button>';
+    if(!e) h += '<div class="empty">用語が見つかりません</div>';
+    else {
+      h += '<h2 class="biztitle">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</h2>';
+      if(e.short) h += '<p class="bodytext"><b>' + esc(e.short) + '</b></p>';
+      if(e.def) h += '<p class="bodytext">' + esc(e.def) + '</p>';
+    }
+  }
+  body.innerHTML = h;
+  body.scrollTop = 0;
+  const on = pills.querySelector('button.on');
+  if(on) pills.scrollLeft = Math.max(0, on.offsetLeft - 40);
+}
 
 /* v21.1: the whole-market scatter was withdrawn at his word
    («全体グラフは一旦消していいよ») — the page is the ranking
@@ -9366,14 +9429,12 @@ function renderBizPrice(){
 }
 
 function bizEnsure(){
-  if(bookCache[bizBook]){ bizData = bookCache[bizBook]; return; }
-  if(bookError[bizBook]){ bizError = true; return; }
-  const bk = bizBook;
-  fetch(BIZ_BOOKS[bk].file, { cache: 'no-cache' }).then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
-  .then(d=>{ bookCache[bk] = d; if(bizBook !== bk) return; bizData = d; bizError = false; if(view==='biz') renderBiz(); if(view==='bizch') renderBizCh(); if(view==='bizp') renderBizPrice(); if(view==='biz' || view==='bizch' || view==='bizp') renderBizPillBar(); })
-  .catch(()=>{ bookError[bk] = true; if(bizBook !== bk) return; bizError = true; if(view==='biz') renderBiz(); });
+  if(bizData || bizError) return;
+  fetch('artbusiness.json', { cache: 'no-cache' }).then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+  .then(d=>{ bizData = d; if(view==='biz') renderBiz(); if(view==='bizch') renderBizCh(); if(view==='bizp') renderBizPrice(); if(view==='biz' || view==='bizch' || view==='bizp') renderBizPillBar(); })
+  .catch(()=>{ bizError = true; if(view==='biz') renderBiz(); });
 }
-function bizRetry(){ bookError[bizBook] = false; bizError = false; bizEnsure(); if(view==='biz') renderBiz(); }
+function bizRetry(){ bizError = false; bizEnsure(); if(view==='biz') renderBiz(); }
 function bizChapters(){ return (bizData && Array.isArray(bizData.chapters))? bizData.chapters: []; }
 function bizGlossary(){ return (bizData && Array.isArray(bizData.glossary))? bizData.glossary: []; }
 function bizTermHTML(t){
@@ -9397,7 +9458,7 @@ function renderBizPillBar(){
   const sc = bar.querySelector('.bizpillscroll'); if(!sc) return;
   if(!bizData){ sc.innerHTML = ''; return; }
   const active = view === 'bizp'? 'price': (view === 'bizch'? bizChapterId: '');
-  let h = (bizBook === 'biz')? '<button data-bizpill="price" class="' + (active === 'price'? 'on': '') + '" onclick="openBizPrice()">早見表</button>' : '';
+  let h = '<button data-bizpill="price" class="' + (active === 'price'? 'on': '') + '" onclick="openBizPrice()">早見表</button>';
   h += bizChapters().map((c, i)=> '<button data-bizpill="' + escA(c.id) + '" class="' + (active === c.id? 'on': '') + '" onclick="openBizChapter(\'' + escA(c.id) + '\')">' + esc(c.pill || ('第' + (i + 1) + '章')) + '</button>').join('');
   if(bizGlossary().length) h += '<button data-bizpill="glossary" class="' + (active === 'glossary'? 'on': '') + '" onclick="openBizChapter(\'glossary\')">用語辞典</button>';
   sc.innerHTML = h;
@@ -9413,12 +9474,12 @@ function syncBizBar(v){
 function renderBiz(){
   const el = $('viewBiz'); if(!el) return;
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>';
-  h += '<h2 class="biztitle">' + esc((bizData && bizData.title) || bizBookLabel()) + '</h2>';
+  h += '<h2 class="biztitle">' + esc((bizData && bizData.title) || 'アートビジネス') + '</h2>';
   if(bizData && bizData.intro) h += '<p class="bodytext">' + esc(bizData.intro) + '</p>';
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
-    if(bizBook === 'biz') h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span></span><span class="bizchgo">›</span></button>';
+    h += '<button class="bizchrow" onclick="openBizPrice()"><span class="bizchno">表</span><span class="bizchmain"><span class="bizchtitle">作品価格早見表</span></span><span class="bizchgo">›</span></button>';
     h += bizChapters().map((c, i)=> '<button class="bizchrow" onclick="openBizChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span></span><span class="bizchgo">›</span></button>').join('');
     if(bizGlossary().length) h += '<button class="bizchrow" onclick="openBizChapter(\'glossary\')"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span></span><span class="bizchgo">›</span></button>';
   }
@@ -9477,7 +9538,7 @@ function updateHeader(){
    path refreshes the header. */
 syncTimelineBtn();
 if(view==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; return; }
-if(view==='biz' || view==='bizch' || view==='bizp'){ $('appname').textContent = bizBookLabel(); $('topcount').textContent = ''; return; }
+if(view==='biz' || view==='bizch' || view==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; return; }
 const nsu = $('navSym'); if(nsu) nsu.style.display = (view === 'list')? '' : 'none';
 $('appname').textContent = CONFIG.appName;
 /* v2.30: the header count is shared chrome too. It used to be written
@@ -14235,8 +14296,7 @@ function teardownSwipe(st, commit){
     if(view!=='settings') CTX[DS].lastView = view;
 
     $('navTimeline').classList.toggle('on', view==='timeline');
-    $('navBiz').classList.toggle('on', (view==='biz' || view==='bizch' || view==='bizp') && bizBook==='biz');
-    $('navGuide').classList.toggle('on', (view==='biz' || view==='bizch' || view==='bizp') && bizBook==='guide');
+    $('navBiz').classList.toggle('on', view==='biz' || view==='bizch' || view==='bizp');
     /* v2.58: this hand-rolled commit used to skip the header update
        entirely, so a swipe back out of その他 landed on the list
        still titled その他. showView's chrome steps apply here too. */
@@ -14326,7 +14386,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '23.3';
+const APP_VERSION = '24.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
