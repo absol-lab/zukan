@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.7">
+<meta name="app-version" content="27.8">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -278,6 +278,9 @@ figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); disp
    at the photo's top-right on the photo-primary surfaces:
    detail works tiles, museum tiles, and the viewer. */
 .hiresbadge{position:absolute; top:6px; right:6px; z-index:2; font-size:10px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:2px 8px; line-height:1.5; pointer-events:none;}
+/* v27.8: a work with an official video embed carries a play badge on
+   its card (bottom-left, clear of the hi-res badge at top-right). */
+.videobadge{position:absolute; left:6px; bottom:6px; z-index:2; font-size:10px; font-weight:700; letter-spacing:.06em; color:#fff; background:rgba(166,38,28,.9); border-radius:999px; padding:2px 8px; line-height:1.5; pointer-events:none;}
 #vhires{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 58px); right:12px; z-index:6; font-size:11px; font-weight:700; letter-spacing:.06em; color:#EBCB6B; background:rgba(16,14,10,.78); border:1px solid rgba(235,203,107,.55); border-radius:999px; padding:3px 10px; line-height:1.5; pointer-events:none;}
 /* v10.4: the badge reaches every work-tile surface. Small
    variant for timeline strips; a gold dot for the 52px
@@ -453,7 +456,25 @@ h3.subhead:first-child{margin-top:8px;}
 #vthumb{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); right:12px; z-index:6; min-height:40px; padding:8px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:.04em;}
 #vthumb.on{background:var(--accent); border-color:var(--accent); color:#fff;}
 #viewer.open{display:flex;}
-#viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none;}
+#viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none; perspective:1300px;}
+/* v27.8: page turn — the current work sits on .vpage (hinged at its
+   left edge for 次, right edge for 前); the neighbour's preloaded
+   plate waits on .vunder beneath it. The zoom transform keeps living
+   on .vstage inside the page, so the two never fight. */
+#viewer .vpage{position:absolute; inset:0; z-index:2; background:var(--bg); will-change:transform; backface-visibility:hidden;}
+#viewer .vunder{position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;}
+#viewer .vunder img{max-width:100%; max-height:100%; object-fit:contain;}
+#viewer .vshade{position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0; background:linear-gradient(90deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5));}
+/* v27.8: the work's official video, under the caption. The embed
+   iframe is created only when the reader taps the facade — nothing
+   third-party loads from the grid or the detail page. */
+#viewer .vvideo{flex:none; padding:0 16px 10px;}
+#viewer .vvidwrap{position:relative; width:100%; max-width:560px; margin:0 auto; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden;}
+#viewer .vvidwrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+#viewer .vfacade{position:absolute; inset:0; width:100%; height:100%; border:0; padding:0; background:#111; cursor:pointer; display:block;}
+#viewer .vfacade img{width:100%; height:100%; object-fit:cover; display:block; opacity:.82;}
+#viewer .vfacade .vplay{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:62px; height:62px; border-radius:50%; background:rgba(166,38,28,.94); color:#fff; font-size:24px; line-height:62px; text-align:center; padding-left:4px; box-sizing:border-box;}
+#viewer .vvidmeta{max-width:560px; margin:6px auto 0; color:var(--muted); font-size:12px; line-height:1.5; font-family:var(--sans); text-align:center;}
 /* v2.82: the zoom stage — pinch/pan transforms apply here, inside
    the frame, so the viewer chrome never moves. */
 #viewer .vstage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; will-change:transform;}
@@ -1121,13 +1142,14 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <div id="vhires" hidden>超高画質</div>
   <div class="vimg" id="vimg"></div>
   <div class="vcap" id="vcap"></div>
+  <div class="vvideo" id="vvideo" hidden></div>
   <div class="vdeep" id="vdeep" hidden></div>
   <div class="vbar">
-    <button onclick="viewerMove(-1)">‹ 前</button>
+    <button onclick="viewerTurn(-1)">‹ 前</button>
     <span class="vcount" id="vcount"></span>
     <button id="vfav" onclick="toggleFavWork()" aria-label="作品をお気に入り">☆</button>
     <button onclick="closeViewer()">閉じる</button>
-    <button onclick="viewerMove(1)">次 ›</button>
+    <button onclick="viewerTurn(1)">次 ›</button>
   </div>
 </div>
 
@@ -8609,6 +8631,30 @@ if(im.fileId) o.fileId = String(im.fileId);
 if(im.url) o.url = String(im.url);
 return (o.fileId || o.url)? o: null;
 }
+/* v27.8: a work's official video (film/animation works) — Muse-side
+   curated like held_by: the embed of THAT work on the artist's /
+   museum's / archive's official channel (YouTube or Vimeo only;
+   excerpts are flagged, never passed off as the whole work). The
+   app never edits it, but it must survive normalization, merges
+   and editor saves or a device write-back would erase it — the
+   name_kana lesson. An embed that is not https on a known player
+   host is dropped here, so a bad record can never inject markup. */
+function normalizeVideo(v){
+if(!v || typeof v !== 'object') return null;
+const embed = String(v.embed || '');
+const okHost = /^https:\/\/(www\.youtube-nocookie\.com|www\.youtube\.com|player\.vimeo\.com)\//.test(embed);
+if(!okHost) return null;
+const platform = v.platform === 'vimeo'? 'vimeo': (v.platform === 'youtube'? 'youtube': (embed.indexOf('vimeo') >= 0? 'vimeo': 'youtube'));
+return {
+platform: platform,
+url: String(v.url || ''),
+embed: embed,
+channel: String(v.channel || ''),
+official_basis: String(v.official_basis || ''),
+runtime: (v.runtime != null && String(v.runtime) !== '')? String(v.runtime): null,
+excerpt: v.excerpt === true
+};
+}
 /* v18.0: breakthrough （市場の転機ドシエ） — Muse-side curated
    like prices/books, self-contained (never joined with prices[]
    or work_id). A milestone survives only with a numeric year,
@@ -8738,6 +8784,8 @@ if(w && w.held_by) o.held_by = String(w.held_by);
    hires:false (with a fresh updated_at), and that decision
    must be able to reach the device and clear the badge. */
 if(w && 'hires' in w) o.hires = !!w.hires;
+/* v27.8: the work's official video embed (see normalizeVideo) */
+if(w && w.video){ const nv = normalizeVideo(w.video); if(nv) o.video = nv; }
 return o;
 }).filter(w=>w.file || w.caption || w.img);
 /* v2.65: books （作品集） — curated on the Muse side only; the app
@@ -8871,6 +8919,7 @@ if(!m.fileId && w.img.fileId) m.fileId = w.img.fileId;
 ex.img = normalizeImg(m) || ex.img;
 }
 if(!ex.caption && w.caption) ex.caption = w.caption;
+if(!ex.video && w.video) ex.video = w.video;
 if(!ex.file && w.file) ex.file = w.file;
 keysOf(w).forEach(k=>seen.set(k, ex));
 return;
@@ -9655,7 +9704,7 @@ let guideData = null, guideError = false, guideView = 'howto', guideMajorId = nu
 const GUIDE_TAX = [
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique', label: '技法', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6']] },
-  { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7']] },
+  { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11']] },
   { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10']] }
 ];
 function guideEnsure(){
@@ -11306,7 +11355,7 @@ if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありませ
 else{
 worksHTML = '<div class="gallery wm-'+workMode+'">';
 ws.forEach((w,i)=>{
-worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+videoBadgeHTML(w)+'</div><figcaption><div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 worksHTML += '</div>';
 }
@@ -11616,6 +11665,8 @@ function closeViewer(){
 const vw = $('viewer');
 if(!vw.classList.contains('open')) return;
 vDeepNoteSave();
+vTurnReset();
+clearViewerVideo();
 /* v9.1: every closeViewer bumps the generation, and openViewer
    captures it. A stale close (its slide-down finished late, or
    its safety timer) must never strip .open from a viewer that
@@ -11694,11 +11745,13 @@ syncVFavBtn();
 { const hb = $('vhires'); if(hb) hb.hidden = !w.hires; }
 const seq = ++viewerSeq;
 vDeepReset(w);
-const box = $('vimg'); box.innerHTML = '<div class="vstage" id="vstage"></div>';
-const stage = box.firstChild;
+const box = $('vimg'); box.innerHTML = '<div class="vunder" id="vunder"></div><div class="vpage" id="vpage"><div class="vstage" id="vstage"></div><div class="vshade" id="vshade"></div></div>';
+const stage = box.querySelector('.vstage');
 vResetZoom();
 $('vcap').textContent = w.caption || '';
 $('vcount').textContent = (viewerIdx+1)+' / '+viewerWorks.length;
+renderViewerVideo(w);
+preloadNeighbours();
 if(w.img && w.img.fileId){
 /* device-uploaded works resolve through the Drive API (blob URL) */
 const fid = w.img.fileId;
@@ -11768,6 +11821,167 @@ up.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
 setTimeout(()=>{ if(!settled && !up.complete) fail(); }, 7000);
 };
 attempt();
+}
+/* v27.8: the work's official video — a facade under the caption;
+   the iframe (and with it any third-party load) exists only after
+   the reader taps play inside the viewer. Excerpts say so, in the
+   meta line. Closing the viewer empties the box, which stops any
+   playing video at once. */
+function videoThumbURL(v){
+if(!v || v.platform !== 'youtube') return '';
+const m = /embed\/([\w-]{6,})/.exec(v.embed || '');
+return m? 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg': '';
+}
+function renderViewerVideo(w){
+const box = $('vvideo'); if(!box) return;
+const v = (w && w.video && w.video.embed)? w.video: null;
+if(!v){ box.hidden = true; box.innerHTML = ''; return; }
+const thumb = videoThumbURL(v);
+box.innerHTML = '<div class="vvidwrap"><button class="vfacade" onclick="playViewerVideo()" aria-label="動画を再生">'
++ (thumb? '<img src="' + escA(thumb) + '" alt="">': '')
++ '<span class="vplay">▶</span></button></div>'
++ '<div class="vvidmeta">' + (v.excerpt? '動画（抜粋）': '動画') + (v.channel? '：' + esc(v.channel): '') + (v.runtime? ' ・ ' + esc(v.runtime): '') + '（公式チャンネルの埋め込み）</div>';
+box.hidden = false;
+}
+function playViewerVideo(){
+const w = viewerWorks[viewerIdx]; if(!w || !w.video || !w.video.embed) return;
+const wrap = document.querySelector('#vvideo .vvidwrap'); if(!wrap) return;
+const sep = w.video.embed.indexOf('?') >= 0? '&': '?';
+wrap.innerHTML = '<iframe src="' + escA(w.video.embed + sep + 'autoplay=1&rel=0') + '" title="作品動画" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+}
+function clearViewerVideo(){
+const box = $('vvideo'); if(!box) return;
+box.innerHTML = ''; box.hidden = true;
+}
+/* v27.8: PAGE TURN (his proposal: flipping through the viewer
+   should feel like leafing through an art book). A horizontal drag
+   at fit scale hinges the current page (.vpage, rotateY around its
+   spine edge) with a travelling shadow (.vshade); beneath it waits
+   the neighbour's plate image (.vunder), preloaded at render time.
+   The turn engages ONLY when that plate is confirmed loaded — a
+   turn never reveals a placeholder; otherwise the swipe falls back
+   to the plain instant move, exactly as before. Release completes
+   the turn past 30% or on a flick (velocity), else it springs
+   back. Zoomed pans are untouched: the follow lives only in the
+   fit-scale one-finger branch, and the release hook sits behind
+   the pinch/tap verdicts. Kill switch: localStorage
+   zukan.pageTurn = 'off' (or reduced motion) restores plain moves. */
+let pageTurnOn = true;
+try{ if(storeGet('zukan.pageTurn') === 'off') pageTurnOn = false; }catch(e){}
+const vPreloaded = {}; /* url -> Image, ._ok once decoded-ready */
+function vWarmImage(url){
+if(!url) return null;
+let im = vPreloaded[url];
+if(!im){ im = new Image(); im._ok = false; im.onload = ()=>{ im._ok = true; }; im.onerror = ()=>{ im._ok = false; }; vPreloaded[url] = im; im.src = url; }
+return im;
+}
+function preloadNeighbours(){
+if(!viewerWorks || viewerWorks.length < 2) return;
+const n = viewerWorks.length;
+[viewerIdx - 1, viewerIdx + 1].forEach(i=>{
+const w = viewerWorks[((i % n) + n) % n]; if(!w) return;
+if(w.img && w.img.url){ vWarmImage(sizedThumbUrl(String(w.img.url), IMG_SIZE.plate)); vWarmImage(sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer)); }
+else if(w.img && w.img.fileId && !driveImgCache[w.img.fileId]){ try{ loadDriveImage(w.img.fileId); }catch(e){} }
+});
+}
+/* the plate a turn may reveal for w, or null when not confirmed
+   loaded — the no-placeholder rule lives here */
+function turnPlateOf(w){
+if(!w) return null;
+if(w.img && w.img.url){ const u = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate); const im = vPreloaded[u]; return (im && im._ok)? u: null; }
+if(w.img && w.img.fileId) return driveImgCache[w.img.fileId] || null;
+return null;
+}
+const vTurn = { active: false, dir: 0, p: 0, samples: [], animating: false };
+function vTurnSetup(dir){
+const n = viewerWorks.length; if(n < 2) return false;
+const nw = viewerWorks[(viewerIdx + dir + n) % n];
+const url = turnPlateOf(nw); if(!url) return false;
+const under = $('vunder'), page = $('vpage'), shade = $('vshade');
+if(!under || !page) return false;
+under.innerHTML = '';
+const im = document.createElement('img'); im.alt = nw.caption || ''; im.src = url;
+under.appendChild(im);
+page.style.transformOrigin = dir > 0? '0% 50%': '100% 50%';
+if(shade) shade.style.background = dir > 0? 'linear-gradient(90deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5))': 'linear-gradient(270deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5))';
+vTurn.dir = dir;
+return true;
+}
+function vTurnApply(){
+const page = $('vpage'), shade = $('vshade'); if(!page) return;
+const ang = vTurn.p * 100 * (vTurn.dir > 0? -1: 1);
+page.style.transform = 'rotateY(' + ang.toFixed(1) + 'deg)';
+if(shade) shade.style.opacity = String(Math.min(.85, vTurn.p * 1.15));
+}
+function vTurnFollow(t, g){
+if(!pageTurnOn || vTurn.animating || reducedMotion()) return;
+const dx = t.clientX - g.sx, dy = t.clientY - g.sy;
+if(!vTurn.active){
+if(Math.abs(dx) < 14 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+if(!vTurnSetup(dx < 0? 1: -1)) return;
+vTurn.active = true; vTurn.samples = [{ x: t.clientX, t: Date.now() }];
+}
+const r = vBoxRect(); const W = (r && r.width)? r.width: 300;
+const signed = vTurn.dir > 0? -dx: dx;
+vTurn.p = Math.max(0, Math.min(1, signed / (W * 0.85)));
+vTurn.samples.push({ x: t.clientX, t: Date.now() });
+if(vTurn.samples.length > 6) vTurn.samples.shift();
+vTurnApply();
+}
+function vTurnVelocity(){
+const s = vTurn.samples; if(s.length < 2) return 0;
+const now = Date.now();
+let a = s[s.length - 1];
+for(let i = 0; i < s.length; i++){ if(now - s[i].t <= 130){ a = s[i]; break; } }
+const b = s[s.length - 1]; const dt = b.t - a.t; if(dt <= 0) return 0;
+return (b.x - a.x) / dt; /* px/ms in screen direction */
+}
+function vTurnRelease(){
+const dir = vTurn.dir, p = vTurn.p;
+const vel = vTurnVelocity();
+const toward = dir > 0? -vel: vel; /* velocity in the turn's direction */
+vTurn.active = false; vTurn.samples = [];
+if(p > 0.30 || toward > 0.4) vTurnComplete(dir);
+else vTurnSnapBack();
+}
+function vTurnAnimateTo(target, ms, done){
+const page = $('vpage');
+if(!page){ vTurn.animating = false; if(done) done(); return; }
+vTurn.animating = true;
+const from = vTurn.p, dir = vTurn.dir;
+const sgn = dir > 0? -1: 1;
+let a = null;
+try{ a = page.animate([
+{ transform: 'rotateY(' + (from * 100 * sgn).toFixed(1) + 'deg)' },
+{ transform: 'rotateY(' + (target * 100 * sgn).toFixed(1) + 'deg)' }
+], { duration: Math.max(60, ms), easing: 'cubic-bezier(.32,.72,.24,1)', fill: 'both' }); }catch(e){}
+let fired = false;
+const fin = ()=>{ if(fired) return; fired = true; vTurn.animating = false; if(a){ try{ a.cancel(); }catch(e){} } if(done) done(); };
+if(a && a.finished){ a.finished.then(fin).catch(fin); setTimeout(fin, ms + 150); } else fin();
+}
+function vTurnComplete(dir){
+const shade = $('vshade'); if(shade) shade.style.opacity = '.85';
+vTurnAnimateTo(1, 250 * (1 - vTurn.p) + 70, ()=>{ vTurn.p = 0; viewerMove(dir); });
+}
+function vTurnSnapBack(){
+vTurnAnimateTo(0, 190, ()=>{ vTurnReset(); });
+}
+function vTurnReset(){
+const page = $('vpage'), shade = $('vshade'), under = $('vunder');
+if(page) page.style.transform = '';
+if(shade) shade.style.opacity = '0';
+if(under) under.innerHTML = '';
+vTurn.p = 0; vTurn.active = false; vTurn.samples = [];
+}
+function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack(); } }
+/* the ‹ › buttons turn the page too; anything that cannot turn
+   (switch off, reduced motion, plate not ready) moves instantly */
+function viewerTurn(d){
+if(!viewerWorks.length) return;
+if(!pageTurnOn || reducedMotion() || vTurn.animating){ viewerMove(d); return; }
+if(!vTurnSetup(d)){ viewerMove(d); return; }
+vTurn.dir = d; vTurn.p = 0; vTurn.active = false;
+vTurnComplete(d);
 }
 /* v9.0: DEEP ZOOM — staged resolution inside the viewer only.
    His ask after seeing gigapixel sites (Google Arts & Culture,
@@ -12048,6 +12262,10 @@ function vClampPan(){
       if(Math.abs(t.clientX - g.sx) + Math.abs(t.clientY - g.sy) > 6) g.moved = true;
       applyAnchor(g.A, { x: t.clientX, y: t.clientY });
       vClampPan(); vApplyZoom();
+    } else if(g.n === 1 && e.touches.length === 1){
+      /* v27.8: fit-scale one-finger drag — the page-turn follow
+         (visual only; every verdict still happens on release) */
+      vTurnFollow(e.touches[0], g);
     }
   }, { passive:false });
   box.addEventListener('touchend', e=>{
@@ -12084,10 +12302,15 @@ function vClampPan(){
       return;
     }
     if(vZoom.s > 1) return; /* a pan is not a swipe */
+    /* v27.8: an engaged page turn renders its own verdict
+       (complete or spring back); a mid-flight turn swallows the
+       release so no second verdict can double-move */
+    if(vTurn.active){ vTurnRelease(); return; }
+    if(vTurn.animating) return;
     if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
     if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
   });
-  box.addEventListener('touchcancel', ()=>{ vTouchCount = 0; g = null; seqHad2 = false; vFlushPendingSwap(); });
+  box.addEventListener('touchcancel', ()=>{ vTouchCount = 0; g = null; seqHad2 = false; vFlushPendingSwap(); vTurnCancel(); });
   box.addEventListener('gesturestart', e=>{ e.preventDefault(); });
 })();
 
@@ -12101,6 +12324,8 @@ function vClampPan(){
 /* v10.3: the hi-res mark, shared by the photo-primary surfaces.
    v10.4: small variant + a dot for the micro thumbs. */
 function hiresBadgeHTML(w, sm){ return (w && w.hires)? '<span class="hiresbadge'+(sm?' sm':'')+'">超高画質</span>': ''; }
+/* v27.8: the ▶ badge for a work carrying an official video embed */
+function videoBadgeHTML(w){ return (w && w.video)? '<span class="videobadge">▶ 動画</span>': ''; }
 function hiresDotHTML(w){ return (w && w.hires)? '<span class="hiresdot"></span>': ''; }
 function exPosterHTML(e, idx){
 if(!(e && e.img && e.img.url)) return '';
@@ -14179,6 +14404,8 @@ if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec
 /* v10.3: nor a work's hires flag — same per-work carry.
    v12.1: the carry preserves an explicit false as well. */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && 'hires' in ow){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !('hires' in t)) t.hires = !!ow.hires; } });
+/* v27.8: nor a work's official video — same per-work carry */
+if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.video){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.video) t.video = ow.video; } });
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -14277,7 +14504,7 @@ function mergeDataInto(local, incoming){
     otherWorks.forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v12.1 (supersedes the v10.3 stickiness): hires follows the
+      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.video && !ex.video) ex.video = w.video; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v12.1 (supersedes the v10.3 stickiness): hires follows the
    newer side when either side states it explicitly — the
    base record's value stands; the other side fills only a
    base that never carried the key. An explicit false from
