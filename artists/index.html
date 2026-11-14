@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.8">
+<meta name="app-version" content="27.9">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -292,6 +292,28 @@ figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); disp
 .biothumb,.tlthumb{position:relative;}
 figure.work .ph img{width:100%; height:100%; object-fit:cover; display:block;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
+/* v27.9 (§6.4-3 of the return-jump diagnosis): a plate whose image
+   has not arrived yet must read as "loading", never as a black void
+   — on the 2026-11-14 device video a cold detail page sat on
+   near-black boxes for a full second, because the pending holder
+   wears the darkest tone (--bg2 is #101012-class in the dark
+   themes) and its wordmark sits at 65% ink. While the holder still
+   carries only the wordmark (no <img> yet, not a failure plate),
+   the box steps UP to the card tone and the wordmark runs at full
+   ink with a slow breathing opacity, so the eye reads a live
+   placeholder. Geometry is untouched (the box is aspect-ratio
+   fixed either way) and the moment an image lands the rules stop
+   matching. The failure plate (.platefail) keeps its own look. */
+figure.work .ph:not(.platefail):has(> .imgholder > .noimg){background:var(--card);}
+figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{color:var(--text);}
+/* the breathing motion is scoped to the DETAIL view (the surface
+   the diagnosis measured): a 500-card list can hold hundreds of
+   pending plates at once, and an infinite animation on each of
+   them is a real paint cost on the phone. The tone/ink step-up
+   above is static and applies everywhere. */
+#viewDetail figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{animation:phbreathe 1.7s ease-in-out infinite;}
+@keyframes phbreathe{0%,100%{opacity:.5}50%{opacity:1}}
+@media (prefers-reduced-motion: reduce){ #viewDetail figure.work .ph .noimg{animation:none;} }
 figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--bg);}
 figure.work .ph.noplate .noimg{font-size:10.5px; letter-spacing:.08em; line-height:1.55; padding:4px 8px;}
 .grid.wide figure.work .ph.noplate{height:72px;}
@@ -9263,22 +9285,19 @@ let vtBusy = false, vtNoAnim = false, vtFinish = null, swipeSt = null, vtForceDi
    cut (list returns are already synchronous by design; the
    finger-follow swipe gesture is unaffected). */
 const FORWARD_ANIM = true;
-/* v2.58: restore the list's saved scroll position, then re-assert it
-   twice over the next half second: the sticky toolbar changes height
-   as it slims/expands around the restored offset, which shifts the
-   effective scroll by ~100px. A touch from the user cancels the
-   re-assertion (token), so it never fights a hand already scrolling. */
-let listRestoreToken = 0;
-document.addEventListener('touchstart', ()=>{ listRestoreToken++; }, { passive:true });
-function restoreListScroll(y){
-  if(!y){ window.scrollTo(0,0); return; }
-  const tk = ++listRestoreToken;
-  window.scrollTo(0, y);
-  [160, 420].forEach(ms=>setTimeout(()=>{
-    if(listRestoreToken !== tk || view !== 'list') return;
-    if(Math.abs((window.scrollY || 0) - y) > 4) window.scrollTo(0, y);
-  }, ms));
-}
+/* v27.9: restoreListScroll is DELETED (return-jump diagnosis §6.1).
+   The v2.58 helper landed the list scroll and then re-asserted it
+   on +160ms/+420ms timers. On the real device (2026-11-14 15:50
+   video) every one of those scroll commands — issued inside the
+   swipe gesture's teardown window (WAAPI cancel + un-pinning in
+   the same task) — was visually inert: iOS Safari held/overwrote
+   them and applied its own settle (jump + glide) ~0.7s later.
+   Timed re-assertion therefore cannot rescue this failure class,
+   and the helper survives nowhere: list landings are now either
+   (a) backToListSync's single scrollTo inside the showView task
+   (button path), (b) the swipe path's engage-time pre-positioning
+   with a read-back-only teardown (see teardownSwipe), or (c) the
+   one-shot plain scrollTo fallbacks in showView. No timers. */
 /* v27.7: BACK-TO-LIST IS A SYNCHRONOUS CUT (return-transition
    diagnosis §6.1 — the v27.5 reveal failed on the real device).
    The reveal's three premises were all false in the shipped code:
@@ -9294,9 +9313,8 @@ function restoreListScroll(y){
    visibility — the list element was never destroyed, and when
    it is not dirty its DOM is byte-for-byte the one the user
    left, images included; (3) ONE scrollTo onto that settled
-   document (heights identical to save time, so no re-assertion
-   timers — restoreListScroll stays for the swipe-teardown path
-   only); (4) compute the toolbar fold from the RESTORED
+   document (heights identical to save time, so there is nothing
+   to re-assert); (4) compute the toolbar fold from the RESTORED
    position, still inside the same task, so the first painted
    frame is already the final state. No vtSlide, no vt-fixed, no
    body overflow toggle, no WAAPI on this path — there is
@@ -9368,7 +9386,8 @@ const restoreListY = (v==='list' && prev && prev!=='list')? (CTX[DS].scrollY || 
    synchronous return path below (backToListSync) — the slide /
    reveal machinery no longer serves list returns at all. */
 const isListReturn = v==='list' && !!prev && prev!=='list';
-/* (restoreListScroll itself is defined with the transition helpers) */
+/* (v27.9: the old timer-based restoreListScroll helper is deleted —
+   see the tombstone note with the transition helpers) */
 
 /* v2.36: the timeline is a header button again (the 5-segment pill
    was too cramped, user's call); it stays visible on both datasets
@@ -9403,11 +9422,11 @@ if(isListReturn){
 backToListSync();
 } else if(wantAnim && oldEl && newEl && oldEl!==newEl){
 vtSlide(oldEl, newEl, dir, restoreListY);
-if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') restoreListScroll(restoreListY); };
+if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') window.scrollTo(0, restoreListY); }; /* v27.9: one-shot (was restoreListScroll) */
 } else {
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 const tb0 = $('toolbar'); if(tb0) tb0.classList.remove('tbnoanim');
-if(restoreListY) restoreListScroll(restoreListY); else window.scrollTo(0,0);
+if(restoreListY) window.scrollTo(0, restoreListY); else window.scrollTo(0,0); /* v27.9: one-shot (was restoreListScroll) */
 ensurePillAnchor();
 }
 }
@@ -11629,7 +11648,57 @@ v.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
 if(fig) fig.addEventListener('click', ()=>openViewer(ws, +ph.dataset.workidx, a.id));
-const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);}
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+/* v27.9 (§6.4-1 of the return-jump diagnosis): a tile that is
+   ALREADY inside the viewport hydrates DIRECTLY, here and now —
+   it no longer waits for the IntersectionObserver's async
+   delivery plus the scheduler queue behind every other armed
+   tile (on a cold cache that chain outlasted a ~1s detail visit
+   on the real device: ten black placeholders, zero images).
+   Offscreen tiles keep the observer path exactly as before.
+   While the detail is still hidden (openDetail renders before
+   showView) the rect is empty and everything takes the observer
+   path — the double-rAF pass below then promotes whatever is
+   visible the moment the slide brings the view in. */
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
+/* v27.9 (§6.4-1 continued): two frames after this render — the
+   forward slide is under way and the detail is on screen —
+   promote any still-pending visible plate in the detail to a
+   direct hydrate. Idempotent: hydrateImg's own job guard makes
+   a second call for an in-flight span a no-op. */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+if(state.detailId == null || String(state.detailId) !== String(a.id)) return;
+const vv = $('viewDetail'); if(!vv || vv.classList.contains('hidden')) return;
+const vh2 = window.innerHeight || 800;
+vv.querySelectorAll('[data-workidx]').forEach(ph2=>{
+const sp2 = ph2.querySelector('.imgholder');
+if(!sp2 || !sp2._work || sp2._imgJob || sp2.querySelector('img')) return;
+const r2 = sp2.getBoundingClientRect();
+if(r2.height > 0 && r2.bottom > -50 && r2.top < vh2 + 50){ if(imgObserver) imgObserver.unobserve(sp2); hydrateImg(sp2, sp2._work); }
+});
+}));
+/* v27.9 (§6.4-2): prewarm the first screenful of plates at PLATE
+   size, starting now — while the forward slide is still running.
+   The detail tiles request exactly these plate URLs, so when
+   their turn comes the bytes are already in the HTTP cache.
+   Detached Image() fetches only: they never enter the scheduler
+   queue, never touch a span, and a failure is silent (the tile's
+   own chain retries as usual). fileId works prewarm through
+   loadDriveImage, which is also what fills driveImgCache for
+   the tile and the viewer. */
+ws.slice(0, 8).forEach(w=>{
+try{
+if(!w || !w.img) return;
+if(w.img.fileId){ if(!driveImgCache[w.img.fileId]) loadDriveImage(w.img.fileId).catch(()=>{}); return; }
+if(!w.img.url) return;
+const pu = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
+if(prewarmedPlates[pu]) return; prewarmedPlates[pu] = 1;
+const pim = new Image(); pim.src = pu;
+}catch(e){}
 });
 /* v4.3: wire the biography strip's thumbnails. Until now these
    spans were never observed, so the strip stayed on its 図版
@@ -11644,6 +11713,8 @@ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span,
 });
 syncFavBtn();
 }
+
+const prewarmedPlates = {}; /* v27.9: plate URLs already prewarmed this session (see renderDetail) */
 
 /* ---------- fullscreen viewer ---------- */
 let viewerWorks = [], viewerIdx = 0;
@@ -15549,6 +15620,16 @@ function goBack(){
   if(view==='settings' && settingsPanel){ closeSettingsPanel(); return; }
   const t = backTarget(); if(t) showView(t);
 }
+/* v27.9 (return-jump diagnosis §6.1-2): the swipe-back landing is
+   positioned HERE, at engage time — while the outgoing view still
+   covers the screen — never at commit time. A scroll command
+   issued inside the teardown window (gesture commit + WAAPI
+   cancel + un-pinning in one task) is exactly what iOS Safari
+   held and overwrote on the real device; a scroll that already
+   happened seconds earlier, in an ordinary task, has nothing
+   left to fight. listScrollPre is the engage-time half of the
+   landing; teardownSwipe only verifies it stuck. */
+function listScrollPre(win, y){ win.scrollTo(0, y); }
 function engageSwipe(st){
   /* v2.70: a pill-trail swipe can cross datasets （展示/その他 of the
      other context). Swap the dataset context first so the target
@@ -15572,7 +15653,19 @@ function engageSwipe(st){
   oldEl.style.top = (st.H - st.y)+'px';
   oldEl.style.height = '100dvh';
   document.body.classList.add('vt-run');
-  window.scrollTo(0,0);
+  if(st.target==='list'){
+    /* v27.9: pre-position the landing scroll NOW (see listScrollPre
+       above). The list element is in flow and visible underneath
+       the pinned outgoing view, so the offset applies to the real
+       document; the parallax transform paintSwipe puts on the
+       incoming view does not move the document scroll. From here
+       to the commit, nothing may scroll the window — teardown
+       only un-pins and hides. */
+    st.listY = CTX[DS].scrollY || 0;
+    listScrollPre(window, st.listY);
+  } else {
+    window.scrollTo(0,0);
+  }
   st.engaged = true;
   paintSwipe(st);
 }
@@ -15618,10 +15711,23 @@ function teardownSwipe(st, commit){
        still titled その他. showView's chrome steps apply here too. */
     updateHeader();
     updatePill();
-    /* v2.58: landing back on the list restores its saved scroll
-       position (showView saves it when the list is left), instead of
-       always resetting to the top. */
-    if(view==='list') restoreListScroll(CTX[DS].scrollY || 0); else window.scrollTo(0,0);
+    /* v27.9 (return-jump diagnosis §6.1): THE LANDING IS UNIFIED.
+       No scroll command is issued here for the list: engageSwipe
+       pre-positioned the window scroll to the saved offset while
+       the outgoing view still covered the screen, so at commit
+       time the document is already there — there is nothing for
+       the browser to hold, overwrite or settle later, and no
+       re-assertion timer exists anywhere any more
+       (restoreListScroll is deleted). The read-back below is the
+       single permitted rescue (§6.1-3): if the pre-positioned
+       scroll was dropped (the engage-time document reflowed),
+       land ONCE, synchronously — never on a timer. Every other
+       return path lands the same way: backToListSync for the
+       button, one-shot fallbacks in showView. */
+    if(view==='list'){
+      const wantY = (st.listY != null)? st.listY: (CTX[DS].scrollY || 0);
+      if(Math.abs((window.scrollY || 0) - wantY) > 4) window.scrollTo(0, wantY);
+    } else window.scrollTo(0,0);
   } else if(st.newEl){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
@@ -15704,7 +15810,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.7';
+const APP_VERSION = '27.9';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
