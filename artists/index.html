@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.12">
+<meta name="app-version" content="29.13">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13664,28 +13664,35 @@ function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack();
    abandoned for good; below is a recording of one real
    page flip, embedded as base64 MP3 (the single-file rule
    is kept: no fetch, works offline).
-   Source (CC0): "Page Flip" by qubodup — freesound.org
-   sound 454707, https://freesound.org/people/qubodup/
-   sounds/454707/ — license "Creative Commons 0" verified
-   on the sound page on 2026-11-15. Picked from 5 CC0
-   candidates by waveform / spectrum analysis (we cannot
-   listen here): the only candidate that is at once a
-   single continuous gesture, bright (the window used,
-   0.02–0.38 s of the source, has spectral centroid
-   7,895 Hz and just 2.8% of its energy below 500 Hz —
-   no torso, all sheet). Processing: trimmed to that
-   window, 8 ms fade-in / 60 ms fade-out, peak normalized
-   to ~0.90, mono 44.1 kHz MP3 at 64 kbps (3,134 bytes;
-   base64 4,180 chars, +~4.2 KB on this file).
+   v29.13: the v29.12 clip was picked here by waveform /
+   spectrum analysis (we cannot listen), and he judged
+   it 「理想と違う」 on his device (2026-11-15 02:01) —
+   so this time HE chose by ear, from an audition set of
+   six CC0 recordings, and picked #05.
+   Source (CC0): "Page Turn 01" by LilMati — freesound.org
+   sound 397548, https://freesound.org/people/LilMati/
+   sounds/397548/ — license "Creative Commons 0" verified
+   on the sound page on 2026-11-15. A real magazine page
+   turn: a rough, low-leaning texture (whole-gesture
+   spectral centroid 1,143 Hz; 37.5% of its energy below
+   500 Hz). The embedded audio is EXACTLY the audition
+   file he heard: the source trimmed to 0.030–0.435 s,
+   8 ms fades at both ends, peak normalized (decoded peak
+   0.900), mono 44.1 kHz MP3 at 64 kbps; for the embedding
+   only its 45-byte ID3 tag was stripped — the MP3 frames
+   are byte-identical (3,760 bytes; base64 5,016 chars,
+   +836 chars on this file vs the v29.12 payload).
    Playback: the clip is decoded once via decodeAudioData
    (warmed up on the first pointerdown, together with the
    context) and played from a buffer source into the
    master gain, so the settings / volume curve / timing
    wiring is exactly what it was. If decoding fails the
    turn stays silent — there is NO synthesis fallback.
-   The snap-back plays the brightest slice of the same
-   breath (offset 0.10 s, 0.20 s long) at rate 1.2 with
-   the cut end faded in the graph and half master volume:
+   The snap-back plays the brightest sustained sweep of
+   the same breath (offset 0.02 s, 0.20 s long — the
+   windowed centroid of that stretch is ~5.4 kHz, the
+   brightest part of the clip) at rate 1.2 with the cut
+   end faded in the graph and half master volume:
    a shorter, lighter excerpt, never a reverse playback.
    Settings live in ZSET (soundOn / soundVol, panel
    'sound'); when off, no AudioContext is ever created.
@@ -13697,9 +13704,10 @@ function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack();
    keeps its own past-the-switch behaviour; that is its
    separate, earlier decision.) */
 const SND_TURN_B64 =
-'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';
+'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';
 let sndAC = null, sndBuf = null, sndBufBusy = false;
 function sndEnabled(){ return ZSET.soundOn !== false; }
 function sndVolume(){ const v = (typeof ZSET.soundVol === 'number' && isFinite(ZSET.soundVol))? ZSET.soundVol: 0.6; return Math.min(1, Math.max(0, v)); }
@@ -13750,10 +13758,11 @@ try{
   const master = ac.createGain(); master.gain.value = (rev? 0.5: 1) * vol; master.connect(ac.destination);
   const src = ac.createBufferSource(); src.buffer = sndBuf;
   if(rev){
-    /* snap-back: the brightest slice of the same breath
-       (0.10-0.30 s of the clip) at rate 1.2, the cut end
-       faded in the graph — shorter and lighter than the
-       forward flip, never a reverse playback. */
+    /* snap-back: the brightest sustained sweep of the
+       same breath (0.02-0.22 s of the clip) at rate 1.2,
+       the cut end faded in the graph — shorter and
+       lighter than the forward flip, never a reverse
+       playback. */
     const seg = 0.20 / 1.2;
     const g = ac.createGain();
     g.gain.setValueAtTime(1, t0);
@@ -13761,7 +13770,7 @@ try{
     g.gain.linearRampToValueAtTime(0, t0 + seg);
     src.playbackRate.value = 1.2;
     src.connect(g); g.connect(master);
-    src.start(t0, 0.10, 0.20);
+    src.start(t0, 0.02, 0.20);
   } else {
     /* a breath of rate jitter (±3%) so repeats never sound
        stamped; the recording itself does the rest. */
@@ -17923,7 +17932,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.12';
+const APP_VERSION = '29.13';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
