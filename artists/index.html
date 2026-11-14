@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="28.3">
+<meta name="app-version" content="28.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -692,7 +692,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .gppills button{flex:1 1 0; min-width:0; height:40px; padding:0 4px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
 .gppills button.gpwide{flex-grow:1.5;}
 .gppills button.on{color:var(--text); font-weight:600; background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 10px rgba(0,0,0,.25);}
-.gsubpills{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 4px;}
+.gsubpills{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 4px; padding:8px 0 6px; position:sticky; top:0; z-index:6; background:var(--bg);}
 .gsub{flex:none; height:36px; padding:0 12px; border-radius:999px; border:1px solid color-mix(in srgb, var(--text) 13%, transparent); background:color-mix(in srgb, var(--text) 6%, transparent); color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
 .gsub.on{color:var(--text); font-weight:600; background:linear-gradient(180deg, color-mix(in srgb, var(--text) 21%, transparent), color-mix(in srgb, var(--text) 8%, transparent) 58%, color-mix(in srgb, var(--text) 13%, transparent)); border:1px solid color-mix(in srgb, var(--text) 16%, transparent); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 10px rgba(0,0,0,.25);}
 .gdictwrap{margin:2px 0 10px;}
@@ -753,7 +753,7 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
 .glossterm{font-size:16px; font-weight:800; margin-bottom:2px}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
-.gtermlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer}
+.gtermlink{font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 .worklink{background:none; border:none; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 #termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden{display:none}
@@ -10061,7 +10061,21 @@ function guideLinkIndex(){
    match wins; the scan is over the RAW text and escaping
    happens per emitted chunk, so markup can never be forged by
    the text itself. Headings and case titles never pass through
-   here (the callers keep them plain). */
+   here (the callers keep them plain).
+   v28.4: a term is emitted as a real anchor carrying
+   data-gterm, and ONE delegated click handler on #gpbody —
+   the static panel element that is never re-created, only
+   its innerHTML is swapped — performs the jump (see the
+   binding below renderGuide). Up to v28.3 these were
+   throwaway <button>s with an inline onclick, recreated by
+   every render and every in-place swap: the only tappable
+   text in the app wired that way (the Art Business terms
+   have used data-term + delegation all along), and on the
+   user's iPhone the taps did not land (his 2026-11-14 19:35
+   report, after v28.2 multiplied the swaps). Delegation on
+   a persistent ancestor cannot be detached by any re-render,
+   which is the by-design fix. The link style is the solid
+   underline, same as the v28.1 work links — 下線＝押せる. */
 function guideLinkHTML(t){
   const s = String(t == null? '': t);
   const idx = guideLinkIndex();
@@ -10074,7 +10088,7 @@ function guideLinkHTML(t){
       if(surf.length && s.startsWith(surf, i)){ hit = idx[k]; break; }
     }
     if(hit){
-      out += '<button class="gtermlink" onclick="guideJumpTerm(\'' + escA(hit[1]) + '\')">' + esc(hit[0]) + '</button>';
+      out += '<a class="gtermlink" data-gterm="' + escA(hit[1]) + '">' + esc(hit[0]) + '</a>';
       i += hit[0].length;
     } else {
       out += esc(s[i]);
@@ -10166,7 +10180,31 @@ function guideJumpRoadmap(ref){
     const gi = groups.findIndex(g=> g.items.indexOf(ix) >= 0);
     if(gi >= 0) guideSecSel['exam-ch2'] = gi;
   }
-  renderGuide();
+  /* v28.4: the roadmap jump is a chapter switch inside the
+     exam major — same in-place swap as the chips, never a
+     full re-render that would rebuild the calendar it was
+     tapped from. Then ONE deliberate positioning, in the
+     same synchronous task: the chapter head lands just
+     under the sticky chip row, at the selected section —
+     not at the calendar / top of the major (his 2026-11-14
+     19:51 recording: from exam-ch11 the old full re-render
+     threw him back up to the calendar, and the rebuild's
+     repaint ghosted the calendar and phase chips through
+     the chapter text for a frame or two — the recurring
+     overlap family. Here the calendar node is never
+     destroyed, so there is no stale calendar frame to
+     composite, and the scroll moves exactly once). */
+  if(guideView === 'major' && guideMajorId === 'exam' && $('gchap')){
+    guideSwapChapter();
+    const b = $('gpbody'), host = $('gchap');
+    if(b && host){
+      const pills = b.querySelector('.gsubpills');
+      const ph = pills? pills.offsetHeight: 0;
+      const delta = host.getBoundingClientRect().top - b.getBoundingClientRect().top;
+      b.scrollTop = Math.max(0, b.scrollTop + delta - ph);
+    }
+  }
+  else renderGuide();
 }
 /* ---- exam calendar (v28.0) ---- */
 function guideCalData(){ return (guideData && guideData.examCalendar)? guideData.examCalendar: null; }
@@ -10298,7 +10336,29 @@ function openGuideMajor(mid){
   if(!m.subs.some(s=> s[1] === guideChapterId)) guideChapterId = m.subs[0][1];
   renderGuide();
 }
-function guideSub(ch){ guideStack = []; guideChapterId = ch; renderGuide(); }
+/* v28.4: chapter switches inside a major swap ONLY the
+   chapter region (#gchap) in place — the section-tab
+   mechanism of v28.2, one level up (his 2026-11-14 19:35
+   device video: v28.2 fixed the section tabs, but the
+   chapter chips still ran a full renderGuide and threw him
+   back to the top). The chip row is sticky (CSS) and is not
+   rebuilt — only its .on marker moves — the calendar block
+   is not rebuilt either, and the outer scroll is never
+   written, so the landing is exactly where the finger was.
+   A full renderGuide remains for everything else (major
+   switches, stacked returns, first load). */
+function guideSwapChapter(){
+  document.querySelectorAll('#gpbody .gsub').forEach(b=> b.classList.toggle('on', b.getAttribute('data-gchap') === guideChapterId));
+  const host = $('gchap');
+  if(host) host.innerHTML = guideChapterHTML();
+}
+function guideSub(ch){
+  guideStack = [];
+  if(ch === guideChapterId && guideView === 'major' && $('gchap')) return;
+  guideChapterId = ch;
+  if(guideView === 'major' && $('gchap')) guideSwapChapter();
+  else renderGuide();
+}
 function openGuideDict(){ guideStack = []; guideView = 'dict'; renderGuide(); }
 /* v28.0: dict-row taps go through the same stack as chapter-text
    jumps, so the return lands on the dict at its scroll offset. */
@@ -10310,6 +10370,33 @@ function guideDictRowsHTML(q){
   return g.map(e=> '<button class="gtermrow" onclick="openGuideTerm(\'' + escA(e.term) + '\')"><span class="gterm">' + esc(e.term) + '</span>' + (e.reading? '<span class="gread">' + esc(e.reading) + '</span>': '') + '<span class="ggo">›</span></button>').join('');
 }
 function guideDictInput(v){ guideDictQ = v; const el = $('gdictlist'); if(el) el.innerHTML = guideDictRowsHTML(v); }
+/* v28.4: the chapter region of the major view, factored out
+   of renderGuide so guideSub can swap it in place
+   (guideSwapChapter) without a full render. */
+function guideChapterHTML(){
+  const c = guideChapterById(guideChapterId);
+  if(!c) return '<div class="empty">章が見つかりません</div>';
+  let h = '<h2 class="biztitle">' + esc(c.title || '') + '</h2>';
+  if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
+  const secs = Array.isArray(c.sections)? c.sections: [];
+  /* v28.2: true section tabs — with 3+ headed groups only
+     the selected group renders (inside #gsecbody) and the
+     tab row swaps it in place (guideSetSection). Chapters
+     below that bar keep the plain all-sections layout. Any
+     unheaded lead-in group stays with the lead, above the
+     tab row, exactly where it sat in the old layout. */
+  const groups = guideSecGroups(c);
+  const headed = groups.map((g, gi)=> g.head != null? gi: -1).filter(gi=> gi >= 0);
+  if(headed.length >= 3){
+    if(groups[0] && groups[0].head == null) h += guideSecGroupHTML(c, 0);
+    const sel = guideSecSelIdx(c);
+    h += '<div class="gsecrow">' + headed.map(gi=> '<button class="gsec' + (gi === sel? ' on': '') + '" data-gsec="' + gi + '" onclick="guideSetSection(' + gi + ')">' + esc(String(secs[groups[gi].head].h).split('——')[0].slice(0, 14)) + '</button>').join('') + '</div>';
+    h += '<div id="gsecbody">' + guideSecGroupHTML(c, sel) + '</div>';
+  } else {
+    h += groups.map((g, gi)=> guideSecGroupHTML(c, gi)).join('');
+  }
+  return h;
+}
 function renderGuide(){
   const pills = $('gppills'), body = $('gpbody'); if(!pills || !body) return;
   const gu = $('gpuse'); if(gu) gu.classList.toggle('on', guideView === 'howto');
@@ -10328,30 +10415,8 @@ function renderGuide(){
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
     if(m.id === 'exam') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
-    h += '<div class="gsubpills">' + m.subs.map(s=> '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + '</button>').join('') + '</div>';
-    const c = guideChapterById(guideChapterId);
-    if(!c) h += '<div class="empty">章が見つかりません</div>';
-    else {
-      h += '<h2 class="biztitle">' + esc(c.title || '') + '</h2>';
-      if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
-      const secs = Array.isArray(c.sections)? c.sections: [];
-      /* v28.2: true section tabs — with 3+ headed groups only
-         the selected group renders (inside #gsecbody) and the
-         tab row swaps it in place (guideSetSection). Chapters
-         below that bar keep the plain all-sections layout. Any
-         unheaded lead-in group stays with the lead, above the
-         tab row, exactly where it sat in the old layout. */
-      const groups = guideSecGroups(c);
-      const headed = groups.map((g, gi)=> g.head != null? gi: -1).filter(gi=> gi >= 0);
-      if(headed.length >= 3){
-        if(groups[0] && groups[0].head == null) h += guideSecGroupHTML(c, 0);
-        const sel = guideSecSelIdx(c);
-        h += '<div class="gsecrow">' + headed.map(gi=> '<button class="gsec' + (gi === sel? ' on': '') + '" data-gsec="' + gi + '" onclick="guideSetSection(' + gi + ')">' + esc(String(secs[groups[gi].head].h).split('——')[0].slice(0, 14)) + '</button>').join('') + '</div>';
-        h += '<div id="gsecbody">' + guideSecGroupHTML(c, sel) + '</div>';
-      } else {
-        h += groups.map((g, gi)=> guideSecGroupHTML(c, gi)).join('');
-      }
-    }
+    h += '<div class="gsubpills">' + m.subs.map(s=> '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" data-gchap="' + s[1] + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + '</button>').join('') + '</div>';
+    h += '<div id="gchap">' + guideChapterHTML() + '</div>';
   }
   else if(guideView === 'dict'){
     h += '<h2 class="biztitle">辞典</h2>';
@@ -10405,6 +10470,20 @@ function renderGuide(){
     const dx = t.clientX - g.x, dy = t.clientY - g.y;
     if(dx >= 64 && Math.abs(dy) <= Math.abs(dx) * 0.6) guideGoBack();
   }, { passive: true });
+})();
+
+/* v28.4: the ONE delegated tap handler for in-text glossary
+   terms (see guideLinkHTML). Bound once, here, to #gpbody —
+   static markup that no render ever replaces — so chapter
+   swaps, section swaps and calendar refreshes can come and
+   go underneath it and the handler is still there. Taps on
+   anything else in the panel fall through untouched. */
+(function(){
+  const body = $('gpbody'); if(!body) return;
+  body.addEventListener('click', e=>{
+    const el = e.target && e.target.closest? e.target.closest('a.gtermlink'): null;
+    if(el && el.getAttribute('data-gterm')) guideJumpTerm(el.getAttribute('data-gterm'));
+  });
 })();
 
 /* v21.1: the whole-market scatter was withdrawn at his word
@@ -14977,20 +15056,78 @@ requestAnimationFrame(layoutTlSpine);
    unknown as known). Region follows the timeline's segment:
    japan = section starts with 日本：, everything else = west. */
 let tlYear = null;
-function parseLife(a){
-  const nums = String(a.years || '').match(/(\d{4})/g);
-  if(!nums) return null;
-  const birth = parseInt(nums[0], 10);
-  const death = nums.length >= 2? parseInt(nums[nums.length - 1], 10): new Date().getFullYear();
+/* v28.4: strict lifespan parser for this sheet (his
+   2026-11-14 19:43 screenshot: 「ネバアムンの墓の壁画」
+   showed as 当時603歳 in 1953). The old parser grabbed the
+   first 4-digit number anywhere in the string, so
+   「紀元前1350年頃」 became a CE birth in 1350. The rules
+   now, audited against every years string in the data:
+   - 紀元前 years are negative (signed birth/death).
+   - A people-list entry requires a parseable lifespan:
+     a clean birth–death range, or a birth year with a
+     trailing dash / a bare CE birth year (still living).
+     頃 on an endpoint is stripped (approximate is fine).
+     Composite endpoints take their first year
+     ('1488/90頃' → 1488, '1399/1400-1482' → 1399).
+   - Strings carrying 不詳, 活動期 (as a prefix), 世紀 or
+     年前， and any prose, are NOT lifespans: no entry.
+     Site / work / topic records （ポンペイの壁画， ネバアムン
+     の墓の壁画， アルタミラ洞窟…) fail these tests by shape,
+     so they can never appear as people or gain an age.
+   - A single span longer than 110 years is not a human
+     lifespan → rejected.
+   - Duos ('1931–2007／1934–2015'): membership uses the
+     pair's combined span, and no single age is ever shown.
+   - Hard display guard: an age renders only when it is
+     0–110 (enforced again in ysData). */
+function parseYearSide(tok){
+  const m = String(tok).trim().match(/^(紀元前)?\s*(\d{1,4})(?:\/\d{1,4})?\s*年?\s*頃?\s*$/);
+  if(!m) return null;
+  const n = parseInt(m[2], 10);
+  return m[1]? -n: n;
+}
+function parseLifeSpan1(t){
+  const s = String(t).trim();
+  if(!s) return null;
+  const parts = s.split(/\s*[–—~〜-]\s*/);
+  if(parts.length > 2) return null;
+  const birth = parseYearSide(parts[0]);
+  if(birth == null) return null;
+  if(parts.length === 1) return birth > 0? { birth: birth, death: null }: null; /* bare year: a living CE birth year only */
+  if(parts[1] === '') return { birth: birth, death: null };                     /* trailing dash: still living */
+  const death = parseYearSide(parts[1]);
+  if(death == null || death < birth) return null;
   return { birth: birth, death: death };
+}
+function parseLifeSpan(a){
+  let s = String((a && a.years) || '').replace(/,/g, '').trim();
+  if(!s) return null;
+  if(/不詳|年前|世紀/.test(s)) return null;
+  if(/^活動期/.test(s)) return null;
+  s = s.replace(/（[^）]{0,8}）\s*$/, '').trim(); /* short trailing note, e.g. （活動期） */
+  const duo = s.split(/／|\s\/\s/);
+  if(duo.length === 2){
+    const p0 = parseLifeSpan1(duo[0]), p1 = parseLifeSpan1(duo[1]);
+    if(!p0 || !p1) return null;
+    return { birth: Math.min(p0.birth, p1.birth), death: (p0.death == null || p1.death == null)? null: Math.max(p0.death, p1.death), duo: true };
+  }
+  if(duo.length > 2) return null;
+  const one = parseLifeSpan1(s);
+  if(!one) return null;
+  if(one.death != null && one.death - one.birth > 110) return null;
+  return { birth: one.birth, death: one.death, duo: false };
 }
 function ysData(Y){
   const alive = [], works = [];
   DB.artists.forEach(a=>{
     const reg = String(a.section || '').startsWith('日本：')? 'japan': 'west';
     if(reg !== tlRegion) return;
-    const life = parseLife(a);
-    if(life && life.birth <= Y && Y <= life.death) alive.push({ a: a, age: Y - life.birth, birth: life.birth });
+    const life = parseLifeSpan(a);
+    if(life && life.birth <= Y && (life.death == null || Y <= life.death)){
+      let age = null;
+      if(!life.duo){ const ag = Y - life.birth; if(ag >= 0 && ag <= 110) age = ag; }
+      alive.push({ a: a, age: age, birth: life.birth });
+    }
     displayWorks(a).forEach((w, wi)=>{ if(workYearOf(w) === Y) works.push({ a: a, w: w, wi: wi }); });
   });
   alive.sort((p, q)=> p.birth - q.birth);
@@ -15030,7 +15167,7 @@ function renderYsResults(){
   if(d.alive.length){
     h += '<div class="ysrows">'+d.alive.map(x=>{
       const th = thumbOf(x.a);
-      return '<button class="ysrow" onclick="openDetail(\''+escA(x.a.id)+'\')"><span class="ysthumb">'+(th? imgHTML(th, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">図版</span></span>')+'</span><span class="ysmeta"><span class="ysname">'+esc(x.a.name)+'</span><span class="small">'+esc(x.a.years || '')+'</span></span><span class="ysage">当時'+x.age+'歳</span></button>';
+      return '<button class="ysrow" onclick="openDetail(\''+escA(x.a.id)+'\')"><span class="ysthumb">'+(th? imgHTML(th, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">図版</span></span>')+'</span><span class="ysmeta"><span class="ysname">'+esc(x.a.name)+'</span><span class="small">'+esc(x.a.years || '')+'</span></span>'+(x.age != null? '<span class="ysage">当時'+x.age+'歳</span>': '')+'</button>';
     }).join('')+'</div>';
   }
   if(d.works.length){
@@ -16838,7 +16975,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '28.3';
+const APP_VERSION = '28.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
