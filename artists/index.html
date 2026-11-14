@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.16">
+<meta name="app-version" content="27.17">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9794,7 +9794,7 @@ const GUIDE_TAX = [
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique', label: '技法', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6']] },
   { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11']] },
-  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10']] }
+  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['発言集', 'guide-ch-statements']] }
 ];
 function guideEnsure(){
   if(guideData || guideError) return;
@@ -16161,7 +16161,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.16';
+const APP_VERSION = '27.17';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
