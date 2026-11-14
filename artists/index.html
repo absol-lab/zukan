@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="28.0">
+<meta name="app-version" content="28.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -753,6 +753,7 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .glossterm{font-size:16px; font-weight:800; margin-bottom:2px}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
 .gtermlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer}
+.worklink{background:none; border:none; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 #termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden{display:none}
 .secright{display:inline-flex; align-items:center; gap:8px;}
@@ -11899,9 +11900,46 @@ function proseHTML(text){
     return '<div class="bodytext">' + hlEsc(p) + '</div>';
   }).join('');
 }
-function cvBioHTML(text){
-const t = String(text || '').trim();
+/* v28.1: work-title links inside the 来歴 text (his ask,
+   2026-11-14 18:53). A 《title》 in the bio becomes tappable ONLY
+   when it exactly matches the title of one of THIS person's
+   registered works — title = the 《…》 part of the work's
+   caption, the chWorkIdx convention — and that work carries a
+   photo (Drive url / fileId, or a legacy local file). Any work
+   type counts (painting, mural, sculpture, print…); unregistered
+   titles and photo-less works stay plain text. When a title is
+   shared by several of the person's works, the first
+   photo-bearing one in display order wins. */
+function bioWorkTitleOf(w){ const m = /《(.+?)》/.exec((w && w.caption) || ''); return m? m[1].trim(): null; }
+function bioWorkHasPhoto(w){ return !!((w && w.img && (w.img.url || w.img.fileId)) || (w && w.file)); }
+function bioWorkLinkMap(ws){
+const map = Object.create(null);
+(ws || []).forEach((w, i)=>{ const t = bioWorkTitleOf(w); if(t && !(t in map) && bioWorkHasPhoto(w)) map[t] = i; });
+return map;
+}
+function cvBioHTML(text, linkCtx){
+let t = String(text || '').trim();
 if(!t) return '';
+/* Linkification runs on the RAW text before the renderers: a
+   matched 《title》 is swapped for a private-use placeholder, so
+   escaping / sentence splitting / search highlight never see the
+   link HTML (and a title containing 。 can no longer be split
+   mid-title); placeholders are swapped back for the button at
+   every return. Without a linkCtx the output is byte-identical
+   to the pre-v28.1 renderer. */
+let linkSubs = null;
+if(linkCtx && linkCtx.map){
+linkSubs = [];
+t = t.replace(/《([^》]+)》/g, (m, inner)=>{
+const idx = linkCtx.map[inner.trim()];
+if(idx == null) return m;
+const n = linkSubs.length;
+linkSubs.push('<button class="worklink" onclick="openViewer(displayWorks(artistById(\''+escA(linkCtx.id)+'\')), '+idx+', \''+escA(linkCtx.id)+'\')">《'+esc(inner)+'》</button>');
+return ''+n+'';
+});
+if(!linkSubs.length) linkSubs = null;
+}
+const linkBack = h => linkSubs? h.replace(/(\d+)/g, (m, n)=> linkSubs[+n] || m): h;
 const segs = t.split(/(?<=。)\s*(?=(?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年|\d{1,3}歳)/);
 /* v27.14 (c): the lead absorbs ONE trailing particle among
    に/の/、 directly after 年 (or the （N歳）group) — bodies
@@ -11921,7 +11959,7 @@ rows[rows.length - 1].body += s;
 intro += s;
 }
 });
-if(!rows.length) return proseHTML(t);
+if(!rows.length) return linkBack(proseHTML(t));
 /* v27.14 (a): stable-sort the ROW UNITS by lead year (ranges
    by start year). Age-led continuations were glued into
    their row's body at extraction, so sorting units never
@@ -11939,7 +11977,7 @@ rows.splice(i, 1);
 let h = '';
 if(intro) h += proseHTML(intro);
 h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+sentenceSpansHTML(r.body)+'</span></div>').join('') + '</div>';
-return h;
+return linkBack(h);
 }
 let bioStripWiring = [];
 function bioWorksStrip(a, ws){
@@ -12214,7 +12252,7 @@ pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出�
 const chData = chronicleFor(a);
 if(chData) bioHTML = chronicleHTML(a, chData, ws);
 else{
-bioHTML = sp.bio? cvBioHTML(sp.bio): '<div class="bodytext">（来歴の記載はまだありません）</div>';
+bioHTML = sp.bio? cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws) }): '<div class="bodytext">（来歴の記載はまだありません）</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+hlEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
@@ -16710,7 +16748,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '28.0';
+const APP_VERSION = '28.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
