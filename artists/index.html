@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.5">
+<meta name="app-version" content="27.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8340,6 +8340,161 @@ function $(id){ return document.getElementById(id);}
 function storeSet(k,v){ try{ localStorage.setItem(k,v); return true;}catch(e){ return false;}}
 function storeGet(k){ try{ return localStorage.getItem(k);}catch(e){ return null;}}
 function storeDel(k){ try{ localStorage.removeItem(k);}catch(e){}}
+/* ================= v27.6: IndexedDB for small critical state =================
+   Diagnosis: art-labo/favorites-storage-diagnosis.md. localStorage
+   carries the two full DB mirrors (~6.1 MiB against the ~5 MB iOS
+   per-origin quota), so KB-sized critical state sharing the pool
+   failed ATOMICALLY once the mirrors grew past the line — old
+   values survive, new writes silently never land (Marlene Dumas
+   could not be favorited while his 19 stayed intact; the failure
+   tracked the clock, not the person). Phase 1: every small
+   critical key moves to IndexedDB (zukan-store / kv), whose quota
+   is the origin storage pool (orders of magnitude larger), and
+   favorites become memory + IDB + the unchanged Drive mirror —
+   localStorage leaves the favorites path ENTIRELY, so a
+   localStorage quota failure can no longer be a reason a favorite
+   fails. The DB mirrors stay in localStorage for now, behind the
+   dataSave() pressure valve below; Phase 2 moves the mirrors. */
+let IDB_OK = false, IDB_ERR = '', IDB_MIGRATED = 0, idbDb = null;
+const KVMEM = {};   /* key -> raw string | null: the read source for migrated keys once storeInit() has run */
+function idbOpenOnce(){
+  return new Promise(res=>{
+    if(!('indexedDB' in window) || !window.indexedDB){ IDB_ERR = 'indexedDB undefined'; return res(false); }
+    let rq = null;
+    try{ rq = indexedDB.open('zukan-store', 1); }catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
+    rq.onupgradeneeded = ()=>{ try{ rq.result.createObjectStore('kv'); }catch(e){} };
+    rq.onsuccess = ()=>{ idbDb = rq.result; res(true); };
+    rq.onerror = ()=>{ IDB_ERR = String((rq.error && rq.error.name) || 'open error'); res(false); };
+    rq.onblocked = ()=>{ IDB_ERR = 'open blocked'; res(false); };
+  });
+}
+function idbGetRaw(k){
+  return new Promise(res=>{
+    if(!idbDb) return res(null);
+    let r = null;
+    try{ r = idbDb.transaction('kv', 'readonly').objectStore('kv').get(k); }
+    catch(e){ IDB_ERR = String((e && e.name) || e); return res(null); }
+    r.onsuccess = ()=> res(r.result === undefined? null: r.result);
+    r.onerror = ()=>{ IDB_ERR = String((r.error && r.error.name) || 'get error'); res(null); };
+  });
+}
+function idbSetRaw(k, v){
+  return new Promise(res=>{
+    if(!idbDb) return res(false);
+    let tx = null;
+    try{ tx = idbDb.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); }
+    catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'put error'); res(false); };
+    tx.onabort = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'put abort'); res(false); };
+  });
+}
+function idbDelRaw(k){
+  return new Promise(res=>{
+    if(!idbDb) return res(false);
+    let tx = null;
+    try{ tx = idbDb.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); }
+    catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'delete error'); res(false); };
+    tx.onabort = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'delete abort'); res(false); };
+  });
+}
+/* IDB writes are serialized through one chain, so a verify read
+   can never race another write landing between write and read. */
+let idbChain = Promise.resolve();
+function idbRun(fn){ const p = idbChain.then(fn, fn); idbChain = p.then(()=>{}, ()=>{}); return p; }
+/* kvRaw reads memory (the post-migration truth). Before storeInit
+   it falls back to localStorage; after storeInit KVMEM always
+   holds an entry for a migrated key, so the fallback never serves
+   one again. */
+function kvRaw(k){
+  if(k in KVMEM) return KVMEM[k];
+  return storeGet(k);
+}
+/* kvAdopt: the structured loaders' read path. Migration deleted
+   the localStorage copies, so a localStorage value that DIFFERS
+   from KVMEM can only have been written externally after boot
+   (a test harness seeding state mid-session, or an older build
+   in a parallel tab). Adopt it as the truth and carry it into
+   IDB — the pre-v27.6 live-localStorage semantics, with IDB as
+   the home. The app's own writes never touch localStorage for
+   these keys, so in production this branch simply never fires;
+   boot-time precedence is storeInit's and is unaffected. */
+function kvAdopt(k){
+  const lv = storeGet(k);
+  if(lv !== null && lv !== KVMEM[k]){
+    KVMEM[k] = lv;
+    if(IDB_OK) idbRun(()=> idbSetRaw(k, lv));
+  }
+  return (k in KVMEM)? KVMEM[k]: lv;
+}
+/* kvSet updates memory instantly and persists to IDB. It NEVER
+   writes localStorage: a migrated key has exactly one persistent
+   home, or a stale localStorage remnant could win a later
+   migration. When IDB itself is unavailable the write lives in
+   memory for the session (the detectable §3.4 case). */
+function kvSet(k, v){
+  KVMEM[k] = v;
+  if(IDB_OK) idbRun(()=> idbSetRaw(k, v));
+}
+/* The favorites verdict path: resolves true ONLY when the value
+   is in IDB and re-reads byte-identical. */
+async function kvSetVerified(k, v){
+  KVMEM[k] = v;
+  if(!IDB_OK) return false;
+  const ok = await idbRun(()=> idbSetRaw(k, v));
+  if(!ok) return false;
+  return (await idbGetRaw(k)) === v;
+}
+function kvDel(k){
+  KVMEM[k] = null;
+  if(IDB_OK) idbRun(()=> idbDelRaw(k));
+}
+const MIGRATE_KEYS = ['zukan.favorites', 'zukan.ratings', 'zukan.reqSeenIds', 'zukan.changelogSeen', 'zukan.regNotifs', 'zukan.knownIds', 'zukan.requests.outbox', 'zukan.requests.cache', 'zukan.favFail'];
+/* Idempotent, lossless migration (diagnosis §3.3), per key:
+   IDB already holds it → IDB wins and any localStorage remnant
+   is dropped; only localStorage holds it → copy, re-read verify,
+   and only then delete the local copy; neither → nothing. An
+   interruption anywhere converges on the next launch, because
+   the local copy is never deleted before the IDB copy verifies.
+   The Drive-side favorites are never touched here. */
+async function storeInit(){
+  IDB_OK = await idbOpenOnce();
+  for(const k of MIGRATE_KEYS){
+    let v = null;
+    if(IDB_OK) v = await idbGetRaw(k);
+    if(v != null){
+      KVMEM[k] = v;
+      if(storeGet(k) !== null) storeDel(k);
+      IDB_MIGRATED++;
+      continue;
+    }
+    const lv = storeGet(k);
+    if(lv != null){
+      KVMEM[k] = lv;
+      if(IDB_OK && await idbRun(()=> idbSetRaw(k, lv)) && (await idbGetRaw(k)) === lv){ storeDel(k); IDB_MIGRATED++; }
+    } else KVMEM[k] = null;
+  }
+}
+/* v27.6 pressure valve: while the DB mirrors remain in
+   localStorage (Phase 1), a failed mirror write evicts the OTHER
+   dataset's mirror — re-downloadable from Drive / the pack — and
+   retries once. Even a persistent failure blocks nothing: the
+   canonical data lives on Drive, the session runs on the
+   in-memory DB, and every small critical state is in IDB now. */
+function dataSave(prefix, str){
+  if(storeSet(prefix + 'data', str)) return true;
+  const other = (prefix === CFG_ARTISTS.prefix)? CFG_DESIGNERS.prefix: CFG_ARTISTS.prefix;
+  storeDel(other + 'data');
+  return storeSet(prefix + 'data', str);
+}
+function fmtBytes(n){
+  if(n == null || isNaN(n)) return '不明';
+  if(n < 1024) return n + ' B';
+  if(n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
+}
 function sessSet(k,v){ try{ sessionStorage.setItem(k,v);}catch(e){}}
 function sessGet(k){ try{ return sessionStorage.getItem(k);}catch(e){ return null;}}
 function sessDel(k){ try{ sessionStorage.removeItem(k);}catch(e){}}
@@ -8648,7 +8803,7 @@ updated_at: String(a.updated_at||'')
 if(a.thumb_pinned_at) rec.thumb_pinned_at = String(a.thumb_pinned_at);
 return rec;
 }
-function saveDB(){ storeSet(LS_DATA, JSON.stringify(DB));}
+function saveDB(){ dataSave(CONFIG.prefix, JSON.stringify(DB));}
 function normalizeFor(kind, d){ const out = normalizeData(d); out.kind = kind; return out; }
 function loadCtxData(kind){
 const c = CTX[kind];
@@ -8656,7 +8811,7 @@ const raw = storeGet(c.cfg.prefix+'data');
 if(raw){ try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; return; }catch(e){} }
 if(kind==='artists'){
 c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)));
-storeSet(c.cfg.prefix+'data', JSON.stringify(c.DB));
+dataSave(c.cfg.prefix, JSON.stringify(c.DB));
 return;
 }
 c.DB = { kind:kind, version:1, sections:[], artists:[], exhibitions:[] };
@@ -12397,7 +12552,8 @@ function notifWhen(iso){
    request completions on their own panel (v2.82: reached from the
    header's 回収通知 button, not from a tab beside the updates). */
 /* v2.92: per-version 👍/👎 ratings on the update history (his
-   ask). The device copy (localStorage zukan.ratings) is the
+   ask). The device copy (zukan.ratings — localStorage until
+   v27.5, IndexedDB from v27.6) is the
    source of truth; the map is mirrored into zukan-requests.json
    (top-level "ratings") by flushRequestsOnce — the same relay
    file as his requests — so the ratings reach Muse without a
@@ -12406,8 +12562,20 @@ function notifWhen(iso){
    tombstone so a cancel is not resurrected by an older file copy;
    merges take the newest `at` per version. */
 const LS_RATINGS = 'zukan.ratings';
-function ratingsLoad(){ try{ const d = JSON.parse(storeGet(LS_RATINGS)||'{}'); return (d && typeof d==='object' && !Array.isArray(d))? d: {}; }catch(e){ return {}; } }
-function ratingsSave(m){ try{ storeSet(LS_RATINGS, JSON.stringify(m)); }catch(e){} }
+/* v27.6: memory is the read source and IndexedDB the persistence
+   (kvSet); the Drive mirror in flushRequestsOnce reads the same
+   memory, so its behaviour is unchanged. */
+let RATINGS_MEM = null, RATINGS_SRC = undefined;
+function ratingsLoad(){
+  const raw = kvAdopt(LS_RATINGS);
+  if(RATINGS_MEM && RATINGS_SRC === raw) return RATINGS_MEM;
+  let d = null;
+  try{ d = JSON.parse(raw || '{}'); }catch(e){}
+  RATINGS_MEM = (d && typeof d==='object' && !Array.isArray(d))? d: {};
+  RATINGS_SRC = raw;
+  return RATINGS_MEM;
+}
+function ratingsSave(m){ RATINGS_MEM = m; const s = JSON.stringify(m); RATINGS_SRC = s; kvSet(LS_RATINGS, s); }
 function ratingOf(v){ const r = ratingsLoad()[v]; return (r && (r.mark==='good' || r.mark==='bad'))? r.mark: null; }
 function rateVersion(v, mark){
   const m = ratingsLoad();
@@ -12429,7 +12597,9 @@ function ratingsMerge(fileMap){
   return m;
 }
 /* v6.0: favorites (his ask, 2026-11-13) — people AND works.
-   Device localStorage is the source of truth; the map mirrors
+   The device copy is the source of truth (localStorage until
+   v27.5; memory + IndexedDB from v27.6 — see favsLoad below);
+   the map mirrors
    into zukan-requests.json (top-level "favorites") through the
    same flush as the ratings, so Muse can read his taste back
    through the relay: no new relay file, no redeploy. Entries
@@ -12438,28 +12608,44 @@ function ratingsMerge(fileMap){
    and merges take the newest `at` per key, so an older file
    copy cannot resurrect a removed favorite. */
 const LS_FAVS = 'zukan.favorites';
+/* v27.6: FAVS_MEM is the single read source (storeInit loaded it
+   from IndexedDB at boot); favsSave persists to IDB and verifies
+   by re-reading the IDB copy byte-for-byte. localStorage is no
+   longer anywhere in this path, so its quota cannot fail a
+   favorite — his requirement (2026-11-14 14:22) was that adding
+   a favorite must not fail, not merely fail honestly. */
+let FAVS_MEM = null, FAVS_SRC = undefined;   /* FAVS_SRC: the raw string FAVS_MEM was derived from (kvAdopt coherence) */
 function favsLoad(){
-  try{ const d = JSON.parse(storeGet(LS_FAVS)||'{}');
-    return { people: (d && d.people && typeof d.people==='object' && !Array.isArray(d.people))? d.people: {},
-             works: (d && d.works && typeof d.works==='object' && !Array.isArray(d.works))? d.works: {} };
-  }catch(e){ return { people:{}, works:{} }; }
+  const raw = kvAdopt(LS_FAVS);
+  if(FAVS_MEM && FAVS_SRC === raw) return FAVS_MEM;
+  let d = null;
+  try{ d = JSON.parse(raw || '{}'); }catch(e){}
+  FAVS_MEM = { people: (d && d.people && typeof d.people==='object' && !Array.isArray(d.people))? d.people: {},
+               works: (d && d.works && typeof d.works==='object' && !Array.isArray(d.works))? d.works: {} };
+  FAVS_SRC = raw;
+  return FAVS_MEM;
 }
 /* v27.4 (his words: 嘘はなし): a favorites save either lands and
    is VERIFIED by re-reading the store, or it is reported as a
    failure — never toasted as a success/removal that did not
-   happen. favsSave returns the storeSet verdict; on failure it
-   leaves a diagnostic record under zukan.favFail (and the next
-   successful save clears it). Diagnosis:
-   art-labo/favorites-bug-diagnosis.md §7. */
+   happen. v27.6 keeps that rule and moves the verified store to
+   IndexedDB: favsSave resolves to the kvSetVerified verdict; on
+   failure it leaves a diagnostic record under zukan.favFail
+   (itself an IDB key now) and the next successful save clears
+   it. Diagnoses: art-labo/favorites-bug-diagnosis.md §7,
+   art-labo/favorites-storage-diagnosis.md §3. */
 const LS_FAVFAIL = 'zukan.favFail';
 function favFailNote(what, err){
-  try{ storeSet(LS_FAVFAIL, JSON.stringify({ at: new Date().toISOString(), what: what, err: String((err && err.message) || err || 'verify-mismatch') })); }catch(e){}
+  kvSet(LS_FAVFAIL, JSON.stringify({ at: new Date().toISOString(), what: what, err: String((err && err.message) || err || 'verify-mismatch') }));
 }
-function favsSave(m){
-  let ok = false;
-  try{ ok = storeSet(LS_FAVS, JSON.stringify(m)); }catch(e){ ok = false; }
-  if(ok){ try{ storeDel(LS_FAVFAIL); }catch(e){} }
-  else favFailNote('favsSave', 'storeSet returned false');
+function favFailClear(){ if(kvRaw(LS_FAVFAIL) != null) kvDel(LS_FAVFAIL); }
+async function favsSave(m){
+  FAVS_MEM = m;
+  const s = JSON.stringify(m);
+  FAVS_SRC = s;
+  const ok = await kvSetVerified(LS_FAVS, s);
+  if(ok) favFailClear();
+  else favFailNote('favsSave', IDB_OK? ('idb: ' + (IDB_ERR || 'verify-mismatch')): 'indexedDB unavailable');
   return ok;
 }
 function favPersonKey(kind, id){ return kind+':'+id; }
@@ -12467,45 +12653,48 @@ function favWorkKey(kind, id, caption){ return kind+':'+id+'|'+caption; }
 function isFavPerson(kind, id){ const e = favsLoad().people[favPersonKey(kind,id)]; return !!(e && e.fav); }
 function isFavWork(kind, id, caption){ const e = favsLoad().works[favWorkKey(kind,id,caption)]; return !!(e && e.fav); }
 function favPeopleCount(kind){ const m = favsLoad().people; return Object.keys(m).filter(k=> k.indexOf(kind+':')===0 && m[k].fav).length; }
-function setFavPerson(a, on){
+async function setFavPerson(a, on){
   const k = favPersonKey(DS, a.id);
+  const m = favsLoad();
+  /* memory applies instantly — the star follows at once; the
+     verdict below is about IDB persistence only. */
+  m.people[k] = { fav: !!on, at: new Date().toISOString(), name: a.name };
   for(let attempt = 0; attempt < 2; attempt++){
-    const m = favsLoad();
-    m.people[k] = { fav: !!on, at: new Date().toISOString(), name: a.name };
-    if(favsSave(m)){
+    if(await favsSave(m)){
       const chk = favsLoad().people[k];
       if(chk && chk.fav === !!on){ flushArtistRequests(); return true; }
     }
-    favFailNote('setFavPerson:' + k, attempt? 'verify failed after retry': 'verify mismatch, retrying');
+    favFailNote('setFavPerson:' + k, IDB_OK? (attempt? 'verify failed after retry': 'verify mismatch, retrying'): 'indexedDB unavailable');
   }
   return false;
 }
-function setFavWork(a, w, on){
+async function setFavWork(a, w, on){
   const k = favWorkKey(DS, a.id, w.caption||'');
+  const m = favsLoad();
+  m.works[k] = { fav: !!on, at: new Date().toISOString(), name: a.name, caption: w.caption||'' };
   for(let attempt = 0; attempt < 2; attempt++){
-    const m = favsLoad();
-    m.works[k] = { fav: !!on, at: new Date().toISOString(), name: a.name, caption: w.caption||'' };
-    if(favsSave(m)){
+    if(await favsSave(m)){
       const chk = favsLoad().works[k];
       if(chk && chk.fav === !!on){ flushArtistRequests(); return true; }
     }
-    favFailNote('setFavWork:' + k, attempt? 'verify failed after retry': 'verify mismatch, retrying');
+    favFailNote('setFavWork:' + k, IDB_OK? (attempt? 'verify failed after retry': 'verify mismatch, retrying'): 'indexedDB unavailable');
   }
   return false;
 }
 function favsMerge(fileFavs){
   const m = favsLoad();
   if(fileFavs && typeof fileFavs==='object'){
+    let ch = false;
     ['people','works'].forEach(part=>{
       const fm = fileFavs[part];
       if(!fm || typeof fm!=='object' || Array.isArray(fm)) return;
       Object.keys(fm).forEach(k=>{
         const fe = fm[k];
         if(!fe || typeof fe.fav!=='boolean') return;
-        if(!m[part][k] || String(fe.at||'') > String(m[part][k].at||'')) m[part][k] = fe;
+        if(!m[part][k] || String(fe.at||'') > String(m[part][k].at||'')){ m[part][k] = fe; ch = true; }
       });
     });
-    favsSave(m);
+    if(ch) favsSave(m);   /* async persistence; memory already carries the merge */
   }
   return m;
 }
@@ -12517,12 +12706,15 @@ function syncFavFilterBtn(){
   b.classList.toggle('on', favFilter);
   b.innerHTML = '★' + (n? '<span class="favcnt">'+n+'</span>': '');
 }
-function toggleFavPerson(){
+async function toggleFavPerson(){
   const a = artistById(state.detailId); if(!a) return;
-  const okSave = setFavPerson(a, !isFavPerson(DS, a.id));
+  const okSave = await setFavPerson(a, !isFavPerson(DS, a.id));
   syncFavBtn(); syncFavFilterBtn();
-  /* v27.4: the toast follows the VERIFIED post-write state; an
-     unverified write is reported as what it is — a save failure. */
+  /* v27.4→27.6: the toast follows the VERIFIED post-write state —
+     verified now means the IndexedDB copy re-read byte-identical;
+     an unverified write is reported as what it is, a save failure
+     (reachable only when IDB itself is unavailable or its
+     transaction fails — never for a localStorage quota). */
   if(!okSave){ toast('お気に入りを保存できませんでした', 2600); return; }
   toast(isFavPerson(DS, a.id)? 'お気に入りに追加しました': 'お気に入りから外しました', 1600);
 }
@@ -12531,12 +12723,12 @@ function syncFavBtn(){
   const on = isFavPerson(DS, a.id);
   b.classList.toggle('on', on); b.textContent = on? '★': '☆';
 }
-function toggleFavWork(){
+async function toggleFavWork(){
   const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
   if(!a || !w){ toast('この作品はお気に入りにできません', 1600); return; }
-  const okSave = setFavWork(a, w, !isFavWork(DS, a.id, w.caption||''));
+  const okSave = await setFavWork(a, w, !isFavWork(DS, a.id, w.caption||''));
   syncVFavBtn();
-  /* v27.4: same honesty rule as the person star (see toggleFavPerson). */
+  /* v27.4→27.6: same honesty rule as the person star (see toggleFavPerson). */
   if(!okSave){ toast('お気に入りを保存できませんでした', 2600); return; }
   toast(isFavWork(DS, a.id, w.caption||'')? '作品をお気に入りに追加しました': '作品のお気に入りを外しました', 1600);
 }
@@ -12570,20 +12762,27 @@ function syncVFavBtn(){
    lands, and on a rating tap. */
 const LS_CHANGELOG_SEEN = 'zukan.changelogSeen';
 let changelogOpen = {};
+let CLSEEN_MEM = null, CLSEEN_SRC = undefined;   /* v27.6: the seen set's memory form (IDB-persisted via kvSet); SRC = the raw it was derived from */
 function changelogEntryKey(e){ return String(e.v||'') + '|' + String(e.at||''); }
 function changelogSeenLoad(entries){
-  try{ const d = JSON.parse(storeGet(LS_CHANGELOG_SEEN)||'null'); if(Array.isArray(d)) return d; }catch(e){}
+  const raw = kvAdopt(LS_CHANGELOG_SEEN);
+  if(CLSEEN_MEM && CLSEEN_SRC === raw) return CLSEEN_MEM;
+  try{ const d = JSON.parse(raw || 'null'); if(Array.isArray(d)){ CLSEEN_MEM = d; CLSEEN_SRC = raw; return d; } }catch(e){}
   if(!entries || !entries.length) return [];
   const sorted = entries.slice().sort((a, b)=> (Date.parse(b.at||'')||0) - (Date.parse(a.at||'')||0));
   const seed = sorted.slice(1).map(changelogEntryKey);
-  try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seed)); }catch(e){}
+  CLSEEN_MEM = seed;
+  const s = JSON.stringify(seed);
+  CLSEEN_SRC = s;
+  kvSet(LS_CHANGELOG_SEEN, s);
   return seed;
 }
 function changelogUnseenCount(){
   const d = changelogData || changelogCacheLoad();
   if(!d || !d.entries.length) return 0;
-  let seen = null;
-  try{ const j = JSON.parse(storeGet(LS_CHANGELOG_SEEN)||'null'); if(Array.isArray(j)) seen = j; }catch(e){}
+  const raw = kvAdopt(LS_CHANGELOG_SEEN);
+  let seen = (CLSEEN_MEM && CLSEEN_SRC === raw)? CLSEEN_MEM: null;
+  if(!seen && raw){ try{ const j = JSON.parse(raw); if(Array.isArray(j)) seen = j; }catch(e){} }
   if(!seen) return 1; /* unseeded: only the newest entry will be NEW */
   const s = new Set(seen);
   return d.entries.filter(e=> !s.has(changelogEntryKey(e))).length;
@@ -12597,7 +12796,9 @@ function changelogMarkSeen(k){
   const seen = changelogSeenLoad(d? d.entries: null);
   if(seen.indexOf(k) >= 0) return;
   seen.push(k);
-  try{ storeSet(LS_CHANGELOG_SEEN, JSON.stringify(seen)); }catch(e){}
+  const s = JSON.stringify(seen);
+  CLSEEN_SRC = s;
+  kvSet(LS_CHANGELOG_SEEN, s);
 }
 function changelogRefreshTabPill(){
   const btns = document.querySelectorAll('#settingspanel .seg button');
@@ -12715,6 +12916,7 @@ function reqSeenCount(){ const n = parseInt(storeGet(LS_REQ_SEEN)||'0', 10); ret
    up in each book; unclassifiable items show in BOTH books
    rather than vanishing. */
 const LS_REQ_SEEN2 = 'zukan.reqSeenIds';
+let REQSEEN_MEM = null, REQSEEN_SRC = undefined;   /* v27.6: memory form of the per-dataset read sets (IDB-persisted via kvSet) */
 function reqItemDatasets(r){
   if(r.dataset === 'artists' || r.dataset === 'designers') return [r.dataset];
   const nm = reqResolvedName(r);
@@ -12727,7 +12929,9 @@ function reqItemDatasets(r){
   return out.length? out: ['artists', 'designers'];
 }
 function reqSeenIdsLoad(){
-  try{ const d = JSON.parse(storeGet(LS_REQ_SEEN2)||'null'); if(d && Array.isArray(d.artists) && Array.isArray(d.designers)) return d; }catch(e){}
+  const raw = kvAdopt(LS_REQ_SEEN2);
+  if(REQSEEN_MEM && REQSEEN_SRC === raw) return REQSEEN_MEM;
+  try{ const d = JSON.parse(raw || 'null'); if(d && Array.isArray(d.artists) && Array.isArray(d.designers)){ REQSEEN_MEM = d; REQSEEN_SRC = raw; return d; } }catch(e){}
   const d = { artists: [], designers: [] };
   try{
     const legacy = reqSeenCount();
@@ -12736,7 +12940,11 @@ function reqSeenIdsLoad(){
       done.slice(Math.max(0, done.length - legacy)).forEach(r=>{ reqItemDatasets(r).forEach(k=>{ if(!d[k].includes(r.id)) d[k].push(r.id); }); });
     }
   }catch(e){}
-  try{ storeSet(LS_REQ_SEEN2, JSON.stringify(d)); }catch(e){}
+  REQSEEN_MEM = d;
+  const s = JSON.stringify(d);
+  REQSEEN_SRC = s;
+  kvSet(LS_REQ_SEEN2, s);
+  try{ storeDel(LS_REQ_SEEN); }catch(e){}   /* v27.6: the legacy global count is read-and-discarded once the id sets exist */
   return d;
 }
 function reqDoneForDS(k){ return reqDoneItems().filter(r=> reqItemDatasets(r).includes(k)); }
@@ -12757,7 +12965,7 @@ function reqMarkOneRead(r){
       const set = new Set(d[k] || []);
       if(!set.has(r.id)){ set.add(r.id); d[k] = [...set].slice(-300); ch = true; }
     });
-    if(ch) storeSet(LS_REQ_SEEN2, JSON.stringify(d));
+    if(ch){ const s = JSON.stringify(d); REQSEEN_SRC = s; kvSet(LS_REQ_SEEN2, s); }
   }catch(e){}
   refreshReqNotifBtn();
 }
@@ -12785,8 +12993,17 @@ function refreshReqNotifBtn(){
    Bursts are capped at 8 individual notes + one summary. */
 const LS_KNOWN = 'zukan.knownIds';
 const LS_REGNOTIFS = 'zukan.regNotifs';
-function regNotifsLoad(){ try{ const d = JSON.parse(storeGet(LS_REGNOTIFS)||'[]'); return Array.isArray(d)? d: []; }catch(e){ return []; } }
-function regNotifsSave(a){ try{ storeSet(LS_REGNOTIFS, JSON.stringify(a.slice(0, 60))); }catch(e){} }
+let REGNOTIFS_MEM = null, REGNOTIFS_SRC = undefined;   /* v27.6: memory form of the detection notes (IDB-persisted via kvSet) */
+function regNotifsLoad(){
+  const raw = kvAdopt(LS_REGNOTIFS);
+  if(REGNOTIFS_MEM && REGNOTIFS_SRC === raw) return REGNOTIFS_MEM;
+  let d = null;
+  try{ d = JSON.parse(raw || '[]'); }catch(e){}
+  REGNOTIFS_MEM = Array.isArray(d)? d: [];
+  REGNOTIFS_SRC = raw;
+  return REGNOTIFS_MEM;
+}
+function regNotifsSave(a){ REGNOTIFS_MEM = a.slice(0, 60); const s = JSON.stringify(REGNOTIFS_MEM); REGNOTIFS_SRC = s; kvSet(LS_REGNOTIFS, s); }
 function regUnseenCount(k){ return regNotifsLoad().filter(n=>!n.seen && n.dataset === (k || DS)).length; }
 /* v27.3: the registration notes follow the same per-item rule
    as reqMarkOneRead — one note at a time, on navigation (or,
@@ -12799,7 +13016,7 @@ function regMarkOneSeen(nid){
 function regSummarySeen(nid){ regMarkOneSeen(nid); renderRequestNotifs('reqnotiflist'); }
 let knownInitPromise = null;
 function ensureKnownIds(){
-  if(storeGet(LS_KNOWN)) return Promise.resolve(true);
+  if(kvRaw(LS_KNOWN)) return Promise.resolve(true);
   if(knownInitPromise) return knownInitPromise;
   knownInitPromise = (async()=>{
     let base = null;
@@ -12821,7 +13038,7 @@ function ensureKnownIds(){
         base[k] = (c && c.DB && Array.isArray(c.DB.artists))? c.DB.artists.map(a=>String(a && a.id)): [];
       }
     }
-    try{ storeSet(LS_KNOWN, JSON.stringify(base)); }catch(e){}
+    kvSet(LS_KNOWN, JSON.stringify(base));
     return true;
   })();
   return knownInitPromise;
@@ -12834,12 +13051,12 @@ async function detectNewPeople(kind){
     await ensureKnownIds();
     const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) return;
     let known = {};
-    try{ known = JSON.parse(storeGet(LS_KNOWN)||'{}'); }catch(e){ known = {}; }
+    try{ known = JSON.parse(kvRaw(LS_KNOWN)||'{}'); }catch(e){ known = {}; }
     const prev = new Set((Array.isArray(known[kind])? known[kind]: []).map(String));
     const cur = c.DB.artists.filter(a=>a && a.id!=null);
     const fresh = cur.filter(a=>!prev.has(String(a.id)));
     known[kind] = cur.map(a=>String(a.id));
-    try{ storeSet(LS_KNOWN, JSON.stringify(known)); }catch(e){}
+    kvSet(LS_KNOWN, JSON.stringify(known));
     if(!fresh.length) return;
     const doneKeys = new Set();
     try{
@@ -14647,7 +14864,7 @@ async function syncDatasetOnce(kind, reason){
       }
     }
     }
-    storeSet(prefix+'data', JSON.stringify(data));
+    dataSave(prefix, JSON.stringify(data));
     c.DB = data;
     if(kind===DS) DB = data;
     c.lastSyncAt = Date.now();
@@ -14730,10 +14947,31 @@ const REQ_FILE = 'zukan-requests.json';
 const LS_REQ_OUTBOX = 'zukan.requests.outbox';
 const LS_REQ_CACHE = 'zukan.requests.cache';
 function reqNorm(s){ return normSearch(String(s||'').replace(/[.,、:：]/g,'')); }
-function reqOutbox(){ try{ const a = JSON.parse(storeGet(LS_REQ_OUTBOX)||'[]'); return Array.isArray(a)? a: []; }catch(e){ return []; } }
-function reqSaveOutbox(a){ try{ storeSet(LS_REQ_OUTBOX, JSON.stringify(a)); }catch(e){} }
-function reqCache(){ try{ const d = JSON.parse(storeGet(LS_REQ_CACHE)||'null'); return (d && Array.isArray(d.requests))? d: { requests: [] }; }catch(e){ return { requests: [] }; } }
-function reqSaveCache(d){ try{ storeSet(LS_REQ_CACHE, JSON.stringify(d)); }catch(e){} }
+/* v27.6: the outbox is the source of truth for unsent requests,
+   so it moves to IDB with the other small critical keys — a
+   localStorage quota failure can no longer strand or drop a
+   request. Memory forms are the read source; kvSet persists. */
+let REQOUT_MEM = null, REQOUT_SRC = undefined, REQCACHE_MEM = null, REQCACHE_SRC = undefined;
+function reqOutbox(){
+  const raw = kvAdopt(LS_REQ_OUTBOX);
+  if(REQOUT_MEM && REQOUT_SRC === raw) return REQOUT_MEM;
+  let a = null;
+  try{ a = JSON.parse(raw || '[]'); }catch(e){}
+  REQOUT_MEM = Array.isArray(a)? a: [];
+  REQOUT_SRC = raw;
+  return REQOUT_MEM;
+}
+function reqSaveOutbox(a){ REQOUT_MEM = a; const s = JSON.stringify(a); REQOUT_SRC = s; kvSet(LS_REQ_OUTBOX, s); }
+function reqCache(){
+  const raw = kvAdopt(LS_REQ_CACHE);
+  if(REQCACHE_MEM && REQCACHE_SRC === raw) return REQCACHE_MEM;
+  let d = null;
+  try{ d = JSON.parse(raw || 'null'); }catch(e){}
+  REQCACHE_MEM = (d && Array.isArray(d.requests))? d: { requests: [] };
+  REQCACHE_SRC = raw;
+  return REQCACHE_MEM;
+}
+function reqSaveCache(d){ REQCACHE_MEM = d; const s = JSON.stringify(d); REQCACHE_SRC = s; kvSet(LS_REQ_CACHE, s); }
 function reqAllItems(){
   const remote = reqCache().requests || [];
   const ids = {}; remote.forEach(r=>{ ids[r.id]=1; });
@@ -15194,7 +15432,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.5';
+const APP_VERSION = '27.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -15230,7 +15468,7 @@ function loadDesignersSeed(){
       if(c.loadedFromStore || c.DB.artists.length) return; /* 実データがあれば種で上書きしない */
       if(storeGet(CFG_DESIGNERS.prefix+'data')) return;
       c.DB = normalizeFor('designers', j);
-      storeSet(CFG_DESIGNERS.prefix+'data', JSON.stringify(c.DB));
+      dataSave(CFG_DESIGNERS.prefix, JSON.stringify(c.DB));
       if(DS==='designers'){ DB = c.DB; if(view==='list') renderList(); }
       renderAbout();
     })
@@ -15304,7 +15542,7 @@ async function applyDataPack(){
       if(data.timeline==null && incN.timeline) data.timeline = incN.timeline;
       if(!quizHasData(data.quiz) && quizHasData(incN.quiz)) data.quiz = incN.quiz;
       data.kind = kind;
-      storeSet(prefix+'data', JSON.stringify(data));
+      dataSave(prefix, JSON.stringify(data));
       c.DB = data;
       if(kind===DS) DB = data;
     }
@@ -15485,6 +15723,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.cloud, '画像診断（不具合調査用）', '', "openSettingsPanel('diag')")+
+      srow(SICON.db, 'ストレージ診断（不具合調査用）', '', "openSettingsPanel('storage')")+
     '</div>'+
     '<div class="groupcard"><div class="symlegend"><div style="font-weight:700;color:var(--ink);margin-bottom:2px;">分野マークの凡例</div>' + FIELD_LEGEND.map(p => '<span style="display:inline-block;margin-right:14px;white-space:nowrap;"><b>' + p[0] + '</b>' + p[1] + '</span>').join('') + '</div></div>';
 }
@@ -15495,6 +15734,31 @@ function renderSettingsMain(){
    stored URL, the uc?export=view form, the Drive API media route the
    sync already uses, and two controls) and reports data state, tile
    state and per-path results as plain text for a screenshot. */
+/* v27.6: storage observability (diagnosis §3.6) — one screenshot
+   should now identify any future save failure: the origin storage
+   estimate, localStorage's approximate footprint, the IDB state
+   with its last error, the migration state, and the last recorded
+   favorites failure. Anything that cannot be measured is reported
+   as 取得不可， never guessed. */
+async function runStorageDiagnostics(){
+  const out = $('storageout'); if(!out) return;
+  const lines = [];
+  lines.push('=== ストレージ診断 v' + APP_VERSION + ' ===');
+  if(navigator.storage && navigator.storage.estimate){
+    try{ const e = await navigator.storage.estimate(); lines.push('端末ストレージ推定: 使用 ' + fmtBytes(e.usage) + ' / 割当 ' + fmtBytes(e.quota)); }
+    catch(err){ lines.push('端末ストレージ推定: 取得不可'); }
+  } else lines.push('端末ストレージ推定: 取得不可');
+  let lsBytes = 0, lsKeys = 0;
+  try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); const v = localStorage.getItem(k) || ''; lsBytes += (k.length + v.length) * 2; lsKeys++; } }catch(e){}
+  lines.push('localStorage 概算: ' + fmtBytes(lsBytes) + '（' + lsKeys + ' キー）');
+  lines.push('IndexedDB: ' + (IDB_OK? '利用可': '利用不可' + (IDB_ERR? '（' + IDB_ERR + '）': '')) + ' / 移行済みキー: ' + IDB_MIGRATED + ' 件');
+  const ff = kvRaw(LS_FAVFAIL);
+  if(ff){
+    try{ const j = JSON.parse(ff); lines.push('最終のお気に入り保存失敗: ' + (j.at || '') + ' / ' + (j.what || '') + ' / ' + (j.err || '')); }
+    catch(e){ lines.push('最終のお気に入り保存失敗: ' + ff); }
+  } else lines.push('最終のお気に入り保存失敗: なし');
+  out.textContent = lines.join('\n');
+}
 async function runImgDiagnostics(){
   const out = $('diagout'); if(!out) return;
   const lines = [];
@@ -15673,6 +15937,15 @@ function renderSettingsPanel(){
       '<div id="diagout" style="white-space:pre-wrap; font-size:12.5px; line-height:1.75; margin-top:12px; word-break:break-all;"></div>'+
       '</div>');
   }
+  else if(settingsPanel==='storage'){
+    p.innerHTML = panelShell('ストレージ診断',
+      '<div class="setbox">'+
+      '<div class="small">保存領域の実測です。v27.6 から、お気に入り・評価・既読・送信待ちの依頼などの小さな重要データは IndexedDB に保存されます（localStorage の容量不足でお気に入りが保存できなくなる問題の対策）。</div>'+
+      '<button class="blockbtn" onclick="runStorageDiagnostics()">再計測</button>'+
+      '<div id="storageout" style="white-space:pre-wrap; font-size:12.5px; line-height:1.75; margin-top:12px; word-break:break-all;"></div>'+
+      '</div>');
+    runStorageDiagnostics();
+  }
   else if(settingsPanel==='data'){
     p.innerHTML = panelShell('データ',
       '<div class="setbox">'+
@@ -15721,10 +15994,15 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
   DS = startDS; bindCtx();
   applyAppearance();
+  /* v27.6: open IndexedDB and migrate the small critical keys
+     BEFORE anything reads them (favorites are read by the first
+     render, the outbox by the first flush). The DB mirrors stay
+     in localStorage behind dataSave's pressure valve. */
+  await storeInit();
   /* v27.4: a leftover favorites-save diagnostic stays silent for
      the user (the failing tap already told him) but visible in
      the console for support. */
-  try{ const ff = storeGet('zukan.favFail'); if(ff) console.warn('[zukan] favFail:', ff); }catch(e){}
+  try{ const ff = kvRaw(LS_FAVFAIL); if(ff) console.warn('[zukan] favFail:', ff); }catch(e){}
   /* 表示モードのアプリ共通化：共通キーが無ければ開始データセットの既存値を初期値として移行し、両データセットへ統一する */
   const uniMode = storeGet(LS_APP_MODE) || storeGet(CTX[startDS].cfg.prefix+'mode') || storeGet(CTX[startDS==='artists'?'designers':'artists'].cfg.prefix+'mode') || 'def';
   Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = uniMode; });
