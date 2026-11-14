@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="28.4">
+<meta name="app-version" content="29.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -506,6 +506,17 @@ h3.subhead:first-child{margin-top:8px;}
 #viewer .vunder{position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;}
 #viewer .vunder img{max-width:100%; max-height:100%; object-fit:contain;}
 #viewer .vshade{position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0; background:linear-gradient(90deg, rgba(10,8,6,0) 30%, rgba(10,8,6,.5));}
+/* v29.0: paper, not a board (his words: 板を剥がしてるみたい).
+   Two gradient layers ride the turn, recomputed every frame
+   from the bend angle in vTurnApply: .vcast is the shadow the
+   lifted sheet throws on the page it reveals (it sits above
+   .vunder, below .vpage); .vflex lives INSIDE the turning
+   page, above the shade — the travelling light crest at the
+   bend, the deepening shadow at the spine, and the warm dim
+   veil that makes the sheet's far side read as the back of
+   paper — slightly translucent, slightly dark. */
+#viewer .vcast{position:absolute; inset:0; z-index:1; pointer-events:none; opacity:0;}
+#viewer .vflex{position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0;}
 /* v27.8: the work's official video, under the caption. The embed
    iframe is created only when the reader taps the facade — nothing
    third-party loads from the grid or the detail page. */
@@ -755,11 +766,11 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
 .gtermlink{font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 .worklink{background:none; border:none; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
-#termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
-#termsheet.hidden,#symsheet.hidden{display:none}
+#termsheet,#symsheet,#erasheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
+#termsheet.hidden,#symsheet.hidden,#erasheet.hidden{display:none}
 .secright{display:inline-flex; align-items:center; gap:8px;}
-.symsecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
-.symsecbtn.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
+.symsecbtn,.erasecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
+.symsecbtn.on,.erasecbtn.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
 .symopt{display:flex; align-items:center; width:100%; min-height:48px; padding:8px 6px; border:0; border-bottom:1px solid var(--line); background:none; color:var(--text); font-size:14.5px; text-align:left;}
 .symopt .symg{display:inline-block; width:30px; font-size:15px;}
 .symopt .symcnt{margin-left:auto; color:var(--muted); font-size:12.5px;}
@@ -961,6 +972,16 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
 .tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
 button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
+/* v29.0: 歴史 chip — marks a kind:"history" timeline entry (a
+   history-context anchor, not an art movement) on its card and
+   era page, so it reads differently at a glance. */
+.tlhist{display:inline-block; margin-left:8px; padding:1px 9px; border-radius:999px; border:1px solid var(--accent); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.08em; vertical-align:3px; font-family:var(--sans);}
+/* v29.0: the curated photo slot (e.photo {artist,title,year,
+   holder}) — rendered ONLY when a photo URL is present; the
+   slots ship empty in v29.0 (photos are sourced in v29.1). */
+.tlphoto{margin-top:12px;}
+.tlphoto img{display:block; width:100%; max-height:340px; object-fit:contain; border-radius:10px; border:1px solid var(--line); background:var(--bg2);}
+.tlphotocap{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.6;}
 .qcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 16px; margin-top:14px;}
 .qq{font-family:var(--serif); font-size:calc(var(--fs) * 1.0625); line-height:var(--lh); margin-top:6px;}
 .qchoice{display:block; width:100%; text-align:left; background:var(--card2); border:1px solid var(--line); color:var(--text); padding:13px 15px; font-size:14.5px; border-radius:12px; margin-top:10px; font-family:var(--sans); min-height:56px;}
@@ -1186,6 +1207,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
+<div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -10111,6 +10133,21 @@ function guideJumpTerm(term){
   guideView = 'term'; guideTermName = term;
   renderGuide();
 }
+/* v29.0: the same jump, entered from a PERSON page (ITEM 5).
+   The detail DOM is never destroyed by the guide panel — the
+   panel simply covers it — so the snapshot only needs the
+   person's id, open tab and window scroll; guideGoBack's
+   person branch hides the panel and puts the scroll back in
+   the same task. The guide's own term→term jumps keep using
+   guideJumpTerm snapshots on top of this one. */
+function personJumpTerm(term){
+  guideEnsure();
+  guideStack = [{ person: { id: state.detailId, tab: state.tab, scroll: window.scrollY || 0 } }];
+  guideView = 'term'; guideTermName = term;
+  $('guidepanel').classList.remove('hidden');
+  const b = $('navGuide'); if(b) b.classList.add('on');
+  renderGuide();
+}
 /* THE return path — the back button and the in-panel swipe
    both call this, nothing else moves the guide back. The
    scroll offset is handed to renderGuide as guideScrollRestore
@@ -10119,6 +10156,19 @@ function guideJumpTerm(term){
    settle anything (the v27.9 lesson, panel form). */
 function guideGoBack(){
   const s = guideStack.pop();
+  if(s && s.person){
+    /* v29.0: returning to a person page — the detail was never
+       destroyed (the panel covered it), so hiding the panel
+       and restoring the window scroll IS the whole restore;
+       the open tab lives in state.tab, which navigation
+       inside the guide never touched. */
+    guideStack = [];
+    $('guidepanel').classList.add('hidden');
+    const nb = $('navGuide'); if(nb) nb.classList.remove('on');
+    guideScrollRestore = null;
+    window.scrollTo(0, s.person.scroll || 0);
+    return;
+  }
   if(!s){ if(guideView === 'term'){ guideView = 'dict'; renderGuide(); } return; }
   guideView = s.view; guideMajorId = s.majorId; guideChapterId = s.chapterId;
   guideTermName = s.termName; guideDictQ = s.dictQ || '';
@@ -10319,7 +10369,14 @@ function guideEnsure(){
   if(guideData || guideError) return;
   fetch('production.json', { cache: 'no-cache' })
     .then(r=>{ if(!r.ok) throw new Error('production.json'); return r.json(); })
-    .then(j=>{ guideData = j; guideLinkIdx = null; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); })
+    .then(j=>{ guideData = j; guideLinkIdx = null; if(!$('guidepanel').classList.contains('hidden')) renderGuide();
+      /* v29.0: the glossary landing also feeds the 更新予定 tab
+         (production.json's roadmap) and the person-page term
+         links — refresh whichever of those is on screen, the
+         detail keeping its exact scroll position. */
+      if(settingsPanel === 'reqnotif' && bellTab === 'roadmap') renderRoadmapList();
+      const vd = $('viewDetail');
+      if(vd && !vd.classList.contains('hidden') && state.detailId != null && $('guidepanel').classList.contains('hidden')){ const y = window.scrollY || 0; renderDetail(); window.scrollTo(0, y); } })
     .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
 function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
@@ -10425,7 +10482,7 @@ function renderGuide(){
   }
   else if(guideView === 'term'){
     const e = guideGlossary().find(g=> g.term === guideTermName);
-    const backLabel = (guideStack.length && guideStack[guideStack.length - 1].view === 'major')? '‹ 読んでいた場所へ戻る': '‹ 辞典へ戻る';
+    const backLabel = (guideStack.length && (guideStack[guideStack.length - 1].view === 'major' || guideStack[guideStack.length - 1].person))? '‹ 読んでいた場所へ戻る': '‹ 辞典へ戻る';
     h += '<button class="backbtn" onclick="guideGoBack()">' + backLabel + '</button>';
     if(!e) h += '<div class="empty">用語が見つかりません</div>';
     else {
@@ -10483,6 +10540,19 @@ function renderGuide(){
   body.addEventListener('click', e=>{
     const el = e.target && e.target.closest? e.target.closest('a.gtermlink'): null;
     if(el && el.getAttribute('data-gterm')) guideJumpTerm(el.getAttribute('data-gterm'));
+  });
+})();
+
+/* v29.0: the same delegation for person pages — ONE handler on
+   #viewDetail, static markup no render replaces, so tab
+   switches and re-renders can never detach it. Only
+   a.gtermlink taps are intercepted; the v28.1 work links
+   (buttons), chips and rows keep their own paths. */
+(function(){
+  const vd = $('viewDetail'); if(!vd) return;
+  vd.addEventListener('click', e=>{
+    const el = e.target && e.target.closest? e.target.closest('a.gtermlink'): null;
+    if(el && el.getAttribute('data-gterm')) personJumpTerm(el.getAttribute('data-gterm'));
   });
 })();
 
@@ -10818,6 +10888,7 @@ vtNoAnim = false;
 pillRecMute = false;
 /* v27.18 C3: an open field sheet recomputes against the dataset just bound */
 const shOpen = $('symsheet'); if(shOpen && !shOpen.classList.contains('hidden')) openSymSheet();
+const esOpen = $('erasheet'); if(esOpen && !esOpen.classList.contains('hidden')) openEraSheet();
 if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 }
@@ -11075,6 +11146,7 @@ if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
 if(symFilter) arr = arr.filter(a=> fieldSymsList(a).includes(symFilter));
+if(eraFilter) arr = arr.filter(a=> eraOf(a) === eraFilter);
 if(favFilter) arr = arr.filter(a=> isFavPerson(DS, a.id));
 return arr;
 }
@@ -11447,6 +11519,7 @@ tagHtml += '<div class="taggrouprow">'+shownTags.map(tagChip).join('')+(tags.len
 tagHtml += '</div>';
 }
 renderSymFilter();
+renderEraFilter();
 $('tagrow').innerHTML = tagHtml;
 fitToolbarTop();
 renderListBody();
@@ -11543,6 +11616,69 @@ closeSymSheet();
 renderList();
 }
 
+/* v29.0: 時代で選ぶ — the era tab immediately LEFT of the 分野
+   tab in every section header (his ask; the 年代で絞る slider
+   sheet stays as a separate tool). Birth-cohort buckets with
+   movement-era labels, mirroring the sym pattern exactly.
+   Boundaries were set from the actual data (artists 520 /
+   designers 240, counted 2026-11-14): <1400 → 12/0,
+   1400–1829 → 36/7, 1830–1869 → 28/7, 1870–1909 → 65/59,
+   1910–1949 → 131/120, 1950–1979 → 157/42, 1980+ → 86/1.
+   An unparseable birth year (birthSortKey === Infinity) puts
+   the record in NO bucket — it stays in すべて only. The
+   sheet lists only buckets that exist in the current dataset
+   (like the genre sheet), and the active era is always named
+   on the button itself, so the state is never a guess. */
+const ERA_TABS = [
+  ['kodai', '古代〜中世', -Infinity, 1399],
+  ['kinsei', 'ルネサンスから近代へ', 1400, 1829],
+  ['kindai', '印象派と近代の始まり', 1830, 1869],
+  ['modern', 'モダニズム', 1870, 1909],
+  ['sengo', '戦後', 1910, 1949],
+  ['gendai', '現代', 1950, 1979],
+  ['contemp', 'コンテンポラリー', 1980, Infinity]
+];
+const ERA_RANGE_TXT = { kodai: '〜1399年生まれ', kinsei: '1400–1829年生まれ', kindai: '1830–1869年生まれ', modern: '1870–1909年生まれ', sengo: '1910–1949年生まれ', gendai: '1950–1979年生まれ', contemp: '1980年〜生まれ' };
+let eraFilter = '';
+try{ eraFilter = storeGet('zukan.eraFilter') || ''; }catch(e){}
+function eraOf(a){
+  const y = birthSortKey(a);
+  if(!isFinite(y)) return '';
+  for(const [id, , lo, hi] of ERA_TABS){ if(y >= lo && y <= hi) return id; }
+  return '';
+}
+function eraTabOf(id){ return ERA_TABS.find(([g]) => g === id) || null; }
+function eraBtnHTML(){
+  const cur = eraTabOf(eraFilter);
+  return '<button class="erasecbtn' + (cur? ' on': '') + '" onclick="openEraSheet()">' + (cur? '◷ ' + cur[1] : '時代 ▾') + '</button>';
+}
+function renderEraFilter(){
+  const present = new Set();
+  DB.artists.forEach(a => { const e = eraOf(a); if(e) present.add(e); });
+  if(eraFilter && !present.has(eraFilter)){ eraFilter = ''; try{ storeSet('zukan.eraFilter', ''); }catch(e){} }
+  const cur = eraTabOf(eraFilter);
+  document.querySelectorAll('.erasecbtn').forEach(el => {
+    el.textContent = cur? ('◷ ' + cur[1]) : '時代 ▾';
+    el.classList.toggle('on', !!cur);
+  });
+}
+function openEraSheet(){
+  const list = $('eralist'); if(!list) return;
+  const counts = {};
+  DB.artists.forEach(a => { const e = eraOf(a); if(e) counts[e] = (counts[e] || 0) + 1; });
+  let h = '<button class="symopt' + (eraFilter? '' : ' on') + '" onclick="setEraFilter(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (eraFilter? '' : ' ✓') + '</span></button>';
+  ERA_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (eraFilter === g? ' on' : '') + '" onclick="setEraFilter(\'' + g + '\')\"><span class="symg">◷</span>' + label + '（' + ERA_RANGE_TXT[g] + '）<span class="symcnt">' + counts[g] + '名' + (eraFilter === g? ' ✓' : '') + '</span></button>'; });
+  list.innerHTML = h;
+  $('erasheet').classList.remove('hidden');
+}
+function closeEraSheet(){ const sh = $('erasheet'); if(sh) sh.classList.add('hidden'); }
+function setEraFilter(g){
+  eraFilter = (eraFilter === g)? '' : g;
+  try{ storeSet('zukan.eraFilter', eraFilter); }catch(e){}
+  closeEraSheet();
+  renderList();
+}
+
 /* v26.0 (his memo 2026-11-14): when a search matched a person through body
    text (a name appearing in their biography/features, not their own name),
    make the term visible: gold-highlighted in the detail texts, and as a
@@ -11590,6 +11726,49 @@ function hlEsc(text){
   let out = '', pos = 0;
   for(const h of bestHits){ out += esc(t.slice(pos, h[0])) + '<mark class="hl">' + esc(t.slice(h[0], h[1])) + '</mark>'; pos = h[1]; }
   return out + esc(t.slice(pos));
+}
+/* v29.0: person-page glossary links — the v28.4 guide linker
+   (longest-match scan over the RAW text, real <a data-gterm>
+   anchors) extended to the person page's body texts. Two
+   differences from the guide path: (1) 《…》 spans are
+   protected — a work title there is the v28.1 work link's
+   territory (or stays plain), a glossary term never links
+   inside one; (2) non-term chunks pass through hlEsc, so the
+   search highlight keeps working inside the linked prose.
+   Taps are handled by ONE delegated listener on #viewDetail
+   (see personJumpTerm). While the glossary has not loaded
+   the index is empty and this degenerates to plain hlEsc;
+   openDetail starts guideEnsure() and its landing re-renders
+   the detail, so the links appear when production.json
+   arrives. */
+function pTermEsc(text){
+  const s = String(text == null? '': text);
+  const idx = guideLinkIndex();
+  if(!idx.length) return hlEsc(s);
+  const segs = [];
+  let cur = '', i = 0;
+  while(i < s.length){
+    if(s[i] === '《'){
+      const j = s.indexOf('》', i + 1);
+      if(j > i){ segs.push({ t: cur, prot: false }); segs.push({ t: s.slice(i, j + 1), prot: true }); cur = ''; i = j + 1; continue; }
+    }
+    cur += s[i]; i += 1;
+  }
+  segs.push({ t: cur, prot: false });
+  let out = '';
+  for(const seg of segs){
+    if(seg.prot || !seg.t){ out += hlEsc(seg.t); continue; }
+    const t = seg.t;
+    let buf = '', k = 0;
+    while(k < t.length){
+      let hit = null;
+      for(let m = 0; m < idx.length; m++){ const surf = idx[m][0]; if(surf.length && t.startsWith(surf, k)){ hit = idx[m]; break; } }
+      if(hit){ if(buf){ out += hlEsc(buf); buf = ''; } out += '<a class="gtermlink" data-gterm="' + escA(hit[1]) + '">' + esc(hit[0]) + '</a>'; k += hit[0].length; }
+      else { buf += t[k]; k += 1; }
+    }
+    if(buf) out += hlEsc(buf);
+  }
+  return out;
 }
 function searchSnipHTML(a){
   const q = (state.query || '').trim();
@@ -11752,7 +11931,7 @@ group.sort((x, y)=>{
 const kx = birthSortKey(x), ky = birthSortKey(y);
 return kx < ky? -1: kx > ky? 1: 0;
 });
-html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="secright">' + symSecBtnHTML() + '<span class="cnt">'+group.length+'名</span></span></h2>';
+html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="secright">' + eraBtnHTML() + symSecBtnHTML() + '<span class="cnt">'+group.length+'名</span></span></h2>';
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
@@ -11799,6 +11978,7 @@ detailStack = pendingPanelOrigin? [pendingPanelOrigin] : [];
 pendingPanelOrigin = null;
 }
 state.detailId = a.id; state.tab = 'works';
+guideEnsure(); /* v29.0: person-page term links need the glossary; its landing re-renders the detail with links */
 renderDetail(); showView('detail');
 prefetchViewerImage(a);
 }
@@ -12014,14 +12194,14 @@ function chWorkIdx(ws, title, year){
 function chronicleHTML(a, ch, ws){
   let h = '<h3 class="subhead">年代記</h3>';
   const p = ch.profile||{};
-  (p.lead||[]).forEach(t=>{ h += '<p class="chtext">'+esc(t)+'</p>'; });
+  (p.lead||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
   if(p.facts && p.facts.length) h += '<div class="chfacts">'+p.facts.map(f=>'<div>'+esc(f)+'</div>').join('')+'</div>';
-  if(p.note) h += '<p class="chnote2">'+esc(p.note)+'</p>';
+  if(p.note) h += '<p class="chnote2">'+pTermEsc(p.note)+'</p>';
   (ch.periods||[]).forEach(per=>{
     h += '<div class="chperiod"><div class="chhead"><span class="chno">第'+per.n+'期</span><span class="chtitle">'+esc(per.title||'')+'</span></div>'
       + (per.sub? '<div class="chsub">'+esc(per.sub)+'</div>': '')
       + '<div class="chmeta">'+esc(per.years||'')+(per.age? '｜'+esc(per.age): '')+'</div>';
-    (per.text||[]).forEach(t=>{ h += '<p class="chtext">'+esc(t)+'</p>'; });
+    (per.text||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
     if(per.works && per.works.length){
       const thumbs = [];
       per.works.forEach(w=>{
@@ -12039,12 +12219,12 @@ function chronicleHTML(a, ch, ws){
     h += '<h3 class="subhead">早見表</h3>' + ch.quicktable.map(q=>'<div class="chqrow"><div class="chq1">'+esc(q.period)+'</div><div class="chq2">'+esc(q.years)+'｜'+esc(q.age)+'</div><div class="chq3">'+esc(q.turning)+'</div></div>').join('');
   }
   if(ch.constants && ch.constants.length){
-    h += '<h3 class="subhead">年代が変わっても、変わらなかったもの</h3>' + ch.constants.map((c,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(c.title)+'</div><p class="chtext" style="margin:0;">'+esc(c.text)+'</p></div></div>').join('');
+    h += '<h3 class="subhead">年代が変わっても、変わらなかったもの</h3>' + ch.constants.map((c,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(c.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(c.text)+'</p></div></div>').join('');
   }
   if(ch.steps && ch.steps.length){
     h += '<h3 class="subhead">では、なぜ画家になれたのか</h3>';
-    if(ch.steps_intro) h += '<p class="chtext">'+esc(ch.steps_intro)+'</p>';
-    h += ch.steps.map((s,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(s.title)+'</div><p class="chtext" style="margin:0;">'+esc(s.text)+'</p></div></div>').join('');
+    if(ch.steps_intro) h += '<p class="chtext">'+pTermEsc(ch.steps_intro)+'</p>';
+    h += ch.steps.map((s,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(s.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(s.text)+'</p></div></div>').join('');
   }
   return h;
 }
@@ -12055,8 +12235,8 @@ function chronicleHTML(a, ch, ws){
    so highlight behaviour is untouched. */
 function sentenceSpansHTML(text){
   const parts = String(text == null? '': text).split(/(?<=。)\s*/).filter(s=> s.length);
-  if(parts.length <= 1) return hlEsc(text);
-  return parts.map(s=> '<span class="sline">'+hlEsc(s)+'</span>').join('');
+  if(parts.length <= 1) return pTermEsc(text);
+  return parts.map(s=> '<span class="sline">'+pTermEsc(s)+'</span>').join('');
 }
 /* Biography long-text: existing paragraph breaks (blank
    lines) stay paragraph separations; an over-long paragraph
@@ -12065,8 +12245,8 @@ function proseHTML(text){
   const t = String(text == null? '': text);
   return t.split(/\n\n+/).map(p=>{
     const sents = p.split(/(?<=。)\s*/).filter(s=> s.length);
-    if(sents.length > 1 && p.length > 60) return '<div class="bodytext">' + sents.map(s=> '<span class="sline">'+hlEsc(s)+'</span>').join('') + '</div>';
-    return '<div class="bodytext">' + hlEsc(p) + '</div>';
+    if(sents.length > 1 && p.length > 60) return '<div class="bodytext">' + sents.map(s=> '<span class="sline">'+pTermEsc(s)+'</span>').join('') + '</div>';
+    return '<div class="bodytext">' + pTermEsc(p) + '</div>';
   }).join('');
 }
 /* v28.1: work-title links inside the 来歴 text (his ask,
@@ -12422,7 +12602,7 @@ const chData = chronicleFor(a);
 if(chData) bioHTML = chronicleHTML(a, chData, ws);
 else{
 bioHTML = sp.bio? cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws) }): '<div class="bodytext">（来歴の記載はまだありません）</div>';
-if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+hlEsc(a.key_works)+'</div>';
+if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+pTermEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
 if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
@@ -12438,16 +12618,16 @@ if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="
    designer record simply carries none yet. */
 let processHTML = '';
 if(procObj){
-if(procObj.summary) processHTML += '<div class="bodytext">'+hlEsc(procObj.summary)+'</div>';
+if(procObj.summary) processHTML += '<div class="bodytext">'+pTermEsc(procObj.summary)+'</div>';
 if(procObj.steps && procObj.steps.length){
 processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s, i)=>
 '<div class="procstep"><div class="procstep-h"><span class="procnum">'+(i+1)+'</span><span class="proctitle">'+esc(s.title||'')+'</span></div>'
-+'<div class="bodytext">'+hlEsc(s.text)+'</div>'
++'<div class="bodytext">'+pTermEsc(s.text)+'</div>'
 +(s.source? '<div class="procsrc"><a href="'+escA(s.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
 +'</div>').join('');
 }
-if(procObj.environment) processHTML += '<h3 class="subhead">制作環境</h3><div class="bodytext">'+hlEsc(procObj.environment)+'</div>';
-if(procObj.materials_notes) processHTML += '<h3 class="subhead">画材メモ</h3><div class="bodytext">'+hlEsc(procObj.materials_notes)+'</div>';
+if(procObj.environment) processHTML += '<h3 class="subhead">制作環境</h3><div class="bodytext">'+pTermEsc(procObj.environment)+'</div>';
+if(procObj.materials_notes) processHTML += '<h3 class="subhead">画材メモ</h3><div class="bodytext">'+pTermEsc(procObj.materials_notes)+'</div>';
 /* v27.16: the quotes block （本人の言葉） moved wholesale to the
    発言 tab — it renders there, never in both places. In its place
    the process tab gains the dissection axes that are making-of
@@ -12459,7 +12639,7 @@ const AXES = [['thinking','思考プロセス'],['drawings','ドローイング'
 AXES.forEach(([k, label])=>{
 const ax = disObj[k]; if(!ax) return;
 processHTML += '<h3 class="subhead">'+label+'</h3>';
-if(ax.text) processHTML += '<div class="bodytext">'+hlEsc(ax.text)+'</div>';
+if(ax.text) processHTML += '<div class="bodytext">'+pTermEsc(ax.text)+'</div>';
 else if(ax.gap) processHTML += '<div class="small procnote">'+esc(ax.gap)+'</div>';
 if(ax.sources && ax.sources.length) processHTML += '<div class="small" style="margin-top:6px">出典：'+ax.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>';
 });
@@ -12479,21 +12659,21 @@ if(procObj.sources && procObj.sources.length) processHTML += '<div class="small"
 let quotesHTML = '';
 if(procObj && procObj.quotes && procObj.quotes.length){
 quotesHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>
-'<blockquote class="procquote">'+hlEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+(q.text_ja? '<span class="procqja">'+hlEsc(q.text_ja)+'</span>': '')+'</blockquote>').join('');
+'<blockquote class="procquote">'+pTermEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+(q.text_ja? '<span class="procqja">'+pTermEsc(q.text_ja)+'</span>': '')+'</blockquote>').join('');
 }
 if(stanceObj || termsArr.length){
 quotesHTML += '<h3 class="subhead">大事にしている思想</h3>';
 if(stanceObj){
 quotesHTML += '<div class="stmtcard"><div><span class="sumchip">要約</span><span class="stmtterm">姿勢・思想</span></div>'
-+'<div class="stmtmean">'+hlEsc(stanceObj.text)+'</div>'
++'<div class="stmtmean">'+pTermEsc(stanceObj.text)+'</div>'
 +(stanceObj.sources && stanceObj.sources.length? '<div class="stmtsrc">出典：'+stanceObj.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>': '')
 +'</div>';
 }
 termsArr.forEach(t=>{
 quotesHTML += '<div class="stmtcard"><span class="stmtterm">'+esc(t.term)+'</span>'+(t.reading? '<span class="stmtreading">'+esc(t.reading)+'</span>': '')
-+(t.meaning? '<div class="stmtmean"><span class="sumchip">要約</span>'+hlEsc(t.meaning)+'</div>': '')
-+(t.contrast? '<div class="stmtcontrast">対比：'+hlEsc(t.contrast)+'</div>': '')
-+(t.quote? '<div class="stmtquote">'+hlEsc(t.quote)+'</div>': '')
++(t.meaning? '<div class="stmtmean"><span class="sumchip">要約</span>'+pTermEsc(t.meaning)+'</div>': '')
++(t.contrast? '<div class="stmtcontrast">対比：'+pTermEsc(t.contrast)+'</div>': '')
++(t.quote? '<div class="stmtquote">'+pTermEsc(t.quote)+'</div>': '')
 +(t.source? '<div class="stmtsrc"><a href="'+escA(t.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
 +'</div>';
 });
@@ -12738,7 +12918,7 @@ syncVFavBtn();
 { const hb = $('vhires'); if(hb) hb.hidden = !w.hires; }
 const seq = ++viewerSeq;
 vDeepReset(w);
-const box = $('vimg'); box.innerHTML = '<div class="vunder" id="vunder"></div><div class="vpage" id="vpage"><div class="vstage" id="vstage"></div><div class="vshade" id="vshade"></div></div>';
+const box = $('vimg'); box.innerHTML = '<div class="vunder" id="vunder"></div><div class="vcast" id="vcast"></div><div class="vpage" id="vpage"><div class="vstage" id="vstage"></div><div class="vshade" id="vshade"></div><div class="vflex" id="vflex"></div></div>';
 const stage = box.querySelector('.vstage');
 vResetZoom();
 $('vcap').textContent = w.caption || '';
@@ -12895,11 +13075,44 @@ if(shade) shade.style.background = dir > 0? 'linear-gradient(90deg, rgba(10,8,6,
 vTurn.dir = dir;
 return true;
 }
+/* v29.0: the bend is computed, not faked. The sheet rotates
+   around its spine to at most 88° — it never crosses 90°, so
+   the front face (backface-visibility:hidden) stays the only
+   face, and the "back of the paper" is painted by the .vflex
+   veil instead of a mirrored image. Everything derives from
+   the fold fraction cos(angle): the free edge's distance from
+   the spine. The light crest rides just spine-side of the
+   fold and travels with it; the cast shadow on the revealed
+   page sits just beyond the fold and softens as the sheet
+   rises; past p≈0.45 the warm veil grows over the sheet —
+   the far half reads as paper seen from behind. Gradients
+   are written in spine coordinates (90deg for 次, hinge at
+   the left; 270deg for 前， hinge at the right), so one
+   formula serves both directions. */
+const VTURN_MAXANG = 88;
 function vTurnApply(){
-const page = $('vpage'), shade = $('vshade'); if(!page) return;
-const ang = vTurn.p * 100 * (vTurn.dir > 0? -1: 1);
+const page = $('vpage'), shade = $('vshade'), flex = $('vflex'), cast = $('vcast'); if(!page) return;
+const p = vTurn.p, sgn = vTurn.dir > 0? -1: 1;
+const ang = p * VTURN_MAXANG * sgn;
 page.style.transform = 'rotateY(' + ang.toFixed(1) + 'deg)';
-if(shade) shade.style.opacity = String(Math.min(.85, vTurn.p * 1.15));
+if(shade) shade.style.opacity = String(Math.min(.85, p * 1.15));
+const ax = vTurn.dir > 0? '90deg': '270deg';
+const foldPct = Math.cos(p * VTURN_MAXANG * Math.PI / 180) * 100; /* free edge, % from the spine */
+if(flex){
+  const ridge = Math.max(6, foldPct - 5);
+  const shSpine = (0.30 * p).toFixed(3), hi = (0.36 * p).toFixed(3), shEdge = (0.18 * p).toFixed(3);
+  const veil = p <= 0.45? 0: ((p - 0.45) / 0.55 * 0.45);
+  flex.style.background =
+    'linear-gradient(0deg, rgba(48,40,29,' + veil.toFixed(3) + '), rgba(48,40,29,' + veil.toFixed(3) + ')), ' +
+    'linear-gradient(' + ax + ', rgba(12,10,8,' + shSpine + ') 0%, rgba(12,10,8,0) ' + Math.max(4, ridge - 30).toFixed(1) + '%, rgba(255,246,228,' + hi + ') ' + ridge.toFixed(1) + '%, rgba(12,10,8,' + shEdge + ') 100%)';
+  flex.style.opacity = String(Math.min(1, p * 4));
+}
+if(cast){
+  const cs = (0.40 * (0.25 + 0.75 * p)).toFixed(3), csSoft = (0.14 * p).toFixed(3);
+  const f0 = Math.max(0, foldPct - 3).toFixed(1), f1 = Math.min(100, foldPct + 2).toFixed(1), f2 = Math.min(100, foldPct + 30).toFixed(1);
+  cast.style.background = 'linear-gradient(' + ax + ', rgba(10,8,6,0) ' + f0 + '%, rgba(10,8,6,' + cs + ') ' + f1 + '%, rgba(10,8,6,' + csSoft + ') ' + ((+f1 + +f2) / 2).toFixed(1) + '%, rgba(10,8,6,0) ' + f2 + '%)';
+  cast.style.opacity = p > 0? '1': '0';
+}
 }
 function vTurnFollow(t, g){
 if(!pageTurnOn || vTurn.animating || reducedMotion()) return;
@@ -12932,32 +13145,54 @@ vTurn.active = false; vTurn.samples = [];
 if(p > 0.30 || toward > 0.4) vTurnComplete(dir);
 else vTurnSnapBack();
 }
+/* v29.0: the completion / snap-back tween drives vTurn.p
+   itself through vTurnApply on every animation frame, so the
+   bend gradients travel WITH the rotation. (The v27.8 WAAPI
+   tween animated only the transform — the gradients would
+   have frozen mid-turn, which is exactly the stiff, board-like
+   feel being replaced.) Same easing curve as the old tween,
+   evaluated directly. */
+function vBez(t){
+const X1 = .32, Y1 = .72, X2 = .24, Y2 = 1;
+const bx = u => { const v = 1 - u; return 3 * v * v * u * X1 + 3 * v * u * u * X2 + u * u * u; };
+const by = u => { const v = 1 - u; return 3 * v * v * u * Y1 + 3 * v * u * u * Y2 + u * u * u; };
+let lo = 0, hi = 1, u = t;
+for(let i = 0; i < 12; i++){ u = (lo + hi) / 2; if(bx(u) < t) lo = u; else hi = u; }
+return by(u);
+}
 function vTurnAnimateTo(target, ms, done){
 const page = $('vpage');
 if(!page){ vTurn.animating = false; if(done) done(); return; }
 vTurn.animating = true;
-const from = vTurn.p, dir = vTurn.dir;
-const sgn = dir > 0? -1: 1;
-let a = null;
-try{ a = page.animate([
-{ transform: 'rotateY(' + (from * 100 * sgn).toFixed(1) + 'deg)' },
-{ transform: 'rotateY(' + (target * 100 * sgn).toFixed(1) + 'deg)' }
-], { duration: Math.max(60, ms), easing: 'cubic-bezier(.32,.72,.24,1)', fill: 'both' }); }catch(e){}
+const from = vTurn.p;
+const dur = Math.max(60, ms);
+const nowMs = ()=> (window.performance && performance.now)? performance.now(): Date.now();
+const t0 = nowMs();
 let fired = false;
-const fin = ()=>{ if(fired) return; fired = true; vTurn.animating = false; if(a){ try{ a.cancel(); }catch(e){} } if(done) done(); };
-if(a && a.finished){ a.finished.then(fin).catch(fin); setTimeout(fin, ms + 150); } else fin();
+const fin = ()=>{ if(fired) return; fired = true; vTurn.animating = false; if(done) done(); };
+const step = ()=>{
+if(fired) return;
+const k = Math.min(1, (nowMs() - t0) / dur);
+vTurn.p = from + (target - from) * vBez(k);
+vTurnApply();
+if(k < 1) requestAnimationFrame(step);
+else { vTurn.p = target; vTurnApply(); fin(); }
+};
+requestAnimationFrame(step);
+setTimeout(fin, dur + 250); /* stall backstop, as before */
 }
 function vTurnComplete(dir){
-const shade = $('vshade'); if(shade) shade.style.opacity = '.85';
 vTurnAnimateTo(1, 250 * (1 - vTurn.p) + 70, ()=>{ vTurn.p = 0; viewerMove(dir); });
 }
 function vTurnSnapBack(){
 vTurnAnimateTo(0, 190, ()=>{ vTurnReset(); });
 }
 function vTurnReset(){
-const page = $('vpage'), shade = $('vshade'), under = $('vunder');
+const page = $('vpage'), shade = $('vshade'), under = $('vunder'), flex = $('vflex'), cast = $('vcast');
 if(page) page.style.transform = '';
 if(shade) shade.style.opacity = '0';
+if(flex){ flex.style.opacity = '0'; flex.style.background = ''; }
+if(cast){ cast.style.opacity = '0'; cast.style.background = ''; }
 if(under) under.innerHTML = '';
 vTurn.p = 0; vTurn.active = false; vTurn.samples = [];
 }
@@ -14117,6 +14352,7 @@ function changelogMarkAllSeen(){
   if(ch){ const s = JSON.stringify(seen); CLSEEN_SRC = s; kvSet(LS_CHANGELOG_SEEN, s); }
 }
 function bellMarkAllRead(){
+  if(bellTab === 'roadmap'){ renderRoadmapList(); return; } /* v29.0: nothing to mark read on the roadmap tab */
   if(bellTab === 'history'){ changelogMarkAllSeen(); renderUpdateList(); }
   else { reqMarkAllReadForDS(); renderRequestNotifs('reqnotiflist'); }
   notifRefreshTabPills();
@@ -14187,6 +14423,31 @@ function renderUpdateList(){
       + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
       + (open? '<ul class="upnotes">'+(e.notes||[]).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul>': '')
       + '</div>';
+  }).join('');
+}
+/* v29.0 （更新予定 tab, his TOP priority 2026-11-14 19:57):
+   the tab right of 更新履歴 lists what is planned, with the
+   version it is planned for. The data rides production.json's
+   `roadmap` array — the same fetch the guide uses — so future
+   edits are content-only pushes; until that fetch lands (or if
+   it fails) the in-app fallback copy below renders instead, so
+   the tab is never empty. Entries: { v:'29.1'|null, label,
+   lines:[...] } — a null v shows the label as its chip. */
+const ROADMAP_FALLBACK = [
+  { v: '29.1', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
+  { v: null, label: 'データの更新予定', lines: ['作家の発言の日本語訳（残り262件）を順に進めます', '作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします'] },
+  { v: null, label: 'その先', lines: ['「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
+];
+function roadmapEntries(){
+  const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
+  return r || ROADMAP_FALLBACK;
+}
+function renderRoadmapList(){
+  const el = $('roadmaplist'); if(!el) return;
+  el.innerHTML = roadmapEntries().map(e=>{
+    const chip = e.v? '<span class="upv">v'+esc(e.v)+'</span>': '<span class="upv">'+esc(e.label || '')+'</span>';
+    return '<div class="uprow"><div class="uphead">'+chip+(e.v && e.label? '<span class="upat">'+esc(e.label)+'</span>': '')+'</div>'
+      + '<ul class="upnotes">'+(e.lines || []).map(n => '<li>'+esc(n)+'</li>').join('')+'</ul></div>';
   }).join('');
 }
 /* v2.81: a completed registration is announced under the name it
@@ -14964,6 +15225,23 @@ japan: [
 { bigYear: "2000", years: "2000年代–現在", title: "日常と余白のデザイン", summary: "原研哉の「白」とリデザイン、深澤直人の無意識に寄り添うデザインが、情報とモノに埋もれた時代の質を問い直した。震災後は社会のためのデザインも問われている。", background: "成熟した消費社会で、足すデザインから引くデザインへ。日本の美意識を世界に翻訳し直す試みが続いている。", artists: [{label: "原研哉", link: "原研哉"}, {label: "深澤直人", link: "深澤直人"}, {label: "佐藤卓", link: "佐藤卓"}] }
 ]
 };
+/* v29.0: the curated photo slot. Ships empty in v29.0 — the
+   staging identified a representative work for 82 entries but
+   no photo URL is accepted into the data until it is sourced
+   and verified (v29.1). Until then this returns '' — no broken
+   image, no placeholder box, nothing. */
+function tlPhotoHTML(e){
+  const ph = e && e.photo;
+  if(!ph || !ph.url) return '';
+  const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
+  return '<div class="tlphoto"><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
+}
+/* v29.0: a blank line in the staged detail/background text is
+   a paragraph break — render it as separate paragraphs, never
+   as a wall of text. */
+function tlParasHTML(t){
+  return String(t || '').split(/\n\n+/).map(p => '<p class="bodytext">'+esc(p)+'</p>').join('');
+}
 function timelineOf(){
 if(DS==='designers') return TL_DESIGN;
 const t = DB && DB.timeline;
@@ -15011,8 +15289,9 @@ const key = tlRegion+':'+i;
 html += '<div class="tlcard">'
 +(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
 +'<div class="tlyears">'+esc(e.years||'')+'</div>'
-+(e.title? '<div class="tltitle">'+esc(e.title)+'</div>': '')
++(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history'? '<span class="tlhist">歴史</span>': '')+'</div>': '')
 +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
+html += tlPhotoHTML(e);
 if(e.background){
 if(tlOpenBg[key]) html += '<div class="tlbg">'+esc(e.background)+'</div>'
 +'<div style="margin-top:8px;"><button class="linkbtn" onclick="toggleTlBg(\''+key+'\')">閉じる</button></div>';
@@ -15255,8 +15534,9 @@ function renderEra(){
     +'<div class="eraband" style="background:'+col+'"></div>'
     +(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
     +'<div class="tlyears">'+esc(e.years||'')+'</div>'
-    +(e.title? '<div class="tltitle">'+esc(e.title)+'</div>': '')
+    +(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history'? '<span class="tlhist">歴史</span>': '')+'</div>': '')
     +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
+  html += tlPhotoHTML(e);
   const wiring = [];
   if(ew.length){
     const h0 = ew[0];
@@ -15265,8 +15545,8 @@ function renderEra(){
       +'<div class="small" style="margin-top:6px;">'+esc(h0.a.name)+'　'+esc(h0.w.caption||'')+'</div>';
   }
   const detail = e.detail || (DS==='designers'? (TL_DESIGN_DETAIL[e.title] || ''): '') || e.background || '';
-  if(detail) html += '<h3 class="subhead">詳しく</h3><div class="bodytext">'+esc(detail)+'</div>';
-  if(e.background && detail && detail !== e.background) html += '<h3 class="subhead">背景</h3><div class="bodytext">'+esc(e.background)+'</div>';
+  if(detail) html += '<h3 class="subhead">詳しく</h3>'+tlParasHTML(detail);
+  if(e.background && detail && detail !== e.background) html += '<h3 class="subhead">背景</h3>'+tlParasHTML(e.background);
   const arts = Array.isArray(e.artists)? e.artists: [];
   const chips = [];
   arts.forEach(x=>{
@@ -16165,6 +16445,8 @@ function refreshAfterSync(kind){
      open notification panel has the same shape. */
   const sh = $('symsheet');
   if(sh && !sh.classList.contains('hidden')) openSymSheet();
+  const esh = $('erasheet');
+  if(esh && !esh.classList.contains('hidden')) openEraSheet();
   if(settingsPanel === 'reqnotif') renderRequestNotifs('reqnotiflist');
 }
 /* 1データセット分の同期。ストレージを正として読み書きし、結果を CTX[kind] に残す。
@@ -16975,7 +17257,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '28.4';
+const APP_VERSION = '29.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -17021,7 +17303,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 20;
+const DATA_PACK = 21;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
@@ -17083,6 +17365,15 @@ async function applyDataPack(){
       }
       /* 年表・クイズがローカルに無い場合はパックから補う（鮮度判定で漏れた場合の保険） */
       if(data.timeline==null && incN.timeline) data.timeline = incN.timeline;
+      /* v29.0: the timeline is curated content that is never
+         edited on the device, and mergeDataInto's updated_at
+         gate can never fire for it once the device's records
+         are newer than the pack snapshot — the old 33-entry
+         timeline would have stayed forever. Like sections
+         above, the pack copy is canonical: take it wholesale
+         whenever the pack carries one. (The Drive master still
+         holds its own timeline copy; see SETUP v29.0 note.) */
+      if(incN.timeline && (Array.isArray(incN.timeline.west) || Array.isArray(incN.timeline.japan))) data.timeline = incN.timeline;
       if(!quizHasData(data.quiz) && quizHasData(incN.quiz)) data.quiz = incN.quiz;
       data.kind = kind;
       dataSave(prefix, JSON.stringify(data));
@@ -17466,10 +17757,13 @@ function renderSettingsPanel(){
     p.innerHTML = panelShell('通知',
       '<div class="seg" role="group" aria-label="通知と更新履歴" style="margin-bottom:12px">'
       + '<button class="'+(bellTab==='notifs'? 'on': '')+'" onclick="setBellTab(\'notifs\')">通知'+notifTabBadge()+'</button>'
-      + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴'+changelogTabBadge()+'</button></div>'
+      + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴'+changelogTabBadge()+'</button>'
+      + '<button class="'+(bellTab==='roadmap'? 'on': '')+'" onclick="setBellTab(\'roadmap\')">更新予定</button></div>'
       + '<div id="reqnotiflist"'+(bellTab==='notifs'? '': ' style="display:none"')+'></div>'
-      + '<div id="updatelist"'+(bellTab==='history'? '': ' style="display:none"')+'></div>');
+      + '<div id="updatelist"'+(bellTab==='history'? '': ' style="display:none"')+'></div>'
+      + '<div id="roadmaplist"'+(bellTab==='roadmap'? '': ' style="display:none"')+'></div>');
     if(bellTab==='notifs') renderRequestNotifs('reqnotiflist');
+    else if(bellTab==='roadmap'){ renderRoadmapList(); guideEnsure(); }
     else { renderUpdateList(); fetchChangelog(); }
   }
   else if(settingsPanel==='request'){
