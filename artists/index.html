@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="22.1">
+<meta name="app-version" content="22.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -266,6 +266,10 @@ figure.work:active{background:var(--card2);}
    derived from the field's discipline part. Name + photo alone did
    not tell him. */
 .fsyms{font-size:12px; line-height:1.35; color:var(--sub); letter-spacing:.28em; margin-top:1px;}
+.symrow{display:flex; gap:6px; overflow-x:auto; padding-top:8px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+.symrow::-webkit-scrollbar{display:none;}
+.symtab{flex:none;}
+.symtab .symg{margin-right:2px; font-size:13px;}
 .symlegend{padding:10px 14px; font-size:12.5px; color:var(--sub); line-height:2;}
 .symlegend b{display:inline-block; min-width:26px; color:var(--ink); font-weight:600; font-size:13px;}
 figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:9px;}
@@ -964,6 +968,9 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         </div>
         <button class="tbcollapse hidden" id="tbCollapse" onclick="collapseToolbar()" aria-label="ツールバーを畳む"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14.5l7-7 7 7"/></svg></button>
       </div>
+    </div></div>
+    <div class="tbwrap" id="tbwSym"><div class="tbin">
+      <div class="symrow" id="symrow"></div>
     </div></div>
     <div class="tbwrap tbw-tags" id="tbwTags"><div class="tbin">
       <div class="tagrow" id="tagrow"></div>
@@ -9687,6 +9694,7 @@ arr = arr.filter(a=>artistMatches(a, toks));
 if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
+if(symFilter) arr = arr.filter(a=> fieldSymsList(a).includes(symFilter));
 if(favFilter) arr = arr.filter(a=> isFavPerson(DS, a.id));
 return arr;
 }
@@ -10010,6 +10018,7 @@ tagHtml += '<div class="taggrouprow">'+shownTags.map(tagChip).join('')+(tags.len
 }
 tagHtml += '</div>';
 }
+renderSymFilter();
 $('tagrow').innerHTML = tagHtml;
 fitToolbarTop();
 renderListBody();
@@ -10053,15 +10062,41 @@ if(/デザイン|グラフィック|タイポ|タイプ|書体|カリグラフ�
 return '';
 }
 const FIELD_LEGEND = [['▣','絵画'],['◆','彫刻・立体'],['◎','写真'],['▶','映像・映画'],['✦','アニメ'],['⌂','建築・空間'],['■','家具・プロダクト'],['◐','デザイン'],['◇','ファッション'],['◈','工芸・テキスタイル'],['◉','パフォーマンス・舞台'],['✧','コンセプチュアル'],['⌘','コンピュータ'],['▦','版画'],['♪','音楽'],['π','数学・統計'],['φ','哲学・思想'],['¶','文学'],['✺','万能人']];
-function fieldSymsHTML(a){
+function fieldSymsList(a){
 const f = String(a.field || '');
 const ix = f.indexOf('、');
-if(ix < 0) return '';
+if(ix < 0) return [];
 const toks = f.slice(ix + 1).split(/[／\/]/).flatMap(x => x.split('・')).map(x => x.trim()).filter(Boolean).slice(0, 3);
 const syms = [];
 toks.forEach(t => { const g = fieldSym(t); if(g && !syms.includes(g)) syms.push(g); });
+return syms.slice(0, 2);
+}
+function fieldSymsHTML(a){
+const syms = fieldSymsList(a);
 if(!syms.length) return '';
-return '<div class="fsyms">' + syms.slice(0, 2).join(' ') + '</div>';
+return '<div class="fsyms">' + syms.join(' ') + '</div>';
+}
+/* v22.2: discipline filter tabs at the top of the list (his call:
+   a selector by the count to show one discipline; labels are the
+   symbol with the word at its right). One filter at a time; the
+   choice persists across visits and datasets, and auto-clears
+   when the family does not exist in the current book. */
+const SYM_TABS = [['▣','絵画'],['◆','彫刻'],['▦','版画'],['◎','写真'],['▶','映像'],['✦','アニメ'],['⌂','建築'],['■','プロダクト'],['◐','デザイン'],['◇','ファッション'],['◈','工芸'],['◉','舞台'],['✧','コンセプト'],['⌘','コンピュータ'],['♪','音楽'],['π','数学'],['φ','哲学'],['¶','文学'],['✺','万能人']];
+let symFilter = '';
+try{ symFilter = storeGet('zukan.symFilter') || ''; }catch(e){}
+function renderSymFilter(){
+const el = $('symrow'); if(!el) return;
+const present = new Set();
+DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
+if(symFilter && !present.has(symFilter)){ symFilter = ''; try{ storeSet('zukan.symFilter', ''); }catch(e){} }
+let h = '<button class="tagchip symtab' + (symFilter? '' : ' on') + '" onclick="setSymFilter(\'\')">すべて</button>';
+SYM_TABS.forEach(([g, label]) => { if(present.has(g)) h += '<button class="tagchip symtab' + (symFilter === g? ' on' : '') + '" onclick="setSymFilter(\'' + g + '\')"><span class="symg">' + g + '</span> ' + label + '</button>'; });
+el.innerHTML = h;
+}
+function setSymFilter(g){
+symFilter = (symFilter === g)? '' : g;
+try{ storeSet('zukan.symFilter', symFilter); }catch(e){}
+renderList();
 }
 function personCardHTML(a, kind){
 const th = thumbOf(a);
@@ -14241,7 +14276,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '22.1';
+const APP_VERSION = '22.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
