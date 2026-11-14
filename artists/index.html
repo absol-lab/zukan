@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.14">
+<meta name="app-version" content="27.15">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10881,6 +10881,36 @@ renderList();
    text (a name appearing in their biography/features, not their own name),
    make the term visible: gold-highlighted in the detail texts, and as a
    small context snippet on the list card so the hit reason is obvious. */
+/* v27.15 (his report, 2026-11-14 17:32): a Latin-letter query highlights
+   WHOLE WORDS only. A fragment he typed ("Dav") used to light up inside
+   "David Lynch" in the chronology text; now a Latin token matches only
+   where both neighbours are non-Latin-letters or string edges. Japanese /
+   kana / numeric queries keep the plain substring behaviour. hlEsc is the
+   single producer of <mark class="hl"> (detail texts, CV rows, features,
+   notes and the search snippets via searchSnipHTML), so the rule lives
+   here once, not at the call sites. Search MATCHING is untouched — only
+   the highlight painting changed. */
+const HL_LATIN_RE = /[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0100-\u024F]/;
+const HL_CJK_RE = /[\u3040-\u30FF\u3400-\u9FFF\uF900-\uFAFF\uFF66-\uFF9D]/;
+function hlIsLatinTok(tk){ return HL_LATIN_RE.test(tk) && !HL_CJK_RE.test(tk); }
+function hlFindAll(t, tk){
+  const low = t.toLowerCase(), lq = tk.toLowerCase(), hits = [];
+  if(!lq) return hits;
+  if(!hlIsLatinTok(tk)){
+    let pos = 0;
+    while(true){ const j = low.indexOf(lq, pos); if(j < 0) break; hits.push([j, j + lq.length]); pos = j + lq.length; }
+    return hits;
+  }
+  let pos = 0;
+  while(true){
+    const j = low.indexOf(lq, pos); if(j < 0) break;
+    const before = j > 0? t.charAt(j - 1): '';
+    const after = (j + lq.length) < t.length? t.charAt(j + lq.length): '';
+    if((!before || !HL_LATIN_RE.test(before)) && (!after || !HL_LATIN_RE.test(after))){ hits.push([j, j + lq.length]); pos = j + lq.length; }
+    else pos = j + 1;
+  }
+  return hits;
+}
 function hlEsc(text){
   const t = String(text == null? '': text);
   /* raw typed tokens, NOT queryToks(): those are search-normalized (folded
@@ -10888,12 +10918,11 @@ function hlEsc(text){
   const rawQ = (state.query || '').trim();
   const toks = rawQ? [rawQ].concat(rawQ.split(/\s+/)): [];
   if(!toks.length) return esc(t);
-  let best = null;
-  for(const tk of toks){ if(t.toLowerCase().includes(tk.toLowerCase()) && (!best || tk.length > best.length)) best = tk; }
+  let best = null, bestHits = null;
+  for(const tk of toks){ const hits = hlFindAll(t, tk); if(hits.length && (!best || tk.length > best.length)){ best = tk; bestHits = hits; } }
   if(!best) return esc(t);
-  const low = t.toLowerCase(), lq = best.toLowerCase();
   let out = '', pos = 0;
-  while(true){ const j = low.indexOf(lq, pos); if(j < 0) break; out += esc(t.slice(pos, j)) + '<mark class="hl">' + esc(t.slice(j, j + best.length)) + '</mark>'; pos = j + best.length; }
+  for(const h of bestHits){ out += esc(t.slice(pos, h[0])) + '<mark class="hl">' + esc(t.slice(h[0], h[1])) + '</mark>'; pos = h[1]; }
   return out + esc(t.slice(pos));
 }
 function searchSnipHTML(a){
@@ -16014,7 +16043,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.14';
+const APP_VERSION = '27.15';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
