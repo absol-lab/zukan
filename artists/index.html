@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.5">
+<meta name="app-version" content="29.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13228,8 +13228,41 @@ const VTURN_MAXANG = 88;
    re-measures seam continuity over all 47 seams and the p=0
    pixel identity, and benchmarks the per-frame cost against
    the 24-strip build. */
-const VCURL_N = 48;
-const vCurl = { ok: null, segs: [], built: false, W: 0, bnd: null };
+/* v29.6: 192 strips (his ask, 2026-11-14 23:14 — at 48 the
+   facets still showed on his device: 「まだ捲るときに角張が
+   見える」; the page turn was prioritised over the timeline
+   fixes). Structure unchanged again: whole-pixel boundaries
+   by the same distribution (at 192 strips on a 393px page,
+   strips are 2–3px wide and the per-strip angle step is a
+   quarter of the 48-strip build), skewY droop, same fallbacks
+   and kill switch. validate_v29_6 re-measures all 191 seams,
+   the p=0 pixel identity, and benchmarks against the 48-strip
+   build (and extrapolates the 384-strip cost). */
+/* v29.6 comparison tiers (his ask, 2026-11-14 23:18/23:19 —
+   judge 192 vs 384 vs 480 side by side on his own device,
+   then standardise on the winner): the standard is 192, but
+   two artists turn at higher counts — Jan van Eyck at 384,
+   Dürer at 480. The count is chosen at build time from the
+   viewer session's artist (plate -> work -> artist, via
+   viewerArtistId / artistById). At 480 strips on a ~393px
+   page a strip is narrower than 1px, so the whole-pixel
+   boundaries can no longer be strictly increasing: the
+   Math.round distribution stays (boundaries are still whole
+   pixels, some strips are 0px wide and several strips share
+   one pixel column) — the chain still carries all 480
+   segments and the angle model still samples 480 material
+   points. validate_v29_6 measures that path's seams and
+   p=0 identity on its own terms and reports the numbers. */
+const VCURL_N = 192;
+const VCURL_N_BY_ARTIST = { 'jan-van-eyck': 384, 'ヤン・ファン・エイク': 384, 'albrecht-durer': 480, 'アルブレヒト・デューラー': 480 };
+function vCurlStripCount(){
+  try{
+    const a = artistById(viewerArtistId);
+    if(a){ const n = VCURL_N_BY_ARTIST[a.id] || VCURL_N_BY_ARTIST[a.name]; if(n) return n; }
+  }catch(e){}
+  return VCURL_N;
+}
+const vCurl = { ok: null, segs: [], built: false, W: 0, bnd: null, N: 0 };
 function vCurlProbe(){
 if(vCurl.ok !== null) return vCurl.ok;
 let ok = false;
@@ -13261,7 +13294,7 @@ if(stage.querySelector('iframe')) return false;  /* playing video: flat path */
 if(!vCurlProbe()) return false;
 const r = vBoxRect(); if(!r || !r.width || !r.height) return false;
 try{
-const W = r.width, H = r.height, N = VCURL_N;
+const W = r.width, H = r.height, N = vCurlStripCount();
 /* strip boundaries in spine coordinates, whole CSS pixels
    (the last strip absorbs the sub-pixel remainder): window
    positions and clone offsets stay on the device-pixel grid
@@ -13293,18 +13326,18 @@ for(let i = 0; i < N; i++){
 }
 box.appendChild(curl);
 const page = $('vpage'); if(page) page.style.visibility = 'hidden';
-vCurl.segs = segs; vCurl.built = true; vCurl.W = W; vCurl.bnd = bnd;
+vCurl.segs = segs; vCurl.built = true; vCurl.W = W; vCurl.bnd = bnd; vCurl.N = N;
 return true;
 }catch(e){
 const c = $('vcurl'); if(c) c.remove();
 const page = $('vpage'); if(page) page.style.visibility = '';
-vCurl.segs = []; vCurl.built = false; vCurl.bnd = null;
+vCurl.segs = []; vCurl.built = false; vCurl.bnd = null; vCurl.N = 0;
 return false;
 }
 }
 function vCurlTeardown(){
 const c = $('vcurl'); if(c) c.remove();
-vCurl.segs = []; vCurl.built = false; vCurl.bnd = null;
+vCurl.segs = []; vCurl.built = false; vCurl.bnd = null; vCurl.N = 0;
 const page = $('vpage'); if(page) page.style.visibility = '';
 }
 /* the roll model, in spine coordinates (u = arc length from the
@@ -13317,7 +13350,7 @@ const page = $('vpage'); if(page) page.style.visibility = '';
    (degrees) at its material midpoint, plus the model's moving
    parts for the cast shadow. */
 function vCurlModel(p){
-const W = vCurl.W || 300, N = VCURL_N, bnd = vCurl.bnd;
+const W = vCurl.W || 300, N = vCurl.N || VCURL_N, bnd = vCurl.bnd;
 const R = W * (0.40 - 0.20 * p);
 const a = W * Math.pow(1 - p, 1.5);
 const cap = 168 * Math.PI / 180;
@@ -17555,7 +17588,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.5';
+const APP_VERSION = '29.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
