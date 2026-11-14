@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="24.1">
+<meta name="app-version" content="24.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -561,7 +561,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .gphead{flex:none; display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top, 0px) + 12px) 16px 6px;}
 .gptitle{font-size:17px; font-weight:700; letter-spacing:.04em;}
 .gpclose{margin-left:auto; flex:none; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:7px 14px; font-size:13px; min-height:36px;}
-.gppills{flex:none; display:flex; gap:5px; overflow-x:auto; padding:4px 12px 10px; scrollbar-width:none;}
+.gppills{flex:none; display:flex; gap:5px; overflow-x:auto; padding:9px 12px calc(9px + env(safe-area-inset-bottom, 0px)); scrollbar-width:none; border-top:1px solid var(--line); background:var(--bg);}
 .gppills::-webkit-scrollbar{display:none;}
 .gppills button{flex:none; height:40px; padding:0 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
 .gppills button.on{color:var(--text); font-weight:600; border-color:color-mix(in srgb, var(--text) 30%, transparent); background:var(--card2);}
@@ -1022,7 +1022,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
-<div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gppills" id="gppills"></div><div class="gpbody" id="gpbody"></div></div></div>
+<div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
   <div id="settingsmain"></div>
@@ -9239,7 +9239,7 @@ function openGuideGlossary(){ guideMode = 'glossary'; renderGuide(); }
 function openGuideTerm(t){ guideMode = 'term'; guideTermName = t; renderGuide(); }
 function renderGuide(){
   const pills = $('gppills'), body = $('gpbody'); if(!pills || !body) return;
-  let ph = '<button class="' + (guideMode === 'index'? 'on': '') + '" onclick="openGuideIndex()">目次</button>';
+  let ph = '<button class="' + (guideMode === 'index'? 'on': '') + '" onclick="openGuideIndex()">使い方</button>';
   ph += guideChapters().map(c=> '<button class="' + (guideMode === 'chapter' && guideChapterId === c.id? 'on': '') + '" onclick="openGuideChapter(\'' + escA(c.id) + '\')">' + esc(c.pill || c.title || '') + '</button>').join('');
   if(guideGlossary().length) ph += '<button class="' + (guideMode === 'glossary' || guideMode === 'term'? 'on': '') + '" onclick="openGuideGlossary()">用語辞典</button>';
   pills.innerHTML = ph;
@@ -9247,13 +9247,13 @@ function renderGuide(){
   if(!guideData && !guideError) h = '<div class="empty">読み込み中…</div>';
   else if(guideError && !guideData) h = '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="guideRetry()">再試行</button></div>';
   else if(guideMode === 'index'){
-    if(guideData.intro) h += '<p class="bodytext">' + esc(guideData.intro) + '</p>';
-    h += guideChapters().map((c, i)=> '<button class="bizchrow" onclick="openGuideChapter(\'' + escA(c.id) + '\')"><span class="bizchno">' + (i + 1) + '</span><span class="bizchmain"><span class="bizchtitle">' + esc(c.title || '') + '</span></span><span class="bizchgo">›</span></button>').join('');
-    if(guideGlossary().length) h += '<button class="bizchrow" onclick="openGuideGlossary()"><span class="bizchno"></span><span class="bizchmain"><span class="bizchtitle">用語辞典</span></span><span class="bizchgo">›</span></button>';
+    h += '<h2 class="biztitle">使い方</h2>';
+    if(guideData.intro) h += String(guideData.intro).split(/\n\n+/).map(t=> '<p class="bodytext">' + esc(t) + '</p>').join('');
+    h += '<p class="bodytext small">章は下のピルから、用語は「用語辞典」のピルから開けます。</p>';
   }
   else if(guideMode === 'chapter'){
     const chs = guideChapters(); const ix = chs.findIndex(c=> c.id === guideChapterId); const c = chs[ix];
-    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 目次へ戻る</button>';
+    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 使い方へ戻る</button>';
     if(!c) h += '<div class="empty">章が見つかりません</div>';
     else {
       h += '<h2 class="biztitle">' + (ix + 1) + '. ' + esc(c.title || '') + '</h2>';
@@ -9268,7 +9268,7 @@ function renderGuide(){
     }
   }
   else if(guideMode === 'glossary'){
-    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 目次へ戻る</button><h2 class="biztitle">用語辞典</h2>';
+    h += '<button class="backbtn" onclick="openGuideIndex()">‹ 使い方へ戻る</button><h2 class="biztitle">用語辞典</h2>';
     const g = guideGlossary();
     h += g.length? g.map(e=> '<div class="glossrow" onclick="openGuideTerm(\'' + escA(e.term) + '\')"><div class="glossterm">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</div><div class="bodytext">' + esc(e.short || e.def || '') + '</div></div>').join('') : '<div class="empty">用語は準備中です</div>';
   }
@@ -14321,6 +14321,7 @@ function teardownSwipe(st, commit){
     if(!e.touches || e.touches.length!==1) return;
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
     if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
+    if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
@@ -14388,7 +14389,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '24.1';
+const APP_VERSION = '24.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
