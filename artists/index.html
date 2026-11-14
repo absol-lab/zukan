@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.12">
+<meta name="app-version" content="27.13">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -556,6 +556,8 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .ndetail{margin-top:9px; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:11px 12px;}
 .ndetail .nnote{font-size:13.5px; line-height:1.7; white-space:pre-wrap; margin-top:4px;}
 .npagebtn{margin-top:10px; width:100%; min-height:48px; border-radius:12px; border:1px solid var(--accent); background:none; color:var(--accent); font-size:14px; font-weight:600; font-family:var(--sans);}
+.nmember{display:block; width:100%; text-align:left; min-height:44px; padding:9px 2px; border:0; border-top:1px solid var(--line); background:none; color:var(--text); font-size:14px; font-family:var(--sans); cursor:pointer;}
+.nmember:first-child{border-top:0;}
 /* v4.9: completed request notifications jump to the person's page */
 .uprow.tap{cursor:pointer; position:relative; padding-right:24px;}
 .uprow .upgo{position:absolute; right:2px; top:15px; color:var(--muted); font-size:17px; line-height:1;}
@@ -13478,7 +13480,10 @@ async function detectNewPeople(kind){
     const at = new Date().toISOString();
     const mk = (a)=>({ id:'reg'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), dataset:kind, personId:a.id, name:a.name, at, seen:false });
     const entries = todo.slice(0, 8).map(mk);
-    if(todo.length > 8) entries.push({ id:'regsum'+Date.now().toString(36), summary:true, count: todo.length - 8, dataset:kind, at, seen:false });
+    /* v27.13: the summary note stores its member roster
+       (personId + name) — without it the row was a dead end
+       (his report: 「ほか 62 名」 with nowhere to go). */
+    if(todo.length > 8) entries.push({ id:'regsum'+Date.now().toString(36), summary:true, count: todo.length - 8, members: todo.slice(8).map(a=>({ personId:a.id, name:a.name })), dataset:kind, at, seen:false });
     regNotifsSave(entries.concat(regNotifsLoad()));
     refreshReqNotifBtn();
     if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist');
@@ -13494,6 +13499,21 @@ function regNotifJump(nid){
     let found = null;
     try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(n.personId)); }catch(e){}
     if(found){ regMarkOneSeen(n.id); switchDataset(n.dataset); armPanelOrigin(panelDs); openDetail(found.id); return; }
+  }
+  toast('この端末にはまだ届いていません');
+}
+/* v27.13: a member row inside an expanded summary note jumps
+   exactly like an individual registration note (origin frame
+   armed, note already seen from the expansion). */
+function regSummaryJump(nid, personId){
+  const n = regNotifsLoad().find(x=>x.id===nid); if(!n || !n.summary) return;
+  const panelDs = DS;
+  if(n.dataset === DS){ const a = artistById(personId); if(a){ regMarkOneSeen(nid); armPanelOrigin(panelDs); openDetail(a.id); return; } }
+  else{
+    const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
+    let found = null;
+    try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(personId)); }catch(e){}
+    if(found){ regMarkOneSeen(nid); switchDataset(n.dataset); armPanelOrigin(panelDs); openDetail(found.id); return; }
   }
   toast('この端末にはまだ届いていません');
 }
@@ -13625,7 +13645,26 @@ function renderRequestNotifs(targetId){
      mapped in (the filter above), matching the per-book badge. */
   const regRows = regNotifsLoad().filter(n => n.dataset === DS).map(n => {
     const isNew = !n.seen;
-    if(n.summary) return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regSummarySeen(\''+escA(n.id)+'\')"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'</div>' };
+    if(n.summary){
+      /* v27.13: the summary row expands in place like every
+         other row (toggleNotifDetail marks it seen on expand,
+         the v27.10 rule — the old row-level regSummarySeen tap
+         was a dead end that showed nothing). Members stored at
+         detection time list as tappable rows; notes from before
+         v27.13 carry no roster and say so honestly. */
+      const key = 'reg:' + n.id;
+      const open = !!notifOpen[key];
+      let detail = '';
+      if(open){
+        if(Array.isArray(n.members) && n.members.length){
+          detail = '<div class="ndetail">' + n.members.map(mb=> '<button class="nmember" onclick="event.stopPropagation(); regSummaryJump(\''+escA(n.id)+'\',\''+escA(mb.personId)+'\')">'+esc(mb.name)+' ›</button>').join('')
+            + (n.members.length < n.count? '<div class="upat">ほか '+(n.count - n.members.length)+' 名は名簿が保存されていません</div>': '') + '</div>';
+        } else {
+          detail = '<div class="ndetail"><div class="upat">この通知が作られた時点の名簿は保存されていません（名簿つきの通知はこの版からです）</div></div>';
+        }
+      }
+      return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
+    }
     const key = 'reg:' + n.id;
     const open = !!notifOpen[key];
     let detail = '';
@@ -15932,7 +15971,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.12';
+const APP_VERSION = '27.13';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
