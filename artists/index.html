@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.13">
+<meta name="app-version" content="27.14">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -441,6 +441,9 @@ button.inflrow{cursor:pointer;}
    what read as spread-out and inorganic against the catalogue
    density the user asked for. */
 .cvtext{flex:1; min-width:0; font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:var(--lh); overflow-wrap:anywhere;}
+.sline{display:block;}
+.cvtext .sline + .sline{margin-top:2px;}
+.bodytext .sline + .sline{margin-top:2px;}
 /* v5.0: the chronicle (年代記) — a person's page set as a period
    narrative with the period's works woven in, modelled on the
    Gokita chronicle the user praised. Dense catalogue typography:
@@ -11278,11 +11281,37 @@ function chronicleHTML(a, ch, ws){
   }
   return h;
 }
+/* v27.14 readability (his ask, 2026-11-14 17:16): long prose
+   breaks at sentence boundaries, one sentence per line.
+   Splitting happens on the RAW text into sentence units;
+   each unit then goes through hlEsc (escaping + highlight),
+   so highlight behaviour is untouched. */
+function sentenceSpansHTML(text){
+  const parts = String(text == null? '': text).split(/(?<=。)\s*/).filter(s=> s.length);
+  if(parts.length <= 1) return hlEsc(text);
+  return parts.map(s=> '<span class="sline">'+hlEsc(s)+'</span>').join('');
+}
+/* Biography long-text: existing paragraph breaks (blank
+   lines) stay paragraph separations; an over-long paragraph
+   breaks at sentence boundaries too. */
+function proseHTML(text){
+  const t = String(text == null? '': text);
+  return t.split(/\n\n+/).map(p=>{
+    const sents = p.split(/(?<=。)\s*/).filter(s=> s.length);
+    if(sents.length > 1 && p.length > 60) return '<div class="bodytext">' + sents.map(s=> '<span class="sline">'+hlEsc(s)+'</span>').join('') + '</div>';
+    return '<div class="bodytext">' + hlEsc(p) + '</div>';
+  }).join('');
+}
 function cvBioHTML(text){
 const t = String(text || '').trim();
 if(!t) return '';
 const segs = t.split(/(?<=。)\s*(?=(?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年|\d{1,3}歳)/);
-const yearRe = /^((?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年(?:\s*（\d{1,3}歳）)?)/;
+/* v27.14 (c): the lead absorbs ONE trailing particle among
+   に/の/、 directly after 年 (or the （N歳）group) — bodies
+   used to start with the bare particle (にPace Gallery
+   所属。/ のPace Gallery加入後…). The label group stays
+   particle-free. */
+const yearRe = /^((?:1[89]|20)\d{2}(?:[–—\-]\d{2})?年(?:\s*（\d{1,3}歳）)?)([にの、])?/;
 const rows = [];
 let intro = '';
 segs.forEach(s=>{
@@ -11295,10 +11324,24 @@ rows[rows.length - 1].body += s;
 intro += s;
 }
 });
-if(!rows.length) return '<div class="bodytext">'+hlEsc(t)+'</div>';
+if(!rows.length) return proseHTML(t);
+/* v27.14 (a): stable-sort the ROW UNITS by lead year (ranges
+   by start year). Age-led continuations were glued into
+   their row's body at extraction, so sorting units never
+   detaches them. (b): merge rows that are adjacent after
+   the sort and share the identical year label. */
+const startYear = y => { const m = /(\d{4})/.exec(y); return m? parseInt(m[1], 10): 0; };
+rows.sort((x, z)=> startYear(x.y) - startYear(z.y));
+for(let i = rows.length - 1; i > 0; i--){
+if(rows[i].y === rows[i - 1].y){
+const prev = rows[i - 1], cur = rows[i];
+prev.body = prev.body + ((/[。！？」]$/.test(prev.body) || !prev.body || !cur.body)? '': ' ') + cur.body;
+rows.splice(i, 1);
+}
+}
 let h = '';
-if(intro) h += '<div class="bodytext">'+hlEsc(intro)+'</div>';
-h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+hlEsc(r.body)+'</span></div>').join('') + '</div>';
+if(intro) h += proseHTML(intro);
+h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+sentenceSpansHTML(r.body)+'</span></div>').join('') + '</div>';
 return h;
 }
 let bioStripWiring = [];
@@ -11563,9 +11606,9 @@ bioHTML = sp.bio? cvBioHTML(sp.bio): '<div class="bodytext">（来歴の記載�
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+hlEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
-if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3><div class="bodytext">'+hlEsc(a.relation)+'</div>';
-if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+hlEsc(sp.tech)+'</div>';
-if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+hlEsc(sp.rest)+'</div>';
+if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
+if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3>'+proseHTML(sp.tech);
+if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3>'+proseHTML(sp.rest);
 if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
 /* v27.0: 制作プロセス tab — the making dossier (data-side
    curated, per artist). The summary leads; the steps run as a
@@ -15971,7 +16014,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.13';
+const APP_VERSION = '27.14';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
