@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.1">
+<meta name="app-version" content="27.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9012,7 +9012,21 @@ function restoreListScroll(y){
     if(Math.abs((window.scrollY || 0) - y) > 4) window.scrollTo(0, y);
   }, ms));
 }
+/* v27.2: one-step-back stack for person→person hops inside the
+   detail view (influence rows and their derived reverse rows).
+   Entries are {id, ds, tab}; the detail header shows ‹ 前へ
+   only while the stack is non-empty. Arriving at the list —
+   via the 戻る button, a dataset switch or the pill nav —
+   clears it (the showView hook below); opening a person from
+   outside the detail view also starts fresh (openDetail). The
+   swipe-back gesture is NOT wired to the stack: its commit
+   path swaps view elements (teardownSwipe), and re-rendering
+   the detail in place of that swap would fight the slide
+   machinery (the ググン family) — the gesture still returns
+   to the list, which clears the stack like the button does. */
+let detailStack = [];
 function showView(v){
+if(v === 'list') detailStack = [];
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
 if(v!=='settings') document.body.classList.remove('notifopen');
@@ -9783,7 +9797,17 @@ editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
 function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList(); driftIn($('listbody'), dir);}
-function onSearch(q){ state.query = q.trim(); renderListBody(); updateSlimTools(); updateSearchClear(); }
+function onSearch(q){
+const nq = q.trim();
+const changed = nq !== state.query;
+state.query = nq;
+renderListBody(); updateSlimTools(); updateSearchClear();
+/* v27.2 (his recording 2026-11-14): the moment the query text
+   changes, pull the list back to the very top so the best hit
+   is on screen without scrolling. Input events only — other
+   re-renders never touch the scroll position. */
+if(changed) window.scrollTo(0, 0);
+}
 /* v12.5: the search field's clear (×) button */
 function updateSearchClear(){ const b = $('searchclear'), s = $('searchbox'); if(b && s) b.classList.toggle('hidden', !s.value); }
 function clearSearch(){ const s = $('searchbox'); if(!s) return; s.value = ''; onSearch(''); try{ s.focus({ preventScroll:true }); }catch(e){ try{ s.focus(); }catch(e2){} } }
@@ -9948,6 +9972,66 @@ const q = state.query;
 if(!q || !q.trim()) return [];
 return q.split(/\s+/).map(normSearch).filter(Boolean);
 }
+/* v27.2 (his recording 2026-11-14): while a query is active the
+   results rank by NAME closeness, best first — typing
+   りーへいでぃ used to surface リー・ヘイディ only at the end
+   because the list kept section/DB order. Tiers (the best name
+   form wins): exact > prefix > substring, then the dakuten-
+   folded reading forms, then a romaji-reading hit; the winning
+   form's length breaks ties (shorter = closer). Anyone who
+   matched only through tags/body text scores 0 and keeps the
+   old relative order below every name hit. Ordering only —
+   the matched set itself is untouched (the v8.0 widening rule). */
+const DAKU_STRIP = { 'ガ':'カ','ギ':'キ','グ':'ク','ゲ':'ケ','ゴ':'コ','ザ':'サ','ジ':'シ','ズ':'ス','ゼ':'セ','ゾ':'ソ','ダ':'タ','ヂ':'チ','ヅ':'ツ','デ':'テ','ド':'ト','バ':'ハ','ビ':'ヒ','ブ':'フ','ベ':'ヘ','ボ':'ホ','パ':'ハ','ピ':'ヒ','プ':'フ','ペ':'ヘ','ポ':'ホ','ヴ':'ウ' };
+function dakStrip(s){ return String(s||'').replace(/[ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴ]/g, c=> DAKU_STRIP[c] || c); }
+function nameFormsOf(a){
+const f = [a.name, a.name_kana, a.name_native, a.name_latin];
+if(Array.isArray(a.aliases)) f.push.apply(f, a.aliases);
+return f.filter(Boolean).map(normSearch).filter(Boolean);
+}
+function nameScore(a, toks, qNorm){
+const fields = nameFormsOf(a);
+if(!fields.length) return 0;
+let tier = 0, winLen = 0;
+const hit = (t, len)=>{ if(t > tier || (t === tier && tier > 0 && len < winLen)){ tier = t; winLen = len; } };
+for(const f of fields){
+if(qNorm){
+if(f === qNorm) hit(100, f.length);
+else if(f.indexOf(qNorm) === 0) hit(80, f.length);
+else if(f.indexOf(qNorm) >= 0) hit(60, f.length);
+}
+for(const t of toks){
+if(f === t) hit(95, f.length);
+else if(f.indexOf(t) === 0) hit(75, f.length);
+else if(f.indexOf(t) >= 0) hit(55, f.length);
+}
+}
+if(tier < 90 && qNorm){
+const qd = dakStrip(qNorm);
+for(const f of fields){
+const fd = dakStrip(f);
+if(fd === qd) hit(90, f.length);
+else if(fd.indexOf(qd) === 0) hit(72, f.length);
+else if(fd.indexOf(qd) >= 0) hit(52, f.length);
+}
+}
+if(!tier){
+for(const t of toks){
+const vars = romajiToKanaVariants(t);
+for(const kv of vars){ const nk = normSearch(kv); if(nk && fields.some(f=> f.indexOf(nk) >= 0)){ hit(40, 0); break; } }
+if(tier) break;
+}
+}
+return tier? tier * 100000 - winLen : 0;
+}
+function rankByName(arr){
+const toks = queryToks();
+if(!toks.length) return arr;
+const qNorm = normSearch(state.query);
+const scored = arr.map((a, i)=> ({ a, i, s: nameScore(a, toks, qNorm) }));
+scored.sort((x, y)=> (y.s - x.s) || (x.i - y.i));
+return scored.map(x=> x.a);
+}
 function filteredArtists(){
 let arr = DB.artists;
 const toks = queryToks();
@@ -10016,27 +10100,75 @@ for(let d = 0; d < best && d <= 2; d++){ if(levWithin(tok, w, d)){ best = d; bre
 return best;
 }
 function kanaProximity(tok, a){ return kanaDist(tok, a) <= 2; }
+/* v27.2 (his screenshot 2026-11-14): the rescue is rebuilt on
+   NAME closeness only. The old rule scored a token found
+   anywhere in a person's whole haystack — long bios of famous
+   artists matched almost anything — and let any short window
+   of a name within edit distance 2 count, so a query that DID
+   hit （リーヘイディ → リー・ヘイディ) still trailed a
+   もしかして row of Matisse / Kandinsky / Warhol / Sherman,
+   none of them close to the query. Now candidates are scored
+   by the true edit distance between the query's forms (each
+   token, the whole query, romaji readings of latin tokens)
+   and the person's name forms (name / name_kana / name_latin /
+   aliases) — full forms and near-length windows of long names
+   — nearest first, under a strict length-scaled cap, and
+   NOTHING is suggested when nothing is genuinely close. */
+function levFull(a, b){
+if(a === b) return 0;
+const m = a.length, n = b.length;
+if(!m) return n; if(!n) return m;
+let prev = []; for(let j = 0; j <= n; j++) prev[j] = j;
+for(let i = 1; i <= m; i++){
+const cur = [i];
+for(let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1]? 0: 1));
+prev = cur;
+}
+return prev[n];
+}
+function nearCloseness(a, qForms){
+const fields = nameFormsOf(a); if(!fields.length) return null;
+let best = null;
+const consider = (d, head, flen)=>{
+if(!best || d < best.d || (d === best.d && ((head && !best.head) || (head === best.head && flen < best.flen)))) best = { d, head, flen };
+};
+for(const q of qForms){
+const maxD = q.length <= 3? 1: (q.length <= 5? 2: 3);
+const qChars = new Set(Array.from(q));
+for(const f of fields){
+if(!Array.from(f).some(ch=> qChars.has(ch))) continue;
+if(Math.abs(f.length - q.length) <= maxD && levWithin(q, f, maxD)) consider(levFull(q, f), f.charAt(0) === q.charAt(0), f.length);
+for(let L = Math.max(3, q.length - 1); L <= q.length + 1 && L <= f.length; L++){
+for(let i = 0; i + L <= f.length; i++){
+const w = f.substr(i, L);
+if(levWithin(q, w, maxD)) consider(levFull(q, w), w.charAt(0) === q.charAt(0), f.length);
+}
+}
+if(best && best.d === 0) return best;
+}
+}
+return best;
+}
 function nearMatches(){
 const toks = queryToks(); if(!toks.length) return [];
+const qForms = [];
+const addQ = s=>{ if(s && s.length >= 3 && qForms.indexOf(s) < 0) qForms.push(s); };
+toks.forEach(t=>{ addQ(t); if(/^[a-z]+$/.test(t)) romajiToKanaVariants(t).forEach(kv=> addQ(normSearch(kv))); });
+addQ(normSearch(state.query));
+if(!qForms.length) return [];
 const scored = [];
 for(const kind of ['artists','designers']){
 const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
 c.DB.artists.forEach(a=>{
-const hay = artistHay(a);
-let score = 0, dist = 0;
-toks.forEach(tok=>{
-if(hay.indexOf(tok) >= 0) score += 2;
-else if(romajiToKanaVariants(tok).some(kv=> hay.indexOf(normSearch(kv)) >= 0)) score += 2;
-});
-if(!score && toks.length===1 && toks[0].length>=3 && /[ァ-ヶ]/.test(toks[0])){
-const d = kanaDist(toks[0], a);
-if(d <= 2){ score = 1; dist = d; }
-}
-if(score > 0) scored.push({ kind, a, score, dist });
+const cl = nearCloseness(a, qForms);
+if(cl) scored.push({ kind, a, score: -cl.d, dist: cl.d, head: cl.head, flen: cl.flen });
 });
 }
-/* v8.5: rank by score, then by EDIT DISTANCE (not file order). */
-return scored.sort((x, y)=> (y.score - x.score) || (x.dist - y.dist)).slice(0, 8);
+/* nearest first; ties go to a match that starts with the
+   query's first character (typos rarely garble the head —
+   ゴツフオ→ゴツホ beats ヨフオ/ドフオ tail coincidences),
+   then to the shorter name form. */
+return scored.sort((x, y)=> (x.dist - y.dist) || ((y.head? 1: 0) - (x.head? 1: 0)) || (x.flen - y.flen)).slice(0, 8);
 }
 /* tag facets: classification / technique-material / era-country / theme (default) */
 const TAG_FACETS = {};
@@ -10441,8 +10573,19 @@ return h + '</div>';
    at all, so one stray notes-word hit (「ビッテ・デビット」in
    an unrelated bio) silently suppressed it. Now it appends
    below real results too, minus anyone already shown. */
-function nearExtraHTML(shownHere, shownCross){
+function nearExtraHTML(shownHere, shownCross, directArr){
 if(favFilter) return '';
+/* v27.2: the rescue earns its place only when the query found
+   nobody BY NAME. When a real name match is already on screen
+   the row below is noise (his screenshot: an exact-name hit
+   trailed by famous-name suggestions). */
+if(directArr && directArr.length){
+const toks = queryToks();
+if(toks.length){
+const qn = normSearch(state.query);
+if(directArr.some(a=> nameScore(a, toks, qn) > 0)) return '';
+}
+}
 const near = nearMatches().filter(x=>{
 if(x.kind===DS) return !shownHere.has(String(x.a.id));
 return !shownCross.has(String(x.a.id));
@@ -10476,11 +10619,20 @@ body.innerHTML = html + reqFootHTML();
 wireListImages(body);
 return;
 }
+let html = '';
+if(searching){
+/* v27.2: while a query is active the matches render as ONE
+   name-ranked list — no section headings — so the closest
+   name match is literally the first card on screen (his
+   recording: the obvious hit surfaced only at the very end). */
+html += '<div class="grid '+state.mode+'">';
+rankByName(arr).forEach(a=>{ html += personCardHTML(a, null); });
+html += '</div>';
+} else {
 const order = [];
 DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
 arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
 order.push('');
-let html = '';
 order.forEach(sec=>{
 const group = arr.filter(a=>(a.section||'')===sec);
 if(!group.length) return;
@@ -10489,11 +10641,12 @@ html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 });
+}
 if(searching){
 const shownIds = new Set(arr.map(a=>String(a.id)));
 const crossIds = new Set(crossMatches().slice(0, 24).map(a=>String(a.id)));
 html += crossSectionHTML();
-html += nearExtraHTML(shownIds, crossIds);
+html += nearExtraHTML(shownIds, crossIds, arr);
 }
 body.innerHTML = html + reqFootHTML();
 /* attach work objects for lazy hydration */
@@ -10515,7 +10668,32 @@ im.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
 }
 function openDetail(id){
 const a = artistById(id); if(!a) return;
+/* v27.2: a hop from one person's detail to another's (the
+   influence rows and friends) stacks the person being left,
+   tab included, so ‹ 前へ can walk back one step at a time.
+   Opening from anywhere outside the detail view starts with
+   an empty stack. */
+if(view === 'detail' && state.detailId != null && String(state.detailId) !== String(a.id)){
+detailStack.push({ id: state.detailId, ds: DS, tab: state.tab });
+} else if(view !== 'detail'){
+detailStack = [];
+}
 state.detailId = a.id; state.tab = 'works';
+renderDetail(); showView('detail');
+prefetchViewerImage(a);
+}
+/* v27.2: pop one step of the detail stack and reopen that
+   person on the tab they were left on. */
+function detailBack(){
+const prev = detailStack.pop();
+if(!prev) return;
+const rest = detailStack;
+if(prev.ds && prev.ds !== DS) switchDataset(prev.ds);
+detailStack = rest; /* the dataset switch lands on the list, whose showView clears the stack — reinstate the chain */
+const a = artistById(prev.id);
+if(!a){ detailStack = []; if(view === 'detail') renderDetail(); return; }
+state.detailId = a.id;
+state.tab = DTABS.indexOf(prev.tab) >= 0? prev.tab: 'works';
 renderDetail(); showView('detail');
 prefetchViewerImage(a);
 }
@@ -10801,6 +10979,7 @@ if(state.tab==='process' && !procObj) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
+(detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
 (a.name_latin||a.name_native? '<div class="dlatin">'+esc(a.name_latin)+(a.name_native?'　'+esc(a.name_native):'')+'</div>': '')+
@@ -14706,7 +14885,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.1';
+const APP_VERSION = '27.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
