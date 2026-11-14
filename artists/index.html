@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="28.2">
+<meta name="app-version" content="28.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10035,8 +10035,12 @@ const GUIDE_TAX = [
   { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['発言集', 'guide-ch-statements']] },
   /* v28.0: the 受験 major (his 2026-11-14 call) — chapters +
      calendar staged in art-labo/exam-guide/, shipped in
-     production.json as exam-ch1..7 + examCalendar. */
-  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] }
+     production.json as exam-ch1..7 + examCalendar.
+     v28.3: exam-ch8..12 （出願 chapters; their content was
+     pushed into production.json 2026-11-14, commit a37a5f31)
+     are listed here so the tabs actually appear — the subs
+     list is the only source of chapter tabs. */
+  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] }
 ];
 /* v28.0: surface-form aliases for the term linker (staging:
    art-labo/guide-glossary-gap/aliases.json — the spellings the
@@ -11542,11 +11546,36 @@ m = y.match(/(\d{3,4})/); if(m) return parseInt(m[1], 10);
 m = y.match(/(\d{1,2})\s*世紀/); if(m) return (parseInt(m[1], 10) - 1) * 100 + 1;
 return Infinity;
 }
+/* v28.3: years line for cards + the person-page header (his
+   2026-11-14 19:34: 「死んだ人は何年に死んだのか。生きてる
+   人は今何歳なのかもお願い」). Deceased: the recorded string
+   already carries the full birth–death range and is shown
+   as-is. Living: a single birth year with a trailing dash
+   ('1954–' / '1961-'), or a bare birth year alone (designers
+   carry 43 of those, e.g. '1949') gains the current age,
+   computed from the device date at render time — age =
+   currentYear − birthYear, displayed '1954– ・72歳'. The
+   data is year-only, so the age can be off by one around
+   the birthday (accepted). Everything else — BCE strings,
+   circa/era prose, 生年不詳, duos, site/topic records —
+   is unparseable as a single living lifespan and is shown
+   exactly as recorded; an implausible age (outside 0–110)
+   also falls back to the raw string. */
+function yearsDisplay(a){
+const y = String((a && a.years) || '');
+if(!y) return '';
+const m = y.match(/^(\d{3,4})\s*[–—-]\s*$/) || y.match(/^(\d{3,4})$/);
+if(m){
+  const age = new Date().getFullYear() - parseInt(m[1], 10);
+  if(age >= 0 && age <= 110) return y + ' ・' + age + '歳';
+}
+return y;
+}
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + (a.years? '<div class="yrs">'+esc(a.years)+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -12123,7 +12152,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
 (a.name_latin||a.name_native? '<div class="dlatin">'+esc(a.name_latin)+(a.name_native?'　'+esc(a.name_native):'')+'</div>': '')+
 '<div class="dmeta">'+
-(a.years?'<span>'+esc(a.years)+'</span>':'')+
+(a.years?'<span>'+esc(yearsDisplay(a))+'</span>':'')+
 (a.field?'<span>'+esc(a.field)+'</span>':'')+
 (a.section?'<span>'+esc(a.section)+'</span>':'')+
 '</div>'+
@@ -16809,7 +16838,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '28.2';
+const APP_VERSION = '28.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
