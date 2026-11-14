@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="24.0">
+<meta name="app-version" content="24.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -96,8 +96,8 @@ a{color:var(--accent);}
    go position:fixed themselves with explicit tops, so nothing
    double-counts. */
 header.top{position:fixed; top:0; left:0; right:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--line);}
-.toprow{display:flex; align-items:center; gap:3px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 8px 4px; max-width:720px; margin:0 auto;}
-h1.appname{font-family:var(--sans); font-size:15px; font-weight:700; letter-spacing:.02em; margin:0; white-space:nowrap; flex:none;}
+.toprow{display:flex; align-items:center; gap:5px; padding:calc(env(safe-area-inset-top, 0px) + 10px) 10px 4px; max-width:720px; margin:0 auto;}
+h1.appname{font-family:var(--sans); font-size:16px; font-weight:700; letter-spacing:.02em; margin:0; white-space:nowrap; flex:none;}
 /* v2.49: sync status dot, the diary app's exact pattern (8px circle
    beside the title; green #46a758 = connected & no error, red
    #e5484d = disconnected or error) — always visible in the header
@@ -110,17 +110,17 @@ button.txtbtn{background:none; border:none; font-size:13px; letter-spacing:.06em
 /* v2.93: the request-notifications door is a bell-mark button —
    icon only, with a small count badge (his call: the labelled
    button was too big). */
-#navReqNotif{position:relative; display:inline-flex; align-items:center; justify-content:center; width:34px; height:33px; padding:0;}
+#navReqNotif{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0;}
 #navReqNotif svg{width:17px; height:17px;}
 /* v19.6: the biz entry missed the pill-button enumeration and
    every svg size rule — on iOS its viewBox-only svg collapsed
    to zero width and the button vanished between the bell and
    年表 (his screenshot, 2026-11-13 23:49). Same box as the bell. */
-#navBiz{position:relative; display:inline-flex; align-items:center; justify-content:center; width:34px; height:33px; padding:0;}
+#navBiz{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0;}
 #navBiz svg{width:17px; height:17px;}
-#navGuide{position:relative; display:inline-flex; align-items:center; justify-content:center; width:34px; height:33px; padding:0;}
+#navGuide{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0;}
 #navGuide svg{width:17px; height:17px;}
-#navTimeline{display:inline-flex; align-items:center; justify-content:center; width:34px; height:33px; padding:0;}
+#navTimeline{display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0;}
 #navTimeline svg{width:17px; height:17px;}
 #navReqNotif .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
 /* v2.93: on the notification screens (update history / request
@@ -593,9 +593,9 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
 #termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden{display:none}
-.symnav{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:4px 8px; font-size:12px; margin-left:2px; min-height:30px;}
-.symnav:active{background:var(--card2);}
-.symnav.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
+.secright{display:inline-flex; align-items:center; gap:8px;}
+.symsecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
+.symsecbtn.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
 .symopt{display:flex; align-items:center; width:100%; min-height:48px; padding:8px 6px; border:0; border-bottom:1px solid var(--line); background:none; color:var(--text); font-size:14.5px; text-align:left;}
 .symopt .symg{display:inline-block; width:30px; font-size:15px;}
 .symopt .symcnt{margin-left:auto; color:var(--muted); font-size:12.5px;}
@@ -968,7 +968,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <header class="top">
   <div class="toprow">
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
-    <button class="symnav" id="navSym" onclick="openSymSheet()" aria-label="分野で絞る"></button>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
     <button class="txtbtn" id="navReqNotif" onclick="openRequestNotifs()" aria-label="リクエスト回収の通知"></button>
@@ -8923,7 +8922,6 @@ syncBizBar(v);
 /* v2.48: entering その他 renames the header; leaving restores it */
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
 else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
-const nsv = $('navSym'); if(nsv) nsv.style.display = (v === 'list')? '' : 'none';
 else updateHeader();
 if(v==='list') renderList();
 updateToolbarSlim();
@@ -9539,7 +9537,6 @@ function updateHeader(){
 syncTimelineBtn();
 if(view==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; return; }
 if(view==='biz' || view==='bizch' || view==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; return; }
-const nsu = $('navSym'); if(nsu) nsu.style.display = (view === 'list')? '' : 'none';
 $('appname').textContent = CONFIG.appName;
 /* v2.30: the header count is shared chrome too. It used to be written
    only by renderList, so a dataset switch landing directly on a
@@ -10182,14 +10179,19 @@ return '<div class="fsyms">' + syms.join(' ') + '</div>';
 const SYM_TABS = [['▣','絵画'],['◆','彫刻'],['▦','版画'],['◎','写真'],['▶','映像'],['✦','アニメ'],['⌂','建築'],['■','プロダクト'],['◐','デザイン'],['◇','ファッション'],['◈','工芸'],['◉','舞台'],['✧','コンセプト'],['⌘','コンピュータ'],['♪','音楽'],['π','数学'],['φ','哲学'],['¶','文学'],['✺','万能人']];
 let symFilter = '';
 try{ symFilter = storeGet('zukan.symFilter') || ''; }catch(e){}
+function symSecBtnHTML(){
+const cur = SYM_TABS.find(([g]) => g === symFilter);
+return '<button class="symsecbtn' + (cur? ' on': '') + '" onclick="openSymSheet()">' + (cur? cur[0] + ' ' + cur[1] : '分野 ▾') + '</button>';
+}
 function renderSymFilter(){
-const el = $('navSym'); if(!el) return;
 const present = new Set();
 DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
 if(symFilter && !present.has(symFilter)){ symFilter = ''; try{ storeSet('zukan.symFilter', ''); }catch(e){} }
 const cur = SYM_TABS.find(([g]) => g === symFilter);
-el.textContent = cur? (cur[0] + ' ' + cur[1]) : '分野 ▾';
-el.classList.toggle('on', !!cur);
+document.querySelectorAll('.symsecbtn').forEach(el => {
+  el.textContent = cur? (cur[0] + ' ' + cur[1]) : '分野 ▾';
+  el.classList.toggle('on', !!cur);
+});
 }
 function openSymSheet(){
 const list = $('symlist'); if(!list) return;
@@ -10274,7 +10276,7 @@ let html = '';
 order.forEach(sec=>{
 const group = arr.filter(a=>(a.section||'')===sec);
 if(!group.length) return;
-html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="cnt">'+group.length+'名</span></h2>';
+html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="secright">' + symSecBtnHTML() + '<span class="cnt">'+group.length+'名</span></span></h2>';
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
@@ -14386,7 +14388,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '24.0';
+const APP_VERSION = '24.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
