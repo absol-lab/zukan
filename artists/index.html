@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.13">
+<meta name="app-version" content="30.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1046,6 +1046,23 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
    history-context anchor, not an art movement) on its card and
    era page, so it reads differently at a glance. */
 .tlhist{display:inline-block; margin-left:8px; padding:1px 9px; border-radius:999px; border:1px solid var(--accent); color:var(--accent); font-size:11px; font-weight:700; letter-spacing:.08em; vertical-align:3px; font-family:var(--sans);}
+/* v30.0: four streams (2x2 seg block) + world map panel + map sheet */
+.tl-toprow{display:flex; gap:10px; align-items:stretch; padding:2px 0 8px;}
+.tlsegs{display:flex; flex-direction:column; gap:6px; justify-content:center; flex:none;}
+.tlsegs .tlsegrow{padding:0;}
+.tlmap{position:relative; flex:1 1 auto; min-width:0; padding:0; margin:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent; font-family:inherit;}
+.tlmap canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
+.tlmap .tlmap-tag{position:absolute; left:7px; bottom:5px; font-size:9.5px; letter-spacing:.1em; color:var(--muted); pointer-events:none;}
+#tlmapsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
+#tlmapsheet.hidden{display:none}
+.tlmap-bigwrap{position:relative; width:100%; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card2);}
+#tlmapBigCv{display:block; width:100%;}
+.tlm-lit{margin-top:12px;}
+.tlm-row{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px; font-family:inherit; color:var(--text); cursor:pointer; min-height:44px;}
+.tlm-row .tlm-place{font-weight:700; white-space:nowrap;}
+.tlm-row .tlm-t{flex:1; min-width:0;}
+.tlm-row .tlm-y{color:var(--muted); font-size:12px; white-space:nowrap;}
+.tlm-city{margin-top:12px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--card2);}
 /* v29.0: the curated photo slot (e.photo {artist,title,year,
    holder}) — rendered ONLY when a photo URL is present; the
    slots ship empty in v29.0 (photos are sourced in v29.3). */
@@ -1284,6 +1301,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
+<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small" style="margin-bottom:8px;">年表の年と連動しています。光っている場所が、その年ごろに動いていた場所です。地図をタップすると、その場所の動きが見られます。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -15838,8 +15856,22 @@ if(!t || typeof t!=='object') return null;
 const west = Array.isArray(t.west)? t.west: [];
 const japan = Array.isArray(t.japan)? t.japan: [];
 if(!west.length && !japan.length) return null;
-return { west:west, japan:japan };
+return { west:west, japan:japan,
+  world: Array.isArray(t.world)? t.world: [],
+  japanHistory: Array.isArray(t.japanHistory)? t.japanHistory: [] };
 }
+/* v30.0: the timeline carries four streams on the artists side —
+   the two art streams plus 世界史 (world) and 日本史 (japanHistory).
+   Designers keep their two streams. Stream order here is the
+   segDir order for switch animations: art pair first (his 2x2
+   layout: top row 西洋/日本, second row 世界史/日本史). */
+const TL_STREAM_ORDER = ['west', 'japan', 'world', 'japanHistory'];
+function tlStreams(){
+if(DS === 'designers') return [{ key: 'west', label: '世界' }, { key: 'japan', label: '日本' }];
+return [{ key: 'west', label: '西洋' }, { key: 'japan', label: '日本' },
+        { key: 'world', label: '世界史' }, { key: 'japanHistory', label: '日本史' }];
+}
+function tlIsHistoryStream(k){ return k === 'world' || k === 'japanHistory'; }
 /* v29.10: switching regions no longer throws the reader back
    to the top (his report, 2026-11-14 23:10 — he compares the
    Western and Japanese lines side by side). The switch lands
@@ -15849,15 +15881,22 @@ return { west:west, japan:japan };
    switch back happens with the landing entry untouched. Any
    movement inside the visited region (scroll-spy or drag)
    clears the anchor, and the return then uses nearest-year
-   from wherever the reader now is. */
+   from wherever the reader now is.
+   v30.0: with four streams the anchor is kept per landed
+   stream (tlAnchors[stream] = {fromStream, fromIdx,
+   landedIdx}), so the exact round trip works between any
+   pair of streams, not just west/japan. */
 function setTlRegion(r){
 if(r === tlRegion) return;
+if(!tlStreams().some(s => s.key === r)) return;
 const oldItems = tlBarItems, oldN = oldItems.length;
 const curIdx = oldN > 1? Math.max(0, Math.min(oldN - 1, Math.round(tlBar.frac * (oldN - 1)))): 0;
 const curYear = oldN? tlBigYearNum(oldItems[curIdx]): null;
-const dir = segDir(['west','japan'], tlRegion, r);
+const dir = segDir(TL_STREAM_ORDER, tlRegion, r);
 let backIdx = -1;
-if(tlAnchor && tlAnchor.region === r && tlAnchor.landedRegion === tlRegion && curIdx === tlAnchor.landedIdx) backIdx = tlAnchor.idx;
+const _a = tlAnchors[tlRegion];
+if(_a && _a.fromStream === r && curIdx === _a.landedIdx) backIdx = _a.fromIdx;
+if(_a) delete tlAnchors[tlRegion];
 const fromRegion = tlRegion, fromIdx = curIdx;
 tlRegion = r;
 renderTimeline();
@@ -15868,7 +15907,7 @@ else if(curYear != null){
   let bd = Infinity;
   items.forEach((e, i)=>{ const y = tlBigYearNum(e); if(y == null) return; const d = Math.abs(y - curYear); if(d < bd || (d === bd && i > target)){ bd = d; target = i; } });
 } else if(n > 1 && oldN > 1) target = Math.round((curIdx / (oldN - 1)) * (n - 1));
-tlAnchor = backIdx >= 0? null: { region: fromRegion, idx: fromIdx, landedRegion: r, landedIdx: target };
+if(backIdx < 0) tlAnchors[r] = { fromStream: fromRegion, fromIdx: fromIdx, landedIdx: target };
 tlBarGoTo(target);
 driftIn($('viewTimeline'), dir);
 }
@@ -15879,10 +15918,19 @@ let html = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表'
 +'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>'
-+'<div class="tlstick" id="tlstick"><div class="tlsegrow"><span class="seg">'
-+'<button class="'+(tlRegion==='west'?'on':'')+'" onclick="setTlRegion(\'west\')">'+(DS==='designers'? '世界': '西洋')+'</button>'
-+'<button class="'+(tlRegion==='japan'?'on':'')+'" onclick="setTlRegion(\'japan\')">日本</button>'
-+'</span></div>';
+;
+/* v30.0: stream buttons in his 2x2 block (top row 西洋/日本,
+   second row 世界史/日本史); the world map panel fills the
+   right side across both rows; the year bar stays full width
+   below. Designers keep a single row and no map. */
+const tlStreamsNow = tlStreams();
+if(!tlStreamsNow.some(s => s.key === tlRegion)) tlRegion = 'west';
+const tlRows = DS === 'designers'? [tlStreamsNow] : [tlStreamsNow.slice(0, 2), tlStreamsNow.slice(2)];
+let tlSegs = '';
+tlRows.forEach(row => { tlSegs += '<div class="tlsegrow"><span class="seg">' + row.map(s => '<button class="'+(tlRegion===s.key?'on':'')+'" onclick="setTlRegion(\''+s.key+'\')">'+s.label+'</button>').join('') + '</span></div>'; });
+html += '<div class="tlstick" id="tlstick"><div class="tl-toprow"><div class="tlsegs">' + tlSegs + '</div>'
++(DS === 'designers'? '': '<button type="button" class="tlmap" id="tlmap" onclick="openTlMapSheet()" aria-label="世界地図を大きく開く"><canvas id="tlmapCv"></canvas><span class="tlmap-tag">世界地図</span></button>')
++'</div>';
 const t = timelineOf();
 if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
@@ -15902,7 +15950,7 @@ const key = tlRegion+':'+i;
 html += '<div class="tlcard">'
 +(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
 +'<div class="tlyears">'+esc(e.years||'')+'</div>'
-+(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history'? '<span class="tlhist">歴史</span>': '')+'</div>': '')
++(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history' && !tlIsHistoryStream(tlRegion)? '<span class="tlhist">歴史</span>': '')+'</div>': '')
 +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
 html += tlPhotoHTML(e);
 if(e.background){
@@ -15955,7 +16003,7 @@ requestAnimationFrame(layoutTlSpine);
    rebuilds tlBarItems for the new region. */
 let tlBarItems = [];
 let tlCardsCache = null; /* .tlcard elements of the current render; dropped by tlBarWire on every render */
-let tlAnchor = null; /* v29.10: region-switch return anchor (see setTlRegion) */
+let tlAnchors = {}; /* v30.0: per-stream return anchors (see setTlRegion) */
 const tlBar = { frac: 0, drag: false, raf: 0, draf: 0, geom: null, pendX: null, settleIdx: -1, settleUntil: 0, lastY: 0 };
 function tlBarYearLabel(e){
 if(!e) return '';
@@ -15972,6 +16020,7 @@ knob.style.left = pct; if(fill) fill.style.width = pct;
 const e = tlBarItems[Math.round(tlBar.frac * (n - 1))] || tlBarItems[0];
 if(yv) yv.textContent = tlBarYearLabel(e);
 if(tv) tv.textContent = (e && e.title) || '';
+tlMapPaint();
 }
 /* v29.3: round-year ticks on the bar (his ask, 2026-11-14
    22:02 — 「バーの部分にメモリがないから年代が合わせにくい」).
@@ -15988,18 +16037,33 @@ const TL_TICK_YEARS = [
   { y: 1, lab: '1' }, { y: 500, lab: '500' },
   { y: -1000, lab: '前1000' }, { y: -5000, lab: '前5000' }, { y: -10000, lab: '前10000' }
 ];
+/* v30.0: per-stream tick sets + a distance cap per candidate.
+   On the 日本史 stream every entry is CE, so the BCE candidates
+   used to glue themselves onto unrelated entries (前1000 sat on
+   a medieval entry). The history set drops the BCE candidates,
+   and every candidate on every stream now refuses to claim an
+   entry farther than its cap — a missing tick is honest, a
+   wrong one is not. */
+const TL_TICK_YEARS_JH = [
+  { y: 1900, lab: '1900' }, { y: 1500, lab: '1500' }, { y: 1000, lab: '1000' },
+  { y: 2000, lab: '2000' }, { y: 1800, lab: '1800' }, { y: 1950, lab: '1950' },
+  { y: 500, lab: '500' }
+];
+function tlTickSet(){ return (DS === 'artists' && tlRegion === 'japanHistory')? TL_TICK_YEARS_JH: TL_TICK_YEARS; }
+function tlTickCap(y){ return y <= -5000? 2600: y <= -1000? 1200: y <= 1? 450: y <= 500? 220: y <= 1000? 280: 140; }
 function tlBarTicks(){
 const host = $('tlbarTicks'); if(!host) return;
 host.innerHTML = '';
 const n = tlBarItems.length; if(n < 2) return;
 const years = tlBarItems.map(tlBigYearNum);
 const claim = {};
-TL_TICK_YEARS.forEach((c, pri) => {
+tlTickSet().forEach((c, pri) => {
   let bi = -1, bd = Infinity;
   /* ties go to the LATER entry (e.g. 1950 is 5 from both 1945
      and 1955 — the tick belongs on 1955, clear of 1900's) */
   years.forEach((y, i) => { if(y == null) return; const d = Math.abs(y - c.y); if(d < bd || (d === bd && i > bi)){ bd = d; bi = i; } });
   if(bi < 0) return;
+  if(bd > tlTickCap(c.y)) return;
   if(!claim[bi] || bd < claim[bi].d) claim[bi] = { c: c, pri: pri, d: bd, frac: bi / (n - 1) };
 });
 const placed = [];
@@ -16082,7 +16146,7 @@ for(let i = 0; i < cards.length; i++){
   if(docTop <= line) idx = i; else break;
 }
 tlBar.frac = idx / (cards.length - 1);
-if(tlAnchor && tlRegion === tlAnchor.landedRegion && idx !== tlAnchor.landedIdx) tlAnchor = null;
+{ const _ta = tlAnchors[tlRegion]; if(_ta && idx !== _ta.landedIdx) delete tlAnchors[tlRegion]; }
 tlBarPaint();
 }
 function tlBarWire(){
@@ -16111,7 +16175,7 @@ const end = () => {
   const idx = Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))));
   tlBarLand(idx);
   tlBar.settleIdx = idx; tlBar.settleUntil = performance.now() + 2500;
-  if(tlAnchor && tlRegion === tlAnchor.landedRegion && idx !== tlAnchor.landedIdx) tlAnchor = null;
+  { const _ta = tlAnchors[tlRegion]; if(_ta && idx !== _ta.landedIdx) delete tlAnchors[tlRegion]; }
 };
 track.addEventListener('pointerup', end);
 track.addEventListener('pointercancel', end);
@@ -16137,6 +16201,221 @@ tlBarLand(tlBar.settleIdx);
 }, true);
 window.addEventListener('touchstart', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
 window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
+/* ==== v30.0 world map panel ====
+   A dot-grid world map (Natural Earth 110m, public domain,
+   rasterised to 112x45 land cells — staging in
+   ~/workspace/art-labo/timeline-map/) in the timeline's sticky
+   frame, right of the stream buttons. Pins are PLACES, not
+   movements: a pin lights while any of its movements is active
+   at the year the bar is showing, fading in/out over a 15%
+   bleed of the movement's span (clamped to 2-25 years, so even
+   short movements get a visible fade). The map follows the
+   bar: tlBarPaint repaints it. Tapping the panel opens a sheet
+   with a bigger map, the year's lit movements, and per-place
+   cards whose rows jump into the timeline at that entry (year
+   flow preserved) and whose artist chips open artist pages.
+   Pin targets resolve their entries by title, so data-side
+   insertions never break the links. */
+const TL_MAP = {"grid":{"cols":112,"rows":45,"b64":"gAAAAAAAAAAAAAAAAAfgAcAAAwAAAAAAAB/v/+ACAAAAYAAAAAAIF5//4AAAIB/4BAAAABgKgP+AAGAD////4AHAA5vw///8AgAAAAAAH///////MA////////+B////GHgAHv//////zgPv//BwEACEf/////gwAMD/+HwAAYv/////8CAAAH//fwAA///////4AAAAP//+AAD///////gAAAAf//mAAHvHf///9AAAAB//9AABxdu////AAAAAH//gAAGAv7///IAAAAAf/8AAAfgX///8OAAAAA//wAAD/I////4AAAAAB/8AAAP//3///gAAAAAB4AAAB//3j//8AAAAAAPgAAAP///x+/gAAAAAAOCAAA//++Dx0AAAAAAAZBAAD//9wMDgAAAAAAAOAAAP//4AQGAAAAAAAAIAAAf//4BAAIAAAAAAAbwAA9//gAAEAAAAAAAAfwAAD/8AAEwAAAAAAAB/wAAP/gAA3AAAAAAAAP/AAAf8AABEHAAAAAAA//gAB/wAACAOAAAAAAD//AAH/AAAAAEAAAAAAH/8AAf8gAAANAAAAAAAP/gAB/2AAAD2BAAAAAAf+AAH8YAAAf4AAAAAAA/4AAPxAAAH/wAAAAAAH/AAA/AAAAf/gAAAAAAfwAAB4AAAB/+AAAAAAB/AAAHAAAAHH4AAAAAAH4AAAAAAAAAHAQAAAAAeAAAAAAAAAAABgAAAABwAAAAAAAAAAAAAAAAAHAAAAAAAAAAABAAAAAAwAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
+let tlMapBits = null, tlMapBase = null, tlMapBaseKey = '', tlMapSel = null, tlMapRows = [];
+function tlMapDecodeBits(){
+if(tlMapBits) return tlMapBits;
+const bin = atob(TL_MAP.grid.b64);
+const bytes = new Uint8Array(bin.length);
+for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+tlMapBits = bytes;
+return bytes;
+}
+function tlMapLand(i){ const b = tlMapDecodeBits(); return (b[i >> 3] >> (7 - (i & 7))) & 1; }
+function tlMapXY(lat, lon, w, h){ return [(((lon - 150) % 360 + 360) % 360) / 360 * w, (85 - lat) / 145 * h]; }
+function tlPinState(pin, year){
+let o = 0; const lit = [];
+(pin.targets || []).forEach(t => {
+  const span = Math.max(1, (t.to || t.from) - t.from);
+  const bleed = Math.min(25, Math.max(2, span * 0.15));
+  let s = 0;
+  if(year >= t.from && year <= t.to) s = 1;
+  else if(year < t.from && year > t.from - bleed) s = (year - (t.from - bleed)) / bleed;
+  else if(year > t.to && year < t.to + bleed) s = 1 - (year - t.to) / bleed;
+  if(s > 0){ lit.push({ t: t, s: s }); if(s > o) o = s; }
+});
+return { o: o, lit: lit };
+}
+function tlMapYearNow(){
+const n = tlBarItems.length; if(!n) return null;
+const e = tlBarItems[Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))))];
+return e? tlBigYearNum(e): null;
+}
+function tlMapBaseDraw(w, h){
+const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+const ctx = cv.getContext('2d'); if(!ctx) return cv;
+const cs = getComputedStyle(document.documentElement);
+const dot = (cs.getPropertyValue('--lineStrong') || '').trim() || '#8a8a8a';
+ctx.fillStyle = dot;
+const cols = TL_MAP.grid.cols, rows = TL_MAP.grid.rows;
+const cw = w / cols, ch = h / rows;
+for(let r = 0; r < rows; r++) for(let c = 0; c < cols; c++){
+  if(tlMapLand(r * cols + c)) ctx.fillRect(c * cw + cw * 0.18, r * ch + ch * 0.18, Math.max(1, cw * 0.64), Math.max(1, ch * 0.64));
+}
+return cv;
+}
+function tlMapDrawInto(cv, year, big){
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+const W = cv.clientWidth; if(!W) return;
+const H = big? Math.round(W * TL_MAP.grid.rows / TL_MAP.grid.cols): cv.clientHeight;
+if(!H) return;
+const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
+if(cv.width !== pw || cv.height !== ph){ cv.width = pw; cv.height = ph; if(!big) tlMapBase = null; }
+const ctx = cv.getContext('2d'); if(!ctx) return;
+const key = (document.documentElement.dataset.theme || '') + ':' + pw + 'x' + ph;
+let base = (!big && tlMapBaseKey === key)? tlMapBase: null;
+if(!base){ base = tlMapBaseDraw(pw, ph); if(!big){ tlMapBase = base; tlMapBaseKey = key; } }
+ctx.clearRect(0, 0, pw, ph);
+ctx.drawImage(base, 0, 0);
+if(year == null) return;
+const cs = getComputedStyle(document.documentElement);
+const acc = (cs.getPropertyValue('--accent') || '').trim() || '#b03a2e';
+const bgc = (cs.getPropertyValue('--bg') || '').trim() || '#ffffff';
+TL_MAP.pins.forEach(pin => {
+  const st = tlPinState(pin, year);
+  if(st.o <= 0.03) return;
+  const xy = tlMapXY(pin.lat, pin.lon, pw, ph);
+  const full = st.lit.filter(l => l.s >= 0.999).length;
+  const rad = (big? 5.2: 3.6) * dpr * (full >= 2? 1.4: 1);
+  ctx.globalAlpha = Math.max(0.25, st.o);
+  ctx.fillStyle = acc;
+  ctx.beginPath(); ctx.arc(xy[0], xy[1], rad, 0, Math.PI * 2); ctx.fill();
+  if(full >= 2){
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = bgc;
+    ctx.font = '700 ' + Math.max(7, Math.round(rad * 1.05)) + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(full), xy[0], xy[1] + rad * 0.06);
+  }
+  ctx.globalAlpha = 1;
+});
+}
+function tlMapPaint(){
+const cv = document.getElementById('tlmapCv');
+if(!cv) return;
+tlMapDrawInto(cv, tlMapYearNow(), false);
+}
+function tlYearLabel(y){ return y < 0? '紀元前' + (-y) + '年': y + '年'; }
+function openTlMapSheet(){
+const sh = $('tlmapsheet'); if(!sh) return;
+tlMapSel = null;
+sh.classList.remove('hidden');
+const bcv = $('tlmapBigCv'); if(bcv) bcv.onclick = tlMapSheetTap;
+requestAnimationFrame(() => tlMapSheetPaint());
+}
+function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh) sh.classList.add('hidden'); }
+function tlMapSheetPaint(){
+const cv = $('tlmapBigCv'); if(!cv) return;
+const year = tlMapYearNow();
+cv.style.height = Math.round(cv.clientWidth * TL_MAP.grid.rows / TL_MAP.grid.cols) + 'px';
+const yl = $('tlmapYear');
+if(yl) yl.textContent = year == null? '': '― ' + tlYearLabel(year) + 'ごろ';
+tlMapDrawInto(cv, year, true);
+tlMapSheetBody(year);
+}
+function tlMapSheetTap(ev){
+const cv = $('tlmapBigCv'); if(!cv || !cv.width) return;
+const r = cv.getBoundingClientRect();
+const x = (ev.clientX - r.left) * (cv.width / r.width);
+const y = (ev.clientY - r.top) * (cv.height / r.height);
+let best = null, bd = Infinity;
+TL_MAP.pins.forEach(pin => {
+  const xy = tlMapXY(pin.lat, pin.lon, cv.width, cv.height);
+  const d = Math.hypot(xy[0] - x, xy[1] - y);
+  if(d < bd){ bd = d; best = pin; }
+});
+if(best && bd <= 26 * Math.min(2, window.devicePixelRatio || 1)){
+  tlMapSel = best.id;
+  tlMapSheetBody(tlMapYearNow());
+}
+}
+function tlMapTargetRow(pin, t){
+const ri = tlMapRows.length;
+tlMapRows.push({ side: t.side, title: t.title });
+const tlo = timelineOf();
+const entries = tlo? tlo[t.side]: null;
+const e = Array.isArray(entries)? entries.find(x => x.title === t.title): null;
+let chips = '';
+if(e && Array.isArray(e.artists)){
+  const cs2 = [];
+  e.artists.forEach(x => {
+    const label = (x && typeof x === 'object')? String(x.label || ''): String(x || '');
+    const link = (x && typeof x === 'object')? x.link: null;
+    if(!label) return;
+    const target = link? (DB.artists.find(a => a.name === link) || null): null;
+    if(target) cs2.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
+    else cs2.push('<span class="tlchip">' + esc(label) + '</span>');
+  });
+  if(cs2.length) chips = '<span style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">' + cs2.join('') + '</span>';
+}
+return '<div class="tlm-row" role="button" onclick="tlMapGoToIdx(' + ri + ')">'
++ '<span class="tlm-place">' + esc(pin.place) + '</span>'
++ '<span class="tlm-t">' + esc(t.title) + chips + '</span>'
++ '<span class="tlm-y">' + t.from + '–' + t.to + '</span></div>';
+}
+function tlMapSheetBody(year){
+const body = $('tlmapBody'); if(!body) return;
+tlMapRows = [];
+if(year == null){ body.innerHTML = ''; return; }
+let html = '';
+if(tlMapSel){
+  const pin = TL_MAP.pins.find(p => p.id === tlMapSel);
+  if(pin){
+    const st = tlPinState(pin, year);
+    html += '<div class="tlm-city"><div style="font-weight:700; font-size:16px;">' + esc(pin.place) + '</div>';
+    if(st.lit.length){
+      html += '<div class="small" style="margin:4px 0 6px;">' + tlYearLabel(year) + 'ごろ、この場所で動いていたもの</div>';
+      st.lit.forEach(l => { html += tlMapTargetRow(pin, l.t); });
+    } else {
+      html += '<div class="small" style="margin:4px 0 6px;">この年、この場所の動きはありません。ここでの動きは：</div>';
+      pin.targets.forEach(t => { html += tlMapTargetRow(pin, t); });
+    }
+    html += '</div>';
+  }
+}
+const litRows = [];
+TL_MAP.pins.forEach(pin => {
+  const st = tlPinState(pin, year);
+  st.lit.filter(l => l.s >= 0.999).forEach(l => litRows.push({ pin: pin, t: l.t }));
+});
+litRows.sort((a, b) => a.t.from - b.t.from);
+html += '<div class="tlm-lit"><div class="tsterm" style="font-size:15px;">その年の動き <span class="small" style="color:var(--muted)">' + litRows.length + '件</span></div>';
+if(litRows.length){
+  litRows.forEach(r => { html += tlMapTargetRow(r.pin, r.t); });
+} else {
+  let best = null;
+  TL_MAP.pins.forEach(pin => pin.targets.forEach(t => {
+    const d = year < t.from? t.from - year: year - t.to;
+    if(d > 0 && (!best || d < best.d)) best = { d: d, pin: pin, t: t };
+  }));
+  html += '<div class="small" style="padding:8px 2px;">この年は、どの場所も表立っては動いていません。'
+    + (best? 'いちばん近い動きは ' + tlYearLabel(best.t.from) + 'の「' + esc(best.t.title) + '」（' + esc(best.pin.place) + '）です。': '') + '</div>';
+}
+html += '</div>';
+body.innerHTML = html;
+}
+function tlMapGoToIdx(i){
+const r = tlMapRows[i]; if(!r) return;
+tlMapGoTo(r.side, r.title);
+}
+function tlMapGoTo(side, title){
+closeTlMapSheet();
+if(side !== tlRegion) setTlRegion(side);
+const idx = tlBarItems.findIndex(e => e.title === title);
+if(idx >= 0) tlBarGoTo(idx);
+}
+function tlMapOpenArtist(id){
+closeTlMapSheet();
+openDetail(id);
+}
+window.addEventListener('resize', () => {
+if(typeof view !== 'undefined' && view === 'timeline') tlMapPaint();
+});
 /* v3.3: era detail — the timeline stops being a list of labels.
    Each era card carries photos (the encyclopedia's own verified
    works made in that era) and opens a detail page: a hero work,
@@ -16208,7 +16487,7 @@ function renderEra(){
     +'<div class="eraband" style="background:'+col+'"></div>'
     +(e.bigYear? '<div class="tlbig">'+esc(e.bigYear)+'</div>': '')
     +'<div class="tlyears">'+esc(e.years||'')+'</div>'
-    +(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history'? '<span class="tlhist">歴史</span>': '')+'</div>': '')
+    +(e.title? '<div class="tltitle">'+esc(e.title)+(e.kind==='history' && !tlIsHistoryStream(eraCtx.region)? '<span class="tlhist">歴史</span>': '')+'</div>': '')
     +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
   html += tlPhotoHTML(e);
   const wiring = [];
@@ -17932,7 +18211,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.13';
+const APP_VERSION = '30.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -17978,7 +18257,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 22;
+const DATA_PACK = 23;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
