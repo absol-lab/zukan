@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.11">
+<meta name="app-version" content="29.12">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13656,32 +13656,51 @@ if(under) under.innerHTML = '';
 vTurn.p = 0; vTurn.active = false; vTurn.samples = [];
 }
 function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack(); } }
-/* The page-turn sound (synthesized with WebAudio, no audio
-   file). v29.9 shipped the first version; his device verdict
-   (2026-11-15 01:19): 「ザッって感じ。もっとペラッと」 — the
-   old noise was a uniform, wide-band (Q=0.85) burst with a
-   900 Hz floor and a separate landing hit, so it read as a
-   dense ザッ, not a thin sheet's ペラッ. v29.11 redesign:
-   ONE gesture of 0.18 s — a high, narrow band (Q=2.5,
-   6500 -> 3200 Hz) with everything under 2.5 kHz cut hard
-   (two cascaded high-pass stages, 24 dB/oct: no torso), an
-   envelope that snaps up in ~8 ms and then trembles 3 times
-   on the way down (the sheet shivering, not a second hit),
-   a 12 ms high チッ tapped from the same breath at the
-   leading edge, and a faint fast grain so the noise reads
-   as fibres, not a uniform hiss. The snap-back is the same
-   shape, shorter (0.13 s) at half volume. Length, sweep and
-   rate jitter a few percent per play so repeats never sound
-   stamped. Settings live in ZSET (soundOn / soundVol, panel
-   'sound'); when off, no AudioContext is ever created. The
-   context is created / resumed from a user gesture. v29.10
-   (his call, 2026-11-15 — 「マナーモードではならないで
+/* The page-turn sound: a REAL recording since v29.12.
+   His device verdicts on the two synthesized generations:
+   v29.9 read as a dense 「ザッ」, and the v29.11 redesign
+   (narrow band, flutter envelope) still read as 作り物
+   (2026-11-15 01:19 / 01:28) — so the synthesis route is
+   abandoned for good; below is a recording of one real
+   page flip, embedded as base64 MP3 (the single-file rule
+   is kept: no fetch, works offline).
+   Source (CC0): "Page Flip" by qubodup — freesound.org
+   sound 454707, https://freesound.org/people/qubodup/
+   sounds/454707/ — license "Creative Commons 0" verified
+   on the sound page on 2026-11-15. Picked from 5 CC0
+   candidates by waveform / spectrum analysis (we cannot
+   listen here): the only candidate that is at once a
+   single continuous gesture, bright (the window used,
+   0.02–0.38 s of the source, has spectral centroid
+   7,895 Hz and just 2.8% of its energy below 500 Hz —
+   no torso, all sheet). Processing: trimmed to that
+   window, 8 ms fade-in / 60 ms fade-out, peak normalized
+   to ~0.90, mono 44.1 kHz MP3 at 64 kbps (3,134 bytes;
+   base64 4,180 chars, +~4.2 KB on this file).
+   Playback: the clip is decoded once via decodeAudioData
+   (warmed up on the first pointerdown, together with the
+   context) and played from a buffer source into the
+   master gain, so the settings / volume curve / timing
+   wiring is exactly what it was. If decoding fails the
+   turn stays silent — there is NO synthesis fallback.
+   The snap-back plays the brightest slice of the same
+   breath (offset 0.10 s, 0.20 s long) at rate 1.2 with
+   the cut end faded in the graph and half master volume:
+   a shorter, lighter excerpt, never a reverse playback.
+   Settings live in ZSET (soundOn / soundVol, panel
+   'sound'); when off, no AudioContext is ever created.
+   The context is created / resumed from a user gesture.
+   v29.10 (his call, 2026-11-15 — 「マナーモードではならないで
    欲しい」): the sound RESPECTS the iPhone silent switch —
-   the switch-override briefly shipped in v29.9 stays
-   removed; plain WebAudio behaviour: silent switch on, no
-   sound. (The diary app keeps its own past-the-switch
-   behaviour; that is its separate, earlier decision.) */
-let sndAC = null, sndNoiseBuf = null;
+   no switch-override is set anywhere; plain WebAudio
+   behaviour: silent switch on, no sound. (The diary app
+   keeps its own past-the-switch behaviour; that is its
+   separate, earlier decision.) */
+const SND_TURN_B64 =
+'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';
+let sndAC = null, sndBuf = null, sndBufBusy = false;
 function sndEnabled(){ return ZSET.soundOn !== false; }
 function sndVolume(){ const v = (typeof ZSET.soundVol === 'number' && isFinite(ZSET.soundVol))? ZSET.soundVol: 0.6; return Math.min(1, Math.max(0, v)); }
 function sndCtx(){
@@ -13692,42 +13711,21 @@ if(!sndAC){
 if(sndAC.state !== 'running'){ try{ sndAC.resume(); }catch(e){} }
 return sndAC;
 }
-function sndNoise(ac){
-if(sndNoiseBuf && sndNoiseBuf.sampleRate === ac.sampleRate) return sndNoiseBuf;
-const len = Math.max(1, Math.floor(ac.sampleRate * 0.5));
-const buf = ac.createBuffer(1, len, ac.sampleRate);
-const d = buf.getChannelData(0);
-for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-sndNoiseBuf = buf; return buf;
-}
-const sndFlutterCache = {};
-function sndFlutterCurve(rev){
-/* v29.11: the flutter envelope — ONE gesture. Keys are
-   [u, level] over the stroke: a sharp snap to full at
-   u=0.045 (~8 ms — the sheet's edge letting go), then the
-   sheet trembles 3 times on the way down, each tremor
-   weaker (0.62 / 0.40 / 0.20), valleys never reaching zero
-   (it stays one connected shiver, never separate hits).
-   Cosine-interpolated at 192 points. A faint fast grain
-   (57 Hz, ±13%) is multiplied in so the noise reads as
-   paper fibres instead of a uniform sheet of hiss; it is
-   hushed at the attack (snap stays clean) and fades with
-   the tail. Returned normalized (peak 1); callers scale. */
-const key = rev? 'r': 'f';
-if(sndFlutterCache[key]) return sndFlutterCache[key];
-const keys = [[0,0],[0.045,1],[0.20,0.45],[0.34,0.62],[0.50,0.28],[0.63,0.40],[0.78,0.15],[0.88,0.20],[1,0]];
-const durN = rev? 0.13: 0.18;
-const N = 192, a = new Float32Array(N);
-for(let i = 0; i < N; i++){
-  const u = i / (N - 1);
-  let k = 0; while(k < keys.length - 2 && u > keys[k + 1][0]) k++;
-  const u0 = keys[k][0], v0 = keys[k][1], u1 = keys[k + 1][0], v1 = keys[k + 1][1];
-  const s = Math.min(1, Math.max(0, (u - u0) / Math.max(1e-6, u1 - u0)));
-  const base = v0 + (v1 - v0) * (0.5 - 0.5 * Math.cos(Math.PI * s));
-  const grain = 1 + 0.13 * Math.sin(2 * Math.PI * 57 * (u * durN)) * Math.min(1, u / 0.06) * (1 - u);
-  a[i] = Math.max(0, base * grain);
-}
-sndFlutterCache[key] = a; return a;
+function sndLoad(){
+/* decode the embedded recording once; the decoded buffer is
+   cached for the life of the page. A failed decode leaves
+   sndBuf null and the turn simply stays silent (no fallback
+   of any kind — his call: a real recording or nothing). */
+if(sndBuf || sndBufBusy || !sndAC) return;
+sndBufBusy = true;
+try{
+  const bin = atob(SND_TURN_B64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  sndAC.decodeAudioData(bytes.buffer,
+    b=>{ sndBuf = b; sndBufBusy = false; },
+    ()=>{ sndBufBusy = false; });
+}catch(e){ sndBufBusy = false; }
 }
 function playPageTurn(rev){
 if(!sndEnabled()) return;
@@ -13740,47 +13738,40 @@ if(!sndEnabled()) return;
    spreads it evenly — the same slide distance, the same
    loudness step, anywhere on the slider. Both previews (the
    on-toggle and slider-commit test plays) route through this
-   function, so they follow the same curve. */
+   function, so they follow the same curve. v29.12: what the
+   gain shapes is now the embedded recording (sndBuf); if it
+   has not decoded yet, this play is skipped (the decode is
+   warmed up on pointerdown, so this is a first-tap edge). */
 const pos = sndVolume(); const vol = pos * pos; if(vol <= 0.001) return;
 const ac = sndCtx(); if(!ac) return;
+if(!sndBuf){ sndLoad(); return; }
 try{
   const t0 = ac.currentTime + 0.02;
-  const jit = ()=> 1 + (Math.random() * 2 - 1) * 0.07;
   const master = ac.createGain(); master.gain.value = (rev? 0.5: 1) * vol; master.connect(ac.destination);
-  const dur = (rev? 0.13: 0.18) * jit();
-  const src = ac.createBufferSource(); src.buffer = sndNoise(ac);
-  src.playbackRate.value = 0.95 + Math.random() * 0.13;
-  /* the body of the sound: nothing under 2.5 kHz survives —
-     two cascaded high-pass stages (24 dB/oct) strip the
-     torso that made the old sound read as ザッ; the band
-     itself rides high and narrow (Q=2.5) and sweeps down
-     as the sheet settles. */
-  const hp1 = ac.createBiquadFilter(); hp1.type = 'highpass'; hp1.frequency.value = 2500;
-  const hp2 = ac.createBiquadFilter(); hp2.type = 'highpass'; hp2.frequency.value = 2500;
-  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.5;
-  bp.frequency.setValueAtTime((rev? 5600: 6500) * jit(), t0);
-  bp.frequency.exponentialRampToValueAtTime((rev? 3400: 3200) * jit(), t0 + dur);
-  const g = ac.createGain();
-  const shape = sndFlutterCurve(rev);
-  const peak = rev? 0.45: 0.55;
-  const curve = new Float32Array(shape.length);
-  for(let i = 0; i < shape.length; i++) curve[i] = shape[i] * peak;
-  g.gain.setValueCurveAtTime(curve, t0, dur);
-  src.connect(hp1); hp1.connect(hp2); hp2.connect(bp); bp.connect(g); g.connect(master);
-  /* the leading edge: the SAME breath of noise, tapped off
-     high — a 12 ms チッ as the sheet's edge lets go. Same
-     start, same source: part of the one gesture, never a
-     delayed second hit. */
-  const tb = ac.createBiquadFilter(); tb.type = 'bandpass'; tb.frequency.value = 8200; tb.Q.value = 1.0;
-  const tg = ac.createGain();
-  tg.gain.setValueAtTime(0.0001, t0);
-  tg.gain.exponentialRampToValueAtTime(rev? 0.12: 0.16, t0 + 0.004);
-  tg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.012);
-  src.connect(tb); tb.connect(tg); tg.connect(master);
-  src.start(t0, Math.random() * 0.2); src.stop(t0 + dur + 0.05);
+  const src = ac.createBufferSource(); src.buffer = sndBuf;
+  if(rev){
+    /* snap-back: the brightest slice of the same breath
+       (0.10-0.30 s of the clip) at rate 1.2, the cut end
+       faded in the graph — shorter and lighter than the
+       forward flip, never a reverse playback. */
+    const seg = 0.20 / 1.2;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(1, t0);
+    g.gain.setValueAtTime(1, t0 + seg - 0.05);
+    g.gain.linearRampToValueAtTime(0, t0 + seg);
+    src.playbackRate.value = 1.2;
+    src.connect(g); g.connect(master);
+    src.start(t0, 0.10, 0.20);
+  } else {
+    /* a breath of rate jitter (±3%) so repeats never sound
+       stamped; the recording itself does the rest. */
+    src.playbackRate.value = 0.97 + Math.random() * 0.06;
+    src.connect(master);
+    src.start(t0);
+  }
 }catch(e){}
 }
-document.addEventListener('pointerdown', ()=>{ if(sndEnabled()) sndCtx(); }, true);
+document.addEventListener('pointerdown', ()=>{ if(sndEnabled() && sndCtx()) sndLoad(); }, true);
 /* the ‹ › buttons turn the page too; anything that cannot turn
    (switch off, reduced motion, plate not ready) moves instantly */
 function viewerTurn(d){
@@ -17932,7 +17923,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.11';
+const APP_VERSION = '29.12';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
