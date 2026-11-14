@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.9">
+<meta name="app-version" content="27.10">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13147,6 +13147,52 @@ function changelogRefreshTabPill(){
     if(b.getAttribute('onclick') === "setBellTab('history')"){ b.innerHTML = '更新履歴' + changelogTabBadge(); return; }
   }
 }
+/* v27.10 (his ask, 2026-11-14 15:39): the 通知 tab carries the
+   same yellow unread pill as 更新履歴 (belldot), counting this
+   book's unread requests + registration notes — the same sum
+   the bell badge shows. */
+function notifTabBadge(){
+  let n = 0;
+  try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
+  return n? '<span class="belldot">'+n+'</span>': '';
+}
+function notifRefreshTabPills(){
+  const btns = document.querySelectorAll('#settingspanel .seg button');
+  for(const b of btns){
+    const oc = b.getAttribute('onclick');
+    if(oc === "setBellTab('notifs')") b.innerHTML = '通知' + notifTabBadge();
+    else if(oc === "setBellTab('history')") b.innerHTML = '更新履歴' + changelogTabBadge();
+  }
+}
+/* v27.10: mark EVERYTHING in one panel tab read — the second
+   press of the bell or of the already-active tab (his rule).
+   Per-dataset, like everything else in this panel: the other
+   book's unread items are untouched. */
+function reqMarkAllReadForDS(){
+  try{
+    const d = reqSeenIdsLoad(); let ch = false;
+    const set = new Set(d[DS] || []);
+    reqDoneForDS(DS).forEach(r=>{ if(!set.has(r.id)){ set.add(r.id); ch = true; } });
+    if(ch){ d[DS] = [...set].slice(-300); const s = JSON.stringify(d); REQSEEN_SRC = s; kvSet(LS_REQ_SEEN2, s); }
+  }catch(e){}
+  const a = regNotifsLoad(); let rch = false;
+  a.forEach(n=>{ if(n.dataset === DS && !n.seen){ n.seen = true; rch = true; } });
+  if(rch) regNotifsSave(a);
+  refreshReqNotifBtn();
+}
+function changelogMarkAllSeen(){
+  const d = changelogData || changelogCacheLoad();
+  if(!d || !d.entries.length) return;
+  const seen = changelogSeenLoad(d.entries);
+  let ch = false;
+  d.entries.forEach(e=>{ const k = changelogEntryKey(e); if(seen.indexOf(k) < 0){ seen.push(k); ch = true; } });
+  if(ch){ const s = JSON.stringify(seen); CLSEEN_SRC = s; kvSet(LS_CHANGELOG_SEEN, s); }
+}
+function bellMarkAllRead(){
+  if(bellTab === 'history'){ changelogMarkAllSeen(); renderUpdateList(); }
+  else { reqMarkAllReadForDS(); renderRequestNotifs('reqnotiflist'); }
+  notifRefreshTabPills();
+}
 function changelogNotesEl(e){
   const ul = document.createElement('ul');
   ul.className = 'upnotes';
@@ -13454,21 +13500,38 @@ function armPanelOrigin(panelDs){
 let notifOpen = {};
 function toggleNotifDetail(key){
   notifOpen[key] = !notifOpen[key];
-  /* v27.3: a row that cannot navigate anywhere (a declined
-     request) is read once he has expanded it — the fullest
-     view that row offers. Navigable rows stay unread here;
-     they turn read in reqNotifJump / regNotifJump only. */
-  if(notifOpen[key] && key.indexOf('req:') === 0){
-    const r = reqAllItems().find(x=> 'req:' + x.id === key);
-    if(r && r.status === 'declined') reqMarkOneRead(r);
+  /* v27.10 (his ask, 2026-11-14 15:39): expanding a row IS the
+     read act for every row in this panel — the v27.3 rule
+     (navigable rows turn read only in reqNotifJump /
+     regNotifJump) left NEW standing on rows he had already
+     read in full right here, which he reported as a bug.
+     Navigation still marks read too; collapsing never
+     un-reads. The history tab has followed this rule since
+     v27.5 (toggleChangelogDetail). */
+  if(notifOpen[key]){
+    if(key.indexOf('req:') === 0){
+      const r = reqAllItems().find(x=> 'req:' + x.id === key);
+      if(r) reqMarkOneRead(r);
+    } else if(key.indexOf('reg:') === 0){
+      regMarkOneSeen(key.slice(4));
+    }
+    notifRefreshTabPills();
   }
   renderRequestNotifs('reqnotiflist');
 }
 /* v16.1: the bell panel also carries the update history
    (his ask — the history no longer lives in the settings list). */
 let bellTab = 'notifs';
-function setBellTab(t){ bellTab = t; renderSettingsPanel(); }
+function setBellTab(t){
+  /* v27.10: pressing the already-active tab again marks that
+     tab's items all read (his rule, 2026-11-14 15:39). */
+  if(settingsPanel === 'reqnotif' && bellTab === t){ bellMarkAllRead(); return; }
+  bellTab = t; renderSettingsPanel();
+}
 function openRequestNotifs(){
+  /* v27.10: a second bell press with the panel already open
+     marks the current tab all read (his rule). */
+  if(view === 'settings' && settingsPanel === 'reqnotif'){ bellMarkAllRead(); return; }
   notifOpen = {};
   changelogOpen = {};
   bellTab = 'notifs';
@@ -15810,7 +15873,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.9';
+const APP_VERSION = '27.10';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -16288,7 +16351,7 @@ function renderSettingsPanel(){
   else if(settingsPanel==='reqnotif'){
     p.innerHTML = panelShell('通知',
       '<div class="seg" role="group" aria-label="通知と更新履歴" style="margin-bottom:12px">'
-      + '<button class="'+(bellTab==='notifs'? 'on': '')+'" onclick="setBellTab(\'notifs\')">通知</button>'
+      + '<button class="'+(bellTab==='notifs'? 'on': '')+'" onclick="setBellTab(\'notifs\')">通知'+notifTabBadge()+'</button>'
       + '<button class="'+(bellTab==='history'? 'on': '')+'" onclick="setBellTab(\'history\')">更新履歴'+changelogTabBadge()+'</button></div>'
       + '<div id="reqnotiflist"'+(bellTab==='notifs'? '': ' style="display:none"')+'></div>'
       + '<div id="updatelist"'+(bellTab==='history'? '': ' style="display:none"')+'></div>');
