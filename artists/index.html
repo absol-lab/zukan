@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.0">
+<meta name="app-version" content="29.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -315,6 +315,37 @@ figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{color:var(--te
 #viewDetail figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{animation:phbreathe 1.7s ease-in-out infinite;}
 @keyframes phbreathe{0%,100%{opacity:.5}50%{opacity:1}}
 @media (prefers-reduced-motion: reduce){ #viewDetail figure.work .ph .noimg{animation:none;} }
+/* v29.1 (his ask, 2026-11-14 21:16): while a work image is still
+   loading, its box says 読み込んでいます… — muted, small, centred,
+   no flashing. .imgload is the in-flow placeholder (it takes the
+   seat the 図版 wordmark used to hold before hydration, and the
+   seat between retries); .imgload.ov is the overlay shown while
+   the fetch itself is in flight, the <img> sitting under it. The
+   label is removed the moment the image lands; a terminal failure
+   replaces the holder's content wholesale (label included), so
+   the failure plate is untouched. A cached image never shows it. */
+.imgholder{position:relative;}
+.imgload{font-family:var(--sans); font-size:11px; color:var(--muted); letter-spacing:.05em; line-height:1.5; padding:4px; text-align:center;}
+.imgload.ov{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:1; pointer-events:none;}
+.biothumb .imgload, .tlthumb .imgload{font-size:9px;}
+.ysthumb .imgload{font-size:8.5px;}
+.exposter .imgload{font-size:12px;}
+.intvthumb .imgload{font-size:8.5px; padding:2px;}
+figure.work .ph .imgload{color:var(--ink35);}
+/* the v27.9 step-up (a pending plate reads as "loading", never a
+   black void) extends to the new label, in-flow and overlay alike */
+figure.work .ph:not(.platefail):has(> .imgholder > .imgload){background:var(--card);}
+figure.work .ph:not(.platefail):has(> .imgholder > .imgload) .imgload{color:var(--text);}
+#viewDetail figure.work .ph:not(.platefail):has(> .imgholder > .imgload) .imgload{animation:phbreathe 1.7s ease-in-out infinite;}
+@media (prefers-reduced-motion: reduce){ #viewDetail figure.work .ph .imgload{animation:none;} }
+/* the viewer's loading label lives on the stage, over the plate
+   area, until the plate image lands (see renderViewer) */
+#viewer .vload{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-family:var(--sans); font-size:13px; letter-spacing:.08em; pointer-events:none; z-index:5;}
+/* the viewer's no-url hydration span takes the whole stage so the
+   shared hydrateImg label (and failure plate) centre properly */
+#viewer .vstage .vhyd{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;}
+.tlphoto{position:relative; min-height:120px; display:flex; flex-direction:column; justify-content:center;}
+.tlphoto .imgload{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;}
 figure.work .ph.noplate{aspect-ratio:auto; height:58px; background:var(--bg);}
 figure.work .ph.noplate .noimg{font-size:10.5px; letter-spacing:.08em; line-height:1.55; padding:4px 8px;}
 .grid.wide figure.work .ph.noplate{height:72px;}
@@ -9371,10 +9402,30 @@ function imgHTML(work, size){
    v2.18: the holder starts with a 図版 wordmark inside, so a plate whose
    image has not arrived yet is never a featureless blank; hydrateImg
    replaces the holder's content when the image (or the failure plate)
-   lands. */
+   lands.
+   v29.1: the wordmark seat now carries the loading label itself
+   （読み込んでいます…) — the holder is a loading state from its
+   first paint until the image (or the failure plate) lands. */
 const id = 'im'+(++imgSeq);
 const cap = work? (work.caption||''): '';
-return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"><span class="noimg">図版</span></span>';
+return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"><span class="imgload">読み込んでいます…</span></span>';
+}
+/* v29.1: the loading label, shared by every image surface.
+   imgLoadLabel(span, true) overlays the label on the in-flight
+   <img>; with false it is the in-flow placeholder. imgLoadDone
+   removes any label from the holder. Callers only add the overlay
+   when the image is not already complete, so a cached image never
+   flashes it. */
+function imgLoadLabel(span, overlay){
+if(!span || span.querySelector('.imgload')) return;
+const s = document.createElement('span');
+s.className = 'imgload' + (overlay? ' ov': '');
+s.textContent = '読み込んでいます…';
+span.appendChild(s);
+}
+function imgLoadDone(span){
+if(!span) return;
+span.querySelectorAll('.imgload').forEach(s=>s.remove());
 }
 /* v2.31: self-healing images. A terminal failure is no longer the end
    state for a render: when a work HAS a Drive image (url or fileId), a
@@ -9476,7 +9527,7 @@ const fail = ()=>{ const ph = span.closest('.ph'); if(ph) ph.classList.add('plat
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
 if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
-span.innerHTML = '<span class="noimg">図版 読込中</span>';
+span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
 Promise.race([loadDriveImage(fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
 if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
 }).catch(fail);
@@ -9494,8 +9545,12 @@ const im = document.createElement('img');
 im.loading = 'eager'; im.alt = cap;
 let i = 0;
 im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
+im.onload = ()=>{ imgLoadDone(span); };
 span.innerHTML=''; span.appendChild(im);
 im.src = cands[0];
+/* v29.1: say so while the local fetch is in flight (a cached
+   candidate is already complete and gets no label) */
+if(!im.complete) imgLoadLabel(span, true);
 };
 if(work.img && work.img.url){
 /* v2.20: retry the Drive URL with backoff before giving up on it.
@@ -9530,11 +9585,11 @@ if(ok) span._imgJob = false;
 const failAttempt = ()=>{
 if(settled) return; settle(false);
 if(attemptNo <= RETRY_WAITS.length && span.isConnected){
-span.innerHTML = '<span class="noimg">図版</span>';
+span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
 setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
 } else { span._imgJob = false; tryLocal(); }
 };
-uim.onload = ()=>{ settle(true); };
+uim.onload = ()=>{ settle(true); imgLoadDone(span); };
 uim.onerror = failAttempt;
 span.innerHTML=''; span.appendChild(uim);
 /* retries carry a cache-buster: a second <img> for the identical URL
@@ -9542,6 +9597,11 @@ span.innerHTML=''; span.appendChild(uim);
    clean URL would just hang on the same connection. The thumbnail
    endpoint ignores unknown params. */
 uim.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
+/* v29.1: the fetch is the loading the user actually waits on —
+   label it (an instantly-cached answer is already complete and
+   gets no label; the label comes off in uim.onload, and a
+   terminal failure replaces the holder content wholesale). */
+if(!uim.complete) imgLoadLabel(span, true);
 /* v2.34: load watchdog. On the user's device, thumbnail requests were
    observed to neither load nor error — the tile stayed a black box
    forever because the wordmark had already been erased and the retry
@@ -12691,7 +12751,7 @@ interviewsHTML = intvArr.map(iv=>{
    v27.0. */
 const th = intvThumbURL(iv);
 return '<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
-+(th? '<span class="intvthumb"><img src="'+escA(th)+'" alt="" loading="lazy"><span class="intvplay">▶</span></span>': '')
++(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.previousElementSibling.remove()"><span class="intvplay">▶</span></span>': '')
 +'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
 +'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
 +([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
@@ -12929,7 +12989,7 @@ if(w.img && w.img.fileId){
 /* device-uploaded works resolve through the Drive API (blob URL) */
 const fid = w.img.fileId;
 if(driveImgCache[fid]){ setViewerImg(box, driveImgCache[fid], w); return; }
-box.innerHTML = '<span class="noimg">図版 読込中</span>';
+box.innerHTML = '<span class="noimg">読み込んでいます…</span>';
 Promise.race([loadDriveImage(fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
 if(seq !== viewerSeq) return;
 if(url) setViewerImg(box, url, w);
@@ -12939,6 +12999,7 @@ return;
 }
 if(!(w.img && w.img.url)){
 const span = document.createElement('span');
+span.className = 'vhyd'; /* v29.1: full-stage span, so hydrateImg's loading label centres */
 span.setAttribute('data-size', String(IMG_SIZE.viewer));
 stage.appendChild(span); hydrateImg(span, w);
 return;
@@ -12957,6 +13018,20 @@ const base = document.createElement('img');
 base.loading = 'eager'; base.alt = w.caption || '';
 base.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
 stage.appendChild(base);
+/* v29.1 (his ask): when the plate is NOT already cached, the stage
+   used to sit black while it fetched — say 読み込んでいます… over
+   the plate area until it lands. A cached plate (the normal case,
+   straight from the detail grid) is complete on arrival and never
+   shows the label. The upgrade's own load/final failure also
+   clears it, so it can never be stranded. */
+if(!(base.complete && base.naturalWidth > 0)){
+const vl = document.createElement('span');
+vl.className = 'vload'; vl.textContent = '読み込んでいます…';
+stage.appendChild(vl);
+const vdone = ()=>{ vl.remove(); };
+base.addEventListener('load', vdone);
+base.addEventListener('error', vdone);
+}
 upgradeViewerImg(stage, w, seq);
 }
 function viewerStage(){ return $('vstage'); }
@@ -12979,9 +13054,13 @@ let settled = false;
 const fail = ()=>{
 if(settled) return; settled = true;
 up.remove();
+/* v29.1: the last failed attempt also clears the stage's loading
+   label — the plate (or its failure) is the final state, never a
+   stranded 読み込んでいます… */
+if(attemptNo > WAITS.length){ const vl = box.querySelector('.vload'); if(vl) vl.remove(); }
 if(attemptNo <= WAITS.length && seq === viewerSeq) setTimeout(attempt, WAITS[attemptNo-1] + Math.floor(Math.random()*250));
 };
-up.onload = ()=>{ if(settled) return; settled = true; if(seq !== viewerSeq){ up.remove(); return; } requestAnimationFrame(()=> up.classList.add('on'));
+up.onload = ()=>{ if(settled) return; settled = true; if(seq !== viewerSeq){ up.remove(); return; } const vl0 = box.querySelector('.vload'); if(vl0) vl0.remove(); requestAnimationFrame(()=> up.classList.add('on'));
 /* v9.0: a w1600 answer narrower than 1600 IS the master —
    remember it, and deep zoom never probes this work. */
 if(w.img && w.img.url && up.naturalWidth && up.naturalWidth < IMG_SIZE.viewer) vDeepCaps[String(w.img.url)] = up.naturalWidth;
@@ -14434,7 +14513,8 @@ function renderUpdateList(){
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
 const ROADMAP_FALLBACK = [
-  { v: '29.1', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
+  { v: '29.1', label: '', lines: ['画像の読み込み表示 — 写真が届くまでの間、その場所に「読み込んでいます…」と出るようになります'] },
+  { v: '29.2', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
   { v: null, label: 'データの更新予定', lines: ['作家の発言の日本語訳（残り262件）を順に進めます', '作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします'] },
   { v: null, label: 'その先', lines: ['「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
 ];
@@ -15228,13 +15308,18 @@ japan: [
 /* v29.0: the curated photo slot. Ships empty in v29.0 — the
    staging identified a representative work for 82 entries but
    no photo URL is accepted into the data until it is sourced
-   and verified (v29.1). Until then this returns '' — no broken
-   image, no placeholder box, nothing. */
+   and verified (v29.2 — it moved when v29.1 became the image
+   loading label). Until then this returns '' — no broken
+   image, no placeholder box, nothing.
+   v29.1: once a photo does ride here, it carries the loading
+   label until it lands (the label removes itself on load; on
+   error it also removes itself and the img keeps its existing
+   behaviour). */
 function tlPhotoHTML(e){
   const ph = e && e.photo;
   if(!ph || !ph.url) return '';
   const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
-  return '<div class="tlphoto"><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
+  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.previousElementSibling.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
 }
 /* v29.0: a blank line in the staged detail/background text is
    a paragraph break — render it as separate paragraphs, never
@@ -17257,7 +17342,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.0';
+const APP_VERSION = '29.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
