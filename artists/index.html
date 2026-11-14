@@ -13666,17 +13666,20 @@ function vTurnCancel(){ if(vTurn.active){ vTurn.active = false; vTurnSnapBack();
    per play so repeats never sound stamped. The snap-back is
    one shorter, half-volume stroke. Settings live in ZSET
    (soundOn / soundVol, panel 'sound'); when off, no
-   AudioContext is ever created. The diary app's recipe is
-   followed for iOS: the context is created/resumed from a
-   user gesture, and navigator.audioSession is set to
-   'playback' so the sound is not held by the silent switch. */
+   AudioContext is ever created. The context is created /
+   resumed from a user gesture. v29.10 (his call, 2026-11-15
+   — 「マナーモードではならないで欲しい」): the sound RESPECTS
+   the iPhone silent switch. The switch-override briefly
+   shipped in v29.9 is removed — plain WebAudio behaviour:
+   silent switch on, no sound. (The
+   diary app keeps its own past-the-switch behaviour; that
+   is its separate, earlier decision.) */
 let sndAC = null, sndNoiseBuf = null;
 function sndEnabled(){ return ZSET.soundOn !== false; }
 function sndVolume(){ const v = (typeof ZSET.soundVol === 'number' && isFinite(ZSET.soundVol))? ZSET.soundVol: 0.6; return Math.min(1, Math.max(0, v)); }
 function sndCtx(){
 if(!sndEnabled()) return null;
 if(!sndAC){
-  try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch(e){}
   try{ sndAC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; }
 }
 if(sndAC.state !== 'running'){ try{ sndAC.resume(); }catch(e){} }
