@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.3">
+<meta name="app-version" content="29.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -14731,8 +14731,6 @@ function renderUpdateList(){
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
 const ROADMAP_FALLBACK = [
-  { v: '29.3', label: '', lines: ['ページめくりをもっと滑らかに — 紙の帯を24本に増やし、めくる途中で絵がずれる問題を直します', '美術史年表の年代バーに目盛りを追加 — 狙った年代に合わせやすくし、バーを動かした時の表示の乱れも直します'] },
-  { v: '29.4', label: '', lines: ['年表の写真 — 拡充した年表の82項目に、代表作の写真を集めて載せます'] },
   { v: null, label: 'データの更新予定', lines: ['作家の発言の日本語訳（残り262件）を順に進めます', '作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします'] },
   { v: null, label: 'その先', lines: ['「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
 ];
@@ -17549,7 +17547,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.3';
+const APP_VERSION = '29.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -17595,7 +17593,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 21;
+const DATA_PACK = 22;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
