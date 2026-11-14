@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="23.2">
+<meta name="app-version" content="23.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9398,7 +9398,7 @@ function renderBizPillBar(){
   if(!bizData){ sc.innerHTML = ''; return; }
   const active = view === 'bizp'? 'price': (view === 'bizch'? bizChapterId: '');
   let h = (bizBook === 'biz')? '<button data-bizpill="price" class="' + (active === 'price'? 'on': '') + '" onclick="openBizPrice()">早見表</button>' : '';
-  h += bizChapters().map((c, i)=> '<button data-bizpill="' + escA(c.id) + '" class="' + (active === c.id? 'on': '') + '" onclick="openBizChapter(\'' + escA(c.id) + '\')">第' + (i + 1) + '章</button>').join('');
+  h += bizChapters().map((c, i)=> '<button data-bizpill="' + escA(c.id) + '" class="' + (active === c.id? 'on': '') + '" onclick="openBizChapter(\'' + escA(c.id) + '\')">' + esc(c.pill || ('第' + (i + 1) + '章')) + '</button>').join('');
   if(bizGlossary().length) h += '<button data-bizpill="glossary" class="' + (active === 'glossary'? 'on': '') + '" onclick="openBizChapter(\'glossary\')">用語辞典</button>';
   sc.innerHTML = h;
   const on = sc.querySelector('button.on');
@@ -14258,6 +14258,7 @@ function teardownSwipe(st, commit){
     if(vtBusy) return; /* 遷移アニメーション中は触らない */
     if(!e.touches || e.touches.length!==1) return;
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
+    if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
@@ -14325,7 +14326,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '23.2';
+const APP_VERSION = '23.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
