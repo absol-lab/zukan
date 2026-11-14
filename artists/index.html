@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.0">
+<meta name="app-version" content="27.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -326,15 +326,17 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .dname{font-family:var(--serif); font-size:26px; line-height:1.3; margin:6px 0 0; letter-spacing:.05em;}
 .dlatin{font-size:14px; color:var(--muted); margin-top:2px;}
 .dmeta{font-size:13.5px; color:var(--muted); margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:7px 14px; display:flex; flex-wrap:wrap; gap:4px 14px;}
-.dtabs{display:flex; gap:8px; margin-top:14px;}
-.dtabs button{flex:1; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:13.5px; letter-spacing:.14em; padding:9px 0; min-height:48px;}
+/* v27.1 (his word, 2026-11-14): the tab pills were too big and
+   the v27.0 two-row wrap read as clutter — the bar is now ONE
+   compact, natively scrolling row (the #bizpillbar pattern:
+   flex-none nowrap pills, hidden scrollbar). It therefore left
+   the v2.23 seg-drag family (SEG_SEL) and the swipe-back
+   arbitration excludes it by name, like #bizpillbar: a drag on
+   the bar scrolls the bar, nothing else. */
+.dtabs{display:flex; flex-wrap:nowrap; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:auto;}
+.dtabs::-webkit-scrollbar{display:none;}
+.dtabs button{flex:none; white-space:nowrap; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:12.5px; letter-spacing:.06em; padding:5px 12px; min-height:32px;}
 .dtabs button.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
-/* v27.0: a person can now carry up to seven tabs （制作プロセス /
-   インタビュー added); the six-glyph labels cannot share one row
-   at the standing size, so when either new tab is present the bar
-   wraps into pill rows instead of clipping a label. */
-.dtabs.many{flex-wrap:wrap;}
-.dtabs.many button{flex:1 1 21%; font-size:12.5px; letter-spacing:.05em; white-space:nowrap;}
 /* v27.0: 制作プロセス tab — the per-artist making dossier, set in
    the detail page's standing type (serif body, subhead labels):
    steps as a numbered sequence, the artist's own words quoted on
@@ -374,7 +376,7 @@ button.inflrow{cursor:pointer;}
    vertical page scrolls through, but the browser must not claim a
    horizontal drag as a scroll and cancel the pointer stream (the v2.18
    touch handler died exactly there on device). */
-.seg, .modebar, .dtabs, .segrow, .swatches, .bizpills{touch-action:pan-y;}
+.seg, .modebar, .segrow, .swatches, .bizpills{touch-action:pan-y;}
 /* v2.23: the detail tabs are a real scroll-snap pager (the diary v1.42
    pattern that works on device): the three panels sit side by side in one
    horizontal scroller and each panel is a full-width snap page, while
@@ -567,8 +569,16 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .exnavs{display:block; font-size:11.5px; color:var(--muted); margin-top:1px;}
 .exitem .calbadge{vertical-align:2px; margin-left:7px;}
 /* v2.63: works-request bar at the top of the detail works tab */
-.worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 10px;}
-.worksreq.wrap{justify-content:flex-start; flex-wrap:wrap; gap:8px 14px;}
+.worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px;}
+.worksreq.wrap{justify-content:flex-start; flex-wrap:wrap; gap:6px 10px;}
+/* v27.1: the works tab's sort / display seg groups in compact
+   form, matching the detail tab bar — one row per group, never
+   wrapping mid-group (the cluster itself may still wrap as a
+   unit), same reduced padding and height. Scoped to the detail
+   view so the list screens' .seg groups keep the standing size. */
+#viewDetail .worksreq .seg{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; gap:6px;}
+#viewDetail .worksreq .seg::-webkit-scrollbar{display:none;}
+#viewDetail .worksreq .seg button{flex:none; white-space:nowrap; min-height:32px; padding:5px 11px; font-size:12.5px;}
 /* v2.65: books tab rows */
 .bookrow{display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px;}
 .bookcover{flex:none; width:72px;}
@@ -9469,11 +9479,21 @@ function bizPriceCollect(){
    adjust per artist when log crushes). Same-work_id items are
    joined with a thin line. */
 function ptScatter(items, pickFn, selIdx){
-  const W = 356, H = 300, mL = 48, mR = 8, mT = 10, mB = 24, pw = W - mL - mR, ph = H - mT - mB;
+  const W = 356, mL = 48, mR = 8, mT = 10, pw = W - mL - mR;
   let yMin = Infinity, yMax = -Infinity, jMin = Infinity, jMax = 0;
   for(const pt of items){ if(pt.year < yMin) yMin = pt.year; if(pt.year > yMax) yMax = pt.year; if(pt.jpy < jMin) jMin = pt.jpy; if(pt.jpy > jMax) jMax = pt.jpy; }
   const x0 = yMin - 1, x1 = yMax + 1;
   const X = yr => mL + (yr - x0) / (x1 - x0) * pw;
+  /* v27.1 (his ask): a finer year axis — the tick step adapts
+     to the plotted span (<=10y: every year, <=30y: 2y, <=60y:
+     5y, longer: 10y) and every tick is labelled. When the ticks
+     crowd (under ~20px apiece) the labels rotate -45 degrees
+     and the chart grows bottom room so nothing is cut. */
+  const xSpan = x1 - x0, xStep = xSpan <= 10 ? 1 : xSpan <= 30 ? 2 : xSpan <= 60 ? 5 : 10;
+  const tickYears = [];
+  for(let yr = Math.ceil(x0 / xStep) * xStep; yr <= x1; yr += xStep) tickYears.push(yr);
+  const denseYears = (pw * xStep / xSpan) < 20;
+  const mB = denseYears ? 38 : 24, H = 300 + (mB - 24), ph = H - mT - mB;
   const logMode = jMax >= jMin * 100;
   let Y, ticks = [];
   if(logMode){
@@ -9492,9 +9512,14 @@ function ptScatter(items, pickFn, selIdx){
     s += '<line x1="' + mL + '" y1="' + tk.y.toFixed(1) + '" x2="' + (mL + pw) + '" y2="' + tk.y.toFixed(1) + '" stroke="var(--line)" stroke-width="1" opacity=".55"/>'
       + '<text x="' + (mL - 4) + '" y="' + (tk.y + 3).toFixed(1) + '" text-anchor="end" font-size="8.5" fill="var(--muted)">' + esc(fmtJPYShort(tk.v)) + '</text>';
   }
-  const span = x1 - x0, step = span > 60 ? 20 : span > 30 ? 10 : span > 12 ? 5 : 2;
-  for(let yr = Math.ceil(x0 / step) * step; yr <= x1; yr += step){
-    s += '<text x="' + X(yr).toFixed(1) + '" y="' + (mT + ph + 15) + '" text-anchor="middle" font-size="8.5" fill="var(--muted)">' + yr + '</text>';
+  for(const yr of tickYears){
+    s += '<line x1="' + X(yr).toFixed(1) + '" y1="' + mT + '" x2="' + X(yr).toFixed(1) + '" y2="' + (mT + ph) + '" stroke="var(--line)" stroke-width="1" opacity=".3"/>';
+    if(denseYears){
+      const lx = X(yr).toFixed(1), ly = (mT + ph + 12).toFixed(1);
+      s += '<text x="' + lx + '" y="' + ly + '" text-anchor="end" font-size="8.5" fill="var(--muted)" transform="rotate(-45 ' + lx + ' ' + ly + ')">' + yr + '</text>';
+    } else {
+      s += '<text x="' + X(yr).toFixed(1) + '" y="' + (mT + ph + 15) + '" text-anchor="middle" font-size="8.5" fill="var(--muted)">' + yr + '</text>';
+    }
   }
   s += '<line x1="' + mL + '" y1="' + mT + '" x2="' + mL + '" y2="' + (mT + ph) + '" stroke="var(--line)"/><line x1="' + mL + '" y1="' + (mT + ph) + '" x2="' + (mL + pw) + '" y2="' + (mT + ph) + '" stroke="var(--line)"/>';
   const groups = {};
@@ -10757,9 +10782,24 @@ if(state.tab==='prices' && !pricesArr.length && !a.breakthrough) state.tab = 'wo
 const procObj = a.process || null;
 const intvArr = Array.isArray(a.interviews)? a.interviews: [];
 const inflArr = Array.isArray(a.influences)? a.influences: [];
+/* v27.1: the 影響 tab also runs BACKWARD — the artists this
+   person influenced, derived at render time from everyone
+   else's influences lists: an entry pointing at this person by
+   id, or (when the entry's id is null) by an exact match of the
+   entry's name against this person's name / name_latin. The
+   entry's note rides along — it usually says what was passed
+   on. The tab shows when EITHER direction is non-empty (Goya
+   carries no influences of his own, but Taburet points at
+   him). */
+const inflGiven = [];
+DB.artists.forEach(x=>{
+if(String(x.id)===String(a.id) || !Array.isArray(x.influences)) return;
+const hit = x.influences.find(inf=> (inf.id != null && String(inf.id)===String(a.id)) || (inf.id == null && !!inf.name && (inf.name===a.name || (!!a.name_latin && inf.name===a.name_latin))));
+if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
+});
 if(state.tab==='process' && !procObj) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
-if(state.tab==='influences' && !inflArr.length) state.tab = 'works';
+if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
@@ -10769,13 +10809,13 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 (a.field?'<span>'+esc(a.field)+'</span>':'')+
 (a.section?'<span>'+esc(a.section)+'</span>':'')+
 '</div>'+
-'<div class="dtabs'+((procObj || intvArr.length || inflArr.length)? ' many': '')+'">'+
+'<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(procObj? '': ' style="display:none"')+'>制作プロセス</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+(intvArr.length? '': ' style="display:none"')+'>インタビュー</button>'+
-'<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+(inflArr.length? '': ' style="display:none"')+'>影響</button>'+
+'<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+((inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>影響</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
 '</div>';
@@ -11014,6 +11054,14 @@ const inner = '<span class="inflmain"><span class="inflname">'+esc(inf.name)+'</
 return target
 ? '<button class="inflrow" onclick="openDetail(\''+escA(inf.id)+'\')">'+inner+'<span class="inflgo">›</span></button>'
 : '<div class="inflrow plain">'+inner+'</div>';
+}).join('');
+}
+/* v27.1: the derived reverse direction — every row resolves in
+   this dataset by construction, so every row navigates. */
+if(inflGiven.length){
+influencesHTML += '<h3 class="subhead">影響を与えた作家</h3>' + inflGiven.map(g=>{
+const inner = '<span class="inflmain"><span class="inflname">'+esc(g.name)+'</span>'+(g.note? '<span class="inflnote">'+esc(g.note)+'</span>': '')+'</span>';
+return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner+'<span class="inflgo">›</span></button>';
 }).join('');
 }
 html += '<div class="dpager" id="dpager">'
@@ -14405,11 +14453,16 @@ function reqFootHTML(){
    under the finger is activated exactly once; the browser's own click
    for that release is swallowed; a cancelled drag restores the preview.
    Groups covered (SEG_SEL): .seg (ex sort / timeline / quiz
-   region), .modebar (display mode), .dtabs (detail tabs — activation
-   smooth-scrolls the pager), .segrow (settings font size / line height)
-   and .swatches (settings theme). The settings font-family panel is a
-   vertical list of rows, not a segment shape, and stays tap-only. */
-const SEG_SEL = '.seg, .modebar, .dtabs, .segrow, .swatches, .bizpills';
+   region), .modebar (display mode), .segrow (settings font size /
+   line height) and .swatches (settings theme). The settings
+   font-family panel is a vertical list of rows, not a segment
+   shape, and stays tap-only. v27.1: .dtabs LEFT this family —
+   the detail tab bar is a compact natively scrolling row now,
+   so a horizontal drag on it scrolls the bar instead of
+   preview-activating tabs (tab switches stay tap + pager drag);
+   the swipe-back arbitration excludes it by name below, the
+   same treatment #bizpillbar's native scroller gets. */
+const SEG_SEL = '.seg, .modebar, .segrow, .swatches, .bizpills';
 let segDrag = null, segSuppressUntil = 0;
 function segBtnUnder(x, y){
 const el = document.elementFromPoint(x, y);
@@ -14586,6 +14639,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
+    if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
        showing — the native scroller moves between tabs and this handler
@@ -14652,7 +14706,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.0';
+const APP_VERSION = '27.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
