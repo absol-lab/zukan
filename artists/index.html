@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.18">
+<meta name="app-version" content="28.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -338,6 +338,8 @@ figure.work .ph.noplate .ini{display:none;}
 figure.work figcaption{padding:7px 4px 3px;}
 figure.work .nm{font-family:var(--serif); font-size:14.5px; line-height:1.35;}
 figure.work .sub{font-size:10.5px; color:var(--muted); line-height:1.4; margin-top:1px;}
+figure.work .yrs{font-size:11px; color:var(--muted); letter-spacing:.03em; line-height:1.35; margin-top:1px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.grid.mini figure.work .yrs{font-size:9.5px; -webkit-line-clamp:1;}
 .grid.wide figure.work .nm{font-size:18px;}
 .grid.compact figure.work .nm{font-size:12px;}
 .grid.compact figure.work .sub{display:none;}
@@ -702,6 +704,29 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 mark.hl{background:#e6b93d; color:#191204; border-radius:2px; padding:0 1px;}
 .snip{font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
 .gpbody{flex:1; overflow-y:auto; padding:2px 16px calc(28px + env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling:touch;}
+.gsecrow{display:flex; gap:6px; overflow-x:auto; padding:8px 0 2px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.gsecrow::-webkit-scrollbar{display:none;}
+.gsec{flex:0 0 auto; background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12px; cursor:pointer;}
+.gcal{margin:6px 0 14px; border:1px solid var(--line); border-radius:14px; padding:10px 10px 12px; background:var(--card);}
+.gcalmonths{display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;}
+.gcalmonths::-webkit-scrollbar{display:none;}
+.gcalmonths button{flex:0 0 auto; background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12.5px; cursor:pointer;}
+.gcalmonths button.on{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+.gcalgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px;}
+.gcaldow{font-size:10.5px; color:var(--muted); text-align:center; padding:2px 0;}
+.gcalcell{position:relative; min-height:34px; border-radius:8px; font-size:12px; text-align:center; padding-top:4px; color:var(--ink);}
+.gcalcell.dim{color:var(--muted); opacity:.45;}
+.gcalcell.today{outline:2px solid var(--ink); outline-offset:-2px; font-weight:700;}
+.gcalcell .dots{position:absolute; left:0; right:0; bottom:3px; display:flex; gap:2px; justify-content:center;}
+.gcalcell .dot{width:5px; height:5px; border-radius:50%;}
+button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
+.gcalphases{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+.gcalphase{display:inline-flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:5px 10px; font-size:11.5px; cursor:pointer;}
+.gcalphase .cdot{width:8px; height:8px; border-radius:50%; flex:0 0 auto;}
+.gcaldetail{margin-top:10px; border-top:1px solid var(--line); padding-top:9px;}
+.gcaldetail .gct{font-weight:700; font-size:13.5px;}
+.gcaldetail .gctype{font-size:11px; color:var(--muted);}
+.gcaldetail .gcsrc{font-size:10.5px; color:var(--muted); margin-top:6px; word-break:break-all;}
 .gpbody .bizchrow{width:100%;}
 .bpchart{border:1px solid var(--line); border-radius:12px; padding:8px 6px 2px; background:var(--card); margin:0 0 8px}
 .bpdetail{display:flex; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card2); margin-top:10px}
@@ -727,6 +752,7 @@ mark.hl{background:#e6b93d; color:#191204; border-radius:2px; padding:0 1px;}
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
 .glossterm{font-size:16px; font-weight:800; margin-bottom:2px}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
+.gtermlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer}
 #termsheet,#symsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden{display:none}
 .secright{display:inline-flex; align-items:center; gap:8px;}
@@ -9984,6 +10010,18 @@ function openBiz(){ showView('biz'); bizEnsure(); }
    slide transitions can never overlap two chapters in it. The
    Art Business book keeps the view-based reader. */
 let guideData = null, guideError = false, guideView = 'howto', guideMajorId = null, guideChapterId = null, guideTermName = null, guideDictQ = '';
+/* v28.0: in-guide navigation stack. A term jump (from chapter
+   text or from the dict list) PUSHES a full snapshot — view,
+   major, chapter, term, dict query and the panel's scroll
+   offset — and EVERY return path (the term view's back button
+   and the in-panel edge swipe) goes through the one function
+   guideGoBack(), which restores the snapshot and re-positions
+   the scroll synchronously in the same task, before the frame
+   paints. This is the guide-panel form of the v27.9 rule: one
+   landing mechanism, positioned up front, no timers, no second
+   path that could land differently. */
+let guideStack = [], guideScrollRestore = null;
+let guideCalMonth = null, guideCalSel = null;
 /* v25.0 (his restructuring): five majors over the same 10 chapters.
    Chapters are cross-listed by reference — ch1 is both プロセスの下地づくり
    and 素材の支持体; ch2 is both プロセスの油彩の工程 and 技法の油彩. */
@@ -9991,31 +10029,222 @@ const GUIDE_TAX = [
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique', label: '技法', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6']] },
   { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11']] },
-  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['発言集', 'guide-ch-statements']] }
+  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['発言集', 'guide-ch-statements']] },
+  /* v28.0: the 受験 major (his 2026-11-14 call) — chapters +
+     calendar staged in art-labo/exam-guide/, shipped in
+     production.json as exam-ch1..7 + examCalendar. */
+  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] }
 ];
+/* v28.0: surface-form aliases for the term linker (staging:
+   art-labo/guide-glossary-gap/aliases.json — the spellings the
+   chapter text actually uses, mapped to glossary headwords). */
+const GUIDE_ALIASES = [["テンペラ","卵テンペラ"],["銀尖筆","シルバーポイント"],["石版","リトグラフ"],["スクリーンプリント","シルクスクリーン"],["ウッドエングレーヴィング","木口木版"],["死色","デッドカラリング"],["脂肪分過多の原則","ファット・オーバー・リーン"],["リンシードオイル","亜麻仁油"],["蝋画","エンカウスティーク"],["サイズ引き","サイズ"],["膠引き","サイズ"],["兎膠","膠"],["透明水彩","水彩"],["防蝕膜","グランド"],["マニエール・ノワール","メゾチント"],["黒の技法","メゾチント"],["ブオン・フレスコ","フレスコ"],["インテナコ","フレスコ"],["無機顔料","顔料（鉱物系）"],["有機顔料","顔料（有機系）"],["レイキ","レーキ"],["レイキ顔料","レーキ"],["オイルアウト","シンキングイン"],["乾燥促進剤","シッカチーフ"],["乾燥剤","シッカチーフ"],["グアッシュ","ガッシュ"],["エンコースト","エンカウスティーク"],["ディステンパー","ディスティンパー"],["スクンブリング","スカンブリング"],["サイジング","サイズ"],["兎皮膠","膠"]];
+let guideLinkIdx = null;
+function guideLinkIndex(){
+  if(guideLinkIdx) return guideLinkIdx;
+  const have = new Set(guideGlossary().map(e=> e.term));
+  const pairs = [];
+  guideGlossary().forEach(e=>{ if(e.term) pairs.push([e.term, e.term]); });
+  GUIDE_ALIASES.forEach(p=>{ if(have.has(p[1]) && p[0] !== p[1]) pairs.push([p[0], p[1]]); });
+  pairs.sort((a, b)=> b[0].length - a[0].length); /* longest match first */
+  guideLinkIdx = pairs;
+  return pairs;
+}
+/* Auto-link glossary terms in a plain-text paragraph: longest
+   match wins; the scan is over the RAW text and escaping
+   happens per emitted chunk, so markup can never be forged by
+   the text itself. Headings and case titles never pass through
+   here (the callers keep them plain). */
+function guideLinkHTML(t){
+  const s = String(t == null? '': t);
+  const idx = guideLinkIndex();
+  if(!idx.length) return esc(s);
+  let out = '', i = 0;
+  while(i < s.length){
+    let hit = null;
+    for(let k = 0; k < idx.length; k++){
+      const surf = idx[k][0];
+      if(surf.length && s.startsWith(surf, i)){ hit = idx[k]; break; }
+    }
+    if(hit){
+      out += '<button class="gtermlink" onclick="guideJumpTerm(\'' + escA(hit[1]) + '\')">' + esc(hit[0]) + '</button>';
+      i += hit[0].length;
+    } else {
+      out += esc(s[i]);
+      i += 1;
+    }
+  }
+  return out;
+}
+function guideParasHTML(paras){ return (paras || []).map(p=> '<p class="bodytext bizp">' + guideLinkHTML(p) + '</p>').join(''); }
+function guideCasesHTML(cases){
+  if(!Array.isArray(cases) || !cases.length) return '';
+  return cases.map(c=> '<div class="casebox"><div class="casetitle">' + esc(c.title || '') + '</div><div class="bodytext">' + guideLinkHTML(c.body || '') + '</div></div>').join('');
+}
+function guideSnapshot(){
+  const b = $('gpbody');
+  return { view: guideView, majorId: guideMajorId, chapterId: guideChapterId, termName: guideTermName, dictQ: guideDictQ, scroll: b? b.scrollTop: 0 };
+}
+function guideJumpTerm(term){
+  guideStack.push(guideSnapshot());
+  guideView = 'term'; guideTermName = term;
+  renderGuide();
+}
+/* THE return path — the back button and the in-panel swipe
+   both call this, nothing else moves the guide back. The
+   scroll offset is handed to renderGuide as guideScrollRestore
+   and applied at the end of the same synchronous render, so
+   the landing is complete before the browser can paint or
+   settle anything (the v27.9 lesson, panel form). */
+function guideGoBack(){
+  const s = guideStack.pop();
+  if(!s){ if(guideView === 'term'){ guideView = 'dict'; renderGuide(); } return; }
+  guideView = s.view; guideMajorId = s.majorId; guideChapterId = s.chapterId;
+  guideTermName = s.termName; guideDictQ = s.dictQ || '';
+  guideScrollRestore = s.scroll || 0;
+  renderGuide();
+}
+function guideJumpSection(i){
+  const body = $('gpbody'), el = document.getElementById('gsec' + i);
+  if(!body || !el) return;
+  body.scrollTop += el.getBoundingClientRect().top - body.getBoundingClientRect().top - 6;
+}
+function guideJumpRoadmap(ref){
+  const m = String(ref || '').match(/フェーズ\s*([0-9０-９]+)/);
+  if(!m) return;
+  const token = 'フェーズ' + m[1];
+  guideChapterId = 'exam-ch2';
+  renderGuide();
+  const c = guideChapterById('exam-ch2');
+  const secs = (c && Array.isArray(c.sections))? c.sections: [];
+  const ix = secs.findIndex(s=> (s.h || '').includes(token));
+  if(ix >= 0) guideJumpSection(ix);
+}
+/* ---- exam calendar (v28.0) ---- */
+function guideCalData(){ return (guideData && guideData.examCalendar)? guideData.examCalendar: null; }
+function guideCalMonths(){
+  const cal = guideCalData(); if(!cal || !cal.range) return [];
+  const out = [];
+  let y = parseInt(cal.range.start.slice(0, 4), 10), mo = parseInt(cal.range.start.slice(5, 7), 10);
+  const ey = parseInt(cal.range.end.slice(0, 4), 10), em = parseInt(cal.range.end.slice(5, 7), 10);
+  while(y < ey || (y === ey && mo <= em)){ out.push(y + '-' + String(mo).padStart(2, '0')); mo++; if(mo > 12){ mo = 1; y++; } }
+  return out;
+}
+function guideCalSetMonth(ym){ guideCalMonth = ym; renderGuide(); }
+function guideCalTapDay(ds){
+  guideCalSel = { kind: 'date', id: ds };
+  renderGuide();
+  const d = $('gcaldetail'); const b = $('gpbody');
+  if(d && b) b.scrollTop += d.getBoundingClientRect().top - b.getBoundingClientRect().top - 40;
+}
+function guideCalTapPhase(id){
+  guideCalSel = { kind: 'phase', id: id };
+  renderGuide();
+  const d = $('gcaldetail'); const b = $('gpbody');
+  if(d && b) b.scrollTop += d.getBoundingClientRect().top - b.getBoundingClientRect().top - 40;
+}
+function guideCalRoadmapBtn(ref){
+  if(!ref) return '';
+  const m = String(ref).match(/フェーズ\s*[0-9０-９]+/);
+  if(!m) return '';
+  return '<p class="bodytext"><button class="txtbtn" onclick="guideJumpRoadmap(\'' + escA(ref) + '\')">第2章の「' + esc(m[0]) + '」へ進む ›</button></p>';
+}
+function guideCalDetailHTML(cal){
+  if(!guideCalSel) return '';
+  let h = '<div class="gcaldetail" id="gcaldetail">';
+  if(guideCalSel.kind === 'date'){
+    const items = cal.key_dates.filter(k=> k.date === guideCalSel.id);
+    if(!items.length) return '';
+    h += items.map(k=>
+      '<div class="gct">' + esc(k.label || '') + '</div>'
+      + '<div class="gctype">' + esc((cal.types && cal.types[k.type]) || k.type || '') + ' ・ ' + esc(k.date) + (k.end_date? ' 〜 ' + esc(k.end_date): '') + '</div>'
+      + (k.detail? '<p class="bodytext">' + guideLinkHTML(k.detail) + '</p>': '')
+      + guideCalRoadmapBtn(k.roadmap_ref)
+      + (k.source? '<div class="gcsrc">出典：' + esc(k.source) + '</div>': '')
+    ).join('');
+  } else {
+    const p = cal.phases.find(x=> x.id === guideCalSel.id);
+    if(!p) return '';
+    h += '<div class="gct">' + esc(p.name || '') + '</div>'
+      + '<div class="gctype">' + esc(p.start) + ' 〜 ' + esc(p.end) + '</div>'
+      + (p.summary? '<p class="bodytext">' + guideLinkHTML(p.summary) + '</p>': '')
+      + (p.detail? '<p class="bodytext">' + guideLinkHTML(p.detail) + '</p>': '')
+      + guideCalRoadmapBtn(p.roadmap_ref);
+  }
+  return h + '</div>';
+}
+function guideCalHTML(){
+  const cal = guideCalData(); if(!cal) return '';
+  const months = guideCalMonths(); if(!months.length) return '';
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  if(!guideCalMonth || months.indexOf(guideCalMonth) < 0){
+    const cur = todayStr.slice(0, 7);
+    guideCalMonth = months.indexOf(cur) >= 0? cur: months[0];
+  }
+  const kdByDay = {};
+  (cal.key_dates || []).forEach(k=>{
+    const push = d=>{ (kdByDay[d] = kdByDay[d] || []).push(k); };
+    push(k.date);
+    if(k.end_date && k.end_date !== k.date){
+      let d = new Date(k.date + 'T00:00:00'); const last = new Date(k.end_date + 'T00:00:00');
+      let guard = 0;
+      while(d < last && guard++ < 70){ d.setDate(d.getDate() + 1); push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')); }
+    }
+  });
+  const phaseOf = ds=> (cal.phases || []).find(p=> ds >= p.start && ds <= p.end) || null;
+  const y = parseInt(guideCalMonth.slice(0, 4), 10), mo = parseInt(guideCalMonth.slice(5, 7), 10);
+  const firstDow = new Date(y, mo - 1, 1).getDay();
+  const days = new Date(y, mo, 0).getDate();
+  const typeColor = { application: '#C08A2D', exam: '#B03A2E', result: '#2E7D52', deadline: '#6C3483', document: '#3E6B8E' };
+  let h = '<div class="gcal"><div class="gcalmonths">'
+    + months.map(ym=> '<button class="' + (ym === guideCalMonth? 'on': '') + '" onclick="guideCalSetMonth(\'' + ym + '\')">' + parseInt(ym.slice(0, 4), 10) + '年' + parseInt(ym.slice(5, 7), 10) + '月</button>').join('')
+    + '</div><div class="gcalgrid">'
+    + ['日', '月', '火', '水', '木', '金', '土'].map(d=> '<div class="gcaldow">' + d + '</div>').join('');
+  for(let i = 0; i < firstDow; i++) h += '<div class="gcalcell dim"></div>';
+  for(let d = 1; d <= days; d++){
+    const ds = guideCalMonth + '-' + String(d).padStart(2, '0');
+    const kds = kdByDay[ds] || [];
+    const ph = phaseOf(ds);
+    const style = ph? ' style="background:' + ph.color + '24"': '';
+    const dots = kds.length? '<span class="dots">' + kds.slice(0, 3).map(k=> '<span class="dot" style="background:' + (typeColor[k.type] || '#888') + '"></span>').join('') + '</span>': '';
+    const cls = 'gcalcell' + (ds === todayStr? ' today': '');
+    if(kds.length) h += '<button class="' + cls + '"' + style + ' onclick="guideCalTapDay(\'' + ds + '\')">' + d + dots + '</button>';
+    else h += '<div class="' + cls + '"' + style + '>' + d + '</div>';
+  }
+  h += '</div><div class="gcalphases">'
+    + (cal.phases || []).map(p=> '<button class="gcalphase" onclick="guideCalTapPhase(\'' + escA(p.id) + '\')"><span class="cdot" style="background:' + escA(p.color || '#888') + '"></span>' + esc(p.name) + '</button>').join('')
+    + '</div>'
+    + guideCalDetailHTML(cal)
+    + '</div>';
+  return h;
+}
 function guideEnsure(){
   if(guideData || guideError) return;
   fetch('production.json', { cache: 'no-cache' })
     .then(r=>{ if(!r.ok) throw new Error('production.json'); return r.json(); })
-    .then(j=>{ guideData = j; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); })
+    .then(j=>{ guideData = j; guideLinkIdx = null; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); })
     .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
 function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
-function openGuide(){ guideView = 'major'; guideMajorId = 'process'; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
-function closeGuide(){ $('guidepanel').classList.add('hidden'); const b = $('navGuide'); if(b) b.classList.remove('on'); }
+function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
+function closeGuide(){ guideStack = []; $('guidepanel').classList.add('hidden'); const b = $('navGuide'); if(b) b.classList.remove('on'); }
 function guideChapters(){ return (guideData && Array.isArray(guideData.chapters))? guideData.chapters: []; }
 function guideGlossary(){ return (guideData && Array.isArray(guideData.glossary))? guideData.glossary: []; }
 function guideChapterById(id){ return guideChapters().find(c=> c.id === id) || null; }
-function openGuideIndex(){ guideView = 'howto'; renderGuide(); }
+function openGuideIndex(){ guideStack = []; guideView = 'howto'; renderGuide(); }
 function openGuideMajor(mid){
   const m = GUIDE_TAX.find(x=> x.id === mid); if(!m) return;
+  guideStack = [];
   guideView = 'major'; guideMajorId = mid;
   if(!m.subs.some(s=> s[1] === guideChapterId)) guideChapterId = m.subs[0][1];
   renderGuide();
 }
-function guideSub(ch){ guideChapterId = ch; renderGuide(); }
-function openGuideDict(){ guideView = 'dict'; renderGuide(); }
-function openGuideTerm(t){ guideView = 'term'; guideTermName = t; renderGuide(); }
+function guideSub(ch){ guideStack = []; guideChapterId = ch; renderGuide(); }
+function openGuideDict(){ guideStack = []; guideView = 'dict'; renderGuide(); }
+/* v28.0: dict-row taps go through the same stack as chapter-text
+   jumps, so the return lands on the dict at its scroll offset. */
+function openGuideTerm(t){ guideJumpTerm(t); }
 function guideDictRowsHTML(q){
   const nq = normSearch(q || '');
   const g = guideGlossary().filter(e=> !nq || normSearch((e.term || '') + ' ' + (e.reading || '')).includes(nq));
@@ -10036,18 +10265,26 @@ function renderGuide(){
   else if(guideView === 'howto'){
     h += '<h2 class="biztitle">使い方</h2>';
     if(guideData.intro) h += String(guideData.intro).split(/\n\n+/).map(t=> '<p class="bodytext">' + esc(t) + '</p>').join('');
-    h += '<p class="bodytext small">下のピルで大分類（制作プロセス／技法／素材／思考）を選ぶと、中のタブで各テーマを開けます。用語は「辞典」のピルから引けます。</p>';
+    h += '<p class="bodytext small">下のピルで大分類（制作プロセス／技法／素材／思考／受験）を選ぶと、中のタブで各テーマを開けます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
   }
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
+    if(m.id === 'exam') h += guideCalHTML();
     h += '<div class="gsubpills">' + m.subs.map(s=> '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + '</button>').join('') + '</div>';
     const c = guideChapterById(guideChapterId);
     if(!c) h += '<div class="empty">章が見つかりません</div>';
     else {
       h += '<h2 class="biztitle">' + esc(c.title || '') + '</h2>';
-      if(c.lead) h += '<p class="bodytext">' + esc(c.lead) + '</p>';
+      if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
       const secs = Array.isArray(c.sections)? c.sections: [];
-      h += secs.map(sec=> (sec.h? '<h3 class="subhead">' + esc(sec.h) + '</h3>': '') + bizParasHTML(sec.paras) + bizCasesHTML(sec.cases)).join('');
+      /* v28.0: section-switch tabs — a chapter with several
+         headed sections gets a tab row that jumps straight to
+         the section inside the panel's own scroll box. */
+      const headed = secs.map((sec, i)=> sec.h? i: -1).filter(i=> i >= 0);
+      if(headed.length >= 3){
+        h += '<div class="gsecrow">' + headed.map(i=> '<button class="gsec" onclick="guideJumpSection(' + i + ')">' + esc(String(secs[i].h).split('——')[0].slice(0, 14)) + '</button>').join('') + '</div>';
+      }
+      h += secs.map((sec, i)=> (sec.h? '<h3 class="subhead" id="gsec' + i + '">' + esc(sec.h) + '</h3>': '') + guideParasHTML(sec.paras) + guideCasesHTML(sec.cases)).join('');
     }
   }
   else if(guideView === 'dict'){
@@ -10057,7 +10294,8 @@ function renderGuide(){
   }
   else if(guideView === 'term'){
     const e = guideGlossary().find(g=> g.term === guideTermName);
-    h += '<button class="backbtn" onclick="openGuideDict()">‹ 辞典へ戻る</button>';
+    const backLabel = (guideStack.length && guideStack[guideStack.length - 1].view === 'major')? '‹ 読んでいた場所へ戻る': '‹ 辞典へ戻る';
+    h += '<button class="backbtn" onclick="guideGoBack()">' + backLabel + '</button>';
     if(!e) h += '<div class="empty">用語が見つかりません</div>';
     else {
       h += '<h2 class="biztitle">' + esc(e.term) + (e.reading? ' <span class="small">' + esc(e.reading) + '</span>': '') + '</h2>';
@@ -10066,10 +10304,42 @@ function renderGuide(){
     }
   }
   body.innerHTML = h;
-  body.scrollTop = 0;
+  /* v28.0: a stacked return (guideGoBack) restores the exact
+     scroll offset in THIS task; every other render starts at
+     the top, exactly as before. */
+  body.scrollTop = (guideScrollRestore != null)? guideScrollRestore: 0;
+  guideScrollRestore = null;
   const on = pills.querySelector('button.on');
   if(on) pills.scrollLeft = Math.max(0, on.offsetLeft - 40);
 }
+
+/* v28.0: the in-panel swipe-back. The guide panel is a modal —
+   the view-level swipe-back deliberately never arms inside it
+   (v24.2) — so the panel gets its own left-edge rightward
+   swipe with the same shape as the view gesture. It calls
+   guideGoBack(), the SAME function as the term view's back
+   button: one return mechanism, two triggers, identical
+   landing (snapshot + synchronous scroll restore). */
+(function(){
+  const body = $('gpbody'); if(!body) return;
+  let gx = null;
+  body.addEventListener('touchstart', e=>{
+    gx = null;
+    if(!guideStack.length && guideView !== 'term') return;
+    if(!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if(t.clientX > 44) return;
+    gx = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  body.addEventListener('touchend', e=>{
+    if(!gx) return;
+    const t = e.changedTouches && e.changedTouches[0];
+    const g = gx; gx = null;
+    if(!t) return;
+    const dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if(dx >= 64 && Math.abs(dy) <= Math.abs(dx) * 0.6) guideGoBack();
+  }, { passive: true });
+})();
 
 /* v21.1: the whole-market scatter was withdrawn at his word
    («全体グラフは一旦消していいよ») — the page is the ranking
@@ -11196,11 +11466,25 @@ function searchSnipHTML(a){
   }
   return '';
 }
+/* v28.0: birth-year sort key — sort_year (BCE-safe, negative
+   for BCE) when the record carries one, else the first year
+   found in the years string （紀元前N → -N; N世紀 → its first
+   year). +Infinity when nothing can be read, so undated
+   records sink to the end of their section in data order. */
+function birthSortKey(a){
+if(a && typeof a.sort_year === 'number' && isFinite(a.sort_year)) return a.sort_year;
+const y = String((a && a.years) || '').replace(/,/g, '');
+let m = y.match(/紀元前\s*(\d{1,5})\s*世紀/); if(m) return -(parseInt(m[1], 10) * 100);
+m = y.match(/紀元前\s*(\d{1,5})/); if(m) return -parseInt(m[1], 10);
+m = y.match(/(\d{3,4})/); if(m) return parseInt(m[1], 10);
+m = y.match(/(\d{1,2})\s*世紀/); if(m) return (parseInt(m[1], 10) - 1) * 100 + 1;
+return Infinity;
+}
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+(a.years?'　'+esc(a.years):'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + (a.years? '<div class="yrs">'+esc(a.years)+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -11286,6 +11570,18 @@ order.push('');
 order.forEach(sec=>{
 const group = arr.filter(a=>(a.section||'')===sec);
 if(!group.length) return;
+/* v28.0: within a section the cards run oldest-first by birth
+   year. sort_year is authoritative where the record carries
+   it (the ancients batch: BCE years are negative); elsewhere
+   the birth year is parsed out of the years string. Unknown
+   birth years keep their data order at the end of the section
+   (the sort is stable and unknowns key to +Infinity). The
+   search path above is untouched — it stays name-ranked
+   (v27.2). */
+group.sort((x, y)=>{
+const kx = birthSortKey(x), ky = birthSortKey(y);
+return kx < ky? -1: kx > ky? 1: 0;
+});
 html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="secright">' + symSecBtnHTML() + '<span class="cnt">'+group.length+'名</span></span></h2>';
 html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
@@ -16414,7 +16710,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.18';
+const APP_VERSION = '28.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
