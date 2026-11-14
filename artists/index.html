@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="29.4">
+<meta name="app-version" content="29.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13220,7 +13220,15 @@ const VTURN_MAXANG = 88;
    first and measured worse — exact at mid-height but tearing
    up to 9.5px at the seams' top and bottom ends — while the
    shear keeps the hinge line invariant at every height). */
-const VCURL_N = 24;
+/* v29.5: 48 strips (his ask, 2026-11-14 22:46 — 「倍に増やして」).
+   Nothing else changes: the boundaries are still whole CSS
+   pixels by the same Math.round distribution (the last strip
+   absorbs the remainder), the droop is still the skewY shear,
+   and the fallbacks / kill switch are untouched. validate_v29_5
+   re-measures seam continuity over all 47 seams and the p=0
+   pixel identity, and benchmarks the per-frame cost against
+   the 24-strip build. */
+const VCURL_N = 48;
 const vCurl = { ok: null, segs: [], built: false, W: 0, bnd: null };
 function vCurlProbe(){
 if(vCurl.ok !== null) return vCurl.ok;
@@ -17547,7 +17555,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '29.4';
+const APP_VERSION = '29.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
