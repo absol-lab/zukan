@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="26.1">
+<meta name="app-version" content="27.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -329,6 +329,43 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .dtabs{display:flex; gap:8px; margin-top:14px;}
 .dtabs button{flex:1; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:13.5px; letter-spacing:.14em; padding:9px 0; min-height:48px;}
 .dtabs button.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
+/* v27.0: a person can now carry up to seven tabs （制作プロセス /
+   インタビュー added); the six-glyph labels cannot share one row
+   at the standing size, so when either new tab is present the bar
+   wraps into pill rows instead of clipping a label. */
+.dtabs.many{flex-wrap:wrap;}
+.dtabs.many button{flex:1 1 21%; font-size:12.5px; letter-spacing:.05em; white-space:nowrap;}
+/* v27.0: 制作プロセス tab — the per-artist making dossier, set in
+   the detail page's standing type (serif body, subhead labels):
+   steps as a numbered sequence, the artist's own words quoted on
+   a ruled card. */
+.procstep{border-bottom:1px solid var(--line); padding:10px 0 4px;}
+.procstep-h{display:flex; align-items:baseline; gap:9px;}
+.procnum{font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--accent); border:1px solid var(--accent); border-radius:999px; padding:1px 8px; flex:none;}
+.proctitle{font-family:var(--sans); font-size:14.5px; font-weight:600; letter-spacing:.03em;}
+.procstep .bodytext{padding:6px 0 2px;}
+.procsrc{font-size:12.5px; margin:0 0 6px;}
+.procquote{margin:8px 0; padding:10px 12px; background:var(--bg2); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; font-family:var(--serif); font-size:calc(var(--fs) * 1); line-height:var(--lh);}
+.procquote a{font-size:12.5px;}
+.procnote{white-space:pre-wrap; margin-top:6px;}
+/* v27.0: インタビュー tab — compact rows in the guide dictionary's
+   sensibility: a kind chip, the title, source ・ date, one-line note. */
+.intvrow{display:flex; gap:10px; align-items:flex-start; border-bottom:1px solid var(--line); padding:10px 2px; color:var(--text); text-decoration:none; min-height:44px;}
+.intvkind{flex:none; font-family:var(--sans); font-size:11.5px; letter-spacing:.06em; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); margin-top:1px;}
+.intvkind.vid{border-color:var(--accent); color:var(--accent); font-weight:600;}
+.intvmain{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
+.intvtitle{font-size:14.5px; line-height:1.45;}
+.intvmeta{font-size:12.5px; color:var(--muted);}
+.intvnote{font-size:12.5px; color:var(--muted); line-height:1.5;}
+/* v27.0: 影響 tab rows — the interviews row's compact form; a
+   resolvable influence is a full-width button with a chevron,
+   an unregistered one sits as plain text in the same row shape. */
+.inflrow{display:flex; gap:10px; align-items:center; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px; color:var(--text); min-height:44px; font-family:inherit;}
+button.inflrow{cursor:pointer;}
+.inflmain{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
+.inflname{font-size:14.5px; line-height:1.45;}
+.inflnote{font-size:12.5px; color:var(--muted); line-height:1.5;}
+.inflgo{flex:none; color:var(--muted); font-size:18px;}
 .bizpills{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; scrollbar-width:none;}
 .bizpills::-webkit-scrollbar{display:none;}
 .bizpills button{flex:none; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:13.5px; letter-spacing:.1em; padding:9px 16px; min-height:48px; white-space:nowrap;}
@@ -8391,6 +8428,73 @@ return o;
 const out = { period: String(b.period||''), summary: String(b.summary||''), sources: (Array.isArray(b.sources)? b.sources: []).map(String).filter(Boolean), milestones: ms };
 return (out.period || out.summary || out.milestones.length)? out: null;
 }
+/* v27.0: process （制作プロセス・ドシエ) — Muse-side curated like
+   breakthrough: the artist's own account of how the work is made
+   (steps in order, studio environment, materials, the artist's
+   own words, and an honest note of what is NOT public). The app
+   never edits it; it must survive normalization, merges and
+   editor saves or the tab would silently empty (the name_kana
+   lesson). A dossier with no summary, no step and no quote is
+   no dossier. Steps and quotes survive only with their text. */
+function normalizeProcess(p){
+if(!p || typeof p !== 'object') return null;
+const steps = (Array.isArray(p.steps)? p.steps: []).map(s=>{
+s = s || {};
+const o = { title: String(s.title||''), text: String(s.text||''), source: String(s.source||'') };
+return o.text? o: null;
+}).filter(Boolean);
+const quotes = (Array.isArray(p.quotes)? p.quotes: []).map(q=>{
+q = q || {};
+const o = { text: String(q.text||''), source: String(q.source||'') };
+return o.text? o: null;
+}).filter(Boolean);
+const out = {
+summary: String(p.summary||''),
+steps: steps,
+environment: String(p.environment||''),
+materials_notes: String(p.materials_notes||''),
+quotes: quotes,
+not_public: String(p.not_public||''),
+sources: (Array.isArray(p.sources)? p.sources: []).map(String).filter(Boolean)
+};
+return (out.summary || out.steps.length || out.quotes.length)? out: null;
+}
+/* v27.0: interviews （インタビュー) — Muse-side curated links
+   (articles and videos) under the same wholesale arrangement.
+   An entry survives only with a title and a URL; the type is
+   'video' only when the data literally says so. */
+function normalizeInterviews(list){
+return (Array.isArray(list)? list: []).map(iv=>{
+iv = iv || {};
+const o = {
+title: String(iv.title||''),
+type: iv.type === 'video'? 'video': 'article',
+source: String(iv.source||''),
+date: String(iv.date||''),
+url: String(iv.url||''),
+note: String(iv.note||'')
+};
+return (o.title && o.url)? o: null;
+}).filter(Boolean);
+}
+/* v27.0: influences （影響を受けた作家) — Muse-side curated;
+   each entry names an artist who shaped this one, carrying the
+   canonical id when that artist is registered in the same
+   dataset (null when not) and a one-line sourced note. An entry
+   survives only with a name; the id is carried as-is (number or
+   string) and resolved against the current dataset at render
+   time — an id that does not resolve renders as plain text. */
+function normalizeInfluences(list){
+return (Array.isArray(list)? list: []).map(inf=>{
+inf = inf || {};
+const o = {
+id: (inf.id != null? inf.id: null),
+name: String(inf.name||''),
+note: String(inf.note||'')
+};
+return o.name? o: null;
+}).filter(Boolean);
+}
 function normalizeArtist(a){
 a = a || {};
 const works = (Array.isArray(a.works)?a.works:[]).map(w=>{
@@ -8491,6 +8595,9 @@ works: works,
 books: books,
 prices: prices,
 breakthrough: normalizeBreakthrough(a.breakthrough),
+process: normalizeProcess(a.process),
+interviews: normalizeInterviews(a.interviews),
+influences: normalizeInfluences(a.influences),
 layer: (a.layer==='candidate')? 'candidate': 'canon',
 updated_at: String(a.updated_at||'')
 };
@@ -10392,7 +10499,10 @@ prefetchViewerImage(a);
    scrolls the pager and the pager's own scroll position is the single
    source of truth for which tab is active (wireDPager keeps state.tab
    and the .on highlight in sync with it). */
-const DTABS = ['works','books','bio','feat','prices'];
+/* v27.0: the user's tab order — 作品 / 特徴 / 来歴 / 制作プロセス /
+   インタビュー / 影響 / 作品集 / 価格. DTABS, the tab bar's buttons
+   and the pager panels all follow this one order. */
+const DTABS = ['works','feat','bio','process','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -10641,6 +10751,15 @@ const sp = splitNotes(a.notes);
    SHOWN for people who actually have auction records. */
 const pricesArr = Array.isArray(a.prices)? a.prices: [];
 if(state.tab==='prices' && !pricesArr.length && !a.breakthrough) state.tab = 'works';
+/* v27.0: the 制作プロセス / インタビュー tabs follow the prices
+   convention — always present in the DTABS order (hidden button
+   + panel), shown only when the record carries the data. */
+const procObj = a.process || null;
+const intvArr = Array.isArray(a.interviews)? a.interviews: [];
+const inflArr = Array.isArray(a.influences)? a.influences: [];
+if(state.tab==='process' && !procObj) state.tab = 'works';
+if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
+if(state.tab==='influences' && !inflArr.length) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
 '<h2 class="dname">'+esc(a.name)+'</h2>'+
@@ -10650,11 +10769,14 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 (a.field?'<span>'+esc(a.field)+'</span>':'')+
 (a.section?'<span>'+esc(a.section)+'</span>':'')+
 '</div>'+
-'<div class="dtabs">'+
+'<div class="dtabs'+((procObj || intvArr.length || inflArr.length)? ' many': '')+'">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品</button>'+
-'<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
-'<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
+'<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
+'<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(procObj? '': ' style="display:none"')+'>制作プロセス</button>'+
+'<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+(intvArr.length? '': ' style="display:none"')+'>インタビュー</button>'+
+'<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+(inflArr.length? '': ' style="display:none"')+'>影響</button>'+
+'<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
@@ -10840,11 +10962,68 @@ if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3><div class="bod
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3><div class="bodytext">'+hlEsc(sp.tech)+'</div>';
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3><div class="bodytext">'+hlEsc(sp.rest)+'</div>';
 if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
+/* v27.0: 制作プロセス tab — the making dossier (data-side
+   curated, per artist). The summary leads; the steps run as a
+   numbered sequence, each with its source; environment and
+   materials follow; the artist's own words are quoted with
+   their sources; and what is not public is stated as such,
+   never papered over. Rendered purely from the fields — a
+   designer record simply carries none yet. */
+let processHTML = '';
+if(procObj){
+if(procObj.summary) processHTML += '<div class="bodytext">'+hlEsc(procObj.summary)+'</div>';
+if(procObj.steps && procObj.steps.length){
+processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s, i)=>
+'<div class="procstep"><div class="procstep-h"><span class="procnum">'+(i+1)+'</span><span class="proctitle">'+esc(s.title||'')+'</span></div>'
++'<div class="bodytext">'+hlEsc(s.text)+'</div>'
++(s.source? '<div class="procsrc"><a href="'+escA(s.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
++'</div>').join('');
+}
+if(procObj.environment) processHTML += '<h3 class="subhead">制作環境</h3><div class="bodytext">'+hlEsc(procObj.environment)+'</div>';
+if(procObj.materials_notes) processHTML += '<h3 class="subhead">画材メモ</h3><div class="bodytext">'+hlEsc(procObj.materials_notes)+'</div>';
+if(procObj.quotes && procObj.quotes.length){
+processHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>
+'<blockquote class="procquote">'+hlEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+'</blockquote>').join('');
+}
+if(procObj.not_public) processHTML += '<h3 class="subhead">公表されていないこと</h3><div class="small procnote">'+esc(procObj.not_public)+'</div>';
+if(procObj.sources && procObj.sources.length) processHTML += '<div class="small" style="margin-top:10px">出典：'+procObj.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>';
+}
+/* v27.0: インタビュー tab — articles and videos in the curated
+   order, each row opening its source in a new tab; videos carry
+   a ▶ 動画 chip, articles a 記事 chip. */
+let interviewsHTML = '';
+if(intvArr.length){
+interviewsHTML = intvArr.map(iv=>
+'<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
++'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
++'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
++([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
++(iv.note? '<span class="intvnote">'+esc(iv.note)+'</span>': '')
++'</span></a>').join('');
+}
+/* v27.0: 影響 tab — the artists who shaped this one (data-side
+   curated). A row whose id resolves in the current dataset
+   navigates to that person's detail; an unregistered influence
+   (id null, or an id this dataset does not hold) renders as
+   plain text — the name is the record, not a dead link. */
+let influencesHTML = '';
+if(inflArr.length){
+influencesHTML = '<h3 class="subhead">影響を受けた作家</h3>' + inflArr.map(inf=>{
+const target = (inf.id != null)? artistById(inf.id): null;
+const inner = '<span class="inflmain"><span class="inflname">'+esc(inf.name)+'</span>'+(inf.note? '<span class="inflnote">'+esc(inf.note)+'</span>': '')+'</span>';
+return target
+? '<button class="inflrow" onclick="openDetail(\''+escA(inf.id)+'\')">'+inner+'<span class="inflgo">›</span></button>'
+: '<div class="inflrow plain">'+inner+'</div>';
+}).join('');
+}
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
-+'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
-+'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
++'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
++'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
++'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
++'<div class="dpage" data-dtab="influences">'+influencesHTML+'</div>'
++'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
 +'<div class="dpage" data-dtab="prices">'+pricesHTML+'</div>'
 +'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
@@ -13193,6 +13372,10 @@ if(old && old.aliases && old.aliases.length) rec.aliases = old.aliases;
 /* v15.0: nor the auction prices (no form field either) */
 if(old && old.prices && old.prices.length) rec.prices = old.prices;
 if(old && old.breakthrough) rec.breakthrough = old.breakthrough;
+/* v27.0: nor the process dossier / interview links / influences (no form fields) */
+if(old && old.process) rec.process = old.process;
+if(old && old.interviews && old.interviews.length) rec.interviews = old.interviews;
+if(old && old.influences && old.influences.length) rec.influences = old.influences;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 /* v10.3: nor a work's hires flag — same per-work carry.
@@ -13268,6 +13451,10 @@ function mergeDataInto(local, incoming){
     if(ia.prices && ia.prices.length) merged.prices = ia.prices;
     /* v18.0: breakthrough, same wholesale treatment. */
     if(ia.breakthrough) merged.breakthrough = ia.breakthrough;
+    /* v27.0: process / interviews / influences, same wholesale treatment. */
+    if(ia.process) merged.process = ia.process;
+    if(ia.interviews && ia.interviews.length) merged.interviews = ia.interviews;
+    if(ia.influences && ia.influences.length) merged.influences = ia.influences;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -14465,7 +14652,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '26.1';
+const APP_VERSION = '27.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
