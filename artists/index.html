@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.15">
+<meta name="app-version" content="27.16">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -375,6 +375,19 @@ button.backbtn{background:none; border:none; color:var(--muted); font-size:14.5p
 .procsrc{font-size:12.5px; margin:0 0 6px;}
 .procquote{margin:8px 0; padding:10px 12px; background:var(--bg2); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; font-family:var(--serif); font-size:calc(var(--fs) * 1); line-height:var(--lh);}
 .procquote a{font-size:12.5px;}
+/* v27.16: 発言 tab — a quote's Japanese translation rides UNDER the
+   original inside the same blockquote, smaller and dimmer; statement
+   cards （作家の言葉 / 姿勢・思想） carry a 要約 chip wherever the text
+   is a sourced summary rather than the artist's verbatim words. */
+.procqja{display:block; margin-top:7px; font-size:.85em; color:var(--muted); line-height:1.75;}
+.stmtcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
+.stmtterm{font-family:var(--serif); font-size:calc(var(--fs) * 1.05); font-weight:600;}
+.stmtreading{font-size:12px; color:var(--muted); margin-left:7px;}
+.stmtmean{margin-top:5px; line-height:var(--lh);}
+.stmtcontrast{margin-top:5px; font-size:.9em; color:var(--muted); line-height:1.7;}
+.stmtquote{margin-top:7px; padding-left:10px; border-left:3px solid var(--accent); font-family:var(--serif); line-height:var(--lh);}
+.stmtsrc{font-size:12.5px; margin-top:6px;}
+.sumchip{display:inline-block; font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:0 6px; margin-right:6px; vertical-align:2px;}
 .procnote{white-space:pre-wrap; margin-top:6px;}
 /* v27.0: インタビュー tab — compact rows in the guide dictionary's
    sensibility: a kind chip, the title, source ・ date, one-line note. */
@@ -8728,8 +8741,27 @@ return o.text? o: null;
 const quotes = (Array.isArray(p.quotes)? p.quotes: []).map(q=>{
 q = q || {};
 const o = { text: String(q.text||''), source: String(q.source||'') };
+/* v27.16: text_ja — the quote's Japanese translation (data-side
+   curated, added wave by wave). Same advance-whitelist treatment:
+   a field the app strips is a field the next device sync erases. */
+if(q.text_ja) o.text_ja = String(q.text_ja);
 return o.text? o: null;
 }).filter(Boolean);
+/* v27.16: dissection （解剖） — the rollout's four axes. stance is
+   statement-type content (rendered in the 発言 tab); thinking /
+   drawings / notes render inside 制作プロセス. Each axis is
+   { text, sources[] } or carries an honest { gap } instead. */
+const dissection = (()=>{
+const d = (p.dissection && typeof p.dissection === 'object')? p.dissection: null;
+if(!d) return null;
+const axes = {};
+['stance','thinking','drawings','notes'].forEach(k=>{
+const ax = d[k]; if(!ax || typeof ax !== 'object') return;
+const o = { text: String(ax.text||''), gap: String(ax.gap||''), sources: (Array.isArray(ax.sources)? ax.sources: []).map(String).filter(Boolean) };
+if(o.text || o.gap) axes[k] = o;
+});
+return Object.keys(axes).length? axes: null;
+})();
 const out = {
 summary: String(p.summary||''),
 steps: steps,
@@ -8739,7 +8771,26 @@ quotes: quotes,
 not_public: String(p.not_public||''),
 sources: (Array.isArray(p.sources)? p.sources: []).map(String).filter(Boolean)
 };
-return (out.summary || out.steps.length || out.quotes.length)? out: null;
+if(dissection) out.dissection = dissection;
+return (out.summary || out.steps.length || out.quotes.length || dissection)? out: null;
+}
+/* v27.16: terms （作家の言葉） — the artist's own coined / privately
+   nuanced terms (data-side curated from their writings and solid
+   scholarship). Meaning and contrast are sourced SUMMARIES (the
+   発言 tab marks them 要約）; the optional quote is verbatim. */
+function normalizeTerms(list){
+return (Array.isArray(list)? list: []).map(t=>{
+t = t || {};
+const o = {
+term: String(t.term||''),
+reading: String(t.reading||''),
+meaning: String(t.meaning||''),
+contrast: String(t.contrast||''),
+source: String(t.source||''),
+quote: String(t.quote||'')
+};
+return (o.term && (o.meaning || o.quote))? o: null;
+}).filter(Boolean);
 }
 /* v27.0: interviews （インタビュー) — Muse-side curated links
    (articles and videos) under the same wholesale arrangement.
@@ -8895,6 +8946,7 @@ books: books,
 prices: prices,
 breakthrough: normalizeBreakthrough(a.breakthrough),
 process: normalizeProcess(a.process),
+terms: normalizeTerms(a.terms),
 interviews: normalizeInterviews(a.interviews),
 influences: normalizeInfluences(a.influences),
 layer: (a.layer==='candidate')? 'candidate': 'canon',
@@ -11122,8 +11174,11 @@ openSettingsPanel('reqnotif');
    and the .on highlight in sync with it). */
 /* v27.0: the user's tab order — 作品 / 特徴 / 来歴 / 制作プロセス /
    インタビュー / 影響 / 作品集 / 価格. DTABS, the tab bar's buttons
-   and the pager panels all follow this one order. */
-const DTABS = ['works','feat','bio','process','interviews','influences','books','prices'];
+   and the pager panels all follow this one order.
+   v27.16: 発言 (quotes) joins between 制作プロセス and インタビュー —
+   作品 / 特徴 / 来歴 / 制作プロセス / 発言 / インタビュー / 影響 /
+   作品集 / 価格. */
+const DTABS = ['works','feat','bio','process','quotes','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -11416,6 +11471,19 @@ if(state.tab==='prices' && !pricesArr.length && !a.breakthrough) state.tab = 'wo
    convention — always present in the DTABS order (hidden button
    + panel), shown only when the record carries the data. */
 const procObj = a.process || null;
+/* v27.16: 発言 tab content — verbatim quotes (process.quotes),
+   the artist's own terms, and the dissection stance. The tab is
+   field-driven like the others: it exists only when at least one
+   of the three is present. Statement content lives ONLY here;
+   the process tab keeps the making-of material. */
+const termsArr = Array.isArray(a.terms)? a.terms: [];
+const disObj = (procObj && procObj.dissection)? procObj.dissection: null;
+const stanceObj = (disObj && disObj.stance && disObj.stance.text)? disObj.stance: null;
+const hasQuotesTab = !!((procObj && procObj.quotes && procObj.quotes.length) || termsArr.length || stanceObj);
+/* the process tab keeps its own material only — an artist whose
+   dossier is nothing but quotes no longer shows an empty process
+   panel behind a lit button. */
+const hasProcessContent = !!(procObj && (procObj.summary || (procObj.steps && procObj.steps.length) || procObj.environment || procObj.materials_notes || procObj.not_public || (procObj.sources && procObj.sources.length) || (disObj && (disObj.thinking || disObj.drawings || disObj.notes))));
 const intvArr = Array.isArray(a.interviews)? a.interviews: [];
 const inflArr = Array.isArray(a.influences)? a.influences: [];
 /* v27.1: the 影響 tab also runs BACKWARD — the artists this
@@ -11433,7 +11501,8 @@ if(String(x.id)===String(a.id) || !Array.isArray(x.influences)) return;
 const hit = x.influences.find(inf=> (inf.id != null && String(inf.id)===String(a.id)) || (inf.id == null && !!inf.name && (inf.name===a.name || (!!a.name_latin && inf.name===a.name_latin))));
 if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
 });
-if(state.tab==='process' && !procObj) state.tab = 'works';
+if(state.tab==='process' && !hasProcessContent) state.tab = 'works';
+if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
@@ -11450,7 +11519,8 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
-'<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(procObj? '': ' style="display:none"')+'>制作プロセス</button>'+
+'<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(hasProcessContent? '': ' style="display:none"')+'>制作プロセス</button>'+
+'<button class="'+(state.tab==='quotes'?'on':'')+'" onclick="setTab(\'quotes\')"'+(hasQuotesTab? '': ' style="display:none"')+'>発言</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+(intvArr.length? '': ' style="display:none"')+'>インタビュー</button>'+
 '<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+((inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>影響</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
@@ -11658,12 +11728,55 @@ processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s
 }
 if(procObj.environment) processHTML += '<h3 class="subhead">制作環境</h3><div class="bodytext">'+hlEsc(procObj.environment)+'</div>';
 if(procObj.materials_notes) processHTML += '<h3 class="subhead">画材メモ</h3><div class="bodytext">'+hlEsc(procObj.materials_notes)+'</div>';
-if(procObj.quotes && procObj.quotes.length){
-processHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>
-'<blockquote class="procquote">'+hlEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+'</blockquote>').join('');
+/* v27.16: the quotes block （本人の言葉） moved wholesale to the
+   発言 tab — it renders there, never in both places. In its place
+   the process tab gains the dissection axes that are making-of
+   material: 思考プロセス / ドローイング / メモ・ノート. An axis
+   with no text carries its honest gap, shown as such. (The
+   stance axis is statement-type and lives in 発言.) */
+if(disObj){
+const AXES = [['thinking','思考プロセス'],['drawings','ドローイング'],['notes','メモ・ノート']];
+AXES.forEach(([k, label])=>{
+const ax = disObj[k]; if(!ax) return;
+processHTML += '<h3 class="subhead">'+label+'</h3>';
+if(ax.text) processHTML += '<div class="bodytext">'+hlEsc(ax.text)+'</div>';
+else if(ax.gap) processHTML += '<div class="small procnote">'+esc(ax.gap)+'</div>';
+if(ax.sources && ax.sources.length) processHTML += '<div class="small" style="margin-top:6px">出典：'+ax.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>';
+});
 }
 if(procObj.not_public) processHTML += '<h3 class="subhead">公表されていないこと</h3><div class="small procnote">'+esc(procObj.not_public)+'</div>';
 if(procObj.sources && procObj.sources.length) processHTML += '<div class="small" style="margin-top:10px">出典：'+procObj.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>';
+}
+/* v27.16: 発言 tab — the artist's statements, aggregated and each
+   kind clearly labelled. 本人の言葉 are verbatim quotes; when a
+   quote carries a text_ja translation it rides under the original
+   in a smaller, dimmer line (absent -> the blockquote renders
+   exactly as it did inside 制作プロセス before the move).
+   大事にしている思想 gathers the dissection stance and the
+   artist's own terms: their meaning / stance text is a sourced
+   SUMMARY and carries the 要約 chip — never dressed as a quote —
+   while a term's own quote field stays verbatim quote-styled. */
+let quotesHTML = '';
+if(procObj && procObj.quotes && procObj.quotes.length){
+quotesHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>
+'<blockquote class="procquote">'+hlEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+(q.text_ja? '<span class="procqja">'+hlEsc(q.text_ja)+'</span>': '')+'</blockquote>').join('');
+}
+if(stanceObj || termsArr.length){
+quotesHTML += '<h3 class="subhead">大事にしている思想</h3>';
+if(stanceObj){
+quotesHTML += '<div class="stmtcard"><div><span class="sumchip">要約</span><span class="stmtterm">姿勢・思想</span></div>'
++'<div class="stmtmean">'+hlEsc(stanceObj.text)+'</div>'
++(stanceObj.sources && stanceObj.sources.length? '<div class="stmtsrc">出典：'+stanceObj.sources.map((s, i)=> '<a href="'+escA(s)+'" target="_blank" rel="noopener">['+(i+1)+']</a>').join(' ')+'</div>': '')
++'</div>';
+}
+termsArr.forEach(t=>{
+quotesHTML += '<div class="stmtcard"><span class="stmtterm">'+esc(t.term)+'</span>'+(t.reading? '<span class="stmtreading">'+esc(t.reading)+'</span>': '')
++(t.meaning? '<div class="stmtmean"><span class="sumchip">要約</span>'+hlEsc(t.meaning)+'</div>': '')
++(t.contrast? '<div class="stmtcontrast">対比：'+hlEsc(t.contrast)+'</div>': '')
++(t.quote? '<div class="stmtquote">'+hlEsc(t.quote)+'</div>': '')
++(t.source? '<div class="stmtsrc"><a href="'+escA(t.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
++'</div>';
+});
 }
 /* v27.0: インタビュー tab — articles and videos in the curated
    order, each row opening its source in a new tab; videos carry
@@ -11715,6 +11828,7 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
++'<div class="dpage" data-dtab="quotes">'+quotesHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
 +'<div class="dpage" data-dtab="influences">'+influencesHTML+'</div>'
 +'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
@@ -14662,6 +14776,8 @@ if(old && old.prices && old.prices.length) rec.prices = old.prices;
 if(old && old.breakthrough) rec.breakthrough = old.breakthrough;
 /* v27.0: nor the process dossier / interview links / influences (no form fields) */
 if(old && old.process) rec.process = old.process;
+/* v27.16: nor the artist's terms （作家の言葉 — no form field either) */
+if(old && old.terms && old.terms.length) rec.terms = old.terms;
 if(old && old.interviews && old.interviews.length) rec.interviews = old.interviews;
 if(old && old.influences && old.influences.length) rec.influences = old.influences;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
@@ -14743,6 +14859,8 @@ function mergeDataInto(local, incoming){
     if(ia.breakthrough) merged.breakthrough = ia.breakthrough;
     /* v27.0: process / interviews / influences, same wholesale treatment. */
     if(ia.process) merged.process = ia.process;
+    /* v27.16: terms （作家の言葉）, same wholesale treatment. */
+    if(ia.terms && ia.terms.length) merged.terms = ia.terms;
     if(ia.interviews && ia.interviews.length) merged.interviews = ia.interviews;
     if(ia.influences && ia.influences.length) merged.influences = ia.influences;
     /* thumb_pinned_at: keep the latest pin event from either side */
@@ -16043,7 +16161,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.15';
+const APP_VERSION = '27.16';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
