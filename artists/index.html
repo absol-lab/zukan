@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="27.17">
+<meta name="app-version" content="27.18">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -8420,39 +8420,46 @@ function idbOpenOnce(){
   return new Promise(res=>{
     if(!('indexedDB' in window) || !window.indexedDB){ IDB_ERR = 'indexedDB undefined'; return res(false); }
     let rq = null;
-    try{ rq = indexedDB.open('zukan-store', 1); }catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
-    rq.onupgradeneeded = ()=>{ try{ rq.result.createObjectStore('kv'); }catch(e){} };
-    rq.onsuccess = ()=>{ idbDb = rq.result; res(true); };
+    /* v27.18 (Phase 2): the database goes to version 2 — the new
+       `datasets` store holds the full DB mirrors and their
+       satellites. The `kv` store and the Phase-1 keys keep their
+       exact semantics; the upgrade only ADDS the store. */
+    try{ rq = indexedDB.open('zukan-store', 2); }catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
+    rq.onupgradeneeded = ()=>{ try{ const db = rq.result; if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv'); if(!db.objectStoreNames.contains('datasets')) db.createObjectStore('datasets'); }catch(e){} };
+    rq.onsuccess = ()=>{ idbDb = rq.result; try{ idbDb.onversionchange = ()=>{ try{ idbDb.close(); }catch(e){} idbDb = null; IDB_OK = false; }; }catch(e){} res(true); };
     rq.onerror = ()=>{ IDB_ERR = String((rq.error && rq.error.name) || 'open error'); res(false); };
     rq.onblocked = ()=>{ IDB_ERR = 'open blocked'; res(false); };
   });
 }
-function idbGetRaw(k){
+function idbGetRaw(k, store){
+  const st = store || 'kv';
   return new Promise(res=>{
     if(!idbDb) return res(null);
     let r = null;
-    try{ r = idbDb.transaction('kv', 'readonly').objectStore('kv').get(k); }
+    try{ r = idbDb.transaction(st, 'readonly').objectStore(st).get(k); }
     catch(e){ IDB_ERR = String((e && e.name) || e); return res(null); }
     r.onsuccess = ()=> res(r.result === undefined? null: r.result);
     r.onerror = ()=>{ IDB_ERR = String((r.error && r.error.name) || 'get error'); res(null); };
   });
 }
-function idbSetRaw(k, v){
+function idbSetRaw(k, v, store){
+  const st = store || 'kv';
   return new Promise(res=>{
     if(!idbDb) return res(false);
     let tx = null;
-    try{ tx = idbDb.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); }
+    try{ tx = idbDb.transaction(st, 'readwrite'); tx.objectStore(st).put(v, k); }
     catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
     tx.oncomplete = ()=> res(true);
     tx.onerror = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'put error'); res(false); };
     tx.onabort = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'put abort'); res(false); };
   });
 }
-function idbDelRaw(k){
+function idbDelRaw(k, store){
+  const st = store || 'kv';
   return new Promise(res=>{
     if(!idbDb) return res(false);
     let tx = null;
-    try{ tx = idbDb.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); }
+    try{ tx = idbDb.transaction(st, 'readwrite'); tx.objectStore(st).delete(k); }
     catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
     tx.oncomplete = ()=> res(true);
     tx.onerror = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'delete error'); res(false); };
@@ -8510,7 +8517,7 @@ function kvDel(k){
   KVMEM[k] = null;
   if(IDB_OK) idbRun(()=> idbDelRaw(k));
 }
-const MIGRATE_KEYS = ['zukan.favorites', 'zukan.ratings', 'zukan.reqSeenIds', 'zukan.changelogSeen', 'zukan.regNotifs', 'zukan.knownIds', 'zukan.requests.outbox', 'zukan.requests.cache', 'zukan.favFail'];
+const MIGRATE_KEYS = ['zukan.favorites', 'zukan.ratings', 'zukan.reqSeenIds', 'zukan.changelogSeen', 'zukan.regNotifs', 'zukan.knownIds', 'zukan.requests.outbox', 'zukan.requests.cache', 'zukan.favFail', 'zukan.news', 'zukan.changelog'];
 /* Idempotent, lossless migration (diagnosis §3.3), per key:
    IDB already holds it → IDB wins and any localStorage remnant
    is dropped; only localStorage holds it → copy, re-read verify,
@@ -8535,6 +8542,179 @@ async function storeInit(){
       if(IDB_OK && await idbRun(()=> idbSetRaw(k, lv)) && (await idbGetRaw(k)) === lv){ storeDel(k); IDB_MIGRATED++; }
     } else KVMEM[k] = null;
   }
+  /* v27.18: the mirrors live in this origin's storage now — ask
+     the browser to keep it (eviction would cost a re-download
+     from Drive, never data). Ignored silently where unsupported. */
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+}
+/* ================= v27.18: Phase 2 — the dataset mirrors move to IndexedDB =================
+   Design: art-labo/storage-phase2/DESIGN.md. The two full DB
+   mirrors outgrew the localStorage pool long ago (the artists
+   mirror alone is roughly twice the ~5 MB iOS quota in UTF-16
+   terms), so dataSave failed on essentially every write and a
+   cold boot rendered the last mirror that ever fit — the
+   430-artist copy frozen on 2026-11-13 — until a sync landed,
+   with derived views (the field sheet) keeping the frozen
+   counts even after it did. Phase 2 moves the mirrors and
+   their satellites (syncMeta / pendingImages / data.corrupt)
+   into the `datasets` store of the same database. A mirror is
+   NEVER written back to localStorage again: if IndexedDB is
+   unavailable, the mirror lives in memory for the session and
+   its provenance is recorded (c.mirrorSource) instead of going
+   silently stale in a store nothing can update. */
+const DS_MIGRATED = { artists: false, designers: false };
+function ctxByPrefix(prefix){ return CFG_ARTISTS.prefix === prefix? CTX.artists: CTX.designers; }
+/* Carry ONE legacy localStorage key into the datasets store:
+   copy -> re-read byte-verify -> only then delete the local
+   copy. An interruption anywhere converges on the next launch,
+   because the local copy survives until the IDB copy verifies
+   (the Phase 1 discipline, DESIGN §2.4). */
+async function dsCarryKey(key){
+  const lv = storeGet(key);
+  if(lv == null || !IDB_OK) return false;
+  const okW = await idbRun(()=> idbSetRaw(key, lv, 'datasets'));
+  if(okW && (await idbGetRaw(key, 'datasets')) === lv){ storeDel(key); return true; }
+  return false;
+}
+async function dsMirrorGet(prefix){
+  if(!IDB_OK) return null;
+  return await idbGetRaw(prefix + 'data', 'datasets');
+}
+/* The mirror and its Phase-2 marker land in ONE transaction,
+   so a datasets mirror carrying the marker is known to have
+   been written by a Phase-2 build — i.e. it is the device's
+   newest copy, not a legacy remnant of unknown generation. */
+function idbPutMirror(prefix, str){
+  return new Promise(res=>{
+    if(!idbDb) return res(false);
+    let tx = null;
+    try{ tx = idbDb.transaction('datasets', 'readwrite'); const st = tx.objectStore('datasets'); st.put(str, prefix + 'data'); st.put('1', prefix + 'data.p2'); }
+    catch(e){ IDB_ERR = String((e && e.name) || e); return res(false); }
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'mirror put error'); res(false); };
+    tx.onabort = ()=>{ IDB_ERR = String((tx.error && tx.error.name) || 'mirror put abort'); res(false); };
+  });
+}
+/* syncMeta lives with its mirror (DESIGN §2.1): the relay B
+   path trusts the pair only when they are the same generation,
+   and any inconsistency falls toward re-download. Reads fall
+   back to the legacy localStorage copy (pre-Phase-2 devices)
+   until the carry in dataInitDataset moves it. */
+async function dsMetaGet(prefix){
+  let raw = null;
+  if(IDB_OK) raw = await idbGetRaw(prefix + 'syncMeta', 'datasets');
+  if(raw == null) raw = storeGet(prefix + 'syncMeta');
+  if(raw == null) return null;
+  try{ const m = JSON.parse(raw); return (m && typeof m === 'object')? m: null; }catch(e){ return null; }
+}
+async function dsMetaSet(prefix, data, stamp){
+  if(!IDB_OK) return;
+  const str = JSON.stringify({ stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) });
+  await idbRun(()=> idbSetRaw(prefix + 'syncMeta', str, 'datasets'));
+}
+/* pendingImages hydrate: the in-memory map stays the read
+   source (bindCtx binds it); boot fills it from the datasets
+   store, carrying the legacy copy over when that is all there
+   is. */
+async function hydratePendingImages(kind){
+  const c = CTX[kind]; if(!c) return;
+  const prefix = c.cfg.prefix;
+  let raw = null;
+  if(IDB_OK) raw = await idbGetRaw(prefix + 'pendingImages', 'datasets');
+  if(raw != null){ if(storeGet(prefix + 'pendingImages') != null) storeDel(prefix + 'pendingImages'); }
+  else {
+    const lv = storeGet(prefix + 'pendingImages');
+    if(lv != null){ raw = lv; await dsCarryKey(prefix + 'pendingImages'); }
+  }
+  if(raw){ try{ const j = JSON.parse(raw); if(j && typeof j === 'object') Object.keys(j).forEach(k=>{ c.pendingImages[k] = j[k]; }); }catch(e){} }
+}
+/* Per-dataset boot load + migration (DESIGN §2.3/§2.4): the
+   async twin of loadCtxData. Records c.mirrorSource
+   ('idb' | 'ls-legacy' | 'seed'), c.mirrorBytes, c.hasMirror
+   and c.mirrorVerified — the boot gate's evidence (C1): a copy
+   may be RENDERED only if it is a Phase-2-written IDB mirror,
+   or it pairs with its syncMeta by hash (same generation), or
+   there was nothing stored at all (nothing stale to show).
+   A sync landing later in the session verifies a dataset too
+   (the gate consults c.lastSyncAt). */
+async function dataInitDataset(kind){
+  const c = CTX[kind]; if(!c) return;
+  const prefix = c.cfg.prefix;
+  let raw = null, p2 = null;
+  if(IDB_OK){
+    raw = await idbGetRaw(prefix + 'data', 'datasets');
+    if(raw != null) p2 = await idbGetRaw(prefix + 'data.p2', 'datasets');
+  }
+  if(raw != null){
+    c.mirrorSource = 'idb';
+    /* IDB is the truth: sweep legacy localStorage remnants of
+       the big keys — they can only be pre-Phase-2 leftovers. */
+    ['data', 'syncMeta', 'data.corrupt', 'pendingImages'].forEach(s=> storeDel(prefix + s));
+  } else {
+    const lv = storeGet(prefix + 'data');
+    if(lv != null){
+      raw = lv;
+      c.mirrorSource = 'ls-legacy';
+      if(await dsCarryKey(prefix + 'data')) c.mirrorSource = 'idb';
+    }
+  }
+  if(IDB_OK){
+    /* the satellites follow the mirror (no-ops when localStorage
+       holds nothing). A syncMeta that fails to carry is DROPPED
+       instead of left behind (DESIGN §2.4 — the pair must not
+       split across stores; absence only costs a re-download). */
+    if(storeGet(prefix + 'syncMeta') != null && !(await dsCarryKey(prefix + 'syncMeta'))) storeDel(prefix + 'syncMeta');
+    await dsCarryKey(prefix + 'data.corrupt');
+  }
+  c.hasMirror = raw != null;
+  c.mirrorBytes = raw? raw.length: 0;
+  if(!c.mirrorSource) c.mirrorSource = 'seed';
+  await hydratePendingImages(kind);
+  c.mirrorVerified = false;
+  if(raw == null) c.mirrorVerified = true;
+  else if(p2 === '1') c.mirrorVerified = true;
+  else {
+    const meta = await dsMetaGet(prefix);
+    if(meta && typeof meta.hash === 'string' && meta.hash === syncHashOfStr(raw)) c.mirrorVerified = true;
+  }
+  if(c.mirrorVerified && c.mirrorSource === 'idb') DS_MIGRATED[kind] = true;
+  let db = null;
+  if(raw != null){
+    try{ db = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; }
+    catch(e){
+      /* D3, Phase-2 edition: the unreadable bytes are stashed in
+         the datasets backup key and the ORIGINAL is kept in
+         place; the seed runs in memory only and is never
+         written back over them. */
+      if(IDB_OK){ const bad = raw; idbRun(()=> idbSetRaw(prefix + 'data.corrupt', bad, 'datasets')); }
+      c.storeUnreadable = true;
+    }
+  }
+  if(!db){
+    db = (kind === 'artists')? normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)))
+                             : { kind: kind, version: 1, sections: [], artists: [], exhibitions: [] };
+    if(kind === 'artists' && raw == null) await dataSave(prefix, JSON.stringify(db));
+  }
+  /* a sync that landed while this read was in flight is fresher
+     than the store copy — never clobber it with the older read;
+     a pack merge in flight is likewise left alone */
+  if(!c.lastSyncAt && !c.packMerged){ c.DB = db; if(DS === kind) DB = db; }
+  c.bootLoaded = true;
+}
+/* Watchdog fallback (DESIGN §2.3): build the in-memory DB from
+   the legacy localStorage copy (or the seed) WITHOUT writing
+   anything anywhere — it is the sync merge base only, and
+   rendering stays gated until a verified copy or a landed
+   sync arrives. */
+function bootFallbackBuild(kind){
+  const c = CTX[kind]; if(!c) return;
+  const raw = storeGet(c.cfg.prefix + 'data');
+  if(raw){
+    try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; if(!c.mirrorSource) c.mirrorSource = 'ls-legacy'; c.hasMirror = true; return; }
+    catch(e){ c.storeUnreadable = true; }
+  }
+  if(kind === 'artists') c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)));
+  else c.DB = { kind: kind, version: 1, sections: [], artists: [], exhibitions: [] };
 }
 /* v27.6 pressure valve: while the DB mirrors remain in
    localStorage (Phase 1), a failed mirror write evicts the OTHER
@@ -8564,19 +8744,36 @@ function markListDirty(){ listDirty = true; }
    list under a "clean" flag. */
 let listRenderedQuery = null;
 const DATA_SAVE_FAIL = {};
+/* v27.18 (Phase 2): the mirror write goes to the IndexedDB
+   `datasets` store, in one transaction with its Phase-2 marker.
+   Returns a Promise<boolean> — the signature is unchanged; the
+   callers that used the boolean (syncDatasetOnce) now await it,
+   the rest let it float, and the failure still surfaces via
+   DATA_SAVE_FAIL + the sync summary (the v27.11 D2 rule). The
+   v27.11 D1 rule also stands: a failed save never deletes
+   anything of the other dataset's. If IndexedDB is unavailable
+   the mirror is NOT written back to localStorage (that way
+   lies the freeze): the session runs on the in-memory DB and
+   the failure is recorded, exactly as visibly as before. */
 function dataSave(prefix, str){
   markListDirty();
-  /* v27.11 D1: the cross-dataset pressure valve is REMOVED —
-     a failed save never deletes the OTHER dataset's mirror
-     (a stale mirror is recoverable; a deleted one falls back
-     to the seed/empty). D2: the failure is recorded and shown
-     in the sync summary (renderSyncStatus) until a save of
-     the same dataset succeeds again. */
-  const okSave = storeSet(prefix + 'data', str);
-  if(okSave){ if(DATA_SAVE_FAIL[prefix]){ delete DATA_SAVE_FAIL[prefix]; renderSyncStatus(); } return true; }
-  DATA_SAVE_FAIL[prefix] = Date.now();
-  renderSyncStatus();
-  return false;
+  if(!IDB_OK){
+    DATA_SAVE_FAIL[prefix] = Date.now();
+    renderSyncStatus();
+    return Promise.resolve(false);
+  }
+  return idbRun(async ()=>{
+    let okSave = false;
+    try{ okSave = await idbPutMirror(prefix, str); }catch(e){ okSave = false; }
+    try{
+      const c = ctxByPrefix(prefix);
+      if(c){ c.mirrorBytes = str.length; if(okSave){ c.mirrorSource = 'idb'; c.hasMirror = true; c.mirrorVerified = true; } }
+    }catch(e){}
+    if(okSave){ if(DATA_SAVE_FAIL[prefix]){ delete DATA_SAVE_FAIL[prefix]; renderSyncStatus(); } return true; }
+    DATA_SAVE_FAIL[prefix] = Date.now();
+    renderSyncStatus();
+    return false;
+  });
 }
 function fmtBytes(n){
   if(n == null || isNaN(n)) return '不明';
@@ -10204,6 +10401,8 @@ vtNoAnim = true;
 showView(v);
 vtNoAnim = false;
 pillRecMute = false;
+/* v27.18 C3: an open field sheet recomputes against the dataset just bound */
+const shOpen = $('symsheet'); if(shOpen && !shOpen.classList.contains('hidden')) openSymSheet();
 if(v==='detail') renderDetail();
 if(v==='list' && CTX[DS].scrollY){ const y = CTX[DS].scrollY; requestAnimationFrame(()=>window.scrollTo(0,y)); }
 }
@@ -11299,7 +11498,25 @@ else if(dx > 0 && d.idx > 0) setTab(DTABS[d.idx-1]);
    as text and nothing breaks. No file -> the CV bio stays. */
 const CHRONICLE_FILES = { '五木田智央': 'chronicle-gokita.json' };
 const chronicleMem = {}; const chronicleBusy = {};
-function chronicleCacheLoad(file){ try{ const j = JSON.parse(storeGet('zukan.chronicle.'+file)||'null'); return (j && Array.isArray(j.periods))? j: null; }catch(e){ return null; } }
+/* v27.18 (§2.6): the chronicle cache keys are per-file and so
+   cannot ride the fixed migration list — they carry lazily, on
+   first read, with the same copy -> verify -> delete discipline,
+   and live in the kv store from then on. */
+function chronicleCacheLoad(file){
+  const key = 'zukan.chronicle.' + file;
+  try{
+    let raw = (key in KVMEM)? KVMEM[key]: null;
+    if(raw == null){
+      raw = storeGet(key);
+      if(raw != null){
+        KVMEM[key] = raw;
+        if(IDB_OK) idbRun(async ()=>{ if(await idbSetRaw(key, raw) && (await idbGetRaw(key)) === raw) storeDel(key); });
+      }
+    }
+    const j = JSON.parse(raw || 'null');
+    return (j && Array.isArray(j.periods))? j: null;
+  }catch(e){ return null; }
+}
 function chronicleFor(a){
   const f = CHRONICLE_FILES[a.name]; if(!f) return null;
   if(chronicleMem[f]) return chronicleMem[f];
@@ -11314,7 +11531,7 @@ async function ensureChronicle(a){
     const res = await fetch(f+'?cv=' + Date.now(), { cache: 'no-store' });
     if(!res.ok) throw new Error('chronicle HTTP ' + res.status);
     const j = await res.json();
-    if(j && Array.isArray(j.periods)){ chronicleMem[f] = j; try{ storeSet('zukan.chronicle.'+f, JSON.stringify(j)); }catch(e){} }
+    if(j && Array.isArray(j.periods)){ chronicleMem[f] = j; try{ kvSet('zukan.chronicle.'+f, JSON.stringify(j)); }catch(e){} }
   }catch(e){ /* the CV bio stays as the fallback */ }
   chronicleBusy[f] = false;
   if(view==='detail' && state.tab==='bio'){ const cur = artistById(state.detailId); if(cur && cur.name===a.name) renderDetail(); }
@@ -13049,7 +13266,7 @@ let newsFetching = false;
 let newsTab = 'top';
 try{ const nt = localStorage.getItem('zukan.newsTab'); if(nt === 'society' || nt === 'art' || nt === 'corr') newsTab = nt; }catch(e){}
 function setNewsTab(t){ newsTab = t; try{ localStorage.setItem('zukan.newsTab', t); }catch(e){} renderNews(); }
-function newsCacheLoad(){ try{ const j = JSON.parse(storeGet('zukan.news')||'null'); return (j && typeof j==='object')? j: null; }catch(e){ return null; } }
+function newsCacheLoad(){ try{ const j = JSON.parse(kvRaw('zukan.news')||'null'); return (j && typeof j==='object')? j: null; }catch(e){ return null; } }
 async function fetchNews(){
   if(newsFetching) return;
   newsFetching = true;
@@ -13057,7 +13274,7 @@ async function fetchNews(){
     const res = await fetch('news.json?cv=' + Date.now(), { cache: 'no-store' });
     if(!res.ok) throw new Error('news HTTP ' + res.status);
     const j = await res.json();
-    if(j && typeof j === 'object'){ newsData = j; try{ storeSet('zukan.news', JSON.stringify(j)); }catch(e){} }
+    if(j && typeof j === 'object'){ newsData = j; try{ kvSet('zukan.news', JSON.stringify(j)); }catch(e){} }
   }catch(e){
     if(!newsData) newsData = newsCacheLoad();
   }
@@ -13074,7 +13291,7 @@ function openNews(){
    last-good copy instantly, then refreshes. Written in plain
    user-facing language with the release date AND time (JST). */
 let changelogData = null, changelogFetching = false;
-function changelogCacheLoad(){ try{ const j = JSON.parse(storeGet('zukan.changelog')||'null'); return (j && Array.isArray(j.entries))? j: null; }catch(e){ return null; } }
+function changelogCacheLoad(){ try{ const j = JSON.parse(kvRaw('zukan.changelog')||'null'); return (j && Array.isArray(j.entries))? j: null; }catch(e){ return null; } }
 async function fetchChangelog(){
   if(changelogFetching) return;
   changelogFetching = true;
@@ -13082,7 +13299,7 @@ async function fetchChangelog(){
     const res = await fetch('changelog.json?cv=' + Date.now(), { cache: 'no-store' });
     if(!res.ok) throw new Error('changelog HTTP ' + res.status);
     const j = await res.json();
-    if(j && Array.isArray(j.entries)){ changelogData = j; try{ storeSet('zukan.changelog', JSON.stringify(j)); }catch(e){} }
+    if(j && Array.isArray(j.entries)){ changelogData = j; try{ kvSet('zukan.changelog', JSON.stringify(j)); }catch(e){} }
   }catch(e){
     if(!changelogData) changelogData = changelogCacheLoad();
   }
@@ -13681,9 +13898,12 @@ function regNotifJump(nid){
   const panelDs = DS;
   if(n.dataset === DS){ const a = artistById(n.personId); if(a){ regMarkOneSeen(n.id); armPanelOrigin(panelDs); openDetail(a.id); return; } }
   else{
-    const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
-    let found = null;
-    try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(n.personId)); }catch(e){}
+    /* v27.18: the other dataset is looked up in MEMORY (both
+       datasets are loaded at boot) — the old code re-parsed the
+       stored mirror string, which could be older than what the
+       session already knows. */
+    const arr = liveDB(n.dataset).artists || [];
+    const found = arr.find(x=>String(x.id)===String(n.personId));
     if(found){ regMarkOneSeen(n.id); switchDataset(n.dataset); armPanelOrigin(panelDs); openDetail(found.id); return; }
   }
   toast('この端末にはまだ届いていません');
@@ -13696,9 +13916,8 @@ function regSummaryJump(nid, personId){
   const panelDs = DS;
   if(n.dataset === DS){ const a = artistById(personId); if(a){ regMarkOneSeen(nid); armPanelOrigin(panelDs); openDetail(a.id); return; } }
   else{
-    const cfg = n.dataset==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
-    let found = null;
-    try{ const arr = (JSON.parse(storeGet(cfg.prefix+'data')||'{}').artists)||[]; found = arr.find(x=>String(x.id)===String(personId)); }catch(e){}
+    const arr = liveDB(n.dataset).artists || [];
+    const found = arr.find(x=>String(x.id)===String(personId));
     if(found){ regMarkOneSeen(nid); switchDataset(n.dataset); armPanelOrigin(panelDs); openDetail(found.id); return; }
   }
   toast('この端末にはまだ届いていません');
@@ -13772,9 +13991,8 @@ function openRequestNotifs(){
    person is actually there. Declined items never jump. */
 function reqFindIn(kind, r){
   try{
-    const cfg = kind==='designers'? CFG_DESIGNERS: CFG_ARTISTS;
-    const raw = storeGet(cfg.prefix+'data'); if(!raw) return null;
-    const arr = (JSON.parse(raw)||{}).artists||[];
+    /* v27.18: memory reference, not a re-parse of the stored mirror */
+    const arr = liveDB(kind).artists || [];
     if(r.kind==='works' && r.artist_id!=null){ const a = arr.find(x=>String(x.id)===String(r.artist_id)); if(a) return a.id; }
     const nm = reqResolvedName(r);
     const a = arr.find(x=>x.name===nm);
@@ -14724,7 +14942,7 @@ box.innerHTML = editWorks.map((w,i)=>
 ).join('') || '<div class="small">作品はまだありません</div>';
 }
 function addEditWork(){ editWorks.push({ caption:'', file:'', img:null}); renderEditWorks();}
-/* images picked in the editor are kept in memory + best-effort localStorage as pending uploads */
+/* images picked in the editor are kept in memory + IndexedDB as pending uploads (v27.18: the datasets store, not localStorage) */
 /* pendingImages はアクティブなデータセットの保留画像オブジェクト（bindCtx で束縛） */
 function fileBase(name){ return String(name||'').replace(/^.*[\\/]/,'').replace(/\.[a-zA-Z0-9]{2,5}$/,'');}
 function attachEditImage(input, i){
@@ -14741,8 +14959,13 @@ renderEditWorks();
 rd.readAsDataURL(f);
 }
 function savePendingImages(){
-try{ storeSet(CONFIG.prefix+'pendingImages', JSON.stringify(pendingImages));}catch(e){}
+  if(!IDB_OK) return;
+  const str = JSON.stringify(pendingImages);
+  const prefix = CONFIG.prefix;
+  idbRun(()=> idbSetRaw(prefix + 'pendingImages', str, 'datasets'));
 }
+/* legacy reader, kept for the boot watchdog fallback only:
+   the normal boot hydrates from IndexedDB (hydratePendingImages) */
 function loadPendingImages(){
 try{ const j = JSON.parse(storeGet(CONFIG.prefix+'pendingImages')||'{}'); Object.keys(j).forEach(k=>{ pendingImages[k]=j[k];});}catch(e){}
 }
@@ -15075,7 +15298,7 @@ function renderSyncStatus(){
     }
     bar.innerHTML = '<span class="'+cur.cls+'">'+esc(cur.label)+'</span>'+hint;
   }
-  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>' + ((DATA_SAVE_FAIL[CFG_ARTISTS.prefix] || DATA_SAVE_FAIL[CFG_DESIGNERS.prefix])? '<div class="syncline err">端末への保存ができませんでした（保存容量の上限のため）</div>': ''); }
+  const ss = $('syncstat'); if(ss){ const s = appStatusInfo(); ss.innerHTML = '<span class="'+s.cls+'">'+esc(s.label)+'</span><span class="syncsum">作家 '+liveDB('artists').artists.length+'名／デザイナー '+liveDB('designers').artists.length+'名</span>' + ((DATA_SAVE_FAIL[CFG_ARTISTS.prefix] || DATA_SAVE_FAIL[CFG_DESIGNERS.prefix])? '<div class="syncline err">端末への保存ができませんでした</div>': '') + (!IDB_OK? '<div class="syncline">端末の保存領域が使えないため、表示は前回の保存分です（同期で最新になります）</div>': ''); }
   const dv = $('driveval'); if(dv) dv.textContent = driveVal();
   const bs = $('btnSync'); if(bs) bs.disabled = appSyncRunning;
   const bc = $('btnConnect'); if(bc) bc.disabled = appSyncRunning;
@@ -15335,8 +15558,12 @@ async function uploadDataUpdateFor(tok, fileId, data){
 }
 /* そのデータセットの保留画像をアップロードし、fileId を data 内の作品へ書き込む */
 async function uploadPendingImagesFor(prefix, data, tok){
-  let pend = {};
-  try{ pend = JSON.parse(storeGet(prefix+'pendingImages')||'{}'); }catch(e){}
+  /* v27.18: the pending map is the context's in-memory object
+     (hydrated from IndexedDB at boot) — the deletions below are
+     the live object, and the remainder is persisted back to the
+     datasets store at the end. */
+  const pc = ctxByPrefix(prefix);
+  let pend = (pc && pc.pendingImages) || {};
   if(!pend || typeof pend!=='object') pend = {};
   const bases = Object.keys(pend);
   if(!bases.length) return data;
@@ -15356,16 +15583,28 @@ async function uploadPendingImagesFor(prefix, data, tok){
       }
     }catch(e){ /* 保留のまま次回再試行 */ }
   }
-  try{ storeSet(prefix+'pendingImages', JSON.stringify(pend)); }catch(e){}
+  if(IDB_OK){ const rest = JSON.stringify(pend); idbRun(()=> idbSetRaw(prefix + 'pendingImages', rest, 'datasets')); }
   return data;
 }
 function refreshAfterSync(kind){
+  /* v27.18: a landed sync is one of the two events that can
+     open the boot gate (the other is the verified store read) */
+  maybeFirstRender();
   if(kind!==DS || isEditing()) return;
   if(view==='list') renderList();
   else if(view==='detail' && state.detailId!=null) renderDetail();
   else if(view==='ex') renderEx();
   else if(view==='timeline') renderTimeline();
   renderAbout();
+  /* v27.18 C3: derived views that render ONCE from whatever
+     dataset was current when they opened must recompute from
+     the landed one. The field sheet was the proven case (his
+     screenshots, 2026-11-14 17:57: header already at 全511名
+     while the open sheet still counted the frozen 430); an
+     open notification panel has the same shape. */
+  const sh = $('symsheet');
+  if(sh && !sh.classList.contains('hidden')) openSymSheet();
+  if(settingsPanel === 'reqnotif') renderRequestNotifs('reqnotiflist');
 }
 /* 1データセット分の同期。ストレージを正として読み書きし、結果を CTX[kind] に残す。
    成功・失敗どちらでも必ず状態が確定する（同期中のまま残らない）。
@@ -15419,20 +15658,24 @@ function syncTotalsOk(payload, remote){
   const p = dataTotals(payload), r = dataTotals(remote);
   return p.people >= r.people && p.works >= r.works && p.ex >= r.ex;
 }
-function syncMetaGet(prefix){ try{ const m = JSON.parse(storeGet(prefix+'syncMeta')||'null'); return (m && typeof m === 'object')? m: null; }catch(e){ return null; } }
-function syncMetaSet(prefix, data, stamp){
-  try{ storeSet(prefix+'syncMeta', JSON.stringify({ stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) })); }catch(e){}
-}
+/* v27.18: syncMeta lives in the datasets store beside its
+   mirror (dsMetaGet/dsMetaSet above). The relay flow is async
+   throughout, so the getters/setters are async twins of the
+   old synchronous pair. */
+async function syncMetaGet(prefix){ return await dsMetaGet(prefix); }
+async function syncMetaSet(prefix, data, stamp){ await dsMetaSet(prefix, data, stamp); }
 async function syncDatasetRelay(kind, data){
   const c = CTX[kind]; if(!c) throw new Error('対象がありません');
   const cfg = c.cfg, prefix = cfg.prefix;
-  const meta = syncMetaGet(prefix);
+  const meta = await syncMetaGet(prefix);
   const localHash = syncHashOfStr(JSON.stringify(data));
   const localClean = !!(meta && meta.hash === localHash);
   const stat = await relayCall('stat', cfg.dataFile);
   if(!stat.exists){
     await relayCall('put', cfg.dataFile, JSON.stringify(data));
-    syncMetaSet(prefix, data, null);
+    /* v27.18 C2: the meta is only STAGED here — syncDatasetOnce
+       commits it after the mirror write has actually landed */
+    c.pendingMeta = { data: data, stamp: null };
     return data;
   }
   const stamp = (typeof stat.updated === 'number')? stat.updated: null;
@@ -15490,7 +15733,7 @@ async function syncDatasetRelay(kind, data){
     }
   }
   c.syncNote = adjusted ? 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）' : null;
-  syncMetaSet(prefix, merged, adjusted ? null : stampAfter);
+  c.pendingMeta = { data: merged, stamp: adjusted ? null : stampAfter };
   return merged;
 }
 async function syncDatasetFlow(kind, reason){
@@ -15508,9 +15751,12 @@ async function syncDatasetOnce(kind, reason){
   const tok = getValidToken();
   if(!tok && !relayReady()){ setCtxStatus(kind, 'disconnected'); return { ok:false, msg:'Drive未接続' }; }
   setCtxStatus(kind, 'syncing');
+  c.pendingMeta = null; /* a staged meta belongs to THIS run's relay flow only */
   try{
     let data = null;
-    const raw = storeGet(prefix+'data');
+    /* v27.18: the sync base is read back from the IndexedDB
+       mirror (the freshest stored copy); memory is the fallback */
+    const raw = await dsMirrorGet(prefix);
     if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
     if(!data) data = c.DB;
     if(tok) data = await uploadPendingImagesFor(prefix, data, tok);
@@ -15548,11 +15794,18 @@ async function syncDatasetOnce(kind, reason){
        result instead of being silently ignored (the frozen
        430-artist mirror of 2026-11-14 stayed invisible exactly
        because this return value was dropped). */
-    const saveOk = dataSave(prefix, JSON.stringify(data));
+    const saveOk = await dataSave(prefix, JSON.stringify(data));
     if(!saveOk){
-      const note = '端末への保存ができませんでした（保存容量の上限のため）';
+      const note = '端末への保存ができませんでした';
       c.syncNote = c.syncNote ? c.syncNote + '／' + note : note;
     }
+    /* v27.18 C2: the staged relay meta commits ONLY behind a
+       mirror write that actually landed — a meta newer than
+       its mirror would let the B path trust a copy that is
+       not there (the old order ran syncMetaSet inside the
+       relay flow, before this save). */
+    if(saveOk && c.pendingMeta){ try{ await syncMetaSet(prefix, c.pendingMeta.data, c.pendingMeta.stamp); }catch(e){} }
+    c.pendingMeta = null;
     c.DB = data;
     if(kind===DS) DB = data;
     c.lastSyncAt = Date.now();
@@ -16161,7 +16414,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '27.17';
+const APP_VERSION = '27.18';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -16195,7 +16448,7 @@ function loadDesignersSeed(){
     .then(j=>{
       const c = CTX.designers;
       if(c.loadedFromStore || c.DB.artists.length) return; /* 実データがあれば種で上書きしない */
-      if(storeGet(CFG_DESIGNERS.prefix+'data')) return;
+      if(c.hasMirror) return; /* v27.18: existence is the dataInit flag now, not a localStorage probe */
       c.DB = normalizeFor('designers', j);
       dataSave(CFG_DESIGNERS.prefix, JSON.stringify(c.DB));
       if(DS==='designers'){ DB = c.DB; if(view==='list') renderList(); }
@@ -16244,10 +16497,10 @@ async function applyDataPack(){
       if(!incoming || typeof incoming!=='object' || !Array.isArray(incoming.artists)) continue;
       const c = CTX[kind]; if(!c) continue;
       const prefix = c.cfg.prefix;
-      let data = null;
-      const raw = storeGet(prefix+'data');
-      if(raw){ try{ data = normalizeFor(kind, JSON.parse(raw)); }catch(e){ data = null; } }
-      if(!data) data = c.DB;
+      /* v27.18: the pack merges onto the in-memory DB that
+         dataInit already loaded from the store — the old raw
+         re-read of the localStorage mirror is gone with it. */
+      let data = c.DB;
       data = mergeDataInto(data, packGuardNewerLocal(data, incoming));
       const incN = normalizeData(incoming);
       /* ルートの sections はパック側を正とする。mergeDataInto は sections を
@@ -16273,6 +16526,7 @@ async function applyDataPack(){
       data.kind = kind;
       dataSave(prefix, JSON.stringify(data));
       c.DB = data;
+      c.packMerged = true; /* a late dataInit read must not clobber this merge */
       if(kind===DS) DB = data;
     }
   }catch(e){ return false; }
@@ -16481,6 +16735,17 @@ async function runStorageDiagnostics(){
   try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); const v = localStorage.getItem(k) || ''; lsBytes += (k.length + v.length) * 2; lsKeys++; } }catch(e){}
   lines.push('localStorage 概算: ' + fmtBytes(lsBytes) + '（' + lsKeys + ' キー）');
   lines.push('IndexedDB: ' + (IDB_OK? '利用可': '利用不可' + (IDB_ERR? '（' + IDB_ERR + '）': '')) + ' / 移行済みキー: ' + IDB_MIGRATED + ' 件');
+  /* v27.18 (§2.7): where each dataset's mirror actually came
+     from this boot, its size, and whether it was verified */
+  ['artists','designers'].forEach(k=>{
+    const c = CTX[k];
+    lines.push((k==='artists'? '作家': 'デザイナー') + 'ミラー: 出所 ' + (c.mirrorSource || '不明') + ' / ' + fmtBytes(c.mirrorBytes? c.mirrorBytes * 2: null) + ' / 検証 ' + (c.mirrorVerified? '済': '未') + (c.storeUnreadable? ' / 読込不能（退避済み）': ''));
+  });
+  lines.push('データセット移行（フェーズ2）: ' + (DS_MIGRATED.artists && DS_MIGRATED.designers? '完了（2/2）': (DS_MIGRATED.artists || DS_MIGRATED.designers? '部分的（1/2）': '未完了')));
+  if(navigator.storage && navigator.storage.persisted){
+    try{ lines.push('ストレージ永続化: ' + ((await navigator.storage.persisted())? '許可': '未許可')); }
+    catch(err){ lines.push('ストレージ永続化: 取得不可'); }
+  } else lines.push('ストレージ永続化: 取得不可');
   const ff = kvRaw(LS_FAVFAIL);
   if(ff){
     try{ const j = JSON.parse(ff); lines.push('最終のお気に入り保存失敗: ' + (j.at || '') + ' / ' + (j.what || '') + ' / ' + (j.err || '')); }
@@ -16708,8 +16973,16 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
 (function(){
   var v = document.getElementById('veil');
   if(!v) return;
-  var done = false;
-  function kill(){ if(done) return; done = true; try{ v.remove(); }catch(e){} }
+  var done = false, held = false;
+  function kill(){ if(done || held) return; done = true; try{ v.remove(); }catch(e){} }
+  /* v27.18: the boot gate (DESIGN C1/C2) can HOLD the veil —
+     boot calls __veilHold synchronously before the fade runs
+     out, and __veilRelease when the first render is allowed.
+     While held, the veil stays the plain black it always was
+     (his rule: a plain veil at launch and nothing else) and
+     taps do not dismiss it. */
+  window.__veilHold = function(){ held = true; try{ v.style.animation = 'none'; v.style.opacity = '1'; }catch(e){} };
+  window.__veilRelease = function(){ if(done) return; held = false; try{ v.style.transition = 'opacity .45s ease .05s'; v.style.opacity = '0'; }catch(e){} setTimeout(kill, 650); };
   v.addEventListener('click', kill);
   v.addEventListener('touchend', function(e){ e.preventDefault(); kill(); }, { passive:false });
   var reduced = false;
@@ -16718,16 +16991,62 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   setTimeout(kill, 750); /* フェード（.1s +.45s）完了直後に除去 */
 })();
 
+/* ================= v27.18: the boot gate (DESIGN C1/C2) =================
+   The first render happens only when every dataset's copy is
+   VERIFIED — a Phase-2-written (or hash-paired) store copy, or
+   a sync landed this session — or when IndexedDB is entirely
+   unavailable (the §2.5 final resort: the legacy copy renders
+   with its provenance on record, and startup sync refreshes
+   it). Until then the veil holds and NO counts or list are
+   drawn from an unverified copy: the frozen 430-artist mirror
+   can never be what the app opens on again. A 12-second timer
+   in init is the no-hang guarantee for the pathological case
+   (offline on the migration boot): render what the device
+   has rather than holding the veil forever. */
+let firstRendered = false, bootGateForced = false;
+function bootGateOpen(){
+  if(bootGateForced || !IDB_OK) return true;
+  return ['artists','designers'].every(k=>{ const c = CTX[k]; return c.mirrorVerified || c.lastSyncAt > 0; });
+}
+function maybeFirstRender(){
+  if(firstRendered || !bootGateOpen()) return;
+  firstRendered = true;
+  if(window.__veilRelease) window.__veilRelease();
+  updateHeader(); updatePill();
+  renderList(); renderSyncStatus(); renderAbout();
+  detectNewPeople('artists'); detectNewPeople('designers');
+}
+
 (async function init(){
   const startDS = (location.hash==='#designers')? 'designers': 'artists';
-  ['artists','designers'].forEach(k=>{ DS = k; bindCtx(); loadPendingImages(); loadCtxData(k); });
+  /* v27.18: the veil is held from this synchronous moment until
+     the boot gate allows the first render (DESIGN C1/C2). */
+  if(window.__veilHold) window.__veilHold();
   DS = startDS; bindCtx();
+  /* v27.18 (Phase 2): IndexedDB opens FIRST now — the small
+     critical keys (v27.6) and the dataset mirrors both live
+     there — then both datasets load from it, migration
+     included (dataInitDataset). A 4-second watchdog keeps a
+     stalled IDB from hanging the boot: memory is built from
+     the legacy copy as the sync merge base (rendering stays
+     gated), and when the IDB read lands it takes over. */
+  const bootData = (async ()=>{
+    await storeInit();
+    for(const k of ['artists','designers']){ DS = k; bindCtx(); await dataInitDataset(k); }
+    DS = startDS; bindCtx();
+  })();
+  let bootSlow = false;
+  await Promise.race([bootData, new Promise(r=> setTimeout(()=>{ bootSlow = true; r(); }, 4000))]);
+  if(bootSlow){
+    ['artists','designers'].forEach(k=>{ if(!CTX[k].bootLoaded){ DS = k; bindCtx(); loadPendingImages(); bootFallbackBuild(k); } });
+    DS = startDS; bindCtx();
+    bootData.then(()=>{
+      DS = startDS; bindCtx();
+      if(firstRendered && !isEditing()){ if(view==='list') renderList(); renderAbout(); renderSyncStatus(); }
+      maybeFirstRender();
+    });
+  }
   applyAppearance();
-  /* v27.6: open IndexedDB and migrate the small critical keys
-     BEFORE anything reads them (favorites are read by the first
-     render, the outbox by the first flush). The DB mirrors stay
-     in localStorage behind dataSave's pressure valve. */
-  await storeInit();
   /* v27.4: a leftover favorites-save diagnostic stays silent for
      the user (the failing tap already told him) but visible in
      the console for support. */
@@ -16738,13 +17057,15 @@ function setLineHeight(id){ ZSET.lineHeight = id; saveZSettings(); applyAppearan
   state.mode = uniMode;
   storeSet(LS_APP_MODE, uniMode);
   await applyDataPack();
-  if(!CTX.designers.loadedFromStore && !storeGet(CFG_DESIGNERS.prefix+'data')) loadDesignersSeed();
-  updateHeader(); updatePill();
-  renderList(); renderSyncStatus(); renderAbout();
-  /* v7.0: catch registrations that landed in local data before
-     this version existed (synced under an older app) */
-  detectNewPeople('artists'); detectNewPeople('designers');
+  if(!CTX.designers.loadedFromStore && !CTX.designers.hasMirror) loadDesignersSeed();
+  maybeFirstRender();
   checkForUpdate();
+  /* v27.18: the boot gate's no-hang guarantee — if no verified
+     copy and no landed sync materialize (offline on the
+     migration boot is the realistic case), render what the
+     device has rather than holding the veil forever. The
+     provenance stays on record in the storage diagnostics. */
+  setTimeout(()=>{ bootGateForced = true; maybeFirstRender(); }, 12000);
   /* v4.1 (image-speed stage 1b): register the image-cache service
      worker — repeat views of Drive thumbnails are served from the
      device. Purely additive: unsupported or failed registration
