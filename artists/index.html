@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.4">
+<meta name="app-version" content="30.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1021,6 +1021,13 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
    only — exhibition schedule bars share the .tlbar class and
    keep their own rules) is un-stuck inside it. */
 .tlstick{position:sticky; top:var(--hdrh, 0px); z-index:26; background:var(--bg); margin-top:12px; border-bottom:1px solid var(--line);}
+/* v30.5: the view head (title + back/quiz buttons) lives INSIDE
+   the sticky frame, so the whole top block — head, stream
+   buttons, map, year bar — sticks as one piece and the back
+   button can no longer scroll away (his ask, 2026-11-15).
+   .tlhead is shared with other views; only the in-frame
+   spacing is overridden here. */
+.tlstick .tlhead{margin-top:0; padding:10px 0 8px;}
 .tlsegrow{padding:2px 0 8px;}
 #tlbar{position:static; margin-top:0; padding:2px 2px 10px; background:transparent; border-bottom:none;}
 .tlbar-lab{flex:none; width:104px; min-width:0;}
@@ -1067,7 +1074,13 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
    holder}) — rendered ONLY when a photo URL is present; the
    slots ship empty in v29.0 (photos are sourced in v29.3). */
 .tlphoto{margin-top:12px;}
-.tlphoto img{display:block; width:100%; max-height:340px; object-fit:contain; border-radius:10px; border:1px solid var(--line); background:var(--bg2);}
+/* v30.5: the photo box has ONE fixed height, before and after the
+   image lands. Through v30.4 the img took its natural height (up
+   to 340px) over a 120px reservation, so every finished load grew
+   its card by up to ~220px and shoved every card below it — the
+   layout moving under the reader is what flew the timeline
+   between eras on device (his 2026-11-15 videos). */
+.tlphoto img{display:block; width:100%; height:min(66vw, 300px); object-fit:contain; border-radius:10px; border:1px solid var(--line); background:var(--bg2);}
 .tlphotocap{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.6;}
 .qcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 16px; margin-top:14px;}
 .qq{font-family:var(--serif); font-size:calc(var(--fs) * 1.0625); line-height:var(--lh); margin-top:6px;}
@@ -10073,7 +10086,7 @@ if(tbRafPending) return;
 tbRafPending = true;
 requestAnimationFrame(()=>{ tbRafPending = false; updateSlimTools(); });
 }, { passive:true });
-window.addEventListener('resize', ()=>{ fitToolbarTop(); if(view==='timeline') layoutTlSpine(); });
+window.addEventListener('resize', ()=>{ fitToolbarTop(); if(view==='timeline'){ layoutTlSpine(); layoutTlTickLabels(); } });
 /* ---------- pill nav positioning (v2.22): plain position:fixed ----------
    The v1.15-diary-port pinNav mechanism is GONE, removed structurally in
    v2.22 after the pill/FAB double-draw recurred on the user's device
@@ -15916,18 +15929,16 @@ renderTimeline();
 const items = tlBarItems, n = items.length;
 let target = 0;
 if(backIdx >= 0 && backIdx < n) target = backIdx;
-else if(curYear != null){
-  let bd = Infinity;
-  items.forEach((e, i)=>{ const y = tlBigYearNum(e); if(y == null) return; const d = Math.abs(y - curYear); if(d < bd || (d === bd && i > target)){ bd = d; target = i; } });
-} else if(n > 1 && oldN > 1) target = Math.round((curIdx / (oldN - 1)) * (n - 1));
+else if(curYear != null) target = tlIdxForYear(curYear);
+else if(n > 1 && oldN > 1) target = Math.round((curIdx / (oldN - 1)) * (n - 1));
 if(backIdx < 0) tlAnchors[r] = { fromStream: fromRegion, fromIdx: fromIdx, landedIdx: target };
 tlBarGoTo(target);
-/* v30.3: the landing is verified once the layout settles. The
-   landing above is measured before the timeline photos load,
-   and a photo takes its natural height (up to 340px) over the
-   reserved 120px — cards above the target grow and push the
-   landed card out of the top position. Drags had the v29.10
-   settle window for this; switches had none. */
+/* v30.3: the landing is verified once the layout settles.
+   v30.5: timeline photos no longer grow their cards on load
+   (fixed-height box), so the layout a switch landing is
+   measured against is stable; the settle window remains as
+   the landing's verification tail (at most one correction,
+   disarmed the moment the reader scrolls away). */
 tlBarArmSettle(target, 4000);
 /* v30.3: no full-view drift on a stream switch. The list is
    rebuilt completely in one innerHTML swap (asserted in
@@ -15941,11 +15952,14 @@ const _stick = $('tlstick'); if(_stick) driftIn(_stick, dir);
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
 const v = $('viewTimeline'); if(!v) return;
-let html = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表': '美術史年表')+'</h2><span class="topsp"></span>'
+/* v30.5: the head is emitted inside #tlstick below (one sticky
+   block: head + stream buttons + map + year bar), so it is
+   built as a fragment here and placed at the frame's top. */
+const tlHeadHTML = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表': '美術史年表')+'</h2><span class="topsp"></span>'
 +'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
-+'</div>'
-;
++'</div>';
+let html = '';
 /* v30.0: stream buttons in his 2x2 block (top row 西洋/日本,
    second row 世界史/日本史); the world map panel fills the
    right side across both rows; the year bar stays full width
@@ -15955,13 +15969,13 @@ if(!tlStreamsNow.some(s => s.key === tlRegion)) tlRegion = 'west';
 const tlRows = DS === 'designers'? [tlStreamsNow] : [tlStreamsNow.slice(0, 2), tlStreamsNow.slice(2)];
 let tlSegs = '';
 tlRows.forEach(row => { tlSegs += '<div class="tlsegrow"><span class="seg">' + row.map(s => '<button class="'+(tlRegion===s.key?'on':'')+'" onclick="setTlRegion(\''+s.key+'\')">'+s.label+'</button>').join('') + '</span></div>'; });
-html += '<div class="tlstick" id="tlstick"><div class="tl-toprow"><div class="tlsegs">' + tlSegs + '</div>'
+html += '<div class="tlstick" id="tlstick">' + tlHeadHTML + '<div class="tl-toprow"><div class="tlsegs">' + tlSegs + '</div>'
 +(DS === 'designers'? '': '<button type="button" class="tlmap" id="tlmap" onclick="openTlMapSheet()" aria-label="世界地図を大きく開く"><canvas id="tlmapCv"></canvas><span class="tlmap-tag">世界地図</span></button>')
 +'</div>';
 const t = timelineOf();
-if(!t){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
+if(!t){ v.innerHTML = html + '</div><div class="empty">年表データはまだありません</div>'; return; }
 const entries = t[tlRegion] || [];
-if(!entries.length){ v.innerHTML = html + '<div class="empty">年表データはまだありません</div>'; return; }
+if(!entries.length){ v.innerHTML = html + '</div><div class="empty">年表データはまだありません</div>'; return; }
 /* v29.2: the year bar sits between the region segment and the
    cards, sticky under the app header (see tlBarWire). */
 html += '<div class="tlbar" id="tlbar"><div class="tlbar-lab"><div class="tlbar-year" id="tlbarYear"></div><div class="tlbar-title" id="tlbarTitle"></div></div>'
@@ -16020,14 +16034,19 @@ requestAnimationFrame(layoutTlSpine);
    alive-that-year results (the whole ys* block, parser included)
    — is removed entirely; it lived only in this view and shared
    nothing with the list side's era/genre sheets. The bar does
-   NOT filter: it is a scrubber over the entry sequence. Entries
-   share the track equally (index-based), so 17,000 BC and the
-   present each get room — a linear year axis would crush
-   everything after 1800 into the last few pixels. Dragging
+   NOT filter: it is a scrubber over the entry sequence. Dragging
    scrolls the matching card to just under the bar; manual
    scrolling moves the bar with it (scroll-spy on the topmost
-   card). Region switches re-range it, because renderTimeline
-   rebuilds tlBarItems for the new region. */
+   card).
+   v30.5: the track is no longer divided equally among entries.
+   All streams of the dataset share ONE year axis (tlAxisRange):
+   same start year, same end year, same year->position mapping,
+   so a given year sits at the same bar position in every stream
+   and switching streams moves neither the year in view nor the
+   knob (his ask, 2026-11-15). Entries sit at their true years;
+   years with no entry are simply blank track. Drags convert
+   position -> year -> nearest entry, and landings snap to that
+   entry, so the sparse deep past costs no landing precision. */
 let tlBarItems = [];
 let tlCardsCache = null; /* .tlcard elements of the current render; dropped by tlBarWire on every render */
 let tlAnchors = {}; /* v30.0: per-stream return anchors (see setTlRegion) */
@@ -16044,6 +16063,49 @@ const n = tlBigYearNum(e);
 if(n == null) return String(e.years || '');
 return n < 0? '紀元前' + (-n) + '年': n + '年';
 }
+/* v30.5: the shared year axis. The range spans every stream of
+   the dataset (artists: -17000, the west stream's oldest entry,
+   to 2023; designers: 1851 to 2007), computed from the data
+   itself — never per stream, so the mapping cannot drift apart
+   between streams. Memoised per render (tlBarWire resets it):
+   a Drive sync that replaces the timeline re-renders the view,
+   which rebuilds the axis from the fresh data. */
+let tlAxisMemo = null;
+function tlAxisRange(){
+if(tlAxisMemo) return tlAxisMemo;
+const t = timelineOf();
+let min = Infinity, max = -Infinity;
+if(t) tlStreams().forEach(s => { (t[s.key] || []).forEach(e => { const y = tlBigYearNum(e); if(y != null){ if(y < min) min = y; if(y > max) max = y; } }); });
+if(min === Infinity){ min = 0; max = 1; }
+if(max <= min) max = min + 1;
+tlAxisMemo = { min: min, max: max };
+return tlAxisMemo;
+}
+function tlYearFrac(y){ const a = tlAxisRange(); return Math.max(0, Math.min(1, (y - a.min) / (a.max - a.min))); }
+function tlFracYear(f){ const a = tlAxisRange(); return a.min + Math.max(0, Math.min(1, f)) * (a.max - a.min); }
+/* the year of tlBarItems[i]; an entry without a parseable year
+   borrows its nearest dated neighbour's, so the axis mapping
+   stays total over the list. */
+function tlEntryYear(i){
+const it = tlBarItems; if(!it.length) return null;
+let y = tlBigYearNum(it[i]); if(y != null) return y;
+for(let d = 1; d < it.length; d++){
+  if(i - d >= 0){ y = tlBigYearNum(it[i - d]); if(y != null) return y; }
+  if(i + d < it.length){ y = tlBigYearNum(it[i + d]); if(y != null) return y; }
+}
+return null;
+}
+/* the entry nearest a year; ties go to the LATER entry (the
+   convention the ticks and switches already used). */
+function tlIdxForYear(y){
+let bi = 0, bd = Infinity;
+for(let i = 0; i < tlBarItems.length; i++){
+  const ey = tlEntryYear(i); if(ey == null) continue;
+  const d = Math.abs(ey - y);
+  if(d < bd || (d === bd && i > bi)){ bd = d; bi = i; }
+}
+return bi;
+}
 function tlBarPaint(){
 const knob = $('tlbarKnob'), fill = $('tlbarFill'), yv = $('tlbarYear'), tv = $('tlbarTitle');
 const n = tlBarItems.length; if(!knob || !n) return;
@@ -16056,62 +16118,67 @@ tlMapPaint();
 }
 /* v29.3: round-year ticks on the bar (his ask, 2026-11-14
    22:02 — 「バーの部分にメモリがないから年代が合わせにくい」).
-   The bar assigns equal width per entry, so a tick for a round
-   year sits at the position of the entry nearest that year —
-   dragging the knob onto the tick lands on that entry. When
-   two candidate years claim the same entry the closer one
-   wins; the rest are thinned by priority so labels never
-   collide. Rebuilt by tlBarWire on every render, so region
-   switches re-range the ticks with everything else. */
+   v30.5: ticks are placed on the SHARED axis (tlAxisRange) —
+   a candidate year inside the axis range gets a tick at its
+   true year position, identical in every stream. The old
+   per-stream candidate sets and distance caps are gone: they
+   existed to keep ticks off unrelated entries under the
+   index-based track, and per-stream sets were themselves a
+   source of the numbers disagreeing between streams. Every
+   candidate draws its tick mark; a label is added only when
+   it keeps 0.08 of the track clear of every label already
+   placed (list order is the priority), so labels never
+   collide even where the modern years crowd together. */
 const TL_TICK_YEARS = [
-  { y: 1900, lab: '1900' }, { y: 1500, lab: '1500' }, { y: 1000, lab: '1000' },
-  { y: 2000, lab: '2000' }, { y: 1800, lab: '1800' }, { y: 1950, lab: '1950' },
-  { y: 1, lab: '1' }, { y: 500, lab: '500' },
-  { y: -1000, lab: '前1000' }, { y: -5000, lab: '前5000' }, { y: -10000, lab: '前10000' }
+  { y: 2000, lab: '2000' }, { y: 1, lab: '1' }, { y: -5000, lab: '前5000' }, { y: -10000, lab: '前10000' },
+  { y: 1000, lab: '1000' }, { y: 1900, lab: '1900' }, { y: 1950, lab: '1950' }, { y: 500, lab: '500' },
+  { y: 1800, lab: '1800' }, { y: 1500, lab: '1500' }, { y: -1000, lab: '前1000' }, { y: -15000, lab: '前15000' }
 ];
-/* v30.0: per-stream tick sets + a distance cap per candidate.
-   On the 日本史 stream every entry is CE, so the BCE candidates
-   used to glue themselves onto unrelated entries (前1000 sat on
-   a medieval entry). The history set drops the BCE candidates,
-   and every candidate on every stream now refuses to claim an
-   entry farther than its cap — a missing tick is honest, a
-   wrong one is not. */
-const TL_TICK_YEARS_JH = [
-  { y: 1900, lab: '1900' }, { y: 1500, lab: '1500' }, { y: 1000, lab: '1000' },
-  { y: 2000, lab: '2000' }, { y: 1800, lab: '1800' }, { y: 1950, lab: '1950' },
-  { y: 500, lab: '500' }
-];
-function tlTickSet(){ return (DS === 'artists' && tlRegion === 'japanHistory')? TL_TICK_YEARS_JH: TL_TICK_YEARS; }
-function tlTickCap(y){ return y <= -5000? 2600: y <= -1000? 1200: y <= 1? 450: y <= 500? 220: y <= 1000? 280: 140; }
 function tlBarTicks(){
 const host = $('tlbarTicks'); if(!host) return;
 host.innerHTML = '';
-const n = tlBarItems.length; if(n < 2) return;
-const years = tlBarItems.map(tlBigYearNum);
-const claim = {};
-tlTickSet().forEach((c, pri) => {
-  let bi = -1, bd = Infinity;
-  /* ties go to the LATER entry (e.g. 1950 is 5 from both 1945
-     and 1955 — the tick belongs on 1955, clear of 1900's) */
-  years.forEach((y, i) => { if(y == null) return; const d = Math.abs(y - c.y); if(d < bd || (d === bd && i > bi)){ bd = d; bi = i; } });
-  if(bi < 0) return;
-  if(bd > tlTickCap(c.y)) return;
-  if(!claim[bi] || bd < claim[bi].d) claim[bi] = { c: c, pri: pri, d: bd, frac: bi / (n - 1) };
-});
-const placed = [];
-Object.keys(claim).map(k => claim[k]).sort((a, b) => a.pri - b.pri).forEach(t => {
-  if(placed.some(p => Math.abs(p.frac - t.frac) < 0.08)) return;
-  placed.push(t);
-});
-placed.sort((a, b) => a.frac - b.frac).forEach(t => {
+if(tlBarItems.length < 2) return;
+const a = tlAxisRange();
+TL_TICK_YEARS.forEach(c => {
+  if(c.y < a.min || c.y > a.max) return;
+  const f = (c.y - a.min) / (a.max - a.min);
   const d = document.createElement('div');
-  d.className = 'tlbar-tick' + (t.frac < 0.07? ' edge-l': t.frac > 0.93? ' edge-r': '');
-  d.style.left = (t.frac * 100).toFixed(2) + '%';
-  d.setAttribute('data-year', String(t.c.y));
-  d.setAttribute('data-idx', String(Math.round(t.frac * (n - 1))));
-  const s = document.createElement('span'); s.textContent = t.c.lab;
+  d.className = 'tlbar-tick' + (f < 0.07? ' edge-l': f > 0.93? ' edge-r': '');
+  d.style.left = (f * 100).toFixed(2) + '%';
+  d.setAttribute('data-year', String(c.y));
+  const s = document.createElement('span'); s.textContent = c.lab;
   d.appendChild(s);
   host.appendChild(d);
+});
+layoutTlTickLabels();
+}
+/* v30.5 (added on his report that the tick labels bunched up
+   on the left and overlapped): label thinning by MEASUREMENT,
+   not by a fixed fraction rule. Every tick keeps its line; a
+   label is shown only if its real rendered box — measured on
+   this screen, at this track width — keeps a clear gap from
+   every label already accepted, walking the shared candidate
+   list in priority order. A label that cannot fit is hidden,
+   never squeezed, so two labels cannot overlap at any screen
+   width. The pass is reversible: hidden labels return when a
+   wider layout gives them room, so it re-runs on resize. */
+function layoutTlTickLabels(){
+const host = $('tlbarTicks'); const track = $('tlbarTrack');
+if(!host || !track) return;
+const tw = track.getBoundingClientRect().width; if(!tw) return;
+const GAP = 6;
+const accepted = [];
+Array.from(host.children).forEach(d => {
+  const s = d.querySelector('span'); if(!s) return;
+  s.style.display = '';
+  const w = s.offsetWidth; if(!w){ s.style.display = 'none'; return; }
+  const f = parseFloat(d.style.left) / 100;
+  let l, r;
+  if(d.classList.contains('edge-l')){ l = f * tw; r = l + w; }
+  else if(d.classList.contains('edge-r')){ r = tw; l = r - w; }
+  else { l = f * tw - w / 2; r = f * tw + w / 2; }
+  if(accepted.some(a => l < a.r + GAP && r > a.l - GAP)) s.style.display = 'none';
+  else accepted.push({ l: l, r: r });
 });
 }
 function tlBarCards(){
@@ -16143,7 +16210,10 @@ return idx;
 function tlBarSetIdx(idx){
 const n = tlBarItems.length; if(!n) return;
 tlBar.idx = Math.max(0, Math.min(n - 1, idx));
-tlBar.frac = n > 1? tlBar.idx / (n - 1): 0;
+/* v30.5: the knob's fraction is the entry's position on the
+   shared year axis, not its share of the entry count. */
+const y = tlEntryYear(tlBar.idx);
+if(y != null) tlBar.frac = tlYearFrac(y);
 }
 /* v30.3: one settle mechanism for every landing (the v29.10
    drag settle, generalised to stream switches). While armed,
@@ -16182,10 +16252,12 @@ tlBarPaint();
    v29.9 every pointermove re-queried the card list, re-read
    the track rect, the target card's rect and two offsetHeights,
    then forced a scroll — several layout reads per move, and
-   the layout itself moves while timeline photos are still
-   loading (.tlphoto reserves only a 120px minimum; the image
-   takes its natural height up to 340px), so the landing was
-   computed against positions that had already shifted. Now:
+   the layout itself moved while timeline photos were still
+   loading (through v30.4 the image took its natural height
+   over a 120px reservation; v30.5 gives the photo a fixed
+   height, so card positions no longer shift on load), and the
+   landing was computed against positions that had already
+   shifted. Now:
    one measurement at pointerdown, moves served from the cache
    at most once per frame, a fresh-measured final landing on
    release, and a short settle window that re-lands on the
@@ -16201,7 +16273,10 @@ function tlBarApplyX(x){
 const g = tlBar.geom; if(!g || !g.width) return;
 tlBar.frac = Math.max(0, Math.min(1, (x - g.left) / g.width));
 const n = tlBarItems.length; if(n < 2){ tlBar.idx = 0; tlBarPaint(); return; }
-const idx = Math.round(tlBar.frac * (n - 1));
+/* v30.5: pointer position -> year on the shared axis -> the
+   nearest entry (the landing snaps to the entry, so the year
+   readout and the card always name a real entry). */
+const idx = tlIdxForYear(tlFracYear(tlBar.frac));
 tlBar.idx = idx;
 tlBarPaint();
 if(g.tops[idx] == null) return;
@@ -16218,18 +16293,37 @@ function tlBarGoTo(idx){
 const n = tlBarItems.length; if(!n) return;
 idx = Math.max(0, Math.min(n - 1, idx));
 tlBar.idx = idx;
-tlBar.frac = n > 1? idx / (n - 1): 0;
+const y = tlEntryYear(idx);
+if(y != null) tlBar.frac = tlYearFrac(y);
 tlBarPaint();
 tlBarLand(idx);
+}
+/* v30.5: the knob's fraction while scrolling — the first
+   card's year, interpolated toward the next card's year by how
+   far the reading line has travelled between the two card
+   tops, all in year space on the shared axis. The knob glides;
+   tlBar.idx (and with it the year label and the map year) stays
+   the measured first card, exactly as v30.3 fixed it. */
+function tlScrollYearFrac(cards, idx){
+const y0 = tlEntryYear(idx); if(y0 == null) return tlBar.frac;
+let y = y0;
+if(idx + 1 < cards.length){
+  const y1 = tlEntryYear(idx + 1);
+  const line = window.scrollY + tlBarStickyH() + 6;
+  const t0 = cards[idx].getBoundingClientRect().top + window.scrollY;
+  const t1 = cards[idx + 1].getBoundingClientRect().top + window.scrollY;
+  if(y1 != null && t1 > t0) y = y0 + (y1 - y0) * Math.max(0, Math.min(1, (line - t0) / (t1 - t0)));
+}
+return tlYearFrac(y);
 }
 function tlBarSyncFromScroll(){
 if(tlBar.drag) return;
 const cards = tlBarCards();
-if(cards.length < 2){ if(cards.length === 1){ tlBar.idx = 0; tlBar.frac = 0; tlBarPaint(); } return; }
+if(cards.length < 2){ if(cards.length === 1){ tlBar.idx = 0; const y = tlEntryYear(0); if(y != null) tlBar.frac = tlYearFrac(y); tlBarPaint(); } return; }
 const idx = tlBarFirstIdx();
 if(idx < 0) return;
 tlBar.idx = idx;
-tlBar.frac = idx / (cards.length - 1);
+tlBar.frac = tlScrollYearFrac(cards, idx);
 /* v30.3: while a landing's settle window is armed, a transient
    mismatch (photos still growing the layout) is the settle
    check's business — it must not eat the round-trip anchor. */
@@ -16242,6 +16336,7 @@ function tlBarWire(){
 const track = $('tlbarTrack'); if(!track) return;
 tlBar.frac = 0; tlBar.idx = 0; tlBar.drag = false; tlBar.geom = null; tlBar.pendX = null; tlBar.settleIdx = -1; tlBar.settleFixed = false; tlBarClearSettleTimers();
 tlCardsCache = null;
+tlAxisMemo = null; /* v30.5: the shared axis is rebuilt from the data this render carries */
 tlBarTicks();
 tlBarPaint();
 track.addEventListener('pointerdown', ev => {
@@ -16261,7 +16356,7 @@ const end = () => {
   if(!tlBar.drag) return;
   tlBar.drag = false; tlBar.pendX = null; tlBar.geom = null;
   const n = tlBarItems.length; if(!n) return;
-  const idx = Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))));
+  const idx = tlIdxForYear(tlFracYear(tlBar.frac));
   tlBarLand(idx);
   tlBar.idx = idx;
   tlBarArmSettle(idx, 2500);
@@ -16269,9 +16364,15 @@ const end = () => {
 };
 track.addEventListener('pointerup', end);
 track.addEventListener('pointercancel', end);
-requestAnimationFrame(()=> tlBarSyncFromScroll());
+requestAnimationFrame(()=>{ tlBarSyncFromScroll(); layoutTlTickLabels(); });
 }
 window.addEventListener('scroll', ()=>{
+/* v30.5: a pending landing correction is disarmed the moment
+   the scroll position leaves the landed spot — here, at the
+   first scroll event, not at the next probe or load. A settle
+   may only ever act while the reader is demonstrably still
+   sitting on the landing it belongs to. */
+if(tlBar.settleIdx >= 0 && Math.abs((window.scrollY || 0) - tlBar.lastY) > 3){ tlBar.settleIdx = -1; tlBarClearSettleTimers(); }
 if(tlBar.drag || tlBar.raf) return;
 if(typeof view === 'undefined' || view !== 'timeline') return;
 if(!$('tlbarTrack')) return;
@@ -16287,7 +16388,18 @@ tlBar.raf = requestAnimationFrame(()=>{ tlBar.raf = 0; tlBarSyncFromScroll(); })
    bar kept the stop-moment entry, so the big year and the
    first card disagreed (his 2026-11-15 video). Any touch or
    wheel input cancels a pending correction: the reader has
-   taken over. */
+   taken over.
+   v30.5: the photo box no longer grows on load (fixed height,
+   see .tlphoto img), so the layout a landing was measured
+   against is the layout that stays; the checks above now
+   verify a stable layout instead of chasing a moving one, and
+   the scroll listener disarms a pending correction the moment
+   the reader scrolls away from the landing. A third job joins:
+   the spine/dots are re-measured after loads, so an expanding
+   background block can no longer leave them pointing at stale
+   offsets. */
+let tlSpineRaf = 0;
+function layoutTlSpineSoon(){ if(tlSpineRaf) return; tlSpineRaf = requestAnimationFrame(()=>{ tlSpineRaf = 0; layoutTlSpine(); }); }
 document.addEventListener('load', ()=>{
 if(tlBar.drag) return;
 if(typeof view === 'undefined' || view !== 'timeline') return;
@@ -16297,6 +16409,7 @@ if(tlBar.settleIdx >= 0) tlBarSettleCheck();
    none was armed, the same load still re-derives the bar from
    the real first card — the two jobs share the event. */
 if(tlBar.settleIdx < 0) tlBarSyncFromScroll();
+layoutTlSpineSoon();
 }, true);
 window.addEventListener('touchstart', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
 window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
@@ -18380,7 +18493,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.4';
+const APP_VERSION = '30.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
