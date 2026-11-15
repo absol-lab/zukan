@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.2">
+<meta name="app-version" content="32.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -491,7 +491,24 @@ button.inflrow{cursor:pointer;}
 .inflnote{font-size:12.5px; color:var(--muted); line-height:1.5;}
 /* v32.2: relations rows — the name carries the underline that
    marks it as tappable (the app-wide promise). */
-.relname{font-size:14.5px; line-height:1.45; text-decoration:underline; text-underline-offset:3px;}
+/* v32.3 (his device feedback 2026-11-16 00:41): each relations
+   row is two columns — the other artist as a list-style mini
+   card on the left (works[0] thumbnail, name, years, so who
+   they are reads at a glance) and the relation note filling
+   the remaining space on the right. The row stays one button
+   with the v32.2 navigation. */
+.relrow{display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:12px 2px; color:var(--text); min-height:44px; font-family:inherit; cursor:pointer;}
+.relmini{flex:none; width:104px; min-width:0; display:flex; flex-direction:column;}
+.relph{position:relative; aspect-ratio:4/3; background:var(--bg2); border-radius:9px; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+.relph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.relph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.relph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center; line-height:1.7;}
+.relph .noimg .ini{display:block; font-size:22px; letter-spacing:0; line-height:1.3;}
+.relmeta{padding:5px 1px 0; display:flex; flex-direction:column; min-width:0;}
+.relname{font-family:var(--serif); font-size:13.5px; line-height:1.35; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere;}
+.relyears{font-family:var(--headfont); font-size:10.5px; color:var(--muted); letter-spacing:.05em; line-height:1.35; margin-top:1px;}
+.relnote{flex:1; min-width:0; font-size:12.5px; color:var(--muted); line-height:1.6; overflow-wrap:anywhere; padding-top:2px;}
+.relrow .inflgo{align-self:center;}
 .inflgo{flex:none; color:var(--muted); font-size:18px;}
 .bizpills{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; scrollbar-width:none;}
 .bizpills::-webkit-scrollbar{display:none;}
@@ -12873,7 +12890,7 @@ if(String(r.from) === String(a.id)){ other = r.to; dir = 'out'; }
 else if(String(r.to) === String(a.id)){ other = r.from; dir = 'in'; }
 else return;
 const t = artistById(other); if(!t) return;
-const row = { id: t.id, name: t.name, note: r.note || '', pfx: dir === 'in' };
+const row = { id: t.id, name: t.name, years: t.years? yearsDisplay(t): '', note: r.note || '', pfx: dir === 'in' };
 if(r.kind === '影響') (dir === 'out'? g.received: g.given).push(row);
 else if(r.kind === '師弟・つながり') g.ties.push(row);
 else if(r.kind === '同じ系譜'){ const k = String(t.id); if(seenGen[k]) return; seenGen[k] = 1; g.genealogy.push(row); }
@@ -12881,10 +12898,21 @@ else if(r.kind === '比較される') g.compared.push(row);
 });
 return g;
 }
+/* v32.3: the row is two columns (his device feedback
+   2026-11-16 00:41) — left, the other artist as a list-style
+   mini card (works[0] thumbnail + name + years, the list
+   card's own construction, so who they are reads at a
+   glance); right, the relation note. An artist with no works
+   gets the list's own 図版なし plate, so the mini card never
+   collapses. */
 function relRowHTML(r, withPrefix){
 const note = r.note? (withPrefix && r.pfx? esc(r.name)+'の記述：' + esc(r.note): esc(r.note)): '';
-const inner = '<span class="inflmain"><span class="relname">'+esc(r.name)+'</span>'+(note? '<span class="inflnote">'+note+'</span>': '')+'</span>';
-return '<button class="inflrow" onclick="openDetail(\''+escA(r.id)+'\')">'+inner+'<span class="inflgo">›</span></button>';
+const t = artistById(r.id);
+const th = t? thumbOf(t): null;
+const ph = th? '<div class="relph" data-relid="'+escA(r.id)+'">'+imgHTML(th, 256)+'</div>'
+: '<div class="relph"><span class="noimg"><span class="ini">'+esc((Array.from(r.name||'')[0]||''))+'</span>図版なし</span></div>';
+const mini = '<span class="relmini">'+ph+'<span class="relmeta"><span class="relname">'+esc(r.name)+'</span>'+(r.years? '<span class="relyears">'+esc(r.years)+'</span>': '')+'</span></span>';
+return '<button class="relrow" onclick="openDetail(\''+escA(r.id)+'\')">'+mini+'<span class="relnote">'+note+'</span><span class="inflgo">›</span></button>';
 }
 function renderDetail(){
 relsEnsure();
@@ -13348,6 +13376,16 @@ if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50
 else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 }
 });
+/* v32.3: the relations rows' mini-card thumbnails (the other
+   artist's works[0]) — same wiring shape as the works tiles. */
+v.querySelectorAll('[data-relid]').forEach(ph=>{
+const t = artistById(ph.dataset.relid); const w = t? thumbOf(t): null; if(!w) return;
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
 /* v27.9 (§6.4-1 continued): two frames after this render — the
    forward slide is under way and the detail is on screen —
    promote any still-pending visible plate in the detail to a
@@ -13357,7 +13395,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 if(state.detailId == null || String(state.detailId) !== String(a.id)) return;
 const vv = $('viewDetail'); if(!vv || vv.classList.contains('hidden')) return;
 const vh2 = window.innerHeight || 800;
-vv.querySelectorAll('[data-workidx],[data-drawidx]').forEach(ph2=>{
+vv.querySelectorAll('[data-workidx],[data-drawidx],[data-relid]').forEach(ph2=>{
 const sp2 = ph2.querySelector('.imgholder');
 if(!sp2 || !sp2._work || sp2._imgJob || sp2.querySelector('img')) return;
 const r2 = sp2.getBoundingClientRect();
@@ -16327,6 +16365,59 @@ function tlPhotoHTML(e){
   const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
   return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
 }
+/* v32.3: one resolver for every timeline artist chip (cards,
+   era pages, map sheet) and for eraWorks. Through v32.2 a
+   chip became a button only when the entry carried a link
+   field naming the artist exactly — 49 registered artists
+   whose chips carried no link stayed plain, so the amber =
+   tappable colour rule read as random (his report
+   2026-11-16 00:49: in 1970 Heizer was amber, Smithson
+   white). Resolution now falls back to the label itself:
+   exact name, then name_kana / name_native, then a unique
+   containment match either way （ドミニク・アングル ->
+   ジャン＝オーギュスト＝ドミニク・アングル, 雪舟等楊 -> 雪舟,
+   ラスコー洞窟壁画 -> ラスコー洞窟）. A name that still does
+   not resolve stays a plain tag — never a guessed link. */
+function tlArtistTarget(x){
+  const link = (x && typeof x === 'object')? x.link: null;
+  if(link){ const a = DB.artists.find(r => r.name === link); if(a) return a; }
+  const label = (x && typeof x === 'object')? String(x.label || ''): String(x || '');
+  if(!label) return null;
+  let a = DB.artists.find(r => r.name === label)
+       || DB.artists.find(r => (r.name_kana || '') === label)
+       || DB.artists.find(r => (r.name_native || '') === label);
+  if(a) return a;
+  if(label.length >= 3){
+    const cands = DB.artists.filter(r => r.name && (r.name.indexOf(label) >= 0 || label.indexOf(r.name) >= 0));
+    if(cands.length === 1) a = cands[0];
+  }
+  return a || null;
+}
+/* v32.3: the same-work test for timeline photos. The
+   timeline-photos pass sourced most entry photos FROM the
+   registered works themselves (the same Drive file), so an
+   entry's photo and its era works are often the same work —
+   37 entries share a file id with a registered work. The
+   file id is the reliable identity (the titles differ: the
+   1967 entry photo is 《布のヴィーナス》, the registered
+   caption 《ぼろのヴィーナス》). */
+function tlDriveId(u){
+  const s = String(u || '');
+  const m = /[?&]id=([\w-]+)/.exec(s) || /\/d\/([\w-]+)/.exec(s);
+  return m? m[1]: null;
+}
+function tlWorkImgId(w){
+  if(!w || !w.img) return null;
+  return w.img.fileId || tlDriveId(w.img.url);
+}
+function tlPhotoImgId(e){
+  return (e && e.photo)? tlDriveId(e.photo.url): null;
+}
+function tlSameWorkAsPhoto(e, w){
+  const pid = tlPhotoImgId(e);
+  if(!pid) return false;
+  return tlWorkImgId(w) === pid;
+}
 /* v29.0: a blank line in the staged detail/background text is
    a paragraph break — render it as separate paragraphs, never
    as a wall of text. */
@@ -16505,9 +16596,8 @@ const arts = Array.isArray(e.artists)? e.artists: [];
 const chips = [];
 arts.forEach(x=>{
 const label = (x && typeof x==='object')? String(x.label||''): String(x||'');
-const link = (x && typeof x==='object')? x.link: null;
 if(!label) return;
-const target = link? (DB.artists.find(a=>a.name===link) || null): null;
+const target = tlArtistTarget(x);
 if(target) chips.push('<button class="tlchip" onclick="openDetail(\''+escA(target.id)+'\')">'+esc(label)+'</button>');
 else chips.push('<span class="tlchip">'+esc(label)+'</span>');
 });
@@ -16515,7 +16605,7 @@ if(chips.length) html += '<div class="tlchips">'+chips.join('')+'</div>';
 /* v3.3: photo strip — this era's works from the encyclopedia
    itself (verified images only, nothing new to source), plus the
    door into the era detail view. */
-const ew = eraWorks(entries, spans, i);
+const ew = eraWorks(entries, spans, i).filter(c=>!tlSameWorkAsPhoto(e, c.w));
 if(ew.length){
 const picks = []; const seenA = {};
 ew.forEach(c=>{ if(picks.length<3 && !seenA[c.a.id]){ seenA[c.a.id]=1; picks.push(c); } });
@@ -17478,9 +17568,8 @@ if(!e || !Array.isArray(e.artists)) return '';
 const cs = [];
 e.artists.forEach(x => {
   const label = (x && typeof x === 'object')? String(x.label || ''): String(x || '');
-  const link = (x && typeof x === 'object')? x.link: null;
   if(!label) return;
-  const target = link? (DB.artists.find(a => a.name === link) || null): null;
+  const target = tlArtistTarget(x);
   if(target) cs.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
   else cs.push('<span class="tlchip">' + esc(label) + '</span>');
 });
@@ -17692,9 +17781,7 @@ function eraWorks(entries, spans, i){
   const sp = spans[i]; if(!sp || sp.start==null) return [];
   const out = [];
   (Array.isArray(e.artists)? e.artists: []).forEach(x=>{
-    const link = (x && typeof x==='object')? x.link: null;
-    if(!link) return;
-    const a = DB.artists.find(r=>r.name===link); if(!a) return;
+    const a = tlArtistTarget(x); if(!a) return;
     const ws = displayWorks(a);
     ws.forEach((w, wi)=>{
       const y = workYearOf(w);
@@ -17732,11 +17819,16 @@ function renderEra(){
     +(e.summary? '<div class="tlsum">'+esc(e.summary)+'</div>': '');
   html += tlPhotoHTML(e);
   const wiring = [];
-  if(ew.length){
-    const h0 = ew[0];
-    wiring.push(h0.w);
-    html += '<button class="erahero" aria-label="'+escA(h0.w.caption||'')+'" onclick="openEraWork(\''+escA(h0.a.id)+'\', '+h0.wi+')">'+imgHTML(h0.w, IMG_SIZE.plate)+'</button>'
-      +'<div class="small" style="margin-top:6px;">'+esc(h0.a.name)+'　'+esc(h0.w.caption||'')+'</div>';
+  /* v32.3: one work, one showing per entry (his report
+     2026-11-16 00:49 — the 1967 entry showed Pistoletto's
+     Venus of the Rags as the entry photo AND again big
+     below the tags). The hero is the first era work that is
+     not the entry photo's work; the gallery lists the rest. */
+  const hero = ew.find(c => !tlSameWorkAsPhoto(e, c.w)) || null;
+  if(hero){
+    wiring.push(hero.w);
+    html += '<button class="erahero" aria-label="'+escA(hero.w.caption||'')+'" onclick="openEraWork(\''+escA(hero.a.id)+'\', '+hero.wi+')">'+imgHTML(hero.w, IMG_SIZE.plate)+'</button>'
+      +'<div class="small" style="margin-top:6px;">'+esc(hero.a.name)+'　'+esc(hero.w.caption||'')+'</div>';
   }
   const detail = e.detail || (DS==='designers'? (TL_DESIGN_DETAIL[e.title] || ''): '') || e.background || '';
   if(detail) html += '<h3 class="subhead">詳しく</h3>'+tlParasHTML(detail);
@@ -17745,16 +17837,16 @@ function renderEra(){
   const chips = [];
   arts.forEach(x=>{
     const label = (x && typeof x==='object')? String(x.label||''): String(x||'');
-    const link = (x && typeof x==='object')? x.link: null;
     if(!label) return;
-    const target = link? (DB.artists.find(a=>a.name===link) || null): null;
+    const target = tlArtistTarget(x);
     if(target) chips.push('<button class="tlchip" onclick="openDetail(\''+escA(target.id)+'\')">'+esc(label)+'</button>');
     else chips.push('<span class="tlchip">'+esc(label)+'</span>');
   });
   if(chips.length) html += '<h3 class="subhead">この時代の人々</h3><div class="tlchips" style="margin-top:4px;">'+chips.join('')+'</div>';
-  if(ew.length){
+  const gal = ew.filter(c => c !== hero && !tlSameWorkAsPhoto(e, c.w));
+  if(gal.length){
     html += '<h3 class="subhead">この時代の作品（図鑑から）</h3><div class="gallery">'
-      + ew.map(c=>{ wiring.push(c.w); return '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+hiresBadgeHTML(c.w)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'（'+c.y+'年）</div><div class="sub">'+esc(c.w.caption||'')+'</div></figcaption></figure>'; }).join('')
+      + gal.map(c=>{ wiring.push(c.w); return '<figure class="work"><div class="ph" onclick="openEraWork(\''+escA(c.a.id)+'\', '+c.wi+')">'+imgHTML(c.w, IMG_SIZE.thumb)+hiresBadgeHTML(c.w)+'</div><figcaption><div class="sub">'+esc(c.a.name)+'（'+c.y+'年）</div><div class="sub">'+esc(c.w.caption||'')+'</div></figcaption></figure>'; }).join('')
       + '</div>';
   }
   html += '</div>';
@@ -17775,13 +17867,17 @@ function layoutTlSpine(){
   const cards = Array.from(wrap.querySelectorAll('.tlcard'));
   const H = wrap.offsetHeight;
   if(!cards.length || !H) return;
-  const n = cards.length, stops = [];
-  cards.forEach((c, i) => {
-    const top = c.offsetTop, h = c.offsetHeight, col = eraColor(i, n);
-    stops.push(col+' '+(((top + h*0.18)/H)*100).toFixed(2)+'%');
-    stops.push(col+' '+(((top + h*0.82)/H)*100).toFixed(2)+'%');
-  });
-  spine.style.background = 'linear-gradient(to bottom, '+stops.join(', ')+')';
+  const n = cards.length;
+  /* v32.3 (his device feedback 2026-11-16 00:46): the spine
+     no longer walks the hue circle era by era — against the
+     wood theme's browns the old colors floated and felt
+     wrong. The bar is now one calm yellow-gold gradient
+     anchored on the accent amber #e8b45a: light gold #f2cd85
+     at the top, through #e8b45a, to deep bronze #b57e2c at
+     the bottom — bright enough to read as a line, quiet
+     enough to sit inside the brown ground. Only this bar
+     changed: the era dots and the era bands keep eraColor. */
+  spine.style.background = 'linear-gradient(to bottom, #f2cd85 0%, #e8b45a 45%, #b57e2c 100%)';
   if(dots) dots.innerHTML = cards.map((c, i) => '<span class="tldot" style="top:'+(c.offsetTop + 20)+'px; background:'+eraColor(i, n)+';"></span>').join('');
 }
 
@@ -19464,7 +19560,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.2';
+const APP_VERSION = '32.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -20214,6 +20310,20 @@ function maybeFirstRender(){
 .xcard{display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 0 10px; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.25);}
 .xcard .xn{font-family:var(--headfont); font-size:17px; font-weight:600;}
 .xcard .xm{color:var(--muted); font-size:12.5px; margin-top:3px; line-height:1.55;}
+/* v32.3: maker plates — the list card's plate construction
+   carrying the person's portrait (makers.json photo: a Drive
+   fileId in the 図鑑画像 folder). A maker without a photo
+   gets a designed initial tile in the wood theme's tones —
+   a large Mincho initial inside a thin frame — never an
+   empty image slot (his words: 画像なしはなしね). */
+.mkph{position:relative; aspect-ratio:4/3; background:var(--bg2); border-radius:9px; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+.mkph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.mkph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.mkini{background:radial-gradient(130% 130% at 28% 18%, var(--card2), var(--bg2));}
+.mkini::before{content:''; position:absolute; inset:7px; border:1px solid var(--line); border-radius:6px; pointer-events:none;}
+.mkini-c{font-family:var(--serif); font-size:44px; line-height:1; color:var(--accent); opacity:.92;}
+.mkph.big{width:184px; flex:none; margin:0 0 12px;}
+.mkph.big .mkini-c{font-size:62px;}
 .xchip{display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 9px; font-size:12px; color:var(--ink); background:var(--card2); margin:0 6px 6px 0;}
 button.xchip{cursor:pointer;}
 .xchip.acc{border-color:var(--accent); color:var(--accent);}
@@ -20308,6 +20418,31 @@ async function xLoadMakers(){
   }catch(e){}
   return XMAKERS;
 }
+/* v32.3: a maker's portrait work object — makers.json carries
+   it as photo (a Drive fileId in the 図鑑画像 folder; a plain
+   URL is also accepted). No photo -> null, and the plate
+   falls back to the designed initial tile. */
+function xMakerWork(m){
+  if(!m || !m.photo) return null;
+  const p = String(m.photo);
+  return /^https?:\/\//.test(p)? { img: { url: p }, caption: m.name || '' }: { img: { fileId: p }, caption: m.name || '' };
+}
+function xMakerPlateHTML(m, big){
+  const w = xMakerWork(m);
+  if(w) return '<div class="ph mkph' + (big? ' big': '') + '" data-mkphoto="' + escA(String(m.photo)) + '" data-mkname="' + escA(m.name || '') + '">' + imgHTML(w, 256) + '</div>';
+  const ini = esc((Array.from(m.name || '')[0] || ''));
+  return '<div class="ph mkph mkini' + (big? ' big': '') + '"><span class="mkini-c">' + ini + '</span></div>';
+}
+function xWireMakerPlates(scope){
+  (scope || document).querySelectorAll('.mkph[data-mkphoto]').forEach(ph => {
+    const span = ph.querySelector('.imgholder'); if(!span) return;
+    const p = ph.dataset.mkphoto;
+    span._work = /^https?:\/\//.test(p)? { img: { url: p }, caption: ph.dataset.mkname || '' }: { img: { fileId: p }, caption: ph.dataset.mkname || '' };
+    const sr = span.getBoundingClientRect();
+    if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, span._work);
+    else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
+  });
+}
 function xOpenMakers(){
   XSTACK.length = 0;
   xGo('立役者', b => {
@@ -20327,13 +20462,21 @@ function xMakersList(b, d, q){
     const people = (d.artists || []).filter(m => m.section === sec && match(m));
     if(!people.length) return;
     h += '<div class="xsec">' + esc(sec) + '</div>';
+    /* v32.3: the same card display as the artist/designer
+       lists — plate (portrait or initial tile), name, years,
+       roles — in the list's own two-column grid. */
+    h += '<div class="grid def">';
     people.forEach(m => {
-      h += '<button class="xcard" onclick="xMakerDetail(' + m.id + ')"><span class="xn">' + esc(m.name) + '</span>'
-        + (m.years? ' <span class="small">' + esc(m.years) + '</span>': '')
-        + '<div class="xm">' + esc((m.roles || []).join('・')) + (m.key_moves? '｜' + esc(m.key_moves): '') + '</div></button>';
+      h += '<figure class="work" onclick="xMakerDetail(' + m.id + ')">' + xMakerPlateHTML(m)
+        + '<figcaption><div class="nm">' + esc(m.name) + '</div>'
+        + (m.years? '<div class="yrs">' + esc(m.years) + '</div>': '')
+        + ((m.roles || []).length? '<div class="sub">' + esc(m.roles.join('・')) + '</div>': '')
+        + '</figcaption></figure>';
     });
+    h += '</div>';
   });
   b.innerHTML = h;
+  xWireMakerPlates(b);
   const inp = $('xmkq');
   if(inp){ inp.addEventListener('input', () => { const v = inp.value; const pos = inp.selectionStart; xMakersList(b, d, v); const n = $('xmkq'); if(n){ n.focus(); try{ n.setSelectionRange(pos, pos); }catch(e){} } }); }
 }
@@ -20341,7 +20484,10 @@ function xMakerDetail(id){
   const d = XMAKERS; if(!d) return;
   const m = (d.artists || []).find(x => x.id === id); if(!m) return;
   xGo(m.name, b => {
-    let h = '<div style="font-family:var(--headfont); font-size:22px; font-weight:700;">' + esc(m.name) + '</div>';
+    /* v32.3: the same portrait plate (or initial tile) as the
+       list card, at the head of the person page. */
+    let h = xMakerPlateHTML(m, true);
+    h += '<div style="font-family:var(--headfont); font-size:22px; font-weight:700;">' + esc(m.name) + '</div>';
     if(m.name_kana || m.name_latin) h += '<div class="small">' + esc([m.name_kana, m.name_latin].filter(Boolean).join(' / ')) + '</div>';
     if(m.years) h += '<div class="small">' + esc(m.years) + '</div>';
     h += '<div style="margin-top:8px;">' + (m.roles || []).map(r => '<span class="xchip acc">' + esc(r) + '</span>').join('') + '</div>';
@@ -20382,6 +20528,7 @@ function xMakerDetail(id){
       });
     }
     b.innerHTML = h;
+    xWireMakerPlates(b);
   });
 }
 function xBookHTML(bk){
