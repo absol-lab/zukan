@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.3">
+<meta name="app-version" content="30.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -16300,33 +16300,83 @@ if(tlBar.settleIdx < 0) tlBarSyncFromScroll();
 }, true);
 window.addEventListener('touchstart', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
 window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
-/* ==== v30.0 world map panel ====
-   A dot-grid world map (Natural Earth 110m, public domain,
-   rasterised to 112x45 land cells — staging in
-   ~/workspace/art-labo/timeline-map/) in the timeline's sticky
-   frame, right of the stream buttons. Pins are PLACES, not
-   movements: a pin lights while any of its movements is active
-   at the year the bar is showing, fading in/out over a 15%
-   bleed of the movement's span (clamped to 2-25 years, so even
-   short movements get a visible fade). The map follows the
-   bar: tlBarPaint repaints it. Tapping the panel opens a sheet
-   with a bigger map, the year's lit movements, and per-place
-   cards whose rows jump into the timeline at that entry (year
-   flow preserved) and whose artist chips open artist pages.
-   Pin targets resolve their entries by title, so data-side
-   insertions never break the links. */
-const TL_MAP = {"grid":{"cols":112,"rows":45,"b64":"gAAAAAAAAAAAAAAAAAfgAcAAAwAAAAAAAB/v/+ACAAAAYAAAAAAIF5//4AAAIB/4BAAAABgKgP+AAGAD////4AHAA5vw///8AgAAAAAAH///////MA////////+B////GHgAHv//////zgPv//BwEACEf/////gwAMD/+HwAAYv/////8CAAAH//fwAA///////4AAAAP//+AAD///////gAAAAf//mAAHvHf///9AAAAB//9AABxdu////AAAAAH//gAAGAv7///IAAAAAf/8AAAfgX///8OAAAAA//wAAD/I////4AAAAAB/8AAAP//3///gAAAAAB4AAAB//3j//8AAAAAAPgAAAP///x+/gAAAAAAOCAAA//++Dx0AAAAAAAZBAAD//9wMDgAAAAAAAOAAAP//4AQGAAAAAAAAIAAAf//4BAAIAAAAAAAbwAA9//gAAEAAAAAAAAfwAAD/8AAEwAAAAAAAB/wAAP/gAA3AAAAAAAAP/AAAf8AABEHAAAAAAA//gAB/wAACAOAAAAAAD//AAH/AAAAAEAAAAAAH/8AAf8gAAANAAAAAAAP/gAB/2AAAD2BAAAAAAf+AAH8YAAAf4AAAAAAA/4AAPxAAAH/wAAAAAAH/AAA/AAAAf/gAAAAAAfwAAB4AAAB/+AAAAAAB/AAAHAAAAHH4AAAAAAH4AAAAAAAAAHAQAAAAAeAAAAAAAAAAABgAAAABwAAAAAAAAAAAAAAAAAHAAAAAAAAAAABAAAAAAwAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAMgAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
-let tlMapBits = null, tlMapBase = null, tlMapBaseKey = '', tlMapSel = null, tlMapRows = [];
-function tlMapDecodeBits(){
-if(tlMapBits) return tlMapBits;
-const bin = atob(TL_MAP.grid.b64);
-const bytes = new Uint8Array(bin.length);
-for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-tlMapBits = bytes;
-return bytes;
-}
-function tlMapLand(i){ const b = tlMapDecodeBits(); return (b[i >> 3] >> (7 - (i & 7))) & 1; }
+/* ==== world map panel (v30.0; map rebuilt in v30.4) ====
+   A real-coastline world map (Natural Earth 110m land, public
+   domain; polygons simplified with Douglas-Peucker at 0.3 deg,
+   quantised to 0.1 deg and delta-encoded into TL_MAP.land —
+   generator in ~/workspace/art-labo/v30-4/gen_map.py) in the
+   timeline's sticky frame, right of the stream buttons. The
+   projection is the one fixed in v30.2: x from (lon + 30),
+   y from (85 - lat) / 145, fitted uniformly into the canvas
+   (letterboxed over the sea). Places are not pins: an active
+   place GLOWS — a soft warm-amber halo centred on its own
+   coordinates, its strength following the activity fade
+   (inside a movement's span full, easing over a 15% bleed of
+   the span, clamped to 2-25 years, so even short movements
+   get a visible fade; a place with several movements running
+   gets a larger halo). The map follows the bar: tlBarPaint
+   repaints it; per year only the glow layer is redrawn, the
+   coastline base is cached per size + theme. Tapping the
+   panel opens a sheet with a bigger map, the year's lit
+   movements, and per-place cards whose rows jump into the
+   timeline at that entry (year flow preserved) and whose
+   artist chips open artist pages. Place targets resolve
+   their entries by title, so data-side insertions never
+   break the links. */
+const TL_MAP = {"land":{"u":10,"d":"spG42C2BSHKdFVOVB9BTvBhBoCaQXUHOC;mvGi1CQIFIbGHHRKJJ;2+Bm0CfCEXgBK;0tD0uCUGmBDHuBFFNORBZtBAJ;8+D2uCEIQHEIdqBIKfGRiBZOzBHGVmCpBgBnBOJ;8/D4rCOUCNMWQGiBDJePBXsBPIJHKPFLVHQNCbpB5BiBQ;m7DgjCHEXNdf;oiE+/BESXAGP;07Du/BFCFN;m7Du+BEQLFBP;iyB09BGqBNACY1BgFhBObLN5BWnBH1BIXmBHcXERICSjB;wsD49BGOOFQQUwCwBcSmBUCEWoBkBEQKoBJ4B3BgDFiBhBInBYbLCJbS7BPTlBdJCXJOREWhBBNjBoBPHRlB7BVnDOlBQJSrCClBWbBfPALOFAhBvBtDKIHRQOPlBOzBCOINqBV0CTadCRORISKDHJGJKECNabcHaWYCDLYlBoBHAJPFMD6BWYFKKTSJiB+C2BOFQvBDZM1BIFGK;i4D27BGGNAHL;m+Cw7BhBLSD;q3Dq7BTBDL;wgDu7BRCKRWLsBFrBU;u8Cm6BYMvBG;y/Cm6BBM5BCQLMG;02Cs5BmBCGHiDmBVI9DT5BROTYC;+mDg5BJOGd;m0Ds5BNFNb;4xDy4BjBQlBLeDGJCKMAQNBLQC;oiDq3BFGRL;qkDi3BGQ5BJEL;uyD+3BFGHThBVEDaO;ymD81BGgBWMQVoBL+DsBcgBgBMGKRCEOmCgC3BJlBnBZJbMCQPGfDRPTDdGWVPlBzClBNMDPPJiBLdAhBZmBJ;ghDo0BPUNElCADOSSwBPAKJDZUiBkCLGHFKPXCCHNLCTNGC0BTBClBNNYjCSNoBI;mjDu0BBQJBAaNlBEPGH;80C64BVApBhBhC3CNfhCpCsBG+B+BWAqBoBHQUIKYYQ;u8Cg0BWSXCFgBROJyBBFVIHLXHXIHJdBBZTVAjBMNeCEPgBHqCrCyBelBsBOS;4hD8vBCYFSHTHKAYXLAXLHdSDFIPYNGKiBPBPQK;wlCoxBREHPDbIfiBuB;2tG6uBVAGNMB;ogD2uBTaLNKXMADMQR;68CqvBZSuB7BEQ;++C2tBYGVY;mhDwtBGYPFGSJGJbMCAHLP;2+C+sBDSTZ;y+CypBSAGcPYAgBuBKCaXVDINLbBILFFBIJLDbIIIxB;4qG4pBfGAJ;2jG+pBbFcDOK;smG2oB0BGiBUHInBDNQTLdEJNqBAJPLB;23CupBPKPFBRsBNEI;yyEmpBHAAXWQ;+hG8mBcG0BkBeInCIOJTFLR9BLHDID/BO2BZ;qjGomBRPEL;w+C8mBJQLfchBKG;kjGwkBVEBH;0jGwkBDOLV;8mD6fHSHFPQLFKV;soB6efWNJ;yhB6e0BIfIXH;ucodHgB1BTEJ;wYsbMOBaRGLpB;8qD+dNoB9BKbWNFAPxCOUQNgBLKJHERTTgCpB+BBUjBOKoBbS7BWDKcAQRU;4Y4aHQNRSN;2sDwZOEOHEWbGRUfNJWVADTKNWBMrB;+rGiYiBCRIXHFFIF;ymF6WrBFvBXFP0BK;2wGuVNSOFMEFGuBIFOODKYJQVBATXSLAOJTD7BAKNHDkBrBeRKA;6gFsTUBHWSQlBXBP;wsDuVWiBdFLcSWAOPLLOCjDLRCbSJHHKD;wOuUjBMbBQVJT8BZUM;2asSLQXTeF;k0EuRTINPqBHKG;8QwQVUqBBViBUCUaOCSgBYENSIKRKlCCrBOLDwBXlBLWFLJENeCELNLXDDTLKLdYjB;osE2PlBFkBB;miGoOHMNHKH;ygG+NXKRFQH;uoEoN8BKPGpBF;w+FiMEKiDeRGpBNvBUHJZCQJKhB;2JyLDOWOZOrCSxCJUHrBJkBJpBDMNgBBeOeLaGgBJ;qkGmLVADJIJSDQG;ojEgKmDkBBMOGFP2BEoBSzBMBSHE7BLDJrBAJFEHXEKKLIzBIoBgBDOjBDpCQjCkBbNzBQJHRKbDdiBCIWEBcTCHQIIhBMHWdEFWbSb3CKbSTgBFqD7BQdXCLSzBWPZzBIxBgBQOpCGANdDZK9DEtE2CgBCeQMJWCcWCSPUJ4BlBqBhC6BbMXJtBcFUrBWBMUMWkBHiBzBOHtBQDNPdHMdTF/BUWdLJzBgBTCJKcQAKQEWNgBICMbElBkBUKiB2BAQLEQSHgBLCvBoC3BiBhBMHF7BWHWJAAVbFzBmBDOgCsCImBBiBvC+BHLGNfNRfjBHEPRAR0COAMkByBmBY0CNCpBfZpCflBDMKnCftDjBYXFCrBLdZTTpBRADUZFBIlBEAQJKbO5ByBAIlBOHuDLCHQGGRGPSRR9BtERrDpBKZXIHFFlBVTdhDGxCLHZJBjBM/BbbrBpBCQuBcUMmBEXMEDYIMsBBwBtBIsBmBMWaZmBNEBavBaAI5BQDQlCgB9BOLMdCRzBCfjB1BjBjBLvBTLvBrCJAGbTmBdtBiBsCgBsBDQcWMkCSMSqBwCmCLOmBaiEfBcdsCjB0BzEoEVqBJYOSDiBauBGuCNc1BezBsBBOSgBBoB5BgBGKHqBvB4BlBiBvBW/BA7BSXNJdGR7B7CRjDxBvCDbS/BWdCZPdGLZnC9BtCUzCZhBzBKfnBfA9CgBzBJjCQhDjCFVfnBjBZBbRVSRIfA5BPRW1B6BtCcJqBjBDZKbwBdUhBqCMqCbqEFWJOEAKSDJKGOBSLKCKiDeKSkCWUNAXcL0EmBqBNUOEHgBGQJc9BCXFJIHdBNMdCPJnBKpBLZdKPLJWReBINmBCwBRiBA+BWqBBYJBV/CzBeTJHcNxCUAMeEDIvBOLDEHTFWLFDfDAHTCVgBPCVuBWeXCXQFLXBXEOMJCZFQWHEUQAKRDGKLCISNAPHLdhBnBCblCjBVfLBFIBPPBPGGayBqBQAAK0BaDIbLHMOIBKTSHCIVNThChBfXFTZJvBalBFdGBYrBSViBIMrBoBtBATQVTvBACbNHOpBLrBcN6DGKLEnBjBfdHBN8BCFXSKuBPGPsBNSdkCHOJNdIfqBLFQMIZUGSUEAIgBJgBOmCVqBKEJcFDfKLSHQQQAGbTDBL+CFWJTJnDOfRETHRILuClBBHbJhBGTOEMnCiBNciBYRWVGR0BXBLQXAxBxCnBYZEbJNjCuDxB2ChC4CnBsCHePqCD+BOZGWMUFkFoBQIAOVKfGnDLgBOCeqBKCHLJOFwBMQFLNuBTmBIKNPLKLNL4BIKKXCAMOGgBDELwDbQCTMqDNWMYLVLMH6BIkDcOJVPXBIHLVgCnB2BEEMTQUUDcWMvBqBWC2BfLJINVBDJQTZPkBNDNUKHUWCJNiBHqBAkBMRRBT+DFPLYL4DRmCCyCJYRwBHiBGbGuBCEKuCD8BSDK5CWoCEKOqBJ4EQCNqCCgBMKMLI4BYUTgBI4DBPRcH0FMmCc4DBQIBQYGqEDkBSYFPNKHoDE,uxBqbaUPCNcGYgBO8BBCnBPFGNNAERkBBTVPEBQFhBXFTdUCANiBBAfjBBpBMvBkBSSBO;g4F+JNGlCLgBN;ojEuIwBEvBK;m7F2JAUaPYOFOUOiBfCV6BEaKCKPMOKBKlBOxBDdkBXObCPIBMVEZQTWJoBeCSiBcD2DoB2BEEkBOWeUQFKVJdNLgBHiBbPfXNYVPvB2CBwBakBAGqBgBQeLgBdgCiCHO6CiBIQWKCY1CmB/DA9CkCwBdoCRSKRMMmBaKiBDUVAOOIvDwBNBBRkBP1BECG9BWLOBOQOpCOkBApBCRmBLLIWPYENNXCUNBOGMuBjCqBrBqBAcY+BFiBPAJNXnBAXXTTKZP3BCHCISTEbLrBA3BcPSGePmCgB+BmBYwBLYLKhBgCJGOTyBJDBoBJMuCBgBOEULgCgBqBQEkBP4BUWPEXMJeBgBXOGPOEuBOPHVYHGPiBgBoBAaKMJwBBPGGKgBKCQgBMMYcQ+BE2BgBQuBKECOPQGGkBCAUQL6BUKKDMYFkCK4BmBgBGSsBHiBnCyCLgDfwCVWzBI7BeRUH4BhDyDVMZBrBTBKaSDOOIBKRadK9BCEmBLGvBCCUOGKHGMhBSHehBMFOoBSHSXMLYZQSiBZBZMDStCdNnCejBdFSPGhBYIKpBNFFaLDWtCHpBIBkB9CBlCMZO7EDdVR5C3BrCzEdVIHJTgBnBDJHKLJCVQlBYLKXaXHFAzBNPAPbLRQKMRGDLvBLBNbTBKLFAXnBjBEHpCLlCtBlBKpEzBnBfDJITNbhC3BAP5BzBRrBPHRDCgB+BmCSwBaSLMrBlBBZ3BhBKAIRZTjBjCXTpBLrCxDBxBM1BP1BgBEKSDlB7CjBLRELZJDP1BlBDRZPLRxBBhCZvEbVEEOpCQGdWFFFjCmBOKRQpBOpBc/DgBuE/BOZpBKZNfICRlBDdNBLNHefeAuBNNLOHzCIbFhBToCRQABKqBAlDtBMJ8BJaRqDVuBO2GKuEaqBNeC+BNOIUNuBUcNCQ4BH+DSaKbKsDBUMWJTHMHqBBkBQ4BI+BDDLSDgBIASMPQAKTtBTCVYNuBMcWRK;ssFuHJIuBFaKYJiBaKHNTmBAWISiBmCUBIfCMIFGnCHxEOLJrBDXPiDHtDBJHuBHhCFeV2BL;uyFoHRMdN;ikGuH/BIbLKJuBC;09FsHQOSP0BJiBWDM8BNoCUCKmBF2CeSSjBKuCSeSeAFOhBY3BbZCBM4BaMUFOrCT0BkB/CTXJGF5BT5BKRHONuCDFFgBdDHvCXOD3BVtBKzENPHUHbAFTkBZ0BF;g1FgH8BAGGTKgBIDSzBG/BVAFqBCVN;wsDsHpCDsBJ;w5F0HVQVBLZeNwCE;uoFwIzBK3BToBjBTLyECqBOpCUZO;+wDmGVIlCJGF;o5FoGLIzBFmBN;utD8FPQpDEnBNKLaD;m2FmFQIJafCVDAJfABN;kwFwFIImBDEKLKzEMDFqBJ1DAuBZ+DUbRSHUC;22B+IrCBFHjBFBJUDBLoBPRDwBPFJ0GhBoBBOIvGsB9BmBES;y4F+E+BGSGFIkBKiFBaQpBK7DA1CHJVTH/BJIH;krF0EBOPI3CMbDsCb;8uFyElBGbFsBJcE;miBuErBKjBFODLHqBD;mvFgE3BEUJ;83FqEtBAJP8BK;m1FmEIItDJUFXDBH+CK;u0CmExDI2BbiCM;meqDgCOxBIlBkBXApBLSFlCXPPkEH;0iB8CoBGdM5BC5BD1BN;2yB6ClCKVDMHtBAqCCeH;mxC6DhDBrCZ+CT2Ce;s9FqDYI/BUjBCpBBVJSLlBAhBPwBPHDuBB8CU;+oGmBgDEkBKzDSsBAxDiBxDKcCNEQK3CamBI1BMxFFBJkBDJNiCI7BR6BRjBTmDDzDAvCb6DPuBIQL+BD;6Be+DQzGOqFBQIVK0EN8BEMI7EWuBCnBaAYYM/BImBKESVAaSrBCYIHG3BEaOAIxBB2BQGQhBEnBRGMXMyCCrDgBxCIvBcvDYROJafQIQTkBbCdRnBAhC1BNfbRINNHUXeFMXzBMXFGX8BEzBRjBDWRzBpBZHAH1BLvEA5BR8CHhELCH2ETIH1BF0DXHJsDH0CG0BJ2DOvBJCHkCL"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
+let tlMapPolys = null, tlMapBase = null, tlMapBaseKey = '', tlMapSel = null, tlMapRows = [];
 function tlMapXY(lat, lon, w, h){ return [(((lon + 30) % 360 + 360) % 360) / 360 * w, (85 - lat) / 145 * h]; }
+/* TL_MAP.land holds the coastline polygons in map space
+   (x = (lon + 30) mod 360, unwrapped per ring so no ring jumps
+   the seam; y = 85 - lat), in degrees, quantised to 1/u and
+   stored as delta + zigzag-varint chars (5 payload bits per
+   char, bit 5 of the alphabet index = continuation). Polygons
+   are ';'-separated, rings ','-separated; a ring is x0 y0 then
+   dx dy pairs. Decoded once and cached. */
+function tlMapDecodeLand(){
+if(tlMapPolys) return tlMapPolys;
+const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const u = TL_MAP.land.u;
+const polys = [];
+TL_MAP.land.d.split(';').forEach(ps => {
+  if(!ps) return;
+  const poly = [];
+  ps.split(',').forEach(rs => {
+    const vals = [];
+    let val = 0, shift = 0;
+    for(let i = 0; i < rs.length; i++){
+      const v = A.indexOf(rs.charAt(i));
+      val |= (v & 31) << shift;
+      if(v & 32) shift += 5;
+      else { vals.push((val & 1)? -((val + 1) / 2): val / 2); val = 0; shift = 0; }
+    }
+    const ring = [];
+    let x = 0, y = 0;
+    for(let i = 0; i + 1 < vals.length; i += 2){ x += vals[i]; y += vals[i + 1]; ring.push([x / u, y / u]); }
+    if(ring.length >= 3) poly.push(ring);
+  });
+  if(poly.length) polys.push(poly);
+});
+tlMapPolys = polys;
+return polys;
+}
+/* Uniform fit of the 360x145-degree map into a canvas of
+   w x h device px (letterboxed: the sea fills the slack). */
+function tlMapXform(w, h){
+const s = Math.min(w / 360, h / 145);
+return { s: s, ox: (w - 360 * s) / 2, oy: (h - 145 * s) / 2 };
+}
+function tlMapPoint(lat, lon, w, h){
+const xf = tlMapXform(w, h);
+const xy = tlMapXY(lat, lon, 360, 145);
+return [xf.ox + xy[0] * xf.s, xf.oy + xy[1] * xf.s];
+}
+const TL_MAP_STYLE = {
+sumi: { sea: '#0c141d', land: '#5d6d5a', coast: 'rgba(235,240,235,0.30)' },
+ocher: { sea: '#0d1618', land: '#6d6a4e', coast: 'rgba(240,230,200,0.30)' },
+spandrel: { sea: '#0a1210', land: '#5f7057', coast: 'rgba(230,240,220,0.28)' },
+kinari: { sea: '#aec3d2', land: '#8b9a72', coast: 'rgba(70,60,35,0.38)' }
+};
 function tlPinState(pin, year){
 let o = 0; const lit = [];
 (pin.targets || []).forEach(t => {
@@ -16348,20 +16398,36 @@ return e? tlBigYearNum(e): null;
 function tlMapBaseDraw(w, h){
 const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
 const ctx = cv.getContext('2d'); if(!ctx) return cv;
-const cs = getComputedStyle(document.documentElement);
-const dot = (cs.getPropertyValue('--lineStrong') || '').trim() || '#8a8a8a';
-ctx.fillStyle = dot;
-const cols = TL_MAP.grid.cols, rows = TL_MAP.grid.rows;
-const cw = w / cols, ch = h / rows;
-for(let r = 0; r < rows; r++) for(let c = 0; c < cols; c++){
-  if(tlMapLand(r * cols + c)) ctx.fillRect(c * cw + cw * 0.18, r * ch + ch * 0.18, Math.max(1, cw * 0.64), Math.max(1, ch * 0.64));
-}
+const stl = TL_MAP_STYLE[document.documentElement.dataset.theme || 'sumi'] || TL_MAP_STYLE.sumi;
+const xf = tlMapXform(w, h);
+ctx.fillStyle = stl.sea;
+ctx.fillRect(0, 0, w, h);
+const land = new Path2D();
+tlMapDecodeLand().forEach(poly => {
+  poly.forEach(ring => {
+    let mn = Infinity, mx = -Infinity;
+    ring.forEach(p => { if(p[0] < mn) mn = p[0]; if(p[0] > mx) mx = p[0]; });
+    for(let off = -360; off <= 360; off += 360){
+      if(xf.ox + (mx + off) * xf.s < 0 || xf.ox + (mn + off) * xf.s > w) continue;
+      ring.forEach((p, i) => {
+        const X = xf.ox + (p[0] + off) * xf.s, Y = xf.oy + p[1] * xf.s;
+        if(i === 0) land.moveTo(X, Y); else land.lineTo(X, Y);
+      });
+      land.closePath();
+    }
+  });
+});
+ctx.fillStyle = stl.land;
+ctx.fill(land, 'evenodd');
+ctx.strokeStyle = stl.coast;
+ctx.lineWidth = Math.max(1, w / 1100);
+ctx.stroke(land);
 return cv;
 }
 function tlMapDrawInto(cv, year, big){
 const dpr = Math.min(2, window.devicePixelRatio || 1);
 const W = cv.clientWidth; if(!W) return;
-const H = big? Math.round(W * TL_MAP.grid.rows / TL_MAP.grid.cols): cv.clientHeight;
+const H = big? Math.round(W * 145 / 360): cv.clientHeight;
 if(!H) return;
 const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
 if(cv.width !== pw || cv.height !== ph){ cv.width = pw; cv.height = ph; if(!big) tlMapBase = null; }
@@ -16372,27 +16438,30 @@ if(!base){ base = tlMapBaseDraw(pw, ph); if(!big){ tlMapBase = base; tlMapBaseKe
 ctx.clearRect(0, 0, pw, ph);
 ctx.drawImage(base, 0, 0);
 if(year == null) return;
-const cs = getComputedStyle(document.documentElement);
-const acc = (cs.getPropertyValue('--accent') || '').trim() || '#b03a2e';
-const bgc = (cs.getPropertyValue('--bg') || '').trim() || '#ffffff';
+const xf = tlMapXform(pw, ph);
+const mw = 360 * xf.s;
+const lightBg = (document.documentElement.dataset.theme || '') === 'kinari';
+ctx.save();
+if(!lightBg) ctx.globalCompositeOperation = 'lighter';
 TL_MAP.pins.forEach(pin => {
   const st = tlPinState(pin, year);
   if(st.o <= 0.03) return;
-  const xy = tlMapXY(pin.lat, pin.lon, pw, ph);
+  const xy = tlMapPoint(pin.lat, pin.lon, pw, ph);
   const full = st.lit.filter(l => l.s >= 0.999).length;
-  const rad = (big? 5.2: 3.6) * dpr * (full >= 2? 1.4: 1);
-  ctx.globalAlpha = Math.max(0.25, st.o);
-  ctx.fillStyle = acc;
-  ctx.beginPath(); ctx.arc(xy[0], xy[1], rad, 0, Math.PI * 2); ctx.fill();
-  if(full >= 2){
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = bgc;
-    ctx.font = '700 ' + Math.max(7, Math.round(rad * 1.05)) + 'px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(String(full), xy[0], xy[1] + rad * 0.06);
-  }
-  ctx.globalAlpha = 1;
+  let R = mw * (big? 0.062: 0.078) * (full >= 2? 1.35: 1);
+  let a = st.o;
+  if(big && tlMapSel && pin.id === tlMapSel){ R *= 1.45; a = Math.min(1, a * 1.25 + 0.25); }
+  const g = ctx.createRadialGradient(xy[0], xy[1], 0, xy[0], xy[1], R);
+  g.addColorStop(0, 'rgba(255,233,196,' + (0.95 * a).toFixed(3) + ')');
+  g.addColorStop(0.28, 'rgba(255,183,92,' + (0.52 * a).toFixed(3) + ')');
+  g.addColorStop(0.62, 'rgba(255,150,54,' + (0.16 * a).toFixed(3) + ')');
+  g.addColorStop(1, 'rgba(255,140,40,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(xy[0], xy[1], R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,244,220,' + (0.85 * a).toFixed(3) + ')';
+  ctx.beginPath(); ctx.arc(xy[0], xy[1], Math.max(1.2, R * 0.13), 0, Math.PI * 2); ctx.fill();
 });
+ctx.restore();
 }
 function tlMapPaint(){
 const cv = document.getElementById('tlmapCv');
@@ -16411,7 +16480,7 @@ function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh) sh.classList.add(
 function tlMapSheetPaint(){
 const cv = $('tlmapBigCv'); if(!cv) return;
 const year = tlMapYearNow();
-cv.style.height = Math.round(cv.clientWidth * TL_MAP.grid.rows / TL_MAP.grid.cols) + 'px';
+cv.style.height = Math.round(cv.clientWidth * 145 / 360) + 'px';
 const yl = $('tlmapYear');
 if(yl) yl.textContent = year == null? '': '― ' + tlYearLabel(year) + 'ごろ';
 tlMapDrawInto(cv, year, true);
@@ -16424,12 +16493,13 @@ const x = (ev.clientX - r.left) * (cv.width / r.width);
 const y = (ev.clientY - r.top) * (cv.height / r.height);
 let best = null, bd = Infinity;
 TL_MAP.pins.forEach(pin => {
-  const xy = tlMapXY(pin.lat, pin.lon, cv.width, cv.height);
+  const xy = tlMapPoint(pin.lat, pin.lon, cv.width, cv.height);
   const d = Math.hypot(xy[0] - x, xy[1] - y);
   if(d < bd){ bd = d; best = pin; }
 });
 if(best && bd <= 26 * Math.min(2, window.devicePixelRatio || 1)){
   tlMapSel = best.id;
+  tlMapDrawInto(cv, tlMapYearNow(), true);
   tlMapSheetBody(tlMapYearNow());
 }
 }
@@ -18310,7 +18380,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.3';
+const APP_VERSION = '30.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
