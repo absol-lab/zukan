@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.10">
+<meta name="app-version" content="30.11">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1117,62 +1117,50 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 .tlmap-bigwrap{position:relative; width:100%; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card2);}
 #tlmapBigCv{display:block; width:100%;}
 .tlm-lit{margin-top:8px;}
-/* v30.9 (his verdict on v30.8: still hard to read and use,
-   and the last row was cut at the screen's bottom edge on
-   device): the year's list is grouped BY PLACE — the place
-   is a heading, each movement under it is a name line with
-   its years at the right, and the artist chips ride their
-   own line below the name. Type is never shrunk; the fit
-   pass in tlMapSheetPaint spends the map's height and the
-   padding first, hides the caption line (t1/t2), and only
-   in its last steps folds the chips onto the name line
-   (d2), then the place heading into the line (d1), so the
-   no-scroll rule survives the most crowded years even on
-   a short screen. */
-.tlm-group{border-bottom:1px solid var(--line); padding:2px 0 6px;}
+/* v30.11 (his verdict on v30.9, 2026-11-15 15:16: the fit
+   ladder's last steps crushed movement names down to
+   "キュビ…" / "：" / "大…" — "とんでもないことになってる"):
+   the sheet is TWO LAYERS now, his own proposal. The main
+   tab is the map plus a plain list — one row per movement
+   carrying only the place name (bold), the movement's name
+   and its years. The name is NEVER cut: no ellipsis, a long
+   name wraps inside its own row. The artists moved into a
+   詳細 tab of their own, grouped under place + movement
+   headings, every artist shown (no cap), and that tab may
+   scroll. The density ladder (t1/t2/d2/d1) is abolished:
+   the main tab's fit pass spends only the map's height and
+   the caption line, and the card may use the sheet's whole
+   visible height (the sheet is anchored to the visual
+   viewport since v30.9). */
+#tlmapsheet .tscard{max-height:100%;}
+.tlm-tabs{display:flex; gap:8px; margin:10px 0 2px; flex:none;}
+.tlm-tab{flex:1; min-height:40px; border:1px solid var(--line); background:var(--card2); color:var(--text); border-radius:999px; font-size:14px; font-family:inherit; cursor:pointer;}
+.tlm-tab.on{border-color:var(--accent); color:var(--accent); font-weight:700;}
+.tlm-tab .small{color:var(--muted); font-weight:400;}
+.tlm-tab.on .small{color:inherit;}
+.tlm-group{border-bottom:1px solid var(--line); padding:2px 0 2px;}
 .tlm-group:last-child{border-bottom:none;}
-.tlm-placehead{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; background:none; border:none; padding:8px 2px 1px; font-family:inherit; color:var(--text); cursor:pointer;}
-.tlm-placehead .tlm-place{font-size:16px; font-weight:700; white-space:nowrap;}
-.tlm-group.on .tlm-placehead .tlm-place{text-decoration:underline; text-underline-offset:3px;}
-.tlm-move{display:block; width:100%; text-align:left; background:none; border:none; padding:5px 2px 7px; font-family:inherit; color:var(--text); cursor:pointer;}
+.tlm-move{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; background:none; border:none; padding:3px 2px 4px; font-family:inherit; color:var(--text); cursor:pointer; line-height:1.35;}
 .tlm-group.on .tlm-move{background:rgba(230,185,61,.08); border-radius:8px;}
-.tlm-mline{display:flex; align-items:baseline; gap:8px;}
-.tlm-mplace{display:none; font-weight:700; white-space:nowrap;}
-.tlm-mline .tlm-name{flex:1; min-width:0; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.tlm-mline .tlm-y{color:var(--muted); font-size:12px; white-space:nowrap;}
+.tlm-mplace{flex:none; font-weight:700; font-size:15px; white-space:nowrap;}
+.tlm-group.on .tlm-mplace{text-decoration:underline; text-underline-offset:3px;}
+.tlm-move .tlm-name{flex:1 1 auto; min-width:0; font-size:15px;}
+.tlm-move .tlm-y{flex:none; color:var(--muted); font-size:12px; white-space:nowrap;}
+.tlm-dhead{font-size:16px; font-weight:700; padding:10px 2px 1px;}
+.tlm-dmove{padding:1px 2px 7px;}
+.tlm-dname{font-size:15px;}
+.tlm-dname .tlm-y{color:var(--muted); font-size:12px; margin-left:8px; white-space:nowrap;}
 .tlm-chips{display:flex; flex-wrap:nowrap; overflow-x:auto; gap:5px; margin-top:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 .tlm-chips::-webkit-scrollbar{display:none;}
 .tlm-chips .tlchip{flex:none; white-space:nowrap;}
+.tlm-chips.wrap{flex-wrap:wrap; overflow-x:visible;}
 /* the sheet's chip strip is the one place the app-wide
    48px tap height for button chips is overridden: at 48px
    the rows could not fit the sheet (his fit request). */
 .tlm-chips button.tlchip{min-height:30px;}
-/* tighter steps: caption off, padding trimmed — type untouched */
-#tlmapsheet.t1 .tlm-sheetcap, #tlmapsheet.t2 .tlm-sheetcap, #tlmapsheet.d2 .tlm-sheetcap, #tlmapsheet.d1 .tlm-sheetcap{display:none;}
-#tlmapsheet.t1 .tlm-group{padding-bottom:4px;}
-#tlmapsheet.t1 .tlm-placehead{padding-top:6px;}
-#tlmapsheet.t1 .tlm-city{padding:8px;}
-#tlmapsheet.t2 .tlm-group{padding-bottom:3px;}
-#tlmapsheet.t2 .tlm-placehead{padding-top:5px;}
-#tlmapsheet.t2 .tlm-move{padding:3px 2px 5px;}
-#tlmapsheet.t2 .tlm-chips{margin-top:3px;}
-#tlmapsheet.t2 .tlm-city{padding:7px;}
-/* d2: the chips fold onto the name line; the place headings stay */
-#tlmapsheet.d2 .tlm-move{display:flex; align-items:center; gap:8px;}
-#tlmapsheet.d2 .tlm-mline{flex:0 1 auto; min-width:0;}
-#tlmapsheet.d2 .tlm-chips{flex:1 1 auto; min-width:0; margin-top:0;}
-#tlmapsheet.d2 .tlm-placehead{padding-top:5px;}
-#tlmapsheet.d2 .tlm-city{padding:7px;}
-/* d1: the place heading folds into the movement line itself */
-#tlmapsheet.d1 .tlm-placehead{display:none;}
-#tlmapsheet.d1 .tlm-mplace{display:inline;}
-#tlmapsheet.d1 .tlm-group.on .tlm-mplace{text-decoration:underline; text-underline-offset:3px;}
-#tlmapsheet.d1 .tlm-move{display:flex; align-items:center; gap:8px; padding:3px 2px;}
-#tlmapsheet.d1 .tlm-mline{flex:0 1 auto; min-width:0;}
-#tlmapsheet.d1 .tlm-chips{flex:1 1 auto; min-width:0; margin-top:0;}
-#tlmapsheet.d1 .tlm-group{border-bottom:none; padding:0;}
-#tlmapsheet.d1 .tlm-city{padding:7px;}
-#tlmapsheet.d1 .tlm-city .tlm-mplace{display:none;}
+/* the tight steps of the main tab's fit pass hide the
+   caption line — type and structure are never touched */
+#tlmapsheet.nocap .tlm-sheetcap{display:none;}
 .tlm-city{margin-top:10px; border:1px solid var(--line); border-radius:12px; padding:10px; background:var(--card2);}
 /* v29.0: the curated photo slot (e.photo {artist,title,year,
    holder}) — rendered ONLY when a photo URL is present; the
@@ -1418,7 +1406,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
-<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
+<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div class="tlm-tabs"><button type="button" class="tlm-tab on" id="tlmtabList" onclick="tlMapSetTab('list')">その年の動き <span class="small" id="tlmtabListN"></span></button><button type="button" class="tlm-tab" id="tlmtabDetail" onclick="tlMapSetTab('detail')">詳細：芸術家 <span class="small" id="tlmtabDetailN"></span></button></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -16795,7 +16783,7 @@ window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true 
    artist chips open artist pages. Place targets resolve
    their entries by title, so data-side insertions never
    break the links. */
-const TL_MAP = {"land":{"u":10,"d":"spG42C2BSHKdFVOVB9BTvBhBoCaQXUHOC;mvGi1CQIFIbGHHRKJJ;2+Bm0CfCEXgBK;0tD0uCUGmBDHuBFFNORBZtBAJ;8+D2uCEIQHEIdqBIKfGRiBZOzBHGVmCpBgBnBOJ;8/D4rCOUCNMWQGiBDJePBXsBPIJHKPFLVHQNCbpB5BiBQ;m7DgjCHEXNdf;oiE+/BESXAGP;07Du/BFCFN;m7Du+BEQLFBP;iyB09BGqBNACY1BgFhBObLN5BWnBH1BIXmBHcXERICSjB;wsD49BGOOFQQUwCwBcSmBUCEWoBkBEQKoBJ4B3BgDFiBhBInBYbLCJbS7BPTlBdJCXJOREWhBBNjBoBPHRlB7BVnDOlBQJSrCClBWbBfPALOFAhBvBtDKIHRQOPlBOzBCOINqBV0CTadCRORISKDHJGJKECNabcHaWYCDLYlBoBHAJPFMD6BWYFKKTSJiB+C2BOFQvBDZM1BIFGK;i4D27BGGNAHL;m+Cw7BhBLSD;q3Dq7BTBDL;wgDu7BRCKRWLsBFrBU;u8Cm6BYMvBG;y/Cm6BBM5BCQLMG;02Cs5BmBCGHiDmBVI9DT5BROTYC;+mDg5BJOGd;m0Ds5BNFNb;4xDy4BjBQlBLeDGJCKMAQNBLQC;oiDq3BFGRL;qkDi3BGQ5BJEL;uyD+3BFGHThBVEDaO;ymD81BGgBWMQVoBL+DsBcgBgBMGKRCEOmCgC3BJlBnBZJbMCQPGfDRPTDdGWVPlBzClBNMDPPJiBLdAhBZmBJ;ghDo0BPUNElCADOSSwBPAKJDZUiBkCLGHFKPXCCHNLCTNGC0BTBClBNNYjCSNoBI;mjDu0BBQJBAaNlBEPGH;80C64BVApBhBhC3CNfhCpCsBG+B+BWAqBoBHQUIKYYQ;u8Cg0BWSXCFgBROJyBBFVIHLXHXIHJdBBZTVAjBMNeCEPgBHqCrCyBelBsBOS;4hD8vBCYFSHTHKAYXLAXLHdSDFIPYNGKiBPBPQK;wlCoxBREHPDbIfiBuB;2tG6uBVAGNMB;ogD2uBTaLNKXMADMQR;68CqvBZSuB7BEQ;++C2tBYGVY;mhDwtBGYPFGSJGJbMCAHLP;2+C+sBDSTZ;y+CypBSAGcPYAgBuBKCaXVDINLbBILFFBIJLDbIIIxB;4qG4pBfGAJ;2jG+pBbFcDOK;smG2oB0BGiBUHInBDNQTLdEJNqBAJPLB;23CupBPKPFBRsBNEI;yyEmpBHAAXWQ;+hG8mBcG0BkBeInCIOJTFLR9BLHDID/BO2BZ;qjGomBRPEL;w+C8mBJQLfchBKG;kjGwkBVEBH;0jGwkBDOLV;8mD6fHSHFPQLFKV;soB6efWNJ;yhB6e0BIfIXH;ucodHgB1BTEJ;wYsbMOBaRGLpB;8qD+dNoB9BKbWNFAPxCOUQNgBLKJHERTTgCpB+BBUjBOKoBbS7BWDKcAQRU;4Y4aHQNRSN;2sDwZOEOHEWbGRUfNJWVADTKNWBMrB;+rGiYiBCRIXHFFIF;ymF6WrBFvBXFP0BK;2wGuVNSOFMEFGuBIFOODKYJQVBATXSLAOJTD7BAKNHDkBrBeRKA;6gFsTUBHWSQlBXBP;wsDuVWiBdFLcSWAOPLLOCjDLRCbSJHHKD;wOuUjBMbBQVJT8BZUM;2asSLQXTeF;k0EuRTINPqBHKG;8QwQVUqBBViBUCUaOCSgBYENSIKRKlCCrBOLDwBXlBLWFLJENeCELNLXDDTLKLdYjB;osE2PlBFkBB;miGoOHMNHKH;ygG+NXKRFQH;uoEoN8BKPGpBF;w+FiMEKiDeRGpBNvBUHJZCQJKhB;2JyLDOWOZOrCSxCJUHrBJkBJpBDMNgBBeOeLaGgBJ;qkGmLVADJIJSDQG;ojEgKmDkBBMOGFP2BEoBSzBMBSHE7BLDJrBAJFEHXEKKLIzBIoBgBDOjBDpCQjCkBbNzBQJHRKbDdiBCIWEBcTCHQIIhBMHWdEFWbSb3CKbSTgBFqD7BQdXCLSzBWPZzBIxBgBQOpCGANdDZK9DEtE2CgBCeQMJWCcWCSPUJ4BlBqBhC6BbMXJtBcFUrBWBMUMWkBHiBzBOHtBQDNPdHMdTF/BUWdLJzBgBTCJKcQAKQEWNgBICMbElBkBUKiB2BAQLEQSHgBLCvBoC3BiBhBMHF7BWHWJAAVbFzBmBDOgCsCImBBiBvC+BHLGNfNRfjBHEPRAR0COAMkByBmBY0CNCpBfZpCflBDMKnCftDjBYXFCrBLdZTTpBRADUZFBIlBEAQJKbO5ByBAIlBOHuDLCHQGGRGPSRR9BtERrDpBKZXIHFFlBVTdhDGxCLHZJBjBM/BbbrBpBCQuBcUMmBEXMEDYIMsBBwBtBIsBmBMWaZmBNEBavBaAI5BQDQlCgB9BOLMdCRzBCfjB1BjBjBLvBTLvBrCJAGbTmBdtBiBsCgBsBDQcWMkCSMSqBwCmCLOmBaiEfBcdsCjB0BzEoEVqBJYOSDiBauBGuCNc1BezBsBBOSgBBoB5BgBGKHqBvB4BlBiBvBW/BA7BSXNJdGR7B7CRjDxBvCDbS/BWdCZPdGLZnC9BtCUzCZhBzBKfnBfA9CgBzBJjCQhDjCFVfnBjBZBbRVSRIfA5BPRW1B6BtCcJqBjBDZKbwBdUhBqCMqCbqEFWJOEAKSDJKGOBSLKCKiDeKSkCWUNAXcL0EmBqBNUOEHgBGQJc9BCXFJIHdBNMdCPJnBKpBLZdKPLJWReBINmBCwBRiBA+BWqBBYJBV/CzBeTJHcNxCUAMeEDIvBOLDEHTFWLFDfDAHTCVgBPCVuBWeXCXQFLXBXEOMJCZFQWHEUQAKRDGKLCISNAPHLdhBnBCblCjBVfLBFIBPPBPGGayBqBQAAK0BaDIbLHMOIBKTSHCIVNThChBfXFTZJvBalBFdGBYrBSViBIMrBoBtBATQVTvBACbNHOpBLrBcN6DGKLEnBjBfdHBN8BCFXSKuBPGPsBNSdkCHOJNdIfqBLFQMIZUGSUEAIgBJgBOmCVqBKEJcFDfKLSHQQQAGbTDBL+CFWJTJnDOfRETHRILuClBBHbJhBGTOEMnCiBNciBYRWVGR0BXBLQXAxBxCnBYZEbJNjCuDxB2ChC4CnBsCHePqCD+BOZGWMUFkFoBQIAOVKfGnDLgBOCeqBKCHLJOFwBMQFLNuBTmBIKNPLKLNL4BIKKXCAMOGgBDELwDbQCTMqDNWMYLVLMH6BIkDcOJVPXBIHLVgCnB2BEEMTQUUDcWMvBqBWC2BfLJINVBDJQTZPkBNDNUKHUWCJNiBHqBAkBMRRBT+DFPLYL4DRmCCyCJYRwBHiBGbGuBCEKuCD8BSDK5CWoCEKOqBJ4EQCNqCCgBMKMLI4BYUTgBI4DBPRcH0FMmCc4DBQIBQYGqEDkBSYFPNKHoDE,uxBqbaUPCNcGYgBO8BBCnBPFGNNAERkBBTVPEBQFhBXFTdUCANiBBAfjBBpBMvBkBSSBO;g4F+JNGlCLgBN;ojEuIwBEvBK;m7F2JAUaPYOFOUOiBfCV6BEaKCKPMOKBKlBOxBDdkBXObCPIBMVEZQTWJoBeCSiBcD2DoB2BEEkBOWeUQFKVJdNLgBHiBbPfXNYVPvB2CBwBakBAGqBgBQeLgBdgCiCHO6CiBIQWKCY1CmB/DA9CkCwBdoCRSKRMMmBaKiBDUVAOOIvDwBNBBRkBP1BECG9BWLOBOQOpCOkBApBCRmBLLIWPYENNXCUNBOGMuBjCqBrBqBAcY+BFiBPAJNXnBAXXTTKZP3BCHCISTEbLrBA3BcPSGePmCgB+BmBYwBLYLKhBgCJGOTyBJDBoBJMuCBgBOEULgCgBqBQEkBP4BUWPEXMJeBgBXOGPOEuBOPHVYHGPiBgBoBAaKMJwBBPGGKgBKCQgBMMYcQ+BE2BgBQuBKECOPQGGkBCAUQL6BUKKDMYFkCK4BmBgBGSsBHiBnCyCLgDfwCVWzBI7BeRUH4BhDyDVMZBrBTBKaSDOOIBKRadK9BCEmBLGvBCCUOGKHGMhBSHehBMFOoBSHSXMLYZQSiBZBZMDStCdNnCejBdFSPGhBYIKpBNFFaLDWtCHpBIBkB9CBlCMZO7EDdVR5C3BrCzEdVIHJTgBnBDJHKLJCVQlBYLKXaXHFAzBNPAPbLRQKMRGDLvBLBNbTBKLFAXnBjBEHpCLlCtBlBKpEzBnBfDJITNbhC3BAP5BzBRrBPHRDCgB+BmCSwBaSLMrBlBBZ3BhBKAIRZTjBjCXTpBLrCxDBxBM1BP1BgBEKSDlB7CjBLRELZJDP1BlBDRZPLRxBBhCZvEbVEEOpCQGdWFFFjCmBOKRQpBOpBc/DgBuE/BOZpBKZNfICRlBDdNBLNHefeAuBNNLOHzCIbFhBToCRQABKqBAlDtBMJ8BJaRqDVuBO2GKuEaqBNeC+BNOIUNuBUcNCQ4BH+DSaKbKsDBUMWJTHMHqBBkBQ4BI+BDDLSDgBIASMPQAKTtBTCVYNuBMcWRK;ssFuHJIuBFaKYJiBaKHNTmBAWISiBmCUBIfCMIFGnCHxEOLJrBDXPiDHtDBJHuBHhCFeV2BL;uyFoHRMdN;ikGuH/BIbLKJuBC;09FsHQOSP0BJiBWDM8BNoCUCKmBF2CeSSjBKuCSeSeAFOhBY3BbZCBM4BaMUFOrCT0BkB/CTXJGF5BT5BKRHONuCDFFgBdDHvCXOD3BVtBKzENPHUHbAFTkBZ0BF;g1FgH8BAGGTKgBIDSzBG/BVAFqBCVN;wsDsHpCDsBJ;w5F0HVQVBLZeNwCE;uoFwIzBK3BToBjBTLyECqBOpCUZO;+wDmGVIlCJGF;o5FoGLIzBFmBN;utD8FPQpDEnBNKLaD;m2FmFQIJafCVDAJfABN;kwFwFIImBDEKLKzEMDFqBJ1DAuBZ+DUbRSHUC;22B+IrCBFHjBFBJUDBLoBPRDwBPFJ0GhBoBBOIvGsB9BmBES;y4F+E+BGSGFIkBKiFBaQpBK7DA1CHJVTH/BJIH;krF0EBOPI3CMbDsCb;8uFyElBGbFsBJcE;miBuErBKjBFODLHqBD;mvFgE3BEUJ;83FqEtBAJP8BK;m1FmEIItDJUFXDBH+CK;u0CmExDI2BbiCM;meqDgCOxBIlBkBXApBLSFlCXPPkEH;0iB8CoBGdM5BC5BD1BN;2yB6ClCKVDMHtBAqCCeH;mxC6DhDBrCZ+CT2Ce;s9FqDYI/BUjBCpBBVJSLlBAhBPwBPHDuBB8CU;+oGmBgDEkBKzDSsBAxDiBxDKcCNEQK3CamBI1BMxFFBJkBDJNiCI7BR6BRjBTmDDzDAvCb6DPuBIQL+BD;6Be+DQzGOqFBQIVK0EN8BEMI7EWuBCnBaAYYM/BImBKESVAaSrBCYIHG3BEaOAIxBB2BQGQhBEnBRGMXMyCCrDgBxCIvBcvDYROJafQIQTkBbCdRnBAhC1BNfbRINNHUXeFMXzBMXFGX8BEzBRjBDWRzBpBZHAH1BLvEA5BR8CHhELCH2ETIH1BF0DXHJsDH0CG0BJ2DOvBJCHkCL"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
+const TL_MAP = {"land":{"u":10,"d":"spG42C2BSHKdFVOVB9BTvBhBoCaQXUHOC;mvGi1CQIFIbGHHRKJJ;2+Bm0CfCEXgBK;0tD0uCUGmBDHuBFFNORBZtBAJ;8+D2uCEIQHEIdqBIKfGRiBZOzBHGVmCpBgBnBOJ;8/D4rCOUCNMWQGiBDJePBXsBPIJHKPFLVHQNCbpB5BiBQ;m7DgjCHEXNdf;oiE+/BESXAGP;07Du/BFCFN;m7Du+BEQLFBP;iyB09BGqBNACY1BgFhBObLN5BWnBH1BIXmBHcXERICSjB;wsD49BGOOFQQUwCwBcSmBUCEWoBkBEQKoBJ4B3BgDFiBhBInBYbLCJbS7BPTlBdJCXJOREWhBBNjBoBPHRlB7BVnDOlBQJSrCClBWbBfPALOFAhBvBtDKIHRQOPlBOzBCOINqBV0CTadCRORISKDHJGJKECNabcHaWYCDLYlBoBHAJPFMD6BWYFKKTSJiB+C2BOFQvBDZM1BIFGK;i4D27BGGNAHL;m+Cw7BhBLSD;q3Dq7BTBDL;wgDu7BRCKRWLsBFrBU;u8Cm6BYMvBG;y/Cm6BBM5BCQLMG;02Cs5BmBCGHiDmBVI9DT5BROTYC;+mDg5BJOGd;m0Ds5BNFNb;4xDy4BjBQlBLeDGJCKMAQNBLQC;oiDq3BFGRL;qkDi3BGQ5BJEL;uyD+3BFGHThBVEDaO;ymD81BGgBWMQVoBL+DsBcgBgBMGKRCEOmCgC3BJlBnBZJbMCQPGfDRPTDdGWVPlBzClBNMDPPJiBLdAhBZmBJ;ghDo0BPUNElCADOSSwBPAKJDZUiBkCLGHFKPXCCHNLCTNGC0BTBClBNNYjCSNoBI;mjDu0BBQJBAaNlBEPGH;80C64BVApBhBhC3CNfhCpCsBG+B+BWAqBoBHQUIKYYQ;u8Cg0BWSXCFgBROJyBBFVIHLXHXIHJdBBZTVAjBMNeCEPgBHqCrCyBelBsBOS;4hD8vBCYFSHTHKAYXLAXLHdSDFIPYNGKiBPBPQK;wlCoxBREHPDbIfiBuB;2tG6uBVAGNMB;ogD2uBTaLNKXMADMQR;68CqvBZSuB7BEQ;++C2tBYGVY;mhDwtBGYPFGSJGJbMCAHLP;2+C+sBDSTZ;y+CypBSAGcPYAgBuBKCaXVDINLbBILFFBIJLDbIIIxB;4qG4pBfGAJ;2jG+pBbFcDOK;smG2oB0BGiBUHInBDNQTLdEJNqBAJPLB;23CupBPKPFBRsBNEI;yyEmpBHAAXWQ;+hG8mBcG0BkBeInCIOJTFLR9BLHDID/BO2BZ;qjGomBRPEL;w+C8mBJQLfchBKG;kjGwkBVEBH;0jGwkBDOLV;8mD6fHSHFPQLFKV;soB6efWNJ;yhB6e0BIfIXH;ucodHgB1BTEJ;wYsbMOBaRGLpB;8qD+dNoB9BKbWNFAPxCOUQNgBLKJHERTTgCpB+BBUjBOKoBbS7BWDKcAQRU;4Y4aHQNRSN;2sDwZOEOHEWbGRUfNJWVADTKNWBMrB;+rGiYiBCRIXHFFIF;ymF6WrBFvBXFP0BK;2wGuVNSOFMEFGuBIFOODKYJQVBATXSLAOJTD7BAKNHDkBrBeRKA;6gFsTUBHWSQlBXBP;wsDuVWiBdFLcSWAOPLLOCjDLRCbSJHHKD;wOuUjBMbBQVJT8BZUM;2asSLQXTeF;k0EuRTINPqBHKG;8QwQVUqBBViBUCUaOCSgBYENSIKRKlCCrBOLDwBXlBLWFLJENeCELNLXDDTLKLdYjB;osE2PlBFkBB;miGoOHMNHKH;ygG+NXKRFQH;uoEoN8BKPGpBF;w+FiMEKiDeRGpBNvBUHJZCQJKhB;2JyLDOWOZOrCSxCJUHrBJkBJpBDMNgBBeOeLaGgBJ;qkGmLVADJIJSDQG;ojEgKmDkBBMOGFP2BEoBSzBMBSHE7BLDJrBAJFEHXEKKLIzBIoBgBDOjBDpCQjCkBbNzBQJHRKbDdiBCIWEBcTCHQIIhBMHWdEFWbSb3CKbSTgBFqD7BQdXCLSzBWPZzBIxBgBQOpCGANdDZK9DEtE2CgBCeQMJWCcWCSPUJ4BlBqBhC6BbMXJtBcFUrBWBMUMWkBHiBzBOHtBQDNPdHMdTF/BUWdLJzBgBTCJKcQAKQEWNgBICMbElBkBUKiB2BAQLEQSHgBLCvBoC3BiBhBMHF7BWHWJAAVbFzBmBDOgCsCImBBiBvC+BHLGNfNRfjBHEPRAR0COAMkByBmBY0CNCpBfZpCflBDMKnCftDjBYXFCrBLdZTTpBRADUZFBIlBEAQJKbO5ByBAIlBOHuDLCHQGGRGPSRR9BtERrDpBKZXIHFFlBVTdhDGxCLHZJBjBM/BbbrBpBCQuBcUMmBEXMEDYIMsBBwBtBIsBmBMWaZmBNEBavBaAI5BQDQlCgB9BOLMdCRzBCfjB1BjBjBLvBTLvBrCJAGbTmBdtBiBsCgBsBDQcWMkCSMSqBwCmCLOmBaiEfBcdsCjB0BzEoEVqBJYOSDiBauBGuCNc1BezBsBBOSgBBoB5BgBGKHqBvB4BlBiBvBW/BA7BSXNJdGR7B7CRjDxBvCDbS/BWdCZPdGLZnC9BtCUzCZhBzBKfnBfA9CgBzBJjCQhDjCFVfnBjBZBbRVSRIfA5BPRW1B6BtCcJqBjBDZKbwBdUhBqCMqCbqEFWJOEAKSDJKGOBSLKCKiDeKSkCWUNAXcL0EmBqBNUOEHgBGQJc9BCXFJIHdBNMdCPJnBKpBLZdKPLJWReBINmBCwBRiBA+BWqBBYJBV/CzBeTJHcNxCUAMeEDIvBOLDEHTFWLFDfDAHTCVgBPCVuBWeXCXQFLXBXEOMJCZFQWHEUQAKRDGKLCISNAPHLdhBnBCblCjBVfLBFIBPPBPGGayBqBQAAK0BaDIbLHMOIBKTSHCIVNThChBfXFTZJvBalBFdGBYrBSViBIMrBoBtBATQVTvBACbNHOpBLrBcN6DGKLEnBjBfdHBN8BCFXSKuBPGPsBNSdkCHOJNdIfqBLFQMIZUGSUEAIgBJgBOmCVqBKEJcFDfKLSHQQQAGbTDBL+CFWJTJnDOfRETHRILuClBBHbJhBGTOEMnCiBNciBYRWVGR0BXBLQXAxBxCnBYZEbJNjCuDxB2ChC4CnBsCHePqCD+BOZGWMUFkFoBQIAOVKfGnDLgBOCeqBKCHLJOFwBMQFLNuBTmBIKNPLKLNL4BIKKXCAMOGgBDELwDbQCTMqDNWMYLVLMH6BIkDcOJVPXBIHLVgCnB2BEEMTQUUDcWMvBqBWC2BfLJINVBDJQTZPkBNDNUKHUWCJNiBHqBAkBMRRBT+DFPLYL4DRmCCyCJYRwBHiBGbGuBCEKuCD8BSDK5CWoCEKOqBJ4EQCNqCCgBMKMLI4BYUTgBI4DBPRcH0FMmCc4DBQIBQYGqEDkBSYFPNKHoDE,uxBqbaUPCNcGYgBO8BBCnBPFGNNAERkBBTVPEBQFhBXFTdUCANiBBAfjBBpBMvBkBSSBO;g4F+JNGlCLgBN;ojEuIwBEvBK;m7F2JAUaPYOFOUOiBfCV6BEaKCKPMOKBKlBOxBDdkBXObCPIBMVEZQTWJoBeCSiBcD2DoB2BEEkBOWeUQFKVJdNLgBHiBbPfXNYVPvB2CBwBakBAGqBgBQeLgBdgCiCHO6CiBIQWKCY1CmB/DA9CkCwBdoCRSKRMMmBaKiBDUVAOOIvDwBNBBRkBP1BECG9BWLOBOQOpCOkBApBCRmBLLIWPYENNXCUNBOGMuBjCqBrBqBAcY+BFiBPAJNXnBAXXTTKZP3BCHCISTEbLrBA3BcPSGePmCgB+BmBYwBLYLKhBgCJGOTyBJDBoBJMuCBgBOEULgCgBqBQEkBP4BUWPEXMJeBgBXOGPOEuBOPHVYHGPiBgBoBAaKMJwBBPGGKgBKCQgBMMYcQ+BE2BgBQuBKECOPQGGkBCAUQL6BUKKDMYFkCK4BmBgBGSsBHiBnCyCLgDfwCVWzBI7BeRUH4BhDyDVMZBrBTBKaSDOOIBKRadK9BCEmBLGvBCCUOGKHGMhBSHehBMFOoBSHSXMLYZQSiBZBZMDStCdNnCejBdFSPGhBYIKpBNFFaLDWtCHpBIBkB9CBlCMZO7EDdVR5C3BrCzEdVIHJTgBnBDJHKLJCVQlBYLKXaXHFAzBNPAPbLRQKMRGDLvBLBNbTBKLFAXnBjBEHpCLlCtBlBKpEzBnBfDJITNbhC3BAP5BzBRrBPHRDCgB+BmCSwBaSLMrBlBBZ3BhBKAIRZTjBjCXTpBLrCxDBxBM1BP1BgBEKSDlB7CjBLRELZJDP1BlBDRZPLRxBBhCZvEbVEEOpCQGdWFFFjCmBOKRQpBOpBc/DgBuE/BOZpBKZNfICRlBDdNBLNHefeAuBNNLOHzCIbFhBToCRQABKqBAlDtBMJ8BJaRqDVuBO2GKuEaqBNeC+BNOIUNuBUcNCQ4BH+DSaKbKsDBUMWJTHMHqBBkBQ4BI+BDDLSDgBIASMPQAKTtBTCVYNuBMcWRK;ssFuHJIuBFaKYJiBaKHNTmBAWISiBmCUBIfCMIFGnCHxEOLJrBDXPiDHtDBJHuBHhCFeV2BL;uyFoHRMdN;ikGuH/BIbLKJuBC;09FsHQOSP0BJiBWDM8BNoCUCKmBF2CeSSjBKuCSeSeAFOhBY3BbZCBM4BaMUFOrCT0BkB/CTXJGF5BT5BKRHONuCDFFgBdDHvCXOD3BVtBKzENPHUHbAFTkBZ0BF;g1FgH8BAGGTKgBIDSzBG/BVAFqBCVN;wsDsHpCDsBJ;w5F0HVQVBLZeNwCE;uoFwIzBK3BToBjBTLyECqBOpCUZO;+wDmGVIlCJGF;o5FoGLIzBFmBN;utD8FPQpDEnBNKLaD;m2FmFQIJafCVDAJfABN;kwFwFIImBDEKLKzEMDFqBJ1DAuBZ+DUbRSHUC;22B+IrCBFHjBFBJUDBLoBPRDwBPFJ0GhBoBBOIvGsB9BmBES;y4F+E+BGSGFIkBKiFBaQpBK7DA1CHJVTH/BJIH;krF0EBOPI3CMbDsCb;8uFyElBGbFsBJcE;miBuErBKjBFODLHqBD;mvFgE3BEUJ;83FqEtBAJP8BK;m1FmEIItDJUFXDBH+CK;u0CmExDI2BbiCM;meqDgCOxBIlBkBXApBLSFlCXPPkEH;0iB8CoBGdM5BC5BD1BN;2yB6ClCKVDMHtBAqCCeH;mxC6DhDBrCZ+CT2Ce;s9FqDYI/BUjBCpBBVJSLlBAhBPwBPHDuBB8CU;+oGmBgDEkBKzDSsBAxDiBxDKcCNEQK3CamBI1BMxFFBJkBDJNiCI7BR6BRjBTmDDzDAvCb6DPuBIQL+BD;6Be+DQzGOqFBQIVK0EN8BEMI7EWuBCnBaAYYM/BImBKESVAaSrBCYIHG3BEaOAIxBB2BQGQhBEnBRGMXMyCCrDgBxCIvBcvDYROJafQIQTkBbCdRnBAhC1BNfbRINNHUXeFMXzBMXFGX8BEzBRjBDWRzBpBZHAH1BLvEA5BR8CHhELCH2ETIH1BF0DXHJsDH0CG0BJ2DOvBJCHkCL"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"ld":"dr","targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"ld":"d","targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"ld":"d","targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"ld":"u","targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"ld":"r","targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"ld":"ur","targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"ld":"r","targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"ld":"u","targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"ld":"ur","targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"ld":"d","targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"ld":"r","targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"ld":"dr","targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"ld":"ur","targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"ld":"u","targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"ld":"u","targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"ld":"u","targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"ld":"d","targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"ld":"l","targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"ld":"r","targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"ld":"d","targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"ld":"u","targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"ld":"ur","targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"ld":"ul","targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"ld":"dl","targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"ld":"l","targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
 let tlMapPolys = null, tlMapBase = null, tlMapBaseKey = '', tlMapSel = null, tlMapRows = [];
 /* v30.6: labels placed by the last big (sheet) draw — {name, x, y}
    in CSS px; also the validator's handle on the label pass. */
@@ -16976,14 +16964,27 @@ if(big){
     const off = Math.max(7 * ratio, mw * 0.035);
     const dy = off + fs * 0.4;
     const xr = xy[0] + off, xl = xy[0] - off - tw - pad * 2, xc = xy[0] - tw / 2 - pad;
-    /* nearest first, then a second, farther ring — dense
-       clusters (Paris / Vienna / Dresden sit ~25px apart)
-       need the extra reach before a name gives up. */
-    const spots = [{ x: xr, y: xy[1] }, { x: xl, y: xy[1] }];
-    [dy, dy * 1.9].forEach(d2 => {
-      spots.push({ x: xc, y: xy[1] - d2 }, { x: xc, y: xy[1] + d2 },
-                 { x: xr, y: xy[1] - d2 }, { x: xr, y: xy[1] + d2 },
-                 { x: xl, y: xy[1] - d2 }, { x: xl, y: xy[1] + d2 });
+    /* v30.11 (his ask, 2026-11-15 15:17: 「国とかの文字の
+       配置も調節できるはず」): a pin may carry a label
+       direction (ld — u/d/l/r and the diagonals) and that
+       direction is tried FIRST; the dense clusters (Paris /
+       Munich / Leiden, Vienna / Dresden, Milan / Turin) are
+       resolved by those directions. The candidate set is
+       the NEAR ring only: the old second, farther ring
+       (dy x 1.9) is abolished — it is what put Leiden's
+       name under Paris, far from its own glow. A name that
+       cannot sit beside its own glow now gives up (the
+       panel caption still names every glowing place)
+       instead of wandering off. */
+    const spotFor = dir => ({
+      x: dir.includes('r')? xr: dir.includes('l')? xl: xc,
+      y: dir.includes('u')? xy[1] - dy: dir.includes('d')? xy[1] + dy: xy[1]
+    });
+    const spots = [];
+    if(c.pin.ld) spots.push(spotFor(c.pin.ld));
+    ['r', 'l', 'u', 'd', 'ur', 'dr', 'ul', 'dl'].forEach(dir => {
+      const sp = spotFor(dir);
+      if(!spots.some(s2 => s2.x === sp.x && s2.y === sp.y)) spots.push(sp);
     });
     for(const sp of spots){
       const rect = { x0: sp.x, y0: sp.y - fs / 2 - pad, x1: sp.x + tw + pad * 2, y1: sp.y + fs / 2 + pad };
@@ -17089,8 +17090,12 @@ if(window.visualViewport){
     if(sh && !sh.classList.contains('hidden')){ tlMapAnchorVV(); tlMapSheetPaint(); }
   });
 }
-function openTlMapSheet(){
+function openTlMapSheet(keepTab){
 const sh = $('tlmapsheet'); if(!sh) return;
+/* v30.11: a fresh open starts on the movements list; the
+   v30.10 detour restore passes keepTab and puts back the
+   tab the reader left from. */
+if(!keepTab) tlMapTab = 'list';
 const bcv = $('tlmapBigCv'); if(bcv) bcv.onclick = tlMapSheetTap;
 /* v30.7: the sheet is painted BEFORE it is presented.
    Through v30.6 it was unhidden first and painted a frame
@@ -17150,35 +17155,76 @@ function sheetLockSync(){ document.documentElement.classList.toggle('sheetlock',
     e.preventDefault();
   }, { passive: false });
 })();
-let tlMapChipCap = 6;
+/* v30.11: the sheet has two layers now — the movements
+   list (the main tab) and the detail tab with the artists.
+   tlMapTab is view state only, like the selection. */
+let tlMapTab = 'list';
+function tlMapSetTab(tab){
+tlMapTab = tab === 'detail'? 'detail': 'list';
+const body = $('tlmapBody'); if(body) body.scrollTop = 0;
+tlMapSheetPaint();
+}
+function tlMapLitRows(year){
+const rows = [];
+TL_MAP.pins.forEach(pin => {
+  const st = tlPinState(pin, year);
+  st.lit.filter(l => l.s >= 0.999).forEach(l => rows.push({ pin: pin, t: l.t }));
+});
+rows.sort((a, b) => a.t.from - b.t.from);
+return rows;
+}
+function tlMapEntryFor(t){
+const tlo = timelineOf();
+const entries = tlo? tlo[t.side]: null;
+return Array.isArray(entries)? entries.find(x => x.title === t.title): null;
+}
+function tlMapArtistCount(rows){
+let n = 0;
+rows.forEach(r => { const e = tlMapEntryFor(r.t); if(e && Array.isArray(e.artists)) n += e.artists.length; });
+return n;
+}
 function tlMapVisibleH(){ const vv = window.visualViewport; return Math.round((vv && vv.height) || window.innerHeight || 800); }
 function tlMapSheetPaint(){
 const cv = $('tlmapBigCv'); if(!cv) return;
 const year = tlMapYearNow();
 const yl = $('tlmapYear');
 if(yl) yl.textContent = year == null? '': '― ' + tlYearLabel(year) + 'ごろ';
-/* v30.9: the fit is a hard rule, measured against the
-   VISIBLE viewport (see tlMapAnchorVV) and against the
-   whole card, not just the list: a step only counts as
-   fitting when the list needs no vertical scroll AND the
-   card's bottom and the close button sit inside the
-   visible area. The ladder spends the map's height and
-   the padding first (type is never shrunk), hides the
-   caption line, then folds the chips onto the name line
-   (d2) and finally the place heading into the line (d1).
-   Sparse years stop at the first, roomiest step. */
+/* v30.11: the tab bar carries the counts — the movements
+   in the main tab, the artists in the detail tab — and the
+   reader's place between the sheet's two layers. */
+const rows = year == null? []: tlMapLitRows(year);
+const ln = $('tlmtabListN'); if(ln) ln.textContent = rows.length? rows.length + '件': '';
+const dn = $('tlmtabDetailN'); if(dn){ const n = tlMapArtistCount(rows); dn.textContent = n? n + '人': ''; }
+const ltb = $('tlmtabList'); if(ltb) ltb.classList.toggle('on', tlMapTab !== 'detail');
+const dtb = $('tlmtabDetail'); if(dtb) dtb.classList.toggle('on', tlMapTab === 'detail');
+/* the fit is still a hard rule for the MAIN tab, measured
+   against the VISIBLE viewport (see tlMapAnchorVV) and
+   against the whole card, not just the list: a step only
+   counts as fitting when the list needs no vertical
+   scroll AND the card's bottom and the close button sit
+   inside the visible area. But the ladder now spends ONLY
+   the map's height and the caption line — the density
+   steps that folded the place headings away (d1) and
+   crushed the movement names with an ellipsis are
+   abolished (his verdict on v30.9); if a crowded year
+   still does not fit, the map gives way, never the words.
+   The rows themselves are set tight (small padding, a
+   1.35 line height) so the most crowded year fits even on
+   a short screen with the words untouched. The detail
+   tab may scroll, so it paints once at the roomiest
+   step. */
 const sh = $('tlmapsheet');
 const body = $('tlmapBody');
 const card = sh? sh.querySelector('.tscard'): null;
 const vh = tlMapVisibleH();
-const steps = [[0.26, 6, ''], [0.17, 6, ''], [0.12, 4, 't1'], [0.09, 3, 't2'], [0.08, 3, 'd2'], [0.08, 3, 'd1']];
+const steps = tlMapTab === 'detail'? [[0.26, false]]: [[0.26, false], [0.21, false], [0.17, true], [0.13, true], [0.10, true], [0.07, true], [0.05, true]];
 for(const st of steps){
-  tlMapChipCap = st[1];
-  if(sh){ ['t1', 't2', 'd2', 'd1', 'compact'].forEach(c => sh.classList.remove(c)); if(st[2]) sh.classList.add(st[2]); }
+  if(sh) sh.classList.toggle('nocap', st[1]);
   cv.style.height = Math.min(Math.round(cv.clientWidth * 145 / 360), Math.round(vh * st[0])) + 'px';
   tlMapDrawInto(cv, year, true);
   tlMapSheetBody(year);
   if(!body || !card) break;
+  if(tlMapTab === 'detail') break;
   const vvB = (window.visualViewport? window.visualViewport.offsetTop + window.visualViewport.height: window.innerHeight);
   const cr = card.getBoundingClientRect();
   const closeEl = sh.querySelector('.tsclose');
@@ -17219,56 +17265,74 @@ tlMapSelSig = tlMapSigNow();
 tlMapSheetPaint();
 tlMapPaint();
 }
-function tlMapMoveHTML(pin, t, mode){
-/* v30.9: one movement = one block: a name line (the place
-   name rides it too, but only shows in the d1 density,
-   where the place heading above has folded away) with the
-   movement's years at the right, and the artist chips on
-   their own line below. Two tap kinds, as before: in the
-   year's list (mode 'sel') a tap selects the place — only
-   that place stays lit — and tapping again releases; in
-   the selected place's own block (default mode) a tap
-   jumps into the timeline at that movement, and only
-   those blocks register in tlMapRows. */
+function tlMapChipsHTML(t){
+/* v30.11: the artists of one movement, ALL of them — no
+   cap, no ほかN名 fold. Through v30.10 the chips rode the
+   year's list and the fit pass capped them; now they live
+   only in the sheet's detail tab, which may scroll, so
+   nobody is ever folded away. A linked name that resolves
+   to a registered person is a button to that person's
+   page, exactly as before. */
+const e = tlMapEntryFor(t);
+if(!e || !Array.isArray(e.artists)) return '';
+const cs = [];
+e.artists.forEach(x => {
+  const label = (x && typeof x === 'object')? String(x.label || ''): String(x || '');
+  const link = (x && typeof x === 'object')? x.link: null;
+  if(!label) return;
+  const target = link? (DB.artists.find(a => a.name === link) || null): null;
+  if(target) cs.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
+  else cs.push('<span class="tlchip">' + esc(label) + '</span>');
+});
+return cs.length? '<span class="tlm-chips wrap">' + cs.join('') + '</span>': '';
+}
+function tlMapRowHTML(pin, t, mode){
+/* v30.11: one movement = one row of three things only —
+   the place name (the short form, bold, the row's
+   heading), the movement's name and its years. The name
+   is NEVER truncated: no ellipsis anywhere in this row; a
+   long name wraps inside its own row instead. No artist
+   chips here — they live in the detail tab now. Two tap
+   kinds, as before: in the year's list (mode 'sel') a tap
+   selects the place — only that place stays lit — and
+   tapping again releases; in the selected place's own
+   block (default mode) a tap jumps into the timeline at
+   that movement, and only those rows register in
+   tlMapRows. */
 const selMode = mode === 'sel';
 let ri = -1;
 if(!selMode){ ri = tlMapRows.length; tlMapRows.push({ side: t.side, title: t.title }); }
-const tlo = timelineOf();
-const entries = tlo? tlo[t.side]: null;
-const e = Array.isArray(entries)? entries.find(x => x.title === t.title): null;
-let chips = '';
-if(e && Array.isArray(e.artists)){
-  const cs2 = [];
-  e.artists.forEach(x => {
-    const label = (x && typeof x === 'object')? String(x.label || ''): String(x || '');
-    const link = (x && typeof x === 'object')? x.link: null;
-    if(!label) return;
-    const target = link? (DB.artists.find(a => a.name === link) || null): null;
-    if(target) cs2.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
-    else cs2.push('<span class="tlchip">' + esc(label) + '</span>');
-  });
-  if(cs2.length){
-    /* the sheet must fit one screen with no vertical
-       scroll even in the most crowded years — the fit pass
-       in tlMapSheetPaint lowers tlMapChipCap until the list
-       fits, and the artists past the cap ride a plain
-       ほかN名 chip instead of making the block taller. */
-    let shown = cs2;
-    if(cs2.length > tlMapChipCap){
-      shown = cs2.slice(0, tlMapChipCap);
-      shown.push('<span class="tlchip">ほか' + (cs2.length - tlMapChipCap) + '名</span>');
-    }
-    chips = '<span class="tlm-chips">' + shown.join('') + '</span>';
-  }
-}
+const short = String(pin.place || '').split('（')[0];
 return '<div class="tlm-move" role="button" onclick="' + (selMode? 'tlMapToggleSel(\'' + pin.id + '\', event)': 'tlMapGoToIdx(' + ri + ')') + '">'
-+ '<span class="tlm-mline"><span class="tlm-mplace">' + esc(pin.place) + '</span><span class="tlm-name">' + esc(t.title) + '</span><span class="tlm-y">' + t.from + '–' + t.to + '</span></span>'
-+ chips + '</div>';
++ '<span class="tlm-mplace">' + esc(short) + '</span><span class="tlm-name">' + esc(t.title) + '</span><span class="tlm-y">' + t.from + '–' + t.to + '</span></div>';
+}
+function tlMapDetailHTML(year){
+/* the detail tab: every artist shown this year, grouped
+   under place + movement headings, nobody capped. */
+const rows = tlMapLitRows(year);
+if(!rows.length) return '<div class="small" style="padding:8px 2px;">この年は、どの場所も表立っては動いていません。</div>';
+const groups = []; const gix = {};
+rows.forEach(r => {
+  let g = gix[r.pin.id];
+  if(!g){ g = { pin: r.pin, rows: [] }; gix[r.pin.id] = g; groups.push(g); }
+  g.rows.push(r);
+});
+let html = '';
+groups.forEach(g => {
+  html += '<div class="tlm-dgroup"><div class="tlm-dhead">' + esc(g.pin.place) + '</div>';
+  g.rows.forEach(r => {
+    html += '<div class="tlm-dmove"><div class="tlm-dname">' + esc(r.t.title) + '<span class="tlm-y">' + r.t.from + '–' + r.t.to + '</span></div>'
+      + tlMapChipsHTML(r.t) + '</div>';
+  });
+  html += '</div>';
+});
+return html;
 }
 function tlMapSheetBody(year){
 const body = $('tlmapBody'); if(!body) return;
 tlMapRows = [];
 if(year == null){ body.innerHTML = ''; return; }
+if(tlMapTab === 'detail'){ body.innerHTML = tlMapDetailHTML(year); return; }
 let html = '';
 if(tlMapSel){
   const pin = TL_MAP.pins.find(p => p.id === tlMapSel);
@@ -17277,37 +17341,32 @@ if(tlMapSel){
     html += '<div class="tlm-city"><div style="font-weight:700; font-size:16px;">' + esc(pin.place) + '</div>';
     if(st.lit.length){
       html += '<div class="small" style="margin:4px 0 6px;">' + tlYearLabel(year) + 'ごろ、この場所で動いていたもの</div>';
-      st.lit.forEach(l => { html += tlMapMoveHTML(pin, l.t); });
+      st.lit.forEach(l => { html += tlMapRowHTML(pin, l.t); });
     } else {
       html += '<div class="small" style="margin:4px 0 6px;">この年、この場所の動きはありません。ここでの動きは：</div>';
-      pin.targets.forEach(t => { html += tlMapMoveHTML(pin, t); });
+      pin.targets.forEach(t => { html += tlMapRowHTML(pin, t); });
     }
     html += '</div>';
   }
 }
-const litRows = [];
-TL_MAP.pins.forEach(pin => {
-  const st = tlPinState(pin, year);
-  st.lit.filter(l => l.s >= 0.999).forEach(l => litRows.push({ pin: pin, t: l.t }));
-});
-litRows.sort((a, b) => a.t.from - b.t.from);
-/* v30.9: the list is grouped BY PLACE (his readability
-   verdict) — groups in the order of their earliest
-   movement, movements inside a group by start year; the
-   place heading carries the selection tap, exactly like
-   the movement blocks under it. */
+const litRows = tlMapLitRows(year);
+/* v30.11: the main tab's list is one flat run of movement
+   rows — each row carries its place name itself (bold, at
+   the row's head), so there are no heading rows to spend
+   height on; rows sharing a place stay wrapped in one
+   .tlm-group purely for the separator line and the
+   selected-place highlight. The count rides the tab. */
 const groups = []; const gix = {};
 litRows.forEach(r => {
   let g = gix[r.pin.id];
   if(!g){ g = { pin: r.pin, rows: [] }; gix[r.pin.id] = g; groups.push(g); }
   g.rows.push(r);
 });
-html += '<div class="tlm-lit"><div class="tsterm" style="font-size:15px;">その年の動き <span class="small" style="color:var(--muted)">' + litRows.length + '件</span></div>';
+html += '<div class="tlm-lit">';
 if(groups.length){
   groups.forEach(g => {
-    html += '<div class="tlm-group' + (tlMapSel === g.pin.id? ' on': '') + '">'
-      + '<div class="tlm-placehead" role="button" onclick="tlMapToggleSel(\'' + g.pin.id + '\', event)"><span class="tlm-place">' + esc(g.pin.place) + '</span></div>';
-    g.rows.forEach(r => { html += tlMapMoveHTML(r.pin, r.t, 'sel'); });
+    html += '<div class="tlm-group' + (tlMapSel === g.pin.id? ' on': '') + '">';
+    g.rows.forEach(r => { html += tlMapRowHTML(r.pin, r.t, 'sel'); });
     html += '</div>';
   });
 } else {
@@ -17377,7 +17436,8 @@ if(n){
 }
 tlMapSel = st.sel || null;
 tlMapSelSig = tlMapSigNow(); /* re-anchored AFTER the landing, so the selection's context matches again and tlMapPaint keeps it */
-openTlMapSheet();
+tlMapTab = st.tab === 'detail'? 'detail': 'list'; /* v30.11: back to the tab he left from */
+openTlMapSheet(true);
 if(st.chips && st.chips.length){
   const saved = st.chips;
   requestAnimationFrame(() => {
@@ -17388,7 +17448,9 @@ if(st.chips && st.chips.length){
 }
 }
 function tlMapOpenArtist(id){
-tlMapReturn = { ds: DS, region: tlRegion, idx: tlBar.idx, year: tlMapYearNow(), sel: tlMapSel, chips: tlMapChipScrolls() };
+/* v30.11: the record also carries the tab — a detour from
+   the detail tab returns to the detail tab. */
+tlMapReturn = { ds: DS, region: tlRegion, idx: tlBar.idx, year: tlMapYearNow(), sel: tlMapSel, tab: tlMapTab, chips: tlMapChipScrolls() };
 closeTlMapSheet();
 openDetail(id);
 }
@@ -19202,7 +19264,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.10';
+const APP_VERSION = '30.11';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
