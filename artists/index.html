@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="sumi" data-fontsize="standard" data-fontfamily="mincho" data-lineheight="standard">
+<html lang="ja" data-theme="wood" data-fontsize="standard" data-fontfamily="mincho" data-lineheight="standard">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
-<meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.13">
+<meta name="theme-color" content="#171009">
+<meta name="app-version" content="31.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -25,6 +25,10 @@
   --fs:16px; --lh:1.7;
   --bodyfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
   --serif:var(--bodyfont);
+  /* v31.0: display type (names + headings) is pinned to this Mincho
+     stack regardless of the content-font setting — the catalogue
+     face of the app. Body / UI text keeps --sans. */
+  --headfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
   --sans:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
   /* legacy aliases (older class names / inline styles) */
   --paper:var(--bg); --paper2:var(--bg2); --ink:var(--text);
@@ -42,6 +46,20 @@
   --text:#f4f4f6; --muted:#9c9ca4; --accent:#d9d9e0; --line:#33333a; --lineStrong:#7a7a84;
   --danger:#ff5247; --nav:rgba(26,26,30,.92); --sheet:rgba(0,0,0,.55);
   --fab:#a9a9b0; --fabink:#000000; --ink35:rgba(244,244,246,.65);
+}
+/* wood (v31.0, the default): the dark wood ground — deep brown
+   between tea and charcoal, cards one step lighter like walnut
+   panels on a desk, and the accent unified to the amber of the
+   timeline map's glow (its mid stop is rgb(255,183,92); #e8b45a
+   keeps that hue at a lightness that still reads as text).
+   Audited values: text on card 14.7:1, muted on card 7.7:1,
+   accent on card 9.0:1, danger on card 6.0:1, lineStrong on
+   card 5.3:1 (validator re-measures the computed styles). */
+:root[data-theme="wood"]{
+  --bg:#171009; --bg2:#20150b; --card:#2b1c0f; --card2:#3a2716;
+  --text:#f6efe2; --muted:#c3ac8a; --accent:#e8b45a; --line:#4a351d; --lineStrong:#ab8a5c;
+  --danger:#ff6a55; --nav:rgba(32,21,11,.94); --sheet:rgba(8,5,2,.55);
+  --fab:#e8b45a; --fabink:#171009; --ink35:rgba(246,239,226,.65);
 }
 :root[data-theme="ocher"]{
   --bg:#16110b; --bg2:#1d1610; --card:#251c12; --card2:#2f2416;
@@ -1350,12 +1368,68 @@ button.zseg{padding:9px 16px; border:1px solid var(--line); border-radius:999px;
 button.zseg.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
 .catlabel{color:var(--muted); font-size:calc(var(--fs) * .8); margin:18px 4px 8px; letter-spacing:.1em; font-family:var(--sans);}
 .hidden{display:none !important;}
+/* ===== v31.0: the design refresh (his call, 2026-11-15) =====
+   A dark wood ground, the map's amber as the one accent, and
+   Mincho display type. CSS only — no DOM, no behaviour changes.
+   (1) Display type: names and headings ride --headfont (the fixed
+   Mincho stack above), in every theme; body and UI controls keep
+   --sans, and reading text keeps following the font setting via
+   --serif, exactly as before. Weights soften where Mincho carries
+   the size on its own (800-weight Mincho turns blobby). */
+h1.appname{font-family:var(--headfont); font-weight:700; letter-spacing:.07em;}
+.dname{font-family:var(--headfont);}
+figure.work .nm{font-family:var(--headfont);}
+figure.work .yrs{font-family:var(--headfont); letter-spacing:.05em;}
+h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
+.biztitle{font-family:var(--headfont); font-weight:700; letter-spacing:.04em;}
+.bizchtitle{font-family:var(--headfont); font-weight:600;}
+.casetitle{font-family:var(--headfont); font-weight:700;}
+.glossterm{font-family:var(--headfont); font-weight:700;}
+.gterm{font-family:var(--headfont);}
+.proctitle{font-family:var(--headfont); font-weight:700;}
+.exitem .et{font-family:var(--headfont);}
+.tlhead h2{font-family:var(--headfont);}
+.tlbig{font-family:var(--headfont);}
+.tltitle{font-family:var(--headfont);}
+.tlbar-year{font-family:var(--headfont);}
+.panelnav .pttl{font-family:var(--headfont); letter-spacing:.06em;}
+.calsheethead span{font-family:var(--headfont); font-weight:600;}
+.tsterm{font-family:var(--headfont); font-weight:700; letter-spacing:.04em;}
+/* guide chapter + section names are display type too (the list
+   form of the chapter heading); the major pills above them stay
+   gothic — they are primary navigation, not headings. */
+.gsub{font-family:var(--headfont); letter-spacing:.03em;}
+.gsec{font-family:var(--headfont);}
+/* (2) The one deliberate accent in the rhythm: a short amber rule
+   beside guide / business chapter titles. */
+.biztitle{border-left:3px solid var(--accent); padding-left:11px;}
+/* (3) Wood theme only: the grain lives on the ground alone — two
+   repeating gradients with incommensurate periods (23px / 173px)
+   so the pattern never reads as a uniform tile; alphas stay at
+   0.02–0.14 so text ground stays calm. Cards, sheets and reading
+   surfaces stay plain (the Endel subtraction for reading screens);
+   the header and toolbar stay plain too, like the desk's edge. */
+:root[data-theme="wood"] body{
+  background-color:var(--bg);
+  background-image:
+    repeating-linear-gradient(91deg, rgba(0,0,0,.14) 0 1px, rgba(0,0,0,0) 1px 9px, rgba(255,214,150,.035) 9px 10px, rgba(0,0,0,0) 10px 23px),
+    repeating-linear-gradient(179deg, rgba(0,0,0,.10) 0 34px, rgba(255,205,140,.028) 34px 71px, rgba(0,0,0,.05) 71px 118px, rgba(255,220,170,.02) 118px 173px);
+}
+/* (4) Wood theme only: cards sit ON the desk — a soft drop shadow
+   and a hair of top light, so works and names read as cards laid
+   on the wood (the Balatro tactility, kept quiet). */
+:root[data-theme="wood"] figure.work{
+  box-shadow:0 1px 0 rgba(255,220,170,.05), 0 10px 22px rgba(0,0,0,.38);
+}
+:root[data-theme="wood"] .bizchrow, :root[data-theme="wood"] .tagaccrow{
+  box-shadow:0 6px 16px rgba(0,0,0,.30);
+}
 </style>
 </head>
 <body>
 <script>/* pre-paint (v2.22, diary pattern): restore saved appearance before
    first paint so a returning user never sees the default theme flash. */
-try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h=document.documentElement;if(z){if(z.theme)h.dataset.theme=z.theme;if(z.fontSize)h.dataset.fontsize=z.fontSize;if(z.fontFamily)h.dataset.fontfamily=z.fontFamily;if(z.lineHeight)h.dataset.lineheight=z.lineHeight;}}}catch(e){}</script>
+try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h=document.documentElement;if(z){var th=z.theme;if(th&&!z.v31theme&&th==='sumi')th='wood';if(th)h.dataset.theme=th;if(z.fontSize)h.dataset.fontsize=z.fontSize;if(z.fontFamily)h.dataset.fontfamily=z.fontFamily;if(z.lineHeight)h.dataset.lineheight=z.lineHeight;}}}catch(e){}</script>
 <div id="veil" aria-hidden="true"></div>
 <header class="top">
   <div class="toprow">
@@ -16861,6 +16935,7 @@ const xy = tlMapXY(lat, lon, 360, 145);
 return [xf.ox + xy[0] * xf.s, xf.oy + xy[1] * xf.s];
 }
 const TL_MAP_STYLE = {
+wood: { sea: '#150e07', land: '#6f6248', coast: 'rgba(255,232,195,0.30)' },
 sumi: { sea: '#0c141d', land: '#5d6d5a', coast: 'rgba(235,240,235,0.30)' },
 ocher: { sea: '#0d1618', land: '#6d6a4e', coast: 'rgba(240,230,200,0.30)' },
 spandrel: { sea: '#0a1210', land: '#5f7057', coast: 'rgba(230,240,220,0.28)' },
@@ -19290,7 +19365,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.13';
+const APP_VERSION = '31.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -19428,6 +19503,7 @@ async function applyDataPack(){
    only — the Drive data files stay purely the encyclopedia datasets) and
    are restored pre-paint by the inline script at the top of <body>. */
 const THEMES=[
+  { id:'wood', name:'木', chip:'linear-gradient(135deg,#171009,#e8b45a)' },
   { id:'sumi', name:'墨', chip:'linear-gradient(135deg,#000,#26262b)' },
   { id:'ocher', name:'オーカー', chip:'linear-gradient(135deg,#16110b,#d9a441)' },
   { id:'spandrel', name:'スパンドレル', chip:'linear-gradient(135deg,#0e100e,#c9cfae)' },
@@ -19510,10 +19586,17 @@ function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHT
 
 const LS_ZSETTINGS = 'zukan.settings';
 let ZSET = (function(){
-  const d = { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard', soundOn:true, soundVol:0.6 };
+  const d = { theme:'wood', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard', soundOn:true, soundVol:0.6, v31theme:1 };
   try{ const z = JSON.parse(storeGet(LS_ZSETTINGS)||'null');
     if(z && typeof z==='object'){
       if(THEMES.some(t=>t.id===z.theme)) d.theme=z.theme;
+      /* v31.0 one-time migration: a settings file written before
+         v31.0 carries no v31theme mark; if it still names the old
+         default (墨/sumi) the app moves to the new wood ground
+         once. Any other saved theme was an explicit choice and is
+         respected, and once any save lands with the mark present
+         the user's own choice rules from then on. */
+      if(!z.v31theme && z.theme==='sumi') d.theme='wood';
       if(['small','standard','large','xlarge'].includes(z.fontSize)) d.fontSize=z.fontSize;
       if(FONTFAMS.some(f=>f.id===z.fontFamily)) d.fontFamily=z.fontFamily;
       if(LINEHEIGHTS.some(l=>l.id===z.lineHeight)) d.lineHeight=z.lineHeight;
@@ -19535,7 +19618,7 @@ function applyAppearance(){
   h.style.setProperty('--bodyfont', fontFamById(ZSET.fontFamily).stack);
   ensureFontLoaded(fontFamById(ZSET.fontFamily));
   const tc = document.querySelector('meta[name="theme-color"]');
-  if(tc) tc.setAttribute('content', ZSET.theme==='kinari' ? '#f1ebda' : '#000000');
+  if(tc) tc.setAttribute('content', ZSET.theme==='kinari' ? '#f1ebda' : (ZSET.theme==='wood' ? '#171009' : '#000000'));
 }
 const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
