@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.9">
+<meta name="app-version" content="30.10">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1418,7 +1418,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
-<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
+<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -10001,6 +10001,17 @@ const tb0 = $('toolbar'); if(tb0) tb0.classList.remove('tbnoanim');
 if(restoreListY) window.scrollTo(0, restoreListY); else window.scrollTo(0,0); /* v27.9: one-shot (was restoreListScroll) */
 ensurePillAnchor();
 }
+/* v30.10: arriving at the timeline with a remembered map
+   sheet (tlMapOpenArtist's detour) reopens it. When a view
+   slide is running, the restore rides the slide's finish —
+   landing the bar and opening the sheet mid-slide would
+   fight the transition; on the instant path it runs now.
+   The swipe-back path lands in teardownSwipe, which calls
+   the same restore (see there), so both returns agree. */
+if(v==='timeline' && typeof tlMapMaybeRestore === 'function'){
+if(vtBusy){ const pf = vtAfterFinish; vtAfterFinish = ()=>{ if(pf) pf(); tlMapMaybeRestore(); }; }
+else tlMapMaybeRestore();
+}
 }
 function vtSlide(oldEl, newEl, dir, restoreY){
 vtBusy = true;
@@ -17316,12 +17327,68 @@ const r = tlMapRows[i]; if(!r) return;
 tlMapGoTo(r.side, r.title);
 }
 function tlMapGoTo(side, title){
-closeTlMapSheet();
+tlMapDismissSheet(); /* v30.10: a deliberate jump into the timeline is a closing, not a detour — no return state survives it */
 if(side !== tlRegion) setTlRegion(side);
 const idx = tlBarItems.findIndex(e => e.title === title);
 if(idx >= 0) tlBarGoTo(idx);
 }
+/* v30.10: leaving the sheet for a person page is a detour,
+   not a closing (his report, 2026-11-15 13:54, pinned down
+   14:58: after looking at a person he came back to a closed
+   sheet and could not get back to the year and the place he
+   had been reading). tlMapOpenArtist remembers the sheet
+   exactly as it stands — open, on this dataset and stream,
+   landed on this entry (the sheet's year IS the bar's landed
+   entry), with this place selected and the chip bands
+   scrolled this far — and tlMapMaybeRestore puts it all
+   back the moment the reader lands on the timeline again,
+   however deep the detour went (person hops, the works
+   viewer). The memory is view state only, like the
+   selection itself: never saved, and consumed by the first
+   restoration attempt, so it can never reopen twice.
+   An explicit closing — the sheet's own close button, a
+   tap on the backdrop, or a jump from the sheet into the
+   timeline (tlMapGoTo) — goes through tlMapDismissSheet
+   and forgets the detour instead. */
+let tlMapReturn = null;
+function tlMapChipScrolls(){
+const body = $('tlmapBody'); if(!body) return null;
+const bands = body.querySelectorAll('.tlm-chips');
+if(!bands.length) return null;
+const out = []; bands.forEach(b => out.push(b.scrollLeft || 0));
+return out;
+}
+function tlMapDismissSheet(){ tlMapReturn = null; closeTlMapSheet(); }
+function tlMapMaybeRestore(){
+const st = tlMapReturn; if(!st) return;
+if(view !== 'timeline') return;
+tlMapReturn = null; /* consumed either way — a restore never fires twice */
+if(st.ds !== DS) return; /* the detour crossed into the other book; the remembered places belong to that book's map */
+if(st.region !== tlRegion && tlStreams().some(s => s.key === st.region)) setTlRegion(st.region);
+const n = tlBarItems.length;
+if(n){
+  let target = Math.max(0, Math.min(n - 1, st.idx || 0));
+  if(st.year != null && tlEntryYear(target) !== st.year) target = tlIdxForYear(st.year);
+  /* the round trip re-lands the bar from the scroll (which
+     the return reset to the top), so land back on the entry
+     he left, with the usual settle verification behind it */
+  tlBarGoTo(target);
+  tlBarArmSettle(target, 4000);
+}
+tlMapSel = st.sel || null;
+tlMapSelSig = tlMapSigNow(); /* re-anchored AFTER the landing, so the selection's context matches again and tlMapPaint keeps it */
+openTlMapSheet();
+if(st.chips && st.chips.length){
+  const saved = st.chips;
+  requestAnimationFrame(() => {
+    const body = $('tlmapBody'); if(!body) return;
+    const bands = body.querySelectorAll('.tlm-chips');
+    saved.forEach((x, i) => { if(bands[i]) bands[i].scrollLeft = x; });
+  });
+}
+}
 function tlMapOpenArtist(id){
+tlMapReturn = { ds: DS, region: tlRegion, idx: tlBar.idx, year: tlMapYearNow(), sel: tlMapSel, chips: tlMapChipScrolls() };
 closeTlMapSheet();
 openDetail(id);
 }
@@ -19045,6 +19112,12 @@ function teardownSwipe(st, commit){
       const wantY = (st.listY != null)? st.listY: (CTX[DS].scrollY || 0);
       if(Math.abs((window.scrollY || 0) - wantY) > 4) window.scrollTo(0, wantY);
     } else window.scrollTo(0,0);
+    /* v30.10: a committed swipe landing on the timeline
+       restores a remembered map sheet too — showView is not
+       on this path, so the restore is called here as well;
+       both return paths (button and swipe) reopen the sheet
+       with the same year and the same selected place. */
+    if(view==='timeline' && typeof tlMapMaybeRestore === 'function') tlMapMaybeRestore();
   } else if(st.newEl){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
@@ -19129,7 +19202,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.9';
+const APP_VERSION = '30.10';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
