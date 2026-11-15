@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.12">
+<meta name="app-version" content="30.13">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -228,6 +228,15 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .favbtn{background:none; border:none; font-size:21px; line-height:1; color:var(--muted); padding:6px 8px; cursor:pointer; font-family:var(--sans);}
 .favbtn.on{color:#e3a93c;}
 .favmark{color:#e3a93c; font-size:11px;}
+/* v30.13: the 必見 (must-see) mark — a small pill chip in the
+   tagchip family (border + 999px radius, accent colour), sized
+   to ride inside a card name line, a detail title, a guide
+   chapter chip and a chapter heading without moving any layout:
+   inline, nowrap, and never taller than the line it sits in. */
+.mschip{display:inline-block; border:1px solid var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); border-radius:999px; padding:0 6px; font-size:10px; font-weight:700; letter-spacing:.08em; line-height:1.8; vertical-align:2px; white-space:nowrap; font-family:var(--sans);}
+.dname .mschip{font-size:12px; padding:1px 9px; vertical-align:5px;}
+.biztitle .mschip{font-size:11px; padding:1px 8px; vertical-align:3px;}
+.gsub .mschip{font-size:9px; padding:0 5px; line-height:1.7; vertical-align:1px; margin-left:5px;}
 .favfilter{flex:none; width:48px; min-height:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:16px; position:relative; cursor:pointer; font-family:var(--sans); padding:0;}
 .favfilter.on{color:#e3a93c; border-color:#e3a93c;}
 .favfilter .favcnt{position:absolute; top:3px; right:6px; font-size:9.5px; color:var(--muted);}
@@ -10292,6 +10301,23 @@ function openBiz(){ showView('biz'); bizEnsure(); }
    opened from the header brush icon on ANY screen, so the view
    slide transitions can never overlap two chapters in it. The
    Art Business book keeps the view-based reader. */
+/* v30.13: the 必見 (must-see) marks — batch 1 (his 2026-11-15
+   call: mark what must be seen, so the app itself says what to
+   study first). ARTISTS: derived mechanically from the timeline,
+   never a hand-picked list — every registered artist who is the
+   subject of a 西洋 (west) or 日本 (japan) art-stream timeline
+   entry, i.e. the entry's artists[] carries a link naming them
+   (the same name resolution the timeline itself uses). Derived
+   2026-11-15 from the live data (573 artists; timeline west 61
+   + japan 29 entries): 88 artists. GUIDE CHAPTERS: flagged in
+   production.json instead (mustSee on the chapter record — all
+   受験 chapters and all 目に見えない部分 chapters in batch 1).
+   Works carry no mark in batch 1: their rule is a separate
+   decision. Ids are stored as strings — the register mixes
+   numeric and slug ids. */
+const MUST_SEE_ARTISTS = new Set(['1','3','4','5','8','14','18','19','20','22','28','44','48','52','53','54','55','56','57','58','60','61','62','63','64','65','66','67','68','69','70','71','73','74','78','79','80','81','82','83','85','88','89','90','102','106','170','192','195','196','198','230','231','233','ai-weiwei','albrecht-durer','amedeo-modigliani','auguste-rodin','barnett-newman','dan-flavin','diego-velazquez','el-greco','ernst-ludwig-kirchner','francisco-goya','georges-braque','jan-van-eyck','jasper-johns','jean-michel-basquiat','jeff-koons','judy-chicago','kitagawa-utamaro','makoto-aida','marc-chagall','michelangelo-pistoletto','nam-june-paik','olafur-eliasson','rene-magritte','robert-rauschenberg','ryusei-kishida','titian','toshusai-sharaku','tsuguharu-fujita','unkei','ushio-shinohara','utagawa-hiroshige','willem-de-kooning','yasumasa-morimura','yoko-ono']);
+function mustSeeChipHTML(){ return ' <span class="mschip">必見</span>'; }
+function isMustSeeArtist(dsKind, a){ return !!a && dsKind === 'artists' && MUST_SEE_ARTISTS.has(String(a.id)); }
 let guideData = null, guideError = false, guideView = 'howto', guideMajorId = null, guideChapterId = null, guideTermName = null, guideDictQ = '';
 /* v28.0: in-guide navigation stack. A term jump (from chapter
    text or from the dict list) PUSHES a full snapshot — view,
@@ -10716,7 +10742,7 @@ function guideDictInput(v){ guideDictQ = v; const el = $('gdictlist'); if(el) el
 function guideChapterHTML(){
   const c = guideChapterById(guideChapterId);
   if(!c) return '<div class="empty">章が見つかりません</div>';
-  let h = '<h2 class="biztitle">' + esc(c.title || '') + '</h2>';
+  let h = '<h2 class="biztitle">' + esc(c.title || '') + (c.mustSee? mustSeeChipHTML(): '') + '</h2>';
   if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
   const secs = Array.isArray(c.sections)? c.sections: [];
   /* v28.2: true section tabs — with 3+ headed groups only
@@ -10760,7 +10786,7 @@ function renderGuide(){
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
     if(m.id === 'exam') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
-    h += '<div class="gsubpills">' + m.subs.map(s=> '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" data-gchap="' + s[1] + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + '</button>').join('') + '</div>';
+    h += '<div class="gsubpills">' + m.subs.map(s=> { const sc = guideChapterById(s[1]); return '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" data-gchap="' + s[1] + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + ((sc && sc.mustSee)? '<span class="mschip">必見</span>': '') + '</button>'; }).join('') + '</div>';
     h += '<div id="gchap">' + guideChapterHTML() + '</div>';
   }
   else if(guideView === 'dict'){
@@ -12180,7 +12206,7 @@ function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -12761,7 +12787,7 @@ if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab =
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
-'<h2 class="dname">'+esc(a.name)+'</h2>'+
+'<h2 class="dname">'+esc(a.name)+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
 (a.name_latin||a.name_native? '<div class="dlatin">'+esc(a.name_latin)+(a.name_native?'　'+esc(a.name_native):'')+'</div>': '')+
 '<div class="dmeta">'+
 (a.years?'<span>'+esc(yearsDisplay(a))+'</span>':'')+
@@ -19264,7 +19290,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.12';
+const APP_VERSION = '30.13';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */

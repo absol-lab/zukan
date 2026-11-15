@@ -1280,7 +1280,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch2",
@@ -1355,7 +1356,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch3",
@@ -1437,7 +1439,8 @@
       }
      ]
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch4",
@@ -1494,7 +1497,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch5",
@@ -1549,7 +1553,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch6",
@@ -1596,7 +1601,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch7",
@@ -1653,7 +1659,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch8",
@@ -1693,7 +1700,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch9",
@@ -1793,7 +1801,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch10",
@@ -1884,7 +1893,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch11",
@@ -1951,7 +1961,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "exam-ch12",
@@ -1999,7 +2010,8 @@
      ],
      "cases": []
     }
-   ]
+   ],
+   "mustSee": true
   },
   {
    "id": "guide-ch-maturity",
@@ -2095,7 +2107,8 @@
      "cases": []
     }
    ],
-   "pill": "人間としての地"
+   "pill": "人間としての地",
+   "mustSee": true
   },
   {
    "id": "guide-ch-sociality",
@@ -2270,7 +2283,8 @@
      "cases": []
     }
    ],
-   "pill": "社会性"
+   "pill": "社会性",
+   "mustSee": true
   }
  ],
  "glossary": [
@@ -3005,7 +3019,8 @@
     "新しい作家の登録を順に進めます",
     "「作家の言葉」の全体辞典ページ",
     "会期末アラート（終わり間際の展覧会を先に知らせる）",
-    "「一番近い収蔵美術館」の表示"
+    "「一番近い収蔵美術館」の表示",
+    "必見の印を順に広げていきます"
    ]
   }
  ]
