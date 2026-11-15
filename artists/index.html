@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.5">
+<meta name="app-version" content="30.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -657,6 +657,18 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
  in every theme. */
 .newtag{position:absolute; top:13px; right:2px; font-size:11px; font-weight:800; letter-spacing:.1em; color:#191204; background:#e6b93d; border-radius:999px; padding:2px 8px; line-height:1.5;}
 .uprow.tap .newtag{right:24px;}
+/* v30.6: notification rows answer the tap at once — a pressed
+   tint on the whole row, and touch-action:manipulation kills
+   the double-tap-zoom wait that made taps feel ignored. Pure
+   paint (no transition, no layout), so the v27.5 instant-
+   accordion rule for the history tab is untouched. */
+.uprow.tap{touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
+.uprow.tap:active{background:var(--bg2);}
+.nmember{touch-action:manipulation; -webkit-tap-highlight-color:transparent;}
+.nmember:active{background:var(--bg2);}
+.npagebtn{touch-action:manipulation;}
+.ratebtn{touch-action:manipulation;}
+.ratebtn:active{transform:scale(.92);}
 /* v27.4: the compact history rows carry their NEW inline in
    the head (the absolute corner slot belongs to the rate
    buttons there), and the bell panel's history tab gets the
@@ -686,6 +698,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .ratebtn.on{filter:none; opacity:1;}
 .ratebtn.on.good{border-color:var(--tag); box-shadow:inset 0 0 0 1px var(--tag);}
 .ratebtn.on.bad{border-color:var(--danger); box-shadow:inset 0 0 0 1px var(--danger);}
+/* v30.6: the at-a-glance mark chip in the history row head —
+   fixed pairings (gold like the NEW tag / danger red) so it
+   stays legible in every theme. */
+.vmark{flex:none; align-self:center; font-size:11px; font-weight:800; letter-spacing:.08em; border-radius:999px; padding:2px 9px; line-height:1.6;}
+.vmark.good{background:#e6b93d; color:#191204;}
+.vmark.bad{background:var(--danger); color:#fff;}
 .upnotes{margin:6px 0 0; padding-left:17px;}
 .upnotes li{font-size:13.5px; line-height:1.75; margin-top:2px;}
 .corlead{font-size:15.5px; line-height:1.85; margin-top:10px;}
@@ -831,7 +849,12 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .symopt .symcnt{margin-left:auto; color:var(--muted); font-size:12.5px;}
 .symopt.on{font-weight:700;}
 .symopt.on .symcnt{color:var(--accent);}
-.tscard{background:var(--card); border-radius:16px 16px 0 0; padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); width:100%; max-width:560px; max-height:70dvh; overflow:auto}
+.tscard{background:var(--card); border-radius:16px 16px 0 0; padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); width:100%; max-width:560px; max-height:94dvh; display:flex; flex-direction:column; overflow:hidden}
+/* v30.6: inside the sheet only the year-list scrolls — the map
+   (and the close button) stay on screen however long the year is */
+#tlmapBody{overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch;}
+#tlmapsheet .tlmap-bigwrap{flex:none;}
+#tlmapsheet .tsclose{flex:none;}
 .tsterm{font-size:18px; font-weight:800; margin-bottom:6px}
 .tsclose{margin-top:14px; width:100%; min-height:48px; border:1px solid var(--line); background:var(--card2); color:var(--text); border-radius:10px; font-size:15px; font-family:inherit}
 .btbox{border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 0 14px}
@@ -1059,7 +1082,7 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 .tlsegs .tlsegrow{padding:0;}
 .tlmap{position:relative; flex:1 1 auto; min-width:0; padding:0; margin:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent; font-family:inherit;}
 .tlmap canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
-.tlmap .tlmap-tag{position:absolute; left:7px; bottom:5px; font-size:9.5px; letter-spacing:.1em; color:var(--muted); pointer-events:none;}
+.tlmap .tlmap-tag{position:absolute; left:7px; bottom:5px; font-size:10px; letter-spacing:.04em; color:#f2eee4; background:rgba(10,14,18,.55); border-radius:999px; padding:2px 8px; max-width:calc(100% - 14px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;}
 #tlmapsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #tlmapsheet.hidden{display:none}
 .tlmap-bigwrap{position:relative; width:100%; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card2);}
@@ -1314,7 +1337,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
-<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small" style="margin-bottom:8px;">年表の年と連動しています。光っている場所が、その年ごろに動いていた場所です。地図をタップすると、その場所の動きが見られます。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
+<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small" style="margin-bottom:8px;">年表の年と連動しています。光っている場所が、その年ごろに動いていた場所です。光のそばに地名が出ます。地図をタップすると、その場所の動きが見られます。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -9199,7 +9222,9 @@ return o.name? o: null;
 }
 function normalizeArtist(a){
 a = a || {};
-const works = (Array.isArray(a.works)?a.works:[]).map(w=>{
+/* v30.6: the work-item mapper is shared — drawings
+   （ドローイング) carry the exact same item shape as works. */
+const mapWorkItems = arr=> (Array.isArray(arr)? arr: []).map(w=>{
 const o = {
 caption: String(w && w.caption || ''),
 file: String(w && w.file || ''),
@@ -9225,6 +9250,12 @@ if(w && 'hires' in w) o.hires = !!w.hires;
 if(w && w.video){ const nv = normalizeVideo(w.video); if(nv) o.video = nv; }
 return o;
 }).filter(w=>w.file || w.caption || w.img);
+const works = mapWorkItems(a.works);
+/* v30.6: drawings — a SEPARATE list from works (his rule: paper
+   pieces already inside works stay where he put them; nothing is
+   reclassified). Same shape and normalization, so the field
+   survives every load / sync / pack apply. */
+const drawings = mapWorkItems(a.drawings);
 /* v2.65: books （作品集） — curated on the Muse side only; the app
    never edits them, but they must survive normalization, merges
    and editor saves or the tab would silently empty. */
@@ -9296,6 +9327,7 @@ relation: String(a.relation||''), key_works: String(a.key_works||''), notes: Str
 tags: Array.isArray(a.tags)? a.tags.map(String): [],
 work_image: String(a.work_image||''), work_caption: String(a.work_caption||''),
 works: works,
+drawings: drawings,
 books: books,
 prices: prices,
 breakthrough: normalizeBreakthrough(a.breakthrough),
@@ -9407,6 +9439,12 @@ function displayWorks(a){
       if(q.y == null) return -1;
       return (p.y - q.y) * dir || (p.i - q.i);
     }).map(x => x.w);
+}
+/* v30.6: the artist's drawings （ドローイング) — a list SEPARATE
+   from works, in registration order (no sort controls; the order
+   is the curated one, like works' 登録順）. */
+function drawingsOf(a){
+  return (a && Array.isArray(a.drawings)? a.drawings: []).slice();
 }
 function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
 /* v4.3: display modes for the detail works grid (his ask: the
@@ -12164,8 +12202,10 @@ openSettingsPanel('reqnotif');
    and the pager panels all follow this one order.
    v27.16: 発言 (quotes) joins between 制作プロセス and インタビュー —
    作品 / 特徴 / 来歴 / 制作プロセス / 発言 / インタビュー / 影響 /
-   作品集 / 価格. */
-const DTABS = ['works','feat','bio','process','quotes','interviews','influences','books','prices'];
+   作品集 / 価格.
+   v30.6: ドローイング joins immediately after 作品 (his order) —
+   作品 / ドローイング / 特徴 / 来歴 / … */
+const DTABS = ['works','drawings','feat','bio','process','quotes','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -12503,6 +12543,9 @@ function fmtJPYShort(n){ if(n >= 1e8){ const v = n / 1e8; return '¥' + (v >= 10
 function renderDetail(){
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
+/* v30.6: drawings （ドローイング) — shown as their own tab right
+   after 作品， only for artists who have at least one. */
+const dws = drawingsOf(a);
 const sp = splitNotes(a.notes);
 /* v15.0: the prices tab exists (as a hidden button + an empty
    pager panel, so DTABS indices always line up) but is only
@@ -12543,6 +12586,7 @@ if(String(x.id)===String(a.id) || !Array.isArray(x.influences)) return;
 const hit = x.influences.find(inf=> (inf.id != null && String(inf.id)===String(a.id)) || (inf.id == null && !!inf.name && (inf.name===a.name || (!!a.name_latin && inf.name===a.name_latin))));
 if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
 });
+if(state.tab==='drawings' && !dws.length) state.tab = 'works';
 if(state.tab==='process' && !hasProcessContent) state.tab = 'works';
 if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
@@ -12559,6 +12603,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '</div>'+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
+'<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(hasProcessContent? '': ' style="display:none"')+'>制作プロセス</button>'+
@@ -12597,6 +12642,20 @@ worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</
 '<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')">コンパクト</button>' +
 '<button class="'+(workMode==='mini'?'on':'')+'" onclick="setWorkMode(\'mini\')">ミニ</button>' +
 '</span></div>' + worksHTML;
+/* v30.6: the drawings panel — the same gallery as works (same
+   tile shape, same viewer, same page turn), its own list. The
+   tiles carry data-drawidx, NOT data-workidx: the works wiring
+   below is keyed to the works list and must never see them. */
+let drawingsHTML = '';
+if(!dws.length) drawingsHTML = '<div class="empty">ドローイングはまだありません</div>';
+else{
+drawingsHTML = '<div class="worksreq"><span class="small">ドローイング '+dws.length+'点</span></div>' +
+'<div class="gallery wm-'+workMode+'">';
+dws.forEach((w,i)=>{
+drawingsHTML += '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+});
+drawingsHTML += '</div>';
+}
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
    would be a small lie), and the purchase-page link. */
@@ -12867,6 +12926,7 @@ return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner
 }
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
++'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
@@ -12909,6 +12969,19 @@ if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50
 else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 }
 });
+/* v30.6: the drawings tiles — same wiring shape as works, but
+   the click opens the viewer over the DRAWINGS list (kind
+   'drawings'), never the works list. */
+v.querySelectorAll('[data-drawidx]').forEach(ph=>{
+const w = dws[+ph.dataset.drawidx]; ph._work = w;
+const fig = ph.closest('figure');
+if(fig) fig.addEventListener('click', ()=>openViewerDrawings(a, +ph.dataset.drawidx));
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
 /* v27.9 (§6.4-1 continued): two frames after this render — the
    forward slide is under way and the detail is on screen —
    promote any still-pending visible plate in the detail to a
@@ -12918,7 +12991,7 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{
 if(state.detailId == null || String(state.detailId) !== String(a.id)) return;
 const vv = $('viewDetail'); if(!vv || vv.classList.contains('hidden')) return;
 const vh2 = window.innerHeight || 800;
-vv.querySelectorAll('[data-workidx]').forEach(ph2=>{
+vv.querySelectorAll('[data-workidx],[data-drawidx]').forEach(ph2=>{
 const sp2 = ph2.querySelector('.imgholder');
 if(!sp2 || !sp2._work || sp2._imgJob || sp2.querySelector('img')) return;
 const r2 = sp2.getBoundingClientRect();
@@ -12965,7 +13038,19 @@ let viewerWorks = [], viewerIdx = 0;
 let viewerArtistId = null;
 let viewerAnim = null;
 let viewerGen = 0;
+/* v30.6: which list the viewer is paging — 'works' or 'drawings'.
+   The drawings tab opens the viewer over the drawings list; the
+   kind decides the サムネ button (a thumbnail is a works-only
+   concept: hidden for drawings, and viewerSetThumb no-ops), so
+   a drawing can never leak into the works list via the viewer. */
+let viewerKind = 'works';
+let viewerKindNext = null;
+function openViewerDrawings(a, idx){
+viewerKindNext = 'drawings';
+openViewer(drawingsOf(a), idx, a.id);
+}
 function openViewer(ws, idx, artistId){
+viewerKind = viewerKindNext || 'works'; viewerKindNext = null;
 viewerWorks = ws; viewerIdx = idx||0; viewerArtistId = (artistId!=null)? artistId: null;
 const vw = $('viewer');
 viewerGen++;
@@ -12979,6 +13064,7 @@ try{ viewerAnim = vw.animate([{ transform:'translateY(100%)' },{ transform:'tran
 function closeViewer(){
 const vw = $('viewer');
 if(!vw.classList.contains('open')) return;
+viewerKind = 'works';
 vDeepNoteSave();
 vTurnReset();
 clearViewerVideo();
@@ -13021,11 +13107,17 @@ return workKeysOf(w).some(k=> fk.indexOf(k)>=0);
 }
 function updateVThumbBtn(){
 const b = $('vthumb'); if(!b) return;
+/* v30.6: no thumbnail button while paging drawings */
+if(viewerKind==='drawings'){ b.style.display = 'none'; return; }
+b.style.display = '';
 const isT = viewerIsThumb();
 b.textContent = isT? 'サムネ' : 'サムネにする';
 b.classList.toggle('on', isT);
 }
 function viewerSetThumb(){
+/* v30.6: the thumbnail pin applies to works only — a drawing must
+   never be copied into the works list from the viewer. */
+if(viewerKind==='drawings') return;
 const a = artistById(viewerArtistId); if(!a) return;
 const w = viewerWorks[viewerIdx]; if(!w) return;
 if(viewerIsThumb()){ toast('この作品がサムネです'); return; }
@@ -15038,7 +15130,12 @@ function renderUpdateList(){
     const k = changelogEntryKey(e);
     const open = !!changelogOpen[k];
     const rt = ratingOf(e.v);
-    return '<div class="uprow tap" data-ck="'+escA(k)+'" onclick="toggleChangelogDetail(\''+escA(k)+'\')"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span><span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
+    return '<div class="uprow tap" data-ck="'+escA(k)+'" onclick="toggleChangelogDetail(\''+escA(k)+'\')"><div class="uphead"><span class="upv'+(e.v===APP_VERSION? ' now': '')+'">v'+esc(e.v)+'</span>'
+      /* v30.6: the mark shows in the row head itself, so a rated
+         version reads at a glance without opening the row (the
+         rate buttons + storage + Drive mirror are v2.92's). */
+      + (rt==='good'? '<span class="vmark good">グッド</span>': rt==='bad'? '<span class="vmark bad">バッド</span>': '')
+      + '<span class="upat">'+esc(notifWhen(e.at))+'</span>'+(e.v===APP_VERSION? '<span class="upat">（いまの版）</span>': '')
       + (seenSet.has(k)? '': '<span class="newtag inl">NEW</span>')
       + '<span class="ratebtns" onclick="event.stopPropagation()"><button class="ratebtn good'+(rt==='good'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'good\')" aria-label="グッド">👍</button><button class="ratebtn bad'+(rt==='bad'? ' on': '')+'" onclick="rateVersion(\''+esc(e.v)+'\',\'bad\')" aria-label="バッド">👎</button></span>'
       + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
@@ -15413,20 +15510,28 @@ function renderRequestNotifs(targetId){
     const dispName = r.kind==='works'? r.name: (resolved || r.name);
     const key = 'req:' + r.id;
     const open = !!notifOpen[key];
+    /* v30.6 (his complaint, 2026-11-15): the row itself is the
+       tap target now. A completed request for one person jumps
+       STRAIGHT to that person's page (reqNotifJump marks it
+       read on arrival, as before) — no expand-then-small-button
+       detour. A declined row has no page to open, so it keeps
+       the expand (to read the note). */
+    const navigable = r.status !== 'declined';
     let detail = '';
-    if(open){
+    if(!navigable && open){
       let d = '';
       if(r.kind!=='works' && resolved && resolved !== r.name) d += '<div class="upat">リクエスト：「'+esc(r.name)+'」</div>';
       if(r.requested_at) d += '<div class="upat">依頼：'+esc(notifWhen(r.requested_at))+'</div>';
       if(r.note) d += '<div class="nnote">'+esc(r.note)+'</div>';
-      if(r.status!=='declined') d += '<button class="npagebtn" onclick="event.stopPropagation(); reqNotifJump(\''+escA(r.id)+'\')">その人のページへ ›</button>';
       detail = '<div class="ndetail">'+d+'</div>';
     }
-    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
+    const head = '<div class="nhead"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
       + '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>'
-      + (isNew? '<span class="newtag">NEW</span>': '')
-      + '<span class="nexp'+(open?' open':'')+'">›</span></div>'
-      + detail + '</div>' };
+      + (isNew? '<span class="newtag">NEW</span>': '');
+    if(navigable){
+      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="reqNotifJump(\''+escA(r.id)+'\')">' + head + '<span class="upgo">›</span></div></div>' };
+    }
+    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')">' + head + '<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
   });
   /* v7.0: registration detections (see detectNewPeople) ride
      the same panel. v13.1: only the current book's notes are
@@ -15451,17 +15556,12 @@ function renderRequestNotifs(targetId){
           detail = '<div class="ndetail"><div class="upat">この通知が作られた時点の名簿は保存されていません（名簿つきの通知はこの版からです）</div></div>';
         }
       }
-      return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
+      return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')"><div class="nhead"><div class="nrow"><span class="nname">ほか '+n.count+' 名</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
     }
-    const key = 'reg:' + n.id;
-    const open = !!notifOpen[key];
-    let detail = '';
-    if(open){
-      detail = '<div class="ndetail"><div class="upat">'+(n.dataset==='designers'? 'デザイナー図鑑': '作家図鑑')+'への登録を検知</div>'
-        + '<button class="npagebtn" onclick="event.stopPropagation(); regNotifJump(\''+escA(n.id)+'\')">その人のページへ ›</button></div>';
-    }
-    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'"><div class="nhead" onclick="toggleNotifDetail(\''+key+'\')"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="nexp'+(open?' open':'')+'">›</span></div>'
-      + detail + '</div>' };
+    /* v30.6: a single-person registration note — the WHOLE row
+       jumps straight to the person's page (regNotifJump marks
+       it seen on arrival), like the completed-request rows. */
+    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div class="nhead"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div></div>' };
   });
   /* v13.1: one chronological stream again, but only THIS
      book's rows reach it (the v13.0 sections mixed both books
@@ -16438,6 +16538,9 @@ window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true 
    break the links. */
 const TL_MAP = {"land":{"u":10,"d":"spG42C2BSHKdFVOVB9BTvBhBoCaQXUHOC;mvGi1CQIFIbGHHRKJJ;2+Bm0CfCEXgBK;0tD0uCUGmBDHuBFFNORBZtBAJ;8+D2uCEIQHEIdqBIKfGRiBZOzBHGVmCpBgBnBOJ;8/D4rCOUCNMWQGiBDJePBXsBPIJHKPFLVHQNCbpB5BiBQ;m7DgjCHEXNdf;oiE+/BESXAGP;07Du/BFCFN;m7Du+BEQLFBP;iyB09BGqBNACY1BgFhBObLN5BWnBH1BIXmBHcXERICSjB;wsD49BGOOFQQUwCwBcSmBUCEWoBkBEQKoBJ4B3BgDFiBhBInBYbLCJbS7BPTlBdJCXJOREWhBBNjBoBPHRlB7BVnDOlBQJSrCClBWbBfPALOFAhBvBtDKIHRQOPlBOzBCOINqBV0CTadCRORISKDHJGJKECNabcHaWYCDLYlBoBHAJPFMD6BWYFKKTSJiB+C2BOFQvBDZM1BIFGK;i4D27BGGNAHL;m+Cw7BhBLSD;q3Dq7BTBDL;wgDu7BRCKRWLsBFrBU;u8Cm6BYMvBG;y/Cm6BBM5BCQLMG;02Cs5BmBCGHiDmBVI9DT5BROTYC;+mDg5BJOGd;m0Ds5BNFNb;4xDy4BjBQlBLeDGJCKMAQNBLQC;oiDq3BFGRL;qkDi3BGQ5BJEL;uyD+3BFGHThBVEDaO;ymD81BGgBWMQVoBL+DsBcgBgBMGKRCEOmCgC3BJlBnBZJbMCQPGfDRPTDdGWVPlBzClBNMDPPJiBLdAhBZmBJ;ghDo0BPUNElCADOSSwBPAKJDZUiBkCLGHFKPXCCHNLCTNGC0BTBClBNNYjCSNoBI;mjDu0BBQJBAaNlBEPGH;80C64BVApBhBhC3CNfhCpCsBG+B+BWAqBoBHQUIKYYQ;u8Cg0BWSXCFgBROJyBBFVIHLXHXIHJdBBZTVAjBMNeCEPgBHqCrCyBelBsBOS;4hD8vBCYFSHTHKAYXLAXLHdSDFIPYNGKiBPBPQK;wlCoxBREHPDbIfiBuB;2tG6uBVAGNMB;ogD2uBTaLNKXMADMQR;68CqvBZSuB7BEQ;++C2tBYGVY;mhDwtBGYPFGSJGJbMCAHLP;2+C+sBDSTZ;y+CypBSAGcPYAgBuBKCaXVDINLbBILFFBIJLDbIIIxB;4qG4pBfGAJ;2jG+pBbFcDOK;smG2oB0BGiBUHInBDNQTLdEJNqBAJPLB;23CupBPKPFBRsBNEI;yyEmpBHAAXWQ;+hG8mBcG0BkBeInCIOJTFLR9BLHDID/BO2BZ;qjGomBRPEL;w+C8mBJQLfchBKG;kjGwkBVEBH;0jGwkBDOLV;8mD6fHSHFPQLFKV;soB6efWNJ;yhB6e0BIfIXH;ucodHgB1BTEJ;wYsbMOBaRGLpB;8qD+dNoB9BKbWNFAPxCOUQNgBLKJHERTTgCpB+BBUjBOKoBbS7BWDKcAQRU;4Y4aHQNRSN;2sDwZOEOHEWbGRUfNJWVADTKNWBMrB;+rGiYiBCRIXHFFIF;ymF6WrBFvBXFP0BK;2wGuVNSOFMEFGuBIFOODKYJQVBATXSLAOJTD7BAKNHDkBrBeRKA;6gFsTUBHWSQlBXBP;wsDuVWiBdFLcSWAOPLLOCjDLRCbSJHHKD;wOuUjBMbBQVJT8BZUM;2asSLQXTeF;k0EuRTINPqBHKG;8QwQVUqBBViBUCUaOCSgBYENSIKRKlCCrBOLDwBXlBLWFLJENeCELNLXDDTLKLdYjB;osE2PlBFkBB;miGoOHMNHKH;ygG+NXKRFQH;uoEoN8BKPGpBF;w+FiMEKiDeRGpBNvBUHJZCQJKhB;2JyLDOWOZOrCSxCJUHrBJkBJpBDMNgBBeOeLaGgBJ;qkGmLVADJIJSDQG;ojEgKmDkBBMOGFP2BEoBSzBMBSHE7BLDJrBAJFEHXEKKLIzBIoBgBDOjBDpCQjCkBbNzBQJHRKbDdiBCIWEBcTCHQIIhBMHWdEFWbSb3CKbSTgBFqD7BQdXCLSzBWPZzBIxBgBQOpCGANdDZK9DEtE2CgBCeQMJWCcWCSPUJ4BlBqBhC6BbMXJtBcFUrBWBMUMWkBHiBzBOHtBQDNPdHMdTF/BUWdLJzBgBTCJKcQAKQEWNgBICMbElBkBUKiB2BAQLEQSHgBLCvBoC3BiBhBMHF7BWHWJAAVbFzBmBDOgCsCImBBiBvC+BHLGNfNRfjBHEPRAR0COAMkByBmBY0CNCpBfZpCflBDMKnCftDjBYXFCrBLdZTTpBRADUZFBIlBEAQJKbO5ByBAIlBOHuDLCHQGGRGPSRR9BtERrDpBKZXIHFFlBVTdhDGxCLHZJBjBM/BbbrBpBCQuBcUMmBEXMEDYIMsBBwBtBIsBmBMWaZmBNEBavBaAI5BQDQlCgB9BOLMdCRzBCfjB1BjBjBLvBTLvBrCJAGbTmBdtBiBsCgBsBDQcWMkCSMSqBwCmCLOmBaiEfBcdsCjB0BzEoEVqBJYOSDiBauBGuCNc1BezBsBBOSgBBoB5BgBGKHqBvB4BlBiBvBW/BA7BSXNJdGR7B7CRjDxBvCDbS/BWdCZPdGLZnC9BtCUzCZhBzBKfnBfA9CgBzBJjCQhDjCFVfnBjBZBbRVSRIfA5BPRW1B6BtCcJqBjBDZKbwBdUhBqCMqCbqEFWJOEAKSDJKGOBSLKCKiDeKSkCWUNAXcL0EmBqBNUOEHgBGQJc9BCXFJIHdBNMdCPJnBKpBLZdKPLJWReBINmBCwBRiBA+BWqBBYJBV/CzBeTJHcNxCUAMeEDIvBOLDEHTFWLFDfDAHTCVgBPCVuBWeXCXQFLXBXEOMJCZFQWHEUQAKRDGKLCISNAPHLdhBnBCblCjBVfLBFIBPPBPGGayBqBQAAK0BaDIbLHMOIBKTSHCIVNThChBfXFTZJvBalBFdGBYrBSViBIMrBoBtBATQVTvBACbNHOpBLrBcN6DGKLEnBjBfdHBN8BCFXSKuBPGPsBNSdkCHOJNdIfqBLFQMIZUGSUEAIgBJgBOmCVqBKEJcFDfKLSHQQQAGbTDBL+CFWJTJnDOfRETHRILuClBBHbJhBGTOEMnCiBNciBYRWVGR0BXBLQXAxBxCnBYZEbJNjCuDxB2ChC4CnBsCHePqCD+BOZGWMUFkFoBQIAOVKfGnDLgBOCeqBKCHLJOFwBMQFLNuBTmBIKNPLKLNL4BIKKXCAMOGgBDELwDbQCTMqDNWMYLVLMH6BIkDcOJVPXBIHLVgCnB2BEEMTQUUDcWMvBqBWC2BfLJINVBDJQTZPkBNDNUKHUWCJNiBHqBAkBMRRBT+DFPLYL4DRmCCyCJYRwBHiBGbGuBCEKuCD8BSDK5CWoCEKOqBJ4EQCNqCCgBMKMLI4BYUTgBI4DBPRcH0FMmCc4DBQIBQYGqEDkBSYFPNKHoDE,uxBqbaUPCNcGYgBO8BBCnBPFGNNAERkBBTVPEBQFhBXFTdUCANiBBAfjBBpBMvBkBSSBO;g4F+JNGlCLgBN;ojEuIwBEvBK;m7F2JAUaPYOFOUOiBfCV6BEaKCKPMOKBKlBOxBDdkBXObCPIBMVEZQTWJoBeCSiBcD2DoB2BEEkBOWeUQFKVJdNLgBHiBbPfXNYVPvB2CBwBakBAGqBgBQeLgBdgCiCHO6CiBIQWKCY1CmB/DA9CkCwBdoCRSKRMMmBaKiBDUVAOOIvDwBNBBRkBP1BECG9BWLOBOQOpCOkBApBCRmBLLIWPYENNXCUNBOGMuBjCqBrBqBAcY+BFiBPAJNXnBAXXTTKZP3BCHCISTEbLrBA3BcPSGePmCgB+BmBYwBLYLKhBgCJGOTyBJDBoBJMuCBgBOEULgCgBqBQEkBP4BUWPEXMJeBgBXOGPOEuBOPHVYHGPiBgBoBAaKMJwBBPGGKgBKCQgBMMYcQ+BE2BgBQuBKECOPQGGkBCAUQL6BUKKDMYFkCK4BmBgBGSsBHiBnCyCLgDfwCVWzBI7BeRUH4BhDyDVMZBrBTBKaSDOOIBKRadK9BCEmBLGvBCCUOGKHGMhBSHehBMFOoBSHSXMLYZQSiBZBZMDStCdNnCejBdFSPGhBYIKpBNFFaLDWtCHpBIBkB9CBlCMZO7EDdVR5C3BrCzEdVIHJTgBnBDJHKLJCVQlBYLKXaXHFAzBNPAPbLRQKMRGDLvBLBNbTBKLFAXnBjBEHpCLlCtBlBKpEzBnBfDJITNbhC3BAP5BzBRrBPHRDCgB+BmCSwBaSLMrBlBBZ3BhBKAIRZTjBjCXTpBLrCxDBxBM1BP1BgBEKSDlB7CjBLRELZJDP1BlBDRZPLRxBBhCZvEbVEEOpCQGdWFFFjCmBOKRQpBOpBc/DgBuE/BOZpBKZNfICRlBDdNBLNHefeAuBNNLOHzCIbFhBToCRQABKqBAlDtBMJ8BJaRqDVuBO2GKuEaqBNeC+BNOIUNuBUcNCQ4BH+DSaKbKsDBUMWJTHMHqBBkBQ4BI+BDDLSDgBIASMPQAKTtBTCVYNuBMcWRK;ssFuHJIuBFaKYJiBaKHNTmBAWISiBmCUBIfCMIFGnCHxEOLJrBDXPiDHtDBJHuBHhCFeV2BL;uyFoHRMdN;ikGuH/BIbLKJuBC;09FsHQOSP0BJiBWDM8BNoCUCKmBF2CeSSjBKuCSeSeAFOhBY3BbZCBM4BaMUFOrCT0BkB/CTXJGF5BT5BKRHONuCDFFgBdDHvCXOD3BVtBKzENPHUHbAFTkBZ0BF;g1FgH8BAGGTKgBIDSzBG/BVAFqBCVN;wsDsHpCDsBJ;w5F0HVQVBLZeNwCE;uoFwIzBK3BToBjBTLyECqBOpCUZO;+wDmGVIlCJGF;o5FoGLIzBFmBN;utD8FPQpDEnBNKLaD;m2FmFQIJafCVDAJfABN;kwFwFIImBDEKLKzEMDFqBJ1DAuBZ+DUbRSHUC;22B+IrCBFHjBFBJUDBLoBPRDwBPFJ0GhBoBBOIvGsB9BmBES;y4F+E+BGSGFIkBKiFBaQpBK7DA1CHJVTH/BJIH;krF0EBOPI3CMbDsCb;8uFyElBGbFsBJcE;miBuErBKjBFODLHqBD;mvFgE3BEUJ;83FqEtBAJP8BK;m1FmEIItDJUFXDBH+CK;u0CmExDI2BbiCM;meqDgCOxBIlBkBXApBLSFlCXPPkEH;0iB8CoBGdM5BC5BD1BN;2yB6ClCKVDMHtBAqCCeH;mxC6DhDBrCZ+CT2Ce;s9FqDYI/BUjBCpBBVJSLlBAhBPwBPHDuBB8CU;+oGmBgDEkBKzDSsBAxDiBxDKcCNEQK3CamBI1BMxFFBJkBDJNiCI7BR6BRjBTmDDzDAvCb6DPuBIQL+BD;6Be+DQzGOqFBQIVK0EN8BEMI7EWuBCnBaAYYM/BImBKESVAaSrBCYIHG3BEaOAIxBB2BQGQhBEnBRGMXMyCCrDgBxCIvBcvDYROJafQIQTkBbCdRnBAhC1BNfbRINNHUXeFMXzBMXFGX8BEzBRjBDWRzBpBZHAH1BLvEA5BR8CHhELCH2ETIH1BF0DXHJsDH0CG0BJ2DOvBJCHkCL"},"pins":[{"id":"lascaux","place":"ラスコー（ドルドーニュ）","lat":45.05,"lon":1.17,"targets":[{"side":"west","title":"先史の美術","from":-17000,"to":-4000}]},{"id":"babylon","place":"バビロン（メソポタミア）","lat":32.54,"lon":44.42,"targets":[{"side":"west","title":"古代オリエント（メソポタミア）","from":-3500,"to":-539}]},{"id":"giza","place":"ギザ（メンフィス）","lat":29.98,"lon":31.13,"targets":[{"side":"west","title":"古代エジプト","from":-3000,"to":-30}]},{"id":"athens","place":"アテネ","lat":37.98,"lon":23.73,"targets":[{"side":"west","title":"古代ギリシャ（古典期まで）","from":-800,"to":-323}]},{"id":"alexandria","place":"アレクサンドリア","lat":31.2,"lon":29.92,"targets":[{"side":"west","title":"ヘレニズム","from":-323,"to":-30}]},{"id":"rome","place":"ローマ","lat":41.9,"lon":12.5,"targets":[{"side":"west","title":"古代ローマ","from":-100,"to":500},{"side":"west","title":"盛期ルネサンス","from":1495,"to":1527},{"side":"west","title":"バロック","from":1600,"to":1750}]},{"id":"istanbul","place":"コンスタンティノープル（イスタンブール）","lat":41.01,"lon":28.98,"targets":[{"side":"west","title":"ビザンティン","from":330,"to":1453}]},{"id":"baghdad","place":"バグダード","lat":33.31,"lon":44.36,"targets":[{"side":"west","title":"イスラム美術","from":622,"to":1600}]},{"id":"cluny","place":"クリュニー","lat":46.43,"lon":4.66,"targets":[{"side":"west","title":"ロマネスク","from":1050,"to":1200}]},{"id":"paris","place":"パリ","lat":48.85,"lon":2.35,"targets":[{"side":"west","title":"ゴシック","from":1140,"to":1500},{"side":"west","title":"国際ゴシック","from":1380,"to":1420},{"side":"west","title":"ロココ","from":1720,"to":1770},{"side":"west","title":"新古典主義","from":1784,"to":1830},{"side":"west","title":"写実主義","from":1848,"to":1870},{"side":"west","title":"印象派","from":1874,"to":1886},{"side":"west","title":"新印象派（点描）","from":1886,"to":1905},{"side":"west","title":"ポスト印象派","from":1888,"to":1915},{"side":"west","title":"フォーヴィスム（野獣派）","from":1905,"to":1910},{"side":"west","title":"キュビスム（立体派）","from":1907,"to":1925},{"side":"west","title":"シュルレアリスム","from":1924,"to":1945},{"side":"west","title":"《ゲルニカ》とマチス","from":1937,"to":1937},{"side":"west","title":"アンフォルメルとアール・ブリュット（ヨーロッパの戦後）","from":1945,"to":1955},{"side":"west","title":"イヴ・クラインと三木富雄","from":1957,"to":1962},{"side":"west","title":"リレーショナル・アートと参加の美術","from":1998,"to":2008}]},{"id":"florence","place":"フィレンツェ","lat":43.77,"lon":11.25,"targets":[{"side":"west","title":"初期ルネサンス","from":1420,"to":1495},{"side":"west","title":"マニエリスム","from":1520,"to":1600}]},{"id":"bruges","place":"ブリュージュ","lat":51.21,"lon":3.22,"targets":[{"side":"west","title":"北方ルネサンス","from":1430,"to":1500}]},{"id":"nuremberg","place":"ニュルンベルク","lat":49.45,"lon":11.08,"targets":[{"side":"west","title":"北方ルネサンス","from":1495,"to":1528}]},{"id":"venice","place":"ヴェネツィア","lat":45.44,"lon":12.32,"targets":[{"side":"west","title":"ヴェネツィア派と色彩","from":1500,"to":1590}]},{"id":"amsterdam","place":"アムステルダム","lat":52.37,"lon":4.9,"targets":[{"side":"west","title":"オランダ絵画の黄金時代","from":1600,"to":1700}]},{"id":"london","place":"ロンドン","lat":51.51,"lon":-0.13,"targets":[{"side":"west","title":"ロマン主義","from":1800,"to":1850},{"side":"west","title":"ポップアート","from":1956,"to":1965}]},{"id":"vienna","place":"ウィーン","lat":48.21,"lon":16.37,"targets":[{"side":"west","title":"象徴主義とアール・ヌーヴォー","from":1890,"to":1910}]},{"id":"milan","place":"ミラノ","lat":45.46,"lon":9.19,"targets":[{"side":"west","title":"未来派","from":1909,"to":1918},{"side":"west","title":"フォンタナの「空間概念」","from":1949,"to":1968}]},{"id":"munich","place":"ミュンヘン","lat":48.14,"lon":11.58,"targets":[{"side":"west","title":"抽象の誕生","from":1910,"to":1925}]},{"id":"dresden","place":"ドレスデン","lat":51.05,"lon":13.74,"targets":[{"side":"west","title":"ドイツ表現主義","from":1905,"to":1913}]},{"id":"berlin","place":"ベルリン","lat":52.52,"lon":13.4,"targets":[{"side":"west","title":"ドイツ表現主義","from":1913,"to":1920},{"side":"west","title":"ニュー・ペインティングと新表現主義","from":1980,"to":1989},{"side":"west","title":"2000年代（ビエンナーレと市場の時代）","from":2003,"to":2010}]},{"id":"moscow","place":"モスクワ","lat":55.76,"lon":37.62,"targets":[{"side":"west","title":"ロシア前衛（シュプレマティスムと構成主義）","from":1915,"to":1930}]},{"id":"zurich","place":"チューリヒ","lat":47.38,"lon":8.54,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923}]},{"id":"new-york","place":"ニューヨーク","lat":40.71,"lon":-74.01,"targets":[{"side":"west","title":"ダダ","from":1916,"to":1923},{"side":"west","title":"シュルレアリスム","from":1940,"to":1946},{"side":"west","title":"抽象表現主義（戦後アメリカ美術の誕生）","from":1947,"to":1960},{"side":"west","title":"ジョーンズとネオ・ダダ","from":1955,"to":1965},{"side":"west","title":"ポップアート","from":1962,"to":1970},{"side":"west","title":"ミニマル・アート","from":1965,"to":1970},{"side":"west","title":"コンセプチュアル・アート（概念芸術）","from":1968,"to":1978},{"side":"west","title":"ピクチャーズ世代（写真と引用）","from":1977,"to":1986},{"side":"west","title":"ネオ・ジオ","from":1986,"to":1989},{"side":"west","title":"シミュレーションとクーンズ","from":1986,"to":1995}]},{"id":"leiden","place":"ライデン（オランダ）","lat":52.16,"lon":4.49,"targets":[{"side":"west","title":"デ・ステイル","from":1917,"to":1931}]},{"id":"bauhaus","place":"デッサウ（バウハウス）","lat":51.84,"lon":12.24,"targets":[{"side":"west","title":"バウハウス","from":1919,"to":1933}]},{"id":"turin","place":"トリノ","lat":45.07,"lon":7.69,"targets":[{"side":"west","title":"アルテ・ポーヴェラ","from":1967,"to":1975}]},{"id":"wiesbaden","place":"ヴィースバーデン","lat":50.08,"lon":8.24,"targets":[{"side":"west","title":"フルクサスと映像の美術","from":1962,"to":1970}]},{"id":"great-salt-lake","place":"グレートソルト湖（米西部）","lat":41.34,"lon":-112.67,"targets":[{"side":"west","title":"ランド・アート（アースワーク）","from":1968,"to":1980}]},{"id":"los-angeles","place":"ロサンゼルス","lat":34.05,"lon":-118.24,"targets":[{"side":"west","title":"フェミニスト・アート","from":1971,"to":1982}]},{"id":"beijing","place":"北京","lat":39.9,"lon":116.4,"targets":[{"side":"west","title":"グローバル化する美術","from":1989,"to":2000}]},{"id":"aomori","place":"青森（三内丸山）","lat":40.81,"lon":140.74,"targets":[{"side":"japan","title":"縄文","from":-14000,"to":-1000}]},{"id":"yoshinogari","place":"吉野ヶ里（佐賀）","lat":33.32,"lon":130.38,"targets":[{"side":"japan","title":"弥生","from":-1000,"to":300}]},{"id":"sakai","place":"堺（大仙古墳）","lat":34.56,"lon":135.48,"targets":[{"side":"japan","title":"古墳","from":250,"to":600}]},{"id":"asuka","place":"明日香（飛鳥）","lat":34.47,"lon":135.79,"targets":[{"side":"japan","title":"飛鳥","from":592,"to":710}]},{"id":"nara","place":"奈良","lat":34.69,"lon":135.8,"targets":[{"side":"japan","title":"奈良（天平文化）","from":710,"to":794}]},{"id":"kyoto","place":"京都","lat":35.01,"lon":135.77,"targets":[{"side":"japan","title":"平安","from":794,"to":1185},{"side":"japan","title":"平安後期と浄土美術","from":1052,"to":1185},{"side":"japan","title":"室町（水墨画と禅）","from":1336,"to":1467},{"side":"japan","title":"室町後期と東山文化（わびの芽生え）","from":1480,"to":1573},{"side":"japan","title":"安土桃山","from":1573,"to":1615},{"side":"japan","title":"琳派の成立","from":1620,"to":1750},{"side":"japan","title":"奇想の系譜","from":1750,"to":1800}]},{"id":"kamakura","place":"鎌倉","lat":35.32,"lon":139.55,"targets":[{"side":"japan","title":"鎌倉","from":1185,"to":1333}]},{"id":"tokyo","place":"東京（江戸）","lat":35.68,"lon":139.69,"targets":[{"side":"japan","title":"浮世絵と錦絵","from":1765,"to":1800},{"side":"japan","title":"江戸後期（浮世絵の爛熟と写生）","from":1830,"to":1868},{"side":"japan","title":"明治（日本画と洋画の成立）","from":1868,"to":1912},{"side":"japan","title":"大正（個性の時代）","from":1912,"to":1926},{"side":"japan","title":"昭和戦前（前衛の受容）","from":1923,"to":1936},{"side":"japan","title":"戦時下の美術","from":1937,"to":1945},{"side":"japan","title":"敗戦と再出発（シュルレアリスムと多様性）","from":1945,"to":1954},{"side":"japan","title":"反芸術（ネオ・ダダとハイレッド・センター）","from":1960,"to":1964},{"side":"japan","title":"還元主義と多様性（もの派・概念派）","from":1968,"to":1979},{"side":"japan","title":"ヘタうま・パルコ・反イラスト","from":1979,"to":1989},{"side":"japan","title":"脱前衛","from":1980,"to":1984},{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994},{"side":"japan","title":"マニエリスムと多様性（スーパーフラットとマイクロポップ）","from":1995,"to":2009},{"side":"japan","title":"搾取前衛","from":2010,"to":2014}]},{"id":"ashiya","place":"芦屋","lat":34.73,"lon":135.3,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1954,"to":1972}]},{"id":"fukuoka","place":"福岡","lat":33.59,"lon":130.4,"targets":[{"side":"japan","title":"前衛（具体・九州派・アンフォルメル）","from":1957,"to":1968}]},{"id":"osaka","place":"大阪","lat":34.69,"lon":135.5,"targets":[{"side":"japan","title":"再現芸術（関西ニューウェーブとシミュレーション）","from":1985,"to":1994}]}]};
 let tlMapPolys = null, tlMapBase = null, tlMapBaseKey = '', tlMapSel = null, tlMapRows = [];
+/* v30.6: labels placed by the last big (sheet) draw — {name, x, y}
+   in CSS px; also the validator's handle on the label pass. */
+let tlMapLastLabels = [];
 function tlMapXY(lat, lon, w, h){ return [(((lon + 30) % 360 + 360) % 360) / 360 * w, (85 - lat) / 145 * h]; }
 /* TL_MAP.land holds the coastline polygons in map space
    (x = (lon + 30) mod 360, unwrapped per ring so no ring jumps
@@ -16540,11 +16643,15 @@ return cv;
 function tlMapDrawInto(cv, year, big){
 const dpr = Math.min(2, window.devicePixelRatio || 1);
 const W = cv.clientWidth; if(!W) return;
-const H = big? Math.round(W * 145 / 360): cv.clientHeight;
+/* v30.6: the sheet sets a compact CSS height (capped) before
+   calling; the draw letterboxes inside it — the projection
+   and the land geometry are exactly v30.4's. */
+const H = big? (cv.clientHeight || Math.round(W * 145 / 360)): cv.clientHeight;
 if(!H) return;
 const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
 if(cv.width !== pw || cv.height !== ph){ cv.width = pw; cv.height = ph; if(!big) tlMapBase = null; }
 const ctx = cv.getContext('2d'); if(!ctx) return;
+if(big) tlMapLastLabels = [];
 const key = (document.documentElement.dataset.theme || '') + ':' + pw + 'x' + ph;
 let base = (!big && tlMapBaseKey === key)? tlMapBase: null;
 if(!base){ base = tlMapBaseDraw(pw, ph); if(!big){ tlMapBase = base; tlMapBaseKey = key; } }
@@ -16575,11 +16682,82 @@ TL_MAP.pins.forEach(pin => {
   ctx.beginPath(); ctx.arc(xy[0], xy[1], Math.max(1.2, R * 0.13), 0, Math.PI * 2); ctx.fill();
 });
 ctx.restore();
+/* v30.6: place names beside the glows (sheet only) — his ask:
+   a glow he cannot name is a glow he cannot use. Strongest
+   first; a label that would collide with one already placed
+   is skipped. The name is the part before any （…） qualifier. */
+if(big){
+  const ratio = pw / Math.max(1, W);
+  const fs = Math.max(10, Math.round(11.5 * ratio));
+  const pad = Math.round(4 * ratio);
+  const cands = [];
+  TL_MAP.pins.forEach(pin => {
+    const st = tlPinState(pin, year);
+    const sel = tlMapSel && pin.id === tlMapSel;
+    if(st.o >= 0.5 || (sel && st.o > 0.03)) cands.push({ pin: pin, o: sel? 2: st.o });
+  });
+  cands.sort((a, b)=> b.o - a.o);
+  ctx.save();
+  ctx.font = '600 ' + fs + 'px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  const placed = [];
+  cands.forEach(c => {
+    const name = String(c.pin.place || '').split('（')[0];
+    if(!name) return;
+    const xy = tlMapPoint(c.pin.lat, c.pin.lon, pw, ph);
+    const tw = ctx.measureText(name).width;
+    const off = Math.max(7 * ratio, mw * 0.035);
+    const dy = off + fs * 0.4;
+    const xr = xy[0] + off, xl = xy[0] - off - tw - pad * 2, xc = xy[0] - tw / 2 - pad;
+    /* nearest first, then a second, farther ring — dense
+       clusters (Paris / Vienna / Dresden sit ~25px apart)
+       need the extra reach before a name gives up. */
+    const spots = [{ x: xr, y: xy[1] }, { x: xl, y: xy[1] }];
+    [dy, dy * 1.9].forEach(d2 => {
+      spots.push({ x: xc, y: xy[1] - d2 }, { x: xc, y: xy[1] + d2 },
+                 { x: xr, y: xy[1] - d2 }, { x: xr, y: xy[1] + d2 },
+                 { x: xl, y: xy[1] - d2 }, { x: xl, y: xy[1] + d2 });
+    });
+    for(const sp of spots){
+      const rect = { x0: sp.x, y0: sp.y - fs / 2 - pad, x1: sp.x + tw + pad * 2, y1: sp.y + fs / 2 + pad };
+      if(rect.x0 < 1 || rect.x1 > pw - 1 || rect.y0 < 1 || rect.y1 > ph - 1) continue;
+      if(placed.some(p => rect.x0 < p.x1 + 1 && rect.x1 > p.x0 - 1 && rect.y0 < p.y1 + 1 && rect.y1 > p.y0 - 1)) continue;
+      placed.push(rect);
+      ctx.strokeStyle = lightBg? 'rgba(255,252,240,0.8)': 'rgba(5,9,13,0.72)';
+      ctx.lineWidth = Math.max(2, 3.2 * ratio);
+      ctx.strokeText(name, sp.x + pad, sp.y);
+      ctx.fillStyle = lightBg? '#22301f': '#fff6e0';
+      ctx.fillText(name, sp.x + pad, sp.y);
+      tlMapLastLabels.push({ name: name, x: (sp.x + pad) / dpr, y: sp.y / dpr });
+      break;
+    }
+  });
+  ctx.restore();
+}
 }
 function tlMapPaint(){
 const cv = document.getElementById('tlmapCv');
 if(!cv) return;
-tlMapDrawInto(cv, tlMapYearNow(), false);
+const year = tlMapYearNow();
+tlMapDrawInto(cv, year, false);
+/* v30.6: the panel's caption names the places glowing right
+   now (strongest first, up to three + a count), so the small
+   map answers "where is that?" without opening the sheet. */
+const tag = document.querySelector('#tlmap .tlmap-tag');
+if(tag){
+  let txt = '世界地図';
+  if(year != null){
+    const lit = [];
+    TL_MAP.pins.forEach(pin => {
+      const st = tlPinState(pin, year);
+      if(st.o >= 0.5) lit.push({ name: String(pin.place || '').split('（')[0], o: st.o, from: Math.min.apply(null, (pin.targets && pin.targets.length? pin.targets: [{ from: 0 }]).map(t => t.from)) });
+    });
+    lit.sort((a, b)=> (b.o - a.o) || (a.from - b.from));
+    if(lit.length) txt = lit.slice(0, 3).map(x => x.name).join('・') + (lit.length > 3? ' ほか' + (lit.length - 3) + '件': '');
+  }
+  if(tag.textContent !== txt) tag.textContent = txt;
+}
 }
 function tlYearLabel(y){ return y < 0? '紀元前' + (-y) + '年': y + '年'; }
 function openTlMapSheet(){
@@ -16593,7 +16771,10 @@ function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh) sh.classList.add(
 function tlMapSheetPaint(){
 const cv = $('tlmapBigCv'); if(!cv) return;
 const year = tlMapYearNow();
-cv.style.height = Math.round(cv.clientWidth * 145 / 360) + 'px';
+/* v30.6: the map stays compact — at most ~30% of the screen
+   height — so the whole sheet fits one screen and only the
+   list below it scrolls (the card is a flex column now). */
+cv.style.height = Math.min(Math.round(cv.clientWidth * 145 / 360), Math.round((window.innerHeight || 800) * 0.30)) + 'px';
 const yl = $('tlmapYear');
 if(yl) yl.textContent = year == null? '': '― ' + tlYearLabel(year) + 'ごろ';
 tlMapDrawInto(cv, year, true);
@@ -17077,6 +17258,8 @@ if(old && old.breakthrough) rec.breakthrough = old.breakthrough;
 if(old && old.process) rec.process = old.process;
 /* v27.16: nor the artist's terms （作家の言葉 — no form field either) */
 if(old && old.terms && old.terms.length) rec.terms = old.terms;
+/* v30.6: nor the drawings (no form field either) */
+if(old && old.drawings && old.drawings.length) rec.drawings = old.drawings;
 if(old && old.interviews && old.interviews.length) rec.interviews = old.interviews;
 if(old && old.influences && old.influences.length) rec.influences = old.influences;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
@@ -17160,6 +17343,9 @@ function mergeDataInto(local, incoming){
     if(ia.process) merged.process = ia.process;
     /* v27.16: terms （作家の言葉）, same wholesale treatment. */
     if(ia.terms && ia.terms.length) merged.terms = ia.terms;
+    /* v30.6: drawings, same wholesale treatment (curated on the
+       Muse side; an empty incoming set leaves the local one). */
+    if(ia.drawings && ia.drawings.length) merged.drawings = ia.drawings;
     if(ia.interviews && ia.interviews.length) merged.interviews = ia.interviews;
     if(ia.influences && ia.influences.length) merged.influences = ia.influences;
     /* thumb_pinned_at: keep the latest pin event from either side */
@@ -18493,7 +18679,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.5';
+const APP_VERSION = '30.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
