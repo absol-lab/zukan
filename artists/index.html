@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.2">
+<meta name="app-version" content="30.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12820,7 +12820,7 @@ interviewsHTML = intvArr.map(iv=>{
    v27.0. */
 const th = intvThumbURL(iv);
 return '<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
-+(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.previousElementSibling.remove()"><span class="intvplay">▶</span></span>': '')
++(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()"><span class="intvplay">▶</span></span>': '')
 +'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
 +'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
 +([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
@@ -15847,7 +15847,7 @@ function tlPhotoHTML(e){
   const ph = e && e.photo;
   if(!ph || !ph.url) return '';
   const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
-  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.previousElementSibling.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
+  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
 }
 /* v29.0: a blank line in the staged detail/background text is
    a paragraph break — render it as separate paragraphs, never
@@ -15896,7 +15896,14 @@ function setTlRegion(r){
 if(r === tlRegion) return;
 if(!tlStreams().some(s => s.key === r)) return;
 const oldItems = tlBarItems, oldN = oldItems.length;
-const curIdx = oldN > 1? Math.max(0, Math.min(oldN - 1, Math.round(tlBar.frac * (oldN - 1)))): 0;
+/* v30.3: the year in view is read off the card actually at the
+   top (measured from its real position), never estimated from
+   the bar fraction — the fraction is only as fresh as the last
+   scroll sync, and a stale one (a fling interrupted by a stream
+   tap, an imperfect landing) sent the switch to the wrong year
+   and broke the round-trip anchor test below. */
+const _fi = oldN? tlBarFirstIdx(): -1;
+const curIdx = _fi >= 0? _fi: (oldN > 1? Math.max(0, Math.min(oldN - 1, tlBar.idx || 0)): 0);
 const curYear = oldN? tlBigYearNum(oldItems[curIdx]): null;
 const dir = segDir(TL_STREAM_ORDER, tlRegion, r);
 let backIdx = -1;
@@ -15915,7 +15922,21 @@ else if(curYear != null){
 } else if(n > 1 && oldN > 1) target = Math.round((curIdx / (oldN - 1)) * (n - 1));
 if(backIdx < 0) tlAnchors[r] = { fromStream: fromRegion, fromIdx: fromIdx, landedIdx: target };
 tlBarGoTo(target);
-driftIn($('viewTimeline'), dir);
+/* v30.3: the landing is verified once the layout settles. The
+   landing above is measured before the timeline photos load,
+   and a photo takes its natural height (up to 340px) over the
+   reserved 120px — cards above the target grow and push the
+   landed card out of the top position. Drags had the v29.10
+   settle window for this; switches had none. */
+tlBarArmSettle(target, 4000);
+/* v30.3: no full-view drift on a stream switch. The list is
+   rebuilt completely in one innerHTML swap (asserted in
+   validate_v30_3), but animating the whole very tall view —
+   opacity .3 -> 1 over a transformed layer — is the channel
+   through which the previous stream's list ghosted through on
+   device. The motion cue now rides the sticky frame only (a
+   small layer) and the list itself swaps instantly. */
+const _stick = $('tlstick'); if(_stick) driftIn(_stick, dir);
 }
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
 function renderTimeline(){
@@ -16010,7 +16031,12 @@ requestAnimationFrame(layoutTlSpine);
 let tlBarItems = [];
 let tlCardsCache = null; /* .tlcard elements of the current render; dropped by tlBarWire on every render */
 let tlAnchors = {}; /* v30.0: per-stream return anchors (see setTlRegion) */
-const tlBar = { frac: 0, drag: false, raf: 0, draf: 0, geom: null, pendX: null, settleIdx: -1, settleUntil: 0, lastY: 0 };
+/* v30.3: tlBar.idx is the single source of truth for "the entry
+   at the top" — measured from the real cards (tlBarFirstIdx),
+   never estimated back out of the fraction. The year label, the
+   knob, the map year and the stream switch's departure year all
+   read it, so they cannot disagree with the card on screen. */
+const tlBar = { frac: 0, idx: 0, drag: false, raf: 0, draf: 0, geom: null, pendX: null, settleIdx: -1, settleUntil: 0, settleFixed: false, settleTimers: [], lastY: 0 };
 function tlBarYearLabel(e){
 if(!e) return '';
 if(e.bigYear) return String(e.bigYear);
@@ -16023,7 +16049,7 @@ const knob = $('tlbarKnob'), fill = $('tlbarFill'), yv = $('tlbarYear'), tv = $(
 const n = tlBarItems.length; if(!knob || !n) return;
 const pct = (tlBar.frac * 100).toFixed(2) + '%';
 knob.style.left = pct; if(fill) fill.style.width = pct;
-const e = tlBarItems[Math.round(tlBar.frac * (n - 1))] || tlBarItems[0];
+const e = tlBarItems[Math.max(0, Math.min(n - 1, tlBar.idx || 0))] || tlBarItems[0];
 if(yv) yv.textContent = tlBarYearLabel(e);
 if(tv) tv.textContent = (e && e.title) || '';
 tlMapPaint();
@@ -16099,6 +16125,59 @@ const hdr = document.querySelector('header.top');
 const stick = $('tlstick') || $('tlbar');
 return (hdr? hdr.offsetHeight: 0) + (stick? stick.offsetHeight: 0);
 }
+/* v30.3: the entry at the top, measured — the last card whose
+   top edge sits at or above the sticky frame's bottom edge.
+   This is the one rule every consumer (scroll-spy, stream
+   switch, settle check) shares, so they can never disagree
+   about which card is first. -1 when there are no cards. */
+function tlBarFirstIdx(){
+const cards = tlBarCards(); if(!cards.length) return -1;
+const line = window.scrollY + tlBarStickyH() + 6;
+let idx = 0;
+for(let i = 0; i < cards.length; i++){
+  const docTop = cards[i].getBoundingClientRect().top + window.scrollY;
+  if(docTop <= line) idx = i; else break;
+}
+return idx;
+}
+function tlBarSetIdx(idx){
+const n = tlBarItems.length; if(!n) return;
+tlBar.idx = Math.max(0, Math.min(n - 1, idx));
+tlBar.frac = n > 1? tlBar.idx / (n - 1): 0;
+}
+/* v30.3: one settle mechanism for every landing (the v29.10
+   drag settle, generalised to stream switches). While armed,
+   photo loads and timed probes re-check the landing against
+   the fresh layout; if the landed entry is no longer the card
+   at the top, it is re-landed ONCE. The reader taking over —
+   a touch, a wheel turn, a drag, or a scroll away from the
+   landed position — cancels the correction (the existing
+   touch/wheel listeners clear settleIdx; the check itself
+   also refuses once the scroll position has moved). */
+function tlBarArmSettle(idx, ms){
+tlBarClearSettleTimers();
+tlBar.settleIdx = idx; tlBar.settleFixed = false;
+tlBar.settleUntil = performance.now() + (ms || 2500);
+[500, 1500, 3000].forEach(t => { if(t < (ms || 2500)) tlBar.settleTimers.push(setTimeout(tlBarSettleCheck, t)); });
+}
+function tlBarClearSettleTimers(){ (tlBar.settleTimers || []).forEach(clearTimeout); tlBar.settleTimers = []; }
+function tlBarSettleCheck(){
+if(tlBar.settleIdx < 0 || tlBar.drag) return;
+if(performance.now() > tlBar.settleUntil){ tlBar.settleIdx = -1; tlBarClearSettleTimers(); return; }
+if(typeof view === 'undefined' || view !== 'timeline'){ tlBar.settleIdx = -1; tlBarClearSettleTimers(); return; }
+if(Math.abs((window.scrollY || 0) - tlBar.lastY) > 3){ tlBar.settleIdx = -1; tlBarClearSettleTimers(); return; }
+const fi = tlBarFirstIdx();
+if(fi < 0) return;
+if(fi === tlBar.settleIdx){ tlBarSetIdx(tlBar.settleIdx); tlBarPaint(); return; }
+/* the position correction happens once; after that the bar
+   still follows the real first card (paint only, no scroll),
+   so the display can never silently disagree with the card. */
+if(tlBar.settleFixed){ tlBarSetIdx(fi); tlBarPaint(); return; }
+tlBar.settleFixed = true;
+tlBarLand(tlBar.settleIdx);
+tlBarSetIdx(tlBar.settleIdx);
+tlBarPaint();
+}
 /* v29.10: drag geometry is measured ONCE per gesture. Through
    v29.9 every pointermove re-queried the card list, re-read
    the track rect, the target card's rect and two offsetHeights,
@@ -16121,9 +16200,10 @@ return { left: r.left, width: r.width, stickyH: tlBarStickyH(), tops: tlBarCards
 function tlBarApplyX(x){
 const g = tlBar.geom; if(!g || !g.width) return;
 tlBar.frac = Math.max(0, Math.min(1, (x - g.left) / g.width));
-tlBarPaint();
-const n = tlBarItems.length; if(n < 2) return;
+const n = tlBarItems.length; if(n < 2){ tlBar.idx = 0; tlBarPaint(); return; }
 const idx = Math.round(tlBar.frac * (n - 1));
+tlBar.idx = idx;
+tlBarPaint();
 if(g.tops[idx] == null) return;
 tlBar.lastY = Math.max(0, g.tops[idx] - g.stickyH - 2);
 window.scrollTo(0, tlBar.lastY);
@@ -16137,6 +16217,7 @@ window.scrollTo(0, tlBar.lastY);
 function tlBarGoTo(idx){
 const n = tlBarItems.length; if(!n) return;
 idx = Math.max(0, Math.min(n - 1, idx));
+tlBar.idx = idx;
 tlBar.frac = n > 1? idx / (n - 1): 0;
 tlBarPaint();
 tlBarLand(idx);
@@ -16144,25 +16225,27 @@ tlBarLand(idx);
 function tlBarSyncFromScroll(){
 if(tlBar.drag) return;
 const cards = tlBarCards();
-if(cards.length < 2){ if(cards.length === 1){ tlBar.frac = 0; tlBarPaint(); } return; }
-const line = window.scrollY + tlBarStickyH() + 6;
-let idx = 0;
-for(let i = 0; i < cards.length; i++){
-  const docTop = cards[i].getBoundingClientRect().top + window.scrollY;
-  if(docTop <= line) idx = i; else break;
-}
+if(cards.length < 2){ if(cards.length === 1){ tlBar.idx = 0; tlBar.frac = 0; tlBarPaint(); } return; }
+const idx = tlBarFirstIdx();
+if(idx < 0) return;
+tlBar.idx = idx;
 tlBar.frac = idx / (cards.length - 1);
-{ const _ta = tlAnchors[tlRegion]; if(_ta && idx !== _ta.landedIdx) delete tlAnchors[tlRegion]; }
+/* v30.3: while a landing's settle window is armed, a transient
+   mismatch (photos still growing the layout) is the settle
+   check's business — it must not eat the round-trip anchor. */
+if(!(tlBar.settleIdx >= 0 && performance.now() <= tlBar.settleUntil)){
+  const _ta = tlAnchors[tlRegion]; if(_ta && idx !== _ta.landedIdx) delete tlAnchors[tlRegion];
+}
 tlBarPaint();
 }
 function tlBarWire(){
 const track = $('tlbarTrack'); if(!track) return;
-tlBar.frac = 0; tlBar.drag = false; tlBar.geom = null; tlBar.pendX = null; tlBar.settleIdx = -1;
+tlBar.frac = 0; tlBar.idx = 0; tlBar.drag = false; tlBar.geom = null; tlBar.pendX = null; tlBar.settleIdx = -1; tlBar.settleFixed = false; tlBarClearSettleTimers();
 tlCardsCache = null;
 tlBarTicks();
 tlBarPaint();
 track.addEventListener('pointerdown', ev => {
-  tlBar.drag = true; tlBar.settleIdx = -1;
+  tlBar.drag = true; tlBar.settleIdx = -1; tlBarClearSettleTimers();
   tlBar.geom = tlBarMeasure();
   try{ track.setPointerCapture(ev.pointerId); }catch(e){}
   tlBarApplyX(ev.clientX);
@@ -16180,7 +16263,8 @@ const end = () => {
   const n = tlBarItems.length; if(!n) return;
   const idx = Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))));
   tlBarLand(idx);
-  tlBar.settleIdx = idx; tlBar.settleUntil = performance.now() + 2500;
+  tlBar.idx = idx;
+  tlBarArmSettle(idx, 2500);
   { const _ta = tlAnchors[tlRegion]; if(_ta && idx !== _ta.landedIdx) delete tlAnchors[tlRegion]; }
 };
 track.addEventListener('pointerup', end);
@@ -16193,17 +16277,26 @@ if(typeof view === 'undefined' || view !== 'timeline') return;
 if(!$('tlbarTrack')) return;
 tlBar.raf = requestAnimationFrame(()=>{ tlBar.raf = 0; tlBarSyncFromScroll(); });
 }, { passive: true });
-/* v29.10: settle re-anchor — if a timeline photo finishes
-   loading within the settle window after a drag and the
-   reader has not scrolled away from the landed position,
-   re-land on the same entry against the fresh layout. Any
-   touch or wheel input cancels: the reader has taken over. */
+/* v30.3 (generalises the v29.10 settle re-anchor): one load
+   listener, two jobs. While a landing's settle window is armed
+   (drag or stream switch), a finished photo load re-checks the
+   landing against the fresh layout and corrects it at most
+   once. With no landing armed, a finished load re-derives the
+   bar from the card actually at the top — a photo completing
+   after a manual scroll used to move the top card while the
+   bar kept the stop-moment entry, so the big year and the
+   first card disagreed (his 2026-11-15 video). Any touch or
+   wheel input cancels a pending correction: the reader has
+   taken over. */
 document.addEventListener('load', ()=>{
-if(tlBar.settleIdx < 0 || tlBar.drag) return;
-if(performance.now() > tlBar.settleUntil){ tlBar.settleIdx = -1; return; }
+if(tlBar.drag) return;
 if(typeof view === 'undefined' || view !== 'timeline') return;
-if(Math.abs((window.scrollY || 0) - tlBar.lastY) > 3){ tlBar.settleIdx = -1; return; }
-tlBarLand(tlBar.settleIdx);
+if(!$('tlbarTrack')) return;
+if(tlBar.settleIdx >= 0) tlBarSettleCheck();
+/* if the settle just cancelled (the reader has taken over) or
+   none was armed, the same load still re-derives the bar from
+   the real first card — the two jobs share the event. */
+if(tlBar.settleIdx < 0) tlBarSyncFromScroll();
 }, true);
 window.addEventListener('touchstart', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
 window.addEventListener('wheel', ()=>{ tlBar.settleIdx = -1; }, { passive: true });
@@ -16249,7 +16342,7 @@ return { o: o, lit: lit };
 }
 function tlMapYearNow(){
 const n = tlBarItems.length; if(!n) return null;
-const e = tlBarItems[Math.max(0, Math.min(n - 1, Math.round(tlBar.frac * (n - 1))))];
+const e = tlBarItems[Math.max(0, Math.min(n - 1, tlBar.idx || 0))];
 return e? tlBigYearNum(e): null;
 }
 function tlMapBaseDraw(w, h){
@@ -18217,7 +18310,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.2';
+const APP_VERSION = '30.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
