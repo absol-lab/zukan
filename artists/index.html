@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.3">
+<meta name="app-version" content="32.4.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1077,7 +1077,7 @@ html.sheetlock, html.sheetlock body{overflow:hidden;}
    full height of the view, colored per era and blending at the
    seams, so the eras read as one connected 地. */
 .tlwrap{position:relative; padding-left:20px;}
-.tlspine{position:absolute; left:6px; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--lineStrong);}
+.tlspine{position:absolute; left:5px; top:6px; bottom:6px; width:5px; border-radius:3px; background:var(--lineStrong); box-shadow:0 0 7px rgba(232,180,90,.35);}
 .tldot{position:absolute; left:7.5px; width:10px; height:10px; margin-left:-5px; border-radius:50%; box-shadow:0 0 0 2px var(--bg);}
 .tlbig{font-family:var(--serif); font-size:32px; line-height:1.1; letter-spacing:.02em;}
 .tlyears{font-size:13px; color:var(--muted); letter-spacing:.06em; margin-top:2px;}
@@ -1140,9 +1140,16 @@ html.sheetlock, html.sheetlock body{overflow:hidden;}
 .tlbar-tick span{position:absolute; top:11px; left:50%; transform:translateX(-50%); font-family:var(--sans); font-size:9px; line-height:1; color:var(--muted); white-space:nowrap;}
 .tlbar-tick.edge-l span{left:0; transform:none;}
 .tlbar-tick.edge-r span{left:auto; right:0; transform:none;}
-.tlchips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
-.tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:4px 12px; font-size:12px; color:var(--text); font-family:var(--sans);}
-button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inline-flex; align-items:center;}
+.tlchips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+.tlchip{border:1px solid var(--line); background:var(--card2); border-radius:999px; padding:1px 8px; font-size:12px; color:var(--text); font-family:var(--sans); line-height:1.35;}
+/* v32.4.0 (his device feedback 2026-11-16 01:57): the timeline's
+   artist tags were fat 48px pills. His size reference is the
+   SLIM plain tag (the Fragonard one in his screenshot) — the
+   amber tappable buttons now match that exact slimness: same
+   padding, same line-height, no extra min-height. The color
+   coding stays (amber = tappable, plain = not), only the
+   bulk goes. */
+button.tlchip{color:var(--accent); font-weight:600; min-height:0; display:inline-flex; align-items:center; padding:1px 8px; line-height:1.35;}
 /* v29.0: 歴史 chip — marks a kind:"history" timeline entry (a
    history-context anchor, not an art movement) on its card and
    era page, so it reads differently at a glance. */
@@ -1204,7 +1211,7 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 /* the sheet's chip strip is the one place the app-wide
    48px tap height for button chips is overridden: at 48px
    the rows could not fit the sheet (his fit request). */
-.tlm-chips button.tlchip{min-height:30px;}
+.tlm-chips button.tlchip{min-height:0;}
 /* the tight steps of the main tab's fit pass hide the
    caption line — type and structure are never touched */
 #tlmapsheet.nocap .tlm-sheetcap{display:none;}
@@ -1449,6 +1456,82 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 :root[data-theme="wood"] .bizchrow, :root[data-theme="wood"] .tagaccrow{
   box-shadow:0 6px 16px rgba(0,0,0,.30);
 }
+/* ==== v32.4 ==== */
+/* hub button (item 2) */
+#navHub{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); flex:none;}
+#navHub svg{width:17px; height:17px;}
+#navHub .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
+#hubsheet{position:fixed; inset:0; z-index:320; background:rgba(10,6,3,.55); display:flex; align-items:flex-end; justify-content:center;}
+#hubsheet.hidden{display:none;}
+.hubrow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin:0 0 8px; color:var(--text); font-size:15px; cursor:pointer;}
+.hubrow .hubsub{margin-left:auto; color:var(--muted); font-size:12.5px; white-space:nowrap;}
+.hubrow .hubn{background:var(--danger); color:#fff; border-radius:999px; min-width:20px; height:20px; line-height:20px; text-align:center; font-size:11.5px; font-weight:700; padding:0 5px; box-sizing:border-box;}
+/* sticky era row (item 9) */
+.erarow{display:flex; align-items:center; gap:8px; padding:5px 2px 7px; border-top:1px solid var(--line); min-height:34px; box-sizing:border-box;}
+.eraname{font-family:var(--serif); font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:38%;}
+.erachips{display:flex; gap:6px; align-items:center; flex:none;}
+.erachips .erasecbtn, .erachips .symsecbtn{margin:0;}
+.eramodes{margin-left:auto; display:flex; gap:2px; flex:none;}
+.eramodes button{border:1px solid var(--line); background:var(--bg2); color:var(--muted); font-size:11px; padding:4px 7px; border-radius:999px; cursor:pointer;}
+.eramodes button.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600;}
+.toolbar.tbnoanim .tbwrap{transition:none !important;}
+/* genealogy cards (item 1) */
+.gencard{text-align:left;}
+.gencard .gencap{padding:8px 10px 10px;}
+.gencard .genname{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.35;}
+.gencard .genmeta{color:var(--muted); font-size:12px; margin-top:3px; line-height:1.5;}
+.genini{display:flex; align-items:center; justify-content:center; background:radial-gradient(130% 130% at 28% 18%, var(--card2), var(--bg2)); position:relative;}
+.genini::before{content:''; position:absolute; inset:7px; border:1px solid var(--line); border-radius:6px; pointer-events:none;}
+.genini-c{font-family:var(--serif); font-size:44px; line-height:1; color:var(--accent); opacity:.92;}
+/* closing-soon exhibition rows (item 4) */
+.xalrow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 8px; color:var(--text); cursor:pointer;}
+.xalmain{flex:1; min-width:0;}
+.xalartist{font-family:var(--serif); font-size:14.5px; font-weight:600;}
+.xaltitle{font-size:13px; margin-top:2px; line-height:1.45;}
+.xalvenue{color:var(--muted); font-size:12px; margin-top:2px;}
+.xaldays{flex:none; text-align:center; background:var(--accent); color:var(--bg); border-radius:10px; padding:7px 9px; min-width:58px; box-sizing:border-box;}
+.xaldays b{display:block; font-size:15px; line-height:1.15;}
+.xaldays span{font-size:11px;}
+/* price cards (item 13) */
+.bpcard{display:flex; gap:11px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
+.bpcard .bpfig{flex:none; width:86px;}
+.bpcard .bpfig figure.work{margin:0;}
+.bpinfo{flex:1; min-width:0;}
+.bpinfo>span{display:block;}
+.bpfig .ph{border-radius:8px; overflow:hidden;}
+.bprank{display:inline-block; background:var(--accent); color:var(--bg); font-size:11px; font-weight:700; border-radius:999px; padding:1px 8px; margin-bottom:4px;}
+.bptitle{font-family:var(--serif); font-size:14.5px; font-weight:600; line-height:1.4;}
+.bpartist{color:var(--muted); font-size:12.5px; margin-top:2px; text-decoration:underline;}
+.bpprice{font-size:16.5px; font-weight:700; margin-top:5px;}
+.bpprice .bpjpy{color:var(--accent); font-size:13px; font-weight:600; margin-left:6px;}
+.bpmeta{color:var(--muted); font-size:11.5px; margin-top:3px; line-height:1.5;}
+/* word / jiji artist cards (item 13) */
+.xwcard{display:flex; gap:11px; align-items:center; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
+.xwcard .xwfig{flex:none; width:64px;}
+.xwcard .xwfig figure.work{margin:0;}
+.xwmain{flex:1; min-width:0;}
+.xwname{font-family:var(--serif); font-size:15px; font-weight:600; text-decoration:underline;}
+.xwbody{font-size:13px; line-height:1.55; margin-top:3px;}
+/* notification thumb (item 13) */
+.nthumb{flex:none; width:44px; height:44px; border-radius:9px; overflow:hidden; margin-right:10px;}
+.nthumb figure.work{margin:0; height:100%;}
+.nthumb .ph{height:100%;}
+/* figure blocks in articles (item 14) */
+.bizfig{margin:16px 0 6px;}
+.bizfig .figcap{font-size:12.5px; color:var(--muted); margin:0 2px 8px; line-height:1.5;}
+.figworks{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
+.figwork{flex:none; width:150px; text-align:left; background:none; border:none; padding:0; cursor:pointer; color:var(--text);}
+.figwork figure.work{margin:0;}
+.figwork .fwcap{font-size:12px; line-height:1.45; margin-top:5px;}
+.figwork .fwartist{font-size:11.5px; color:var(--accent); text-decoration:underline;}
+.figsvg{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:14px 12px;}
+.figsvg svg{display:block; width:100%; height:auto;}
+.figtable{width:100%; border-collapse:collapse; font-size:13px;}
+.figtable th, .figtable td{border:1px solid var(--line); padding:8px 9px; text-align:left; line-height:1.5; vertical-align:top;}
+.figtable th{background:var(--bg2); font-family:var(--serif);}
+/* makers views (item 6) */
+.mksearch{width:100%; box-sizing:border-box; background:var(--bg2); border:1px solid var(--line); border-radius:999px; color:var(--text); padding:10px 14px; font-size:15px; margin:10px 0 4px;}
+.mkgrouphead{position:sticky; top:var(--hdrh); z-index:5; background:var(--bg); padding:10px 2px 6px; font-family:var(--serif); font-size:16px; font-weight:600;}
 </style>
 </head>
 <body>
@@ -1461,10 +1544,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
-    <button class="txtbtn" id="navReqNotif" onclick="openRequestNotifs()" aria-label="リクエスト回収の通知"></button>
-    <button class="txtbtn" id="navBiz" onclick="openBiz()" aria-label="アートビジネス"></button>
-    <button class="txtbtn" id="navGuide" onclick="openGuide()" aria-label="制作ガイド"></button>
-    <button class="txtbtn" id="navTimeline" onclick="openTimeline()" aria-label="年表"></button>
+    <button class="txtbtn" id="navHub" onclick="openHub()" aria-label="メニュー（通知・アートビジネス・制作ガイド・年表・系譜・作家の言葉）"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="1.9"/><circle cx="12" cy="5" r="1.9"/><circle cx="19" cy="5" r="1.9"/><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/><circle cx="5" cy="19" r="1.9"/><circle cx="12" cy="19" r="1.9"/><circle cx="19" cy="19" r="1.9"/></svg><span class="nbadge" id="hubBadge" style="display:none"></span></button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
 </header>
@@ -1496,6 +1576,13 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
       </div>
       <button id="favFilterBtn" class="favfilter" onclick="toggleFavFilter()" aria-label="お気に入りだけ表示">★</button>
     </div>
+    <div class="erarow" id="erarow">
+      <span class="eraname" id="eraName">一覧</span>
+      <span class="erachips" id="eraChips"></span>
+      <span class="eramodes modeseg" id="eraModeseg">
+        <button data-m="wide" onclick="setMode('wide')">ワイド</button><button data-m="def" onclick="setMode('def')">標準</button><button data-m="compact" onclick="setMode('compact')">コンパクト</button><button data-m="mini" onclick="setMode('mini')">ミニ</button>
+      </span>
+    </div>
   </div>
   <div id="listbody"></div>
 </main>
@@ -1508,14 +1595,17 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewTimeline" class="hidden"></main>
 <main id="viewEra" class="hidden"></main>
 <main id="viewQuiz" class="hidden"></main>
+<main id="viewMakers" class="hidden"></main>
+<main id="viewMakerDetail" class="hidden"></main>
 <main id="viewBiz" class="hidden"></main>
 <main id="viewBizCh" class="hidden"></main>
 <main id="viewBizPrice" class="hidden"></main>
+<div id="hubsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeHub()"><div class="tscard"><div class="tsterm">メニュー</div><div id="hublist"></div><button class="tsclose" onclick="closeHub()">閉じる</button></div></div>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
 <div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div class="tlm-tabs"><button type="button" class="tlm-tab on" id="tlmtabList" onclick="tlMapSetTab('list')">その年の動き <span class="small" id="tlmtabListN"></span></button><button type="button" class="tlm-tab" id="tlmtabDetail" onclick="tlMapSetTab('detail')">詳細：芸術家 <span class="small" id="tlmtabDetailN"></span></button></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
-<div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
+<div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpcrit" onclick="closeGuide(); xOpenCritique()">批評</button><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
   <div id="settingsmain"></div>
@@ -1527,7 +1617,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
   <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
-  <button id="pnMakers" onclick="xOpenMakers()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.2c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2"/></svg><span>立役者</span></button>
+  <button id="pnMakers" onclick="showView('makers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.2c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2"/></svg><span>立役者</span></button>
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
 </nav>
 <div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
@@ -9944,8 +10034,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh', bizp:'viewBizPrice' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2, bizp:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh', bizp:'viewBizPrice', makers:'viewMakers', makerdetail:'viewMakerDetail' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, makers:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2, bizp:2, makerdetail:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -10041,8 +10131,8 @@ syncTimelineBtn(v);
    （展示/年表/その他） makes that hub the list's swipe-back target.
    switchDataset records its own (it swaps DS before calling here)
    and mutes this rule for its call. */
-if(v==='list' && !pillRecMute && (prev==='ex' || prev==='timeline' || prev==='settings' || prev==='biz')){
-  prevPill = { view: prev, ds: (prev==='settings'? DS: 'artists') };
+if(v==='list' && !pillRecMute && (prev==='ex' || prev==='timeline' || prev==='settings' || prev==='biz' || prev==='makers' || prev==='makerdetail')){
+  prevPill = { view: (prev==='makerdetail'? 'makers': prev), ds: ((prev==='settings' || prev==='makers' || prev==='makerdetail')? DS: 'artists') };
 }
 if(vtBusy && vtFinish) vtFinish();
 let dir = (VIEW_DEPTH[v]!=null && VIEW_DEPTH[prev]!=null)? Math.sign(VIEW_DEPTH[v]-VIEW_DEPTH[prev]): 0;
@@ -10054,7 +10144,7 @@ if(!dir && prev!==v) dir = vtForceDir || 1;
 vtForceDir = 0;
 const wantAnim = FORWARD_ANIM && !vtNoAnim && prev!==v && !document.hidden && !reducedMotion();
 view = v;
-if(v!=='settings') CTX[DS].lastView = v;
+if(v!=='settings' && v!=='makers' && v!=='makerdetail') CTX[DS].lastView = v;
 /* v2.58: leaving the list saves its scroll position; entering it
    again restores it. Until now the position was only carried across
    dataset switches, so detail → back always dumped the user at the
@@ -10072,13 +10162,12 @@ const isListReturn = v==='list' && !!prev && prev!=='list';
 /* v2.36: the timeline is a header button again (the 5-segment pill
    was too cramped, user's call); it stays visible on both datasets
    and opens via openTimeline(), crossing datasets like the pill did. */
-$('navTimeline').classList.toggle('on', v==='timeline');
-$('navBiz').classList.toggle('on', v==='biz' || v==='bizch' || v==='bizp');
 updatePill();
 syncBizBar(v);
 /* v2.48: entering その他 renames the header; leaving restores it */
 if(v==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; }
 else if(v==='biz' || v==='bizch' || v==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; }
+else if(v==='makers' || v==='makerdetail'){ $('appname').textContent = '立役者図鑑'; $('topcount').textContent = (typeof xMakerCountText==='function')? xMakerCountText(): ''; }
 else updateHeader();
 if(v==='list' && (listDirty || listRenderedQuery !== state.query)) renderList(); /* v27.7: a clean list is reused exactly as left — nodes, images, heights */
 /* v27.7: for a list return, the toolbar fold is (re)computed
@@ -10097,6 +10186,8 @@ if(v==='biz') renderBiz();
 if(v==='bizch') renderBizCh();
 if(v==='bizp') renderBizPrice();
 if(v==='settings'){ renderSettings(); }
+if(v==='makers') renderMakers();
+if(v==='makerdetail') renderMakerDetail();
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(isListReturn){
 backToListSync();
@@ -10354,8 +10445,9 @@ refreshBizBtn(); refreshGuideBtn(); refreshTlBtn();
    to the artists dataset, and while it is shown the 展示 segment — not
    作家 — carries the active state. */
 $('pnEx').classList.toggle('on', view==='ex' || view==='news' || view==='cal');
-$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal');
-$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal');
+$('pnArtists').classList.toggle('on', DS==='artists' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal' && view!=='makers' && view!=='makerdetail');
+$('pnDesigners').classList.toggle('on', DS==='designers' && view!=='settings' && view!=='ex' && view!=='news' && view!=='cal' && view!=='makers' && view!=='makerdetail');
+const _pnMk = $('pnMakers'); if(_pnMk) _pnMk.classList.toggle('on', view==='makers' || view==='makerdetail');
 $('pnSet').classList.toggle('on', view==='settings');
 }
 /* v2.35: the exhibitions entry point. Exhibitions live in the artists
@@ -11117,20 +11209,42 @@ function renderBizPrice(){
   const people = new Set(pts.map(p => p.ds + ':' + p.pid)).size;
   let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>'
     + '<h2 class="biztitle">作品価格早見表</h2>'
-    + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）を、円換算の高い順に並べています。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。行をタップすると作家のページへ。</p>';
+    + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）を、円換算の高い順に並べています。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。カードをタップすると作家のページへ。</p>';
   if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
   const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
+  /* v32.4.0 (item 13): the price table is cards now — the app's
+     standard form (thumbnail + title + name + the number large).
+     The image is the priced work's own photo when the record
+     carries one; otherwise the artist's representative work;
+     otherwise the designed initial tile — never a bare text row
+     and never a stuck loading plate. */
+  const bpFigStore = [];
   h += rows.map((pt, i) => {
     const p = pt.raw;
-    return '<div class="bprow" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
-      + '<span class="bprank">' + (i + 1) + '</span>'
-      + (p.img && p.img.url ? '<span class="bpcover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</span>' : '')
-      + '<span class="pmain"><span class="pwork">' + esc(p.work) + '</span>'
-      + '<span class="phouse">' + esc(pt.artist) + ' ・ ' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span>'
-      + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="pjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span></div>';
+    let fig;
+    if(p.img && p.img.url){
+      const ix = bpFigStore.length; bpFigStore.push({ img: p.img, caption: p.work });
+      fig = '<div class="ph" data-bpfig="' + ix + '">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>';
+    } else {
+      const a = (CTX[pt.ds] && CTX[pt.ds].DB)? CTX[pt.ds].DB.artists.find(x=>String(x.id) === String(pt.pid)): null;
+      const th = a? thumbOf(a): null;
+      fig = th? '<div class="ph" data-work="' + escA(pt.pid) + '" data-ds="' + pt.ds + '">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
+        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(pt.artist || '')[0] || '')) + '</span>図版なし</span></div>';
+    }
+    return '<button class="bpcard" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
+      + '<span class="bpfig"><figure class="work">' + fig + '</figure></span>'
+      + '<span class="bpinfo"><span class="bprank">' + (i + 1) + '位</span>'
+      + '<span class="bptitle">' + esc(p.work) + '</span>'
+      + '<span class="bpartist">' + esc(pt.artist) + '</span>'
+      + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="bpjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span>'
+      + '<span class="bpmeta">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span></button>';
   }).join('');
   el.innerHTML = h + '</div>';
   wireListImages(el);
+  el.querySelectorAll('[data-bpfig]').forEach(ph=>{
+    const w = bpFigStore[+ph.dataset.bpfig]; if(!w) return;
+    const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
+  });
   renderBizPillBar();
 }
 
@@ -11153,6 +11267,121 @@ function bizParasHTML(paras){ return (paras || []).map(p=> '<p class="bodytext b
 function bizCasesHTML(cases){
   if(!Array.isArray(cases) || !cases.length) return '';
   return cases.map(c=> '<div class="casebox"><div class="casetitle">' + esc(c.title || '') + '</div><div class="bodytext">' + bizTermHTML(c.body || '') + '</div></div>').join('');
+}
+/* v32.4.0 (item 14): figure blocks inside article sections.
+   Data notation (artbusiness.json, sections[].figs — the paragraph
+   structure is untouched; figs render after the section's paras,
+   before its cases):
+     {type:'works', title?, items:[{artist, work?}], note?}
+       Registered works as figures. Each item resolves the artist
+       by exact name in either dataset; `work` picks the work whose
+       caption contains it, otherwise the artist's representative
+       work (works[0]). The card taps through to the artist page.
+     {type:'svg', kind:'trio', title?, items:[{t,s} x3], result}
+       Three element boxes flowing into one result box.
+     {type:'svg', kind:'flow', title?, steps:[{t,s}]}
+       A horizontal chain of boxes with arrows.
+     {type:'svg', kind:'steps', title?, steps:[{t,v,s,h}], note?}
+       Ascending steps; h is a schematic height 0..1 (the caption
+       says so — figures only ever carry numbers the text has).
+     {type:'svg', kind:'axes', title?, x, y, cells:[{t,s} x4]}
+       A 2x2 quadrant (cells in TL, TR, BL, BR order).
+     {type:'svg', kind:'pyramid', title?, layers:[{t,s}]}
+       Stacked layers, widest at the bottom.
+     {type:'table', title?, head:[...], rows:[[...]]}
+   SVG text uses the app's fonts via CSS variables; every label is
+   escaped. wireBizFigs (called by renderBizCh) hydrates the work
+   images. */
+function bizFigWork(ds, artistName, workSub){
+  const db = CTX[ds] && CTX[ds].DB; if(!db) return null;
+  const a = db.artists.find(x=>x.name === artistName); if(!a) return null;
+  const ws = worksOf(a); if(!ws.length) return null;
+  let w = null;
+  if(workSub) w = ws.find(x=>(x.caption || '').indexOf(workSub) >= 0) || null;
+  return { a: a, w: w || ws[0], ds: ds };
+}
+function bizFigResolve(artistName, workSub){
+  return bizFigWork('artists', artistName, workSub) || bizFigWork('designers', artistName, workSub);
+}
+let bizFigStore = [];
+function bizFigsHTML(figs){
+  if(!Array.isArray(figs) || !figs.length) return '';
+  return figs.map(f=>{
+    if(!f || !f.type) return '';
+    if(f.type === 'works'){
+      const cards = [];
+      (f.items || []).forEach(it=>{
+        const r = bizFigResolve(it.artist, it.work); if(!r) return;
+        const ix = bizFigStore.length; bizFigStore.push(r.w);
+        cards.push('<button class="figwork" onclick="openCrossDetail(\'' + r.ds + '\',\'' + escA(r.a.id) + '\')"><figure class="work"><div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div></figure><div class="fwcap">' + esc(it.label || (r.w.caption || '')) + '</div><div class="fwartist">' + esc(r.a.name) + '</div></button>');
+      });
+      if(!cards.length) return '';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figworks">' + cards.join('') + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+    }
+    if(f.type === 'table'){
+      const head = (f.head || []).map(c=>'<th>' + esc(c) + '</th>').join('');
+      const rows = (f.rows || []).map(r=>'<tr>' + r.map(c=>'<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<table class="figtable">' + (head? '<tr>' + head + '</tr>': '') + rows + '</table></div>';
+    }
+    if(f.type === 'svg'){
+      const inner = bizFigSVG(f); if(!inner) return '';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figsvg">' + inner + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+    }
+    return '';
+  }).join('');
+}
+function bizFigSVG(f){
+  const T = (x, y, s, size, anchor, weight)=>'<text x="' + x + '" y="' + y + '" font-size="' + (size || 12) + '" fill="var(--text)" text-anchor="' + (anchor || 'middle') + '"' + (weight? ' font-weight="' + weight + '"': '') + ' font-family="var(--serif)">' + esc(s || '') + '</text>';
+  const S = (x, y, s, anchor)=>'<text x="' + x + '" y="' + y + '" font-size="9.5" fill="var(--muted)" text-anchor="' + (anchor || 'middle') + '">' + esc(s || '') + '</text>';
+  const box = (x, y, w, h, fill)=>'<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="9" fill="' + (fill || 'var(--card)') + '" stroke="var(--line)"/>';
+  if(f.kind === 'trio'){
+    const items = (f.items || []).slice(0, 3); if(items.length < 2) return '';
+    const bw = 104, gap = 8, W = bw * items.length + gap * (items.length - 1) + 8, cx = W / 2;
+    let s = '<svg viewBox="0 0 ' + W + ' 128" role="img">';
+    items.forEach((it, i)=>{ const x = 4 + i * (bw + gap); s += box(x, 6, bw, 52) + T(x + bw / 2, 30, it.t, 13.5, 'middle', 600) + S(x + bw / 2, 48, it.s); });
+    s += '<path d="M' + cx + ' 58 L' + cx + ' 76" stroke="var(--accent)" stroke-width="1.6"/><path d="M' + (cx - 4) + ' 70 L' + cx + ' 78 L' + (cx + 4) + ' 70" fill="none" stroke="var(--accent)" stroke-width="1.6"/>';
+    s += '<rect x="' + (cx - 62) + '" y="80" width="124" height="38" rx="9" fill="var(--accent)"/>' + '<text x="' + cx + '" y="104" font-size="14.5" font-weight="700" fill="var(--bg)" text-anchor="middle" font-family="var(--serif)">' + esc(f.result || '') + '</text>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'flow'){
+    const steps = f.steps || []; if(steps.length < 2) return '';
+    const bw = 118, bh = 54, gap = 16, W = steps.length * bw + (steps.length - 1) * gap + 8, H = bh + 16;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    steps.forEach((st, i)=>{ const x = 4 + i * (bw + gap); s += box(x, 8, bw, bh) + T(x + bw / 2, 32, st.t, 12, 'middle', 600) + S(x + bw / 2, 50, st.s); if(i < steps.length - 1) s += '<path d="M' + (x + bw + 2) + ' ' + (8 + bh / 2) + ' L' + (x + bw + gap - 2) + ' ' + (8 + bh / 2) + '" stroke="var(--accent)" stroke-width="1.6"/><path d="M' + (x + bw + gap - 7) + ' ' + (8 + bh / 2 - 4) + ' L' + (x + bw + gap - 2) + ' ' + (8 + bh / 2) + ' L' + (x + bw + gap - 7) + ' ' + (8 + bh / 2 + 4) + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/>'; });
+    return s + '</svg>';
+  }
+  if(f.kind === 'steps'){
+    const steps = f.steps || []; if(steps.length < 2) return '';
+    const bw = 96, gap = 14, base = 118, maxH = 84, W = steps.length * bw + (steps.length - 1) * gap + 8;
+    let s = '<svg viewBox="0 0 ' + W + ' 150" role="img">';
+    steps.forEach((st, i)=>{ const x = 4 + i * (bw + gap); const h = Math.max(8, Math.round((st.h || 0.3) * maxH)); s += '<rect x="' + x + '" y="' + (base - h) + '" width="' + bw + '" height="' + h + '" rx="5" fill="var(--accent)" opacity="' + (0.45 + 0.55 * (st.h || 0.3)).toFixed(2) + '"/>' + T(x + bw / 2, base - h - 16, st.v, 11.5, 'middle', 700) + S(x + bw / 2, base - h - 4, st.s) + T(x + bw / 2, base + 16, st.t, 11, 'middle', 600); });
+    s += '<line x1="2" y1="' + base + '" x2="' + (W - 2) + '" y2="' + base + '" stroke="var(--line)"/>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'axes'){
+    const cells = f.cells || []; if(cells.length < 4) return '';
+    const W = 320, H = 190, gx = 34, gy = 8, gw = W - gx - 6, gh = H - gy - 24, cw = gw / 2, ch = gh / 2;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    s += '<line x1="' + (gx + cw) + '" y1="' + gy + '" x2="' + (gx + cw) + '" y2="' + (gy + gh) + '" stroke="var(--line)"/><line x1="' + gx + '" y1="' + (gy + ch) + '" x2="' + (gx + gw) + '" y2="' + (gy + ch) + '" stroke="var(--line)"/>';
+    cells.forEach((c, i)=>{ const col = i % 2, row = i < 2? 0: 1; const x = gx + col * cw + cw / 2, y = gy + row * ch; s += T(x, y + ch / 2 - 4, c.t, 12, 'middle', 600) + S(x, y + ch / 2 + 12, c.s); });
+    s += '<text x="' + (gx + gw / 2) + '" y="' + (H - 4) + '" font-size="10.5" fill="var(--muted)" text-anchor="middle">' + esc(f.x || '') + ' →</text>';
+    s += '<text x="12" y="' + (gy + gh / 2) + '" font-size="10.5" fill="var(--muted)" text-anchor="middle" transform="rotate(-90 12 ' + (gy + gh / 2) + ')">' + esc(f.y || '') + ' →</text>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'pyramid'){
+    const layers = f.layers || []; if(layers.length < 2) return '';
+    const W = 320, lh = 40, H = layers.length * lh + 8, cx = W / 2;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    layers.forEach((l, i)=>{ const w = 90 + i * ((W - 110) / Math.max(1, layers.length - 1)); const x = cx - w / 2, y = 4 + i * lh; s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + (lh - 7) + '" rx="8" fill="var(--card)" stroke="var(--accent)"/>' + T(cx, y + 21, l.t, 12, 'middle', 600) + S(cx, y + 34, l.s); });
+    return s + '</svg>';
+  }
+  return '';
+}
+function wireBizFigs(el){
+  el.querySelectorAll('[data-bfig]').forEach(ph=>{
+    const w = bizFigStore[+ph.dataset.bfig]; if(!w) return;
+    const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
+  });
 }
 function openBizChapter(id){ bizChapterId = id; showView('bizch'); }
 /* v21.9: the chapter pills moved into the bottom floating bar.
@@ -11208,7 +11437,8 @@ function renderBizCh(){
       h += '<h2 class="biztitle">' + (ix + 1) + '. ' + esc(c.title || '') + '</h2>';
       if(c.lead) h += '<p class="bodytext">' + esc(c.lead) + '</p>';
       const secs = Array.isArray(c.sections)? c.sections: [];
-      h += secs.map(s=> (s.h? '<h3 class="subhead">' + esc(s.h) + '</h3>': '') + bizParasHTML(s.paras) + bizCasesHTML(s.cases)).join('');
+      bizFigStore = [];
+      h += secs.map(s=> (s.h? '<h3 class="subhead">' + esc(s.h) + '</h3>': '') + bizParasHTML(s.paras) + bizFigsHTML(s.figs) + bizCasesHTML(s.cases)).join('');
       if(!secs.length) h += '<div class="empty">本文は準備中です</div>';
       h += '<div class="biznav">';
       if(ix > 0) h += '<button class="biznavbtn" onclick="openBizChapter(\'' + escA(chs[ix - 1].id) + '\')">‹ 前の章</button>';
@@ -11219,6 +11449,7 @@ function renderBizCh(){
   }
   h += '</div>';
   el.innerHTML = h;
+  wireBizFigs(el);
   renderBizPillBar();
   window.scrollTo(0, 0);
 }
@@ -11326,7 +11557,7 @@ DS = kind; bindCtx();
 editWorks = [];
 updateHeader(); updatePill(); renderSyncStatus();
 }
-function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderList(); driftIn($('listbody'), dir);}
+function setMode(m){ const dir = segDir(['wide','def','compact','mini'], state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderListKeepScroll(); driftIn($('listbody'), dir);}
 function onSearch(q){
 const nq = q.trim();
 const changed = nq !== state.query;
@@ -11341,15 +11572,74 @@ if(changed) window.scrollTo(0, 0);
 /* v12.5: the search field's clear (×) button */
 function updateSearchClear(){ const b = $('searchclear'), s = $('searchbox'); if(b && s) b.classList.toggle('hidden', !s.value); }
 function clearSearch(){ const s = $('searchbox'); if(!s) return; s.value = ''; onSearch(''); try{ s.focus({ preventScroll:true }); }catch(e){ try{ s.focus(); }catch(e2){} } }
+/* v32.4 (item 10): filter and view switches keep the reader's
+   place. The old flow rebuilt the whole list (and the sticky
+   toolbar changed height as the facet panel opened/closed), so
+   the browser's scroll anchor was lost and the page jumped to
+   the top — and the toolbar's grid-rows transition repainted
+   the chips over themselves (the ghosting in his recording).
+   The transaction: pin the first visible card's identity and
+   viewport offset, render with the toolbar transition frozen
+   (tbnoanim), then put the same card back at the same offset
+   in the SAME task (v27.9's rule: same-task scroll commands are
+   the safe ones). If the card is gone, keep scrollY; only when
+   the new content is shorter than the old position do we land
+   at the first result under the header — never at page top. */
+function renderListKeepScroll(renderFn){
+const tb = $('toolbar');
+if(tb) tb.classList.add('tbnoanim');
+const y = window.scrollY || 0;
+let anchorId = null, anchorTop = 0;
+const cards = document.querySelectorAll('#listbody figure.work[data-aid]');
+for(const f of cards){ const r = f.getBoundingClientRect(); if(r.bottom > 0){ anchorId = f.dataset.aid; anchorTop = r.top; break; } }
+(renderFn || renderList)();
+let placed = false;
+if(anchorId){
+const nf = document.querySelector('#listbody figure.work[data-aid="' + String(anchorId).replace(/"/g, '\\"') + '"]');
+if(nf){ const dy = nf.getBoundingClientRect().top - anchorTop; if(dy) window.scrollBy(0, dy); placed = true; }
+}
+if(!placed){
+const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+if(y > maxY){
+const lb = $('listbody');
+const tbB = tb? tb.getBoundingClientRect().bottom: 0;
+const target = lb? Math.max(0, (window.scrollY || 0) + lb.getBoundingClientRect().top - tbB): maxY;
+window.scrollTo(0, Math.min(target, maxY));
+}
+}
+requestAnimationFrame(()=>{ if(tb) tb.classList.remove('tbnoanim'); });
+updateEraName();
+}
+/* v32.4 (item 9): the sticky era row names the section currently
+   in view; it follows the scroll (rAF-throttled, list view only). */
+function updateEraName(){
+const el = $('eraName'); if(!el) return;
+if(queryToks().length){ el.textContent = '検索結果'; return; }
+if(favFilter){ el.textContent = 'お気に入り'; return; }
+const tb = $('toolbar');
+const tbB = tb? tb.getBoundingClientRect().bottom: 0;
+const heads = document.querySelectorAll('#listbody .sechead');
+if(!heads.length){ el.textContent = '一覧'; return; }
+let name = '';
+heads.forEach(h=>{ if(h.getBoundingClientRect().top <= tbB + 4){ const s = h.querySelector('span'); name = s? s.textContent: ''; } });
+if(!name){ const s = heads[0].querySelector('span'); name = s? s.textContent: '一覧'; }
+el.textContent = name;
+}
+let eraNameTick = false;
+window.addEventListener('scroll', ()=>{
+if(typeof view === 'undefined' || view !== 'list' || eraNameTick) return;
+eraNameTick = true;
+requestAnimationFrame(()=>{ eraNameTick = false; updateEraName(); });
+}, { passive:true });
 function toggleTag(t){
 if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
-renderList();
+renderListKeepScroll();
 }
-function toggleTagsOpen(){ state.tagsOpen = !state.tagsOpen; renderList(); }
+function toggleTagsOpen(){ state.tagsOpen = !state.tagsOpen; renderListKeepScroll(); }
 function toggleTagGroup(key){
 if(!state.tagGroupsOpen) state.tagGroupsOpen = {};
 state.tagGroupsOpen[key] = !state.tagGroupsOpen[key];
-renderList();
+renderListKeepScroll();
 }
 function toggleFacet(f){
 /* v21.4 (his call): tapping the OPEN facet's header closes the
@@ -11358,7 +11648,7 @@ function toggleFacet(f){
    force-open below does not instantly resurrect the panel. */
 if(state.facetOpen===f){ state.facetOpen = null; state.facetShut = true; }
 else { state.facetOpen = f; state.facetShut = false; }
-renderList();
+renderListKeepScroll();
 }
 /* v2.77: loose search normalization — the SAME folding applied to
    the query and to the person fields, so ひらがなで打っても
@@ -11709,8 +11999,30 @@ const TAG_FACETS = {};
 ['現代','現代日本','日本','江戸','近代','ルネサンス','日本の戦後','戦後日本','ポーランド','ドイツ','ドイツ戦後','中国現代美術','エチオピア','タイ','ブラジル','スイス','ニューヨーク','福岡','九州派','琳派','具体','もの派','ハイレッド・センター','印象派','キュビスム','シュプレマティスム','空間主義','カラーフィールド','アクション・ペインティング','抽象表現主義への橋','スーパーフラット','ミニマリズム','ポップアート','ネオ・ジオ','ZERO','アール・ブリュット','アウトサイダー','YBA','ライプツィヒ','浮世絵','バンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
 /* v21.8: country tags (added to the data from each person's field) belong to the 年代・国 facet — before this they fell into テーマ・概念, which is why アメリカ never showed under 国. */
 ['アメリカ','イギリス','フランス','イタリア','スペイン','オランダ','ベルギー','オーストリア','チェコ','ロシア','ソ連','中国','韓国','メキシコ','アルゼンチン','キューバ','カナダ','南アフリカ','イスラエル','アイルランド','デンマーク','ノルウェー','ポルトガル','ギリシャ','ルーマニア','ブルガリア','スコットランド','ロンドン'].forEach(t=>TAG_FACETS[t]='jidaikuni');
-const TAG_FACET_ORDER = ['bunrui','gihou','jidaikuni','theme'];
-const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', jidaikuni:'年代・国', theme:'テーマ・概念'};
+const TAG_FACET_ORDER = ['bunrui','gihou','kuni','theme','undou'];
+const TAG_FACET_LABELS = {bunrui:'分類', gihou:'技法・素材', kuni:'国', theme:'テーマ・概念', undou:'運動・様式'};
+/* v32.4 (item 11): the era chips are gone — moving through eras is
+   the section heads' 時代 chip's job, and the duplicate era buckets
+   （日本の戦後 vs 戦後日本） die with them. Era tags stay in the
+   data and in free-word search; they just never render as chips. */
+function tagChipHidden(t){ return t.indexOf('時代：')===0 || (TAG_NENDAI[DS] && TAG_NENDAI[DS].indexOf(t)>=0); }
+/* v32.4 (item 11): style/movement tags that the base tables file
+   under テーマ・概念 move to the new 運動・様式 facet. */
+const TAG_UNDOU = {
+artists: ['バロック','ゴシック','構成主義','マニエリスム','ネオ・ダダ','新古典主義','初期ルネサンス','国際ゴシック','ロシア・アヴァンギャルド','青騎士','原ルネサンス','フルクサス','新表現主義','アルテ・ポーヴェラ','アンフォルメル','ヴェネツィア派','バルビゾン派','写実主義','狩野派','盛期ルネサンス','新印象派','ロココ','エコール・ド・パリ','シエナ派','ダダ','新即物主義','フォーヴィスム','未来派','アール・ヌーヴォー','フォトリアリズム','ハイパーリアリズム','オルフィスム','古典主義','北方ルネサンス','ウィーン分離派','メキシコ壁画運動','フェミニスト・アート','リレーショナル・アート','ロマネスク','分離派','テネブリズム'],
+designers: ['テクノポップ']
+};
+/* v32.4 (item 12): the テーマ・概念 panel is curated — only true
+   themes / concepts / subjects / genres, picked by carrier count
+   and usefulness (artists 679 tags, designers 255 tags before).
+   This is a DISPLAY curation only: the tags stay in the data and
+   free-word search keeps matching everything. A selected theme
+   tag always shows, kept or not. The 系譜 group rides separately,
+   as before. Lists with counts live in the v32.4 WORKLOG. */
+const TAG_THEME_KEEP = {
+artists: ['抽象','コンセプチュアル','肖像','身体','平面','光','風景','地','色彩','市場','不穏','ネガ','独学','反復','具象','記憶','美人画','言葉','洞窟壁画','遺跡','色面','記号','装飾','物語','図と地','グリッド','静物','日常','幾何学','余白','自画像','空洞','空間','黒','物質感','時間','参加','風俗','穴','静けさ','解像度の配分','平面性','神話','奇想','夢','都市','歴史画','ユーモア','役者絵','フェミニズム','制度批評','知覚','宗教画','透明','痕跡','不在','モノクローム'],
+designers: ['幾何','引き算','システム','建築','平面','色彩','記号','方法','光','起源','反復','余白','抽象','理論','制約','シルエット','色面','グリッド','物語','概念','白','構造','可読性','量産','浮遊','標準化','黒','パターン','図と地','制度','都市','非対称','民主化','時間','デジタル','不穏','解放','ネガティブスペース','身体','編集','道具','教育']
+};
 /* designers tag facets (curated 2026-11-11 to mirror the artists system) */
 const TAG_FACETS_D = {};
 ["ポスター", "ファッション", "家具", "工業デザイン", "エディトリアル", "ロゴ", "タイポグラフィ", "テキスタイル", "情報デザイン", "CI", "タイプデザイン", "インテリア", "パッケージ", "ピクトグラム", "プロダクト", "モーション", "ランドスケープ", "舞台美術", "Webデザイン", "展示デザイン", "雑誌", "UI", "グラフィック", "サイン", "映画タイトル", "アートディレクション", "統計", "UX", "イラストレーション", "オートクチュール", "ブランディング", "写真", "広告", "店舗", "庭", "彫刻", "環境", "絵本", "美術館", "サイン計画", "データ可視化", "ブックデザイン", "ホテル", "レコードジャケット", "地図", "抽象映像", "アイコン", "インタラクションデザイン", "インフォグラフィックス", "インフォメーション・アーキテクチャ", "カメラ", "データジャーナリズム", "プレタポルテ", "マウス", "ミニスカート", "ラップトップ", "ランプ", "公園", "博物館", "地図学", "売り場", "庭園", "日本庭園", "日用品", "映像", "椅子", "絵画", "自動車", "舞台", "表紙", "視覚音楽", "道路標識", "雑誌表紙", "電話機", "駅舎"].forEach(t=>TAG_FACETS_D[t]='bunrui');
@@ -11792,15 +12104,28 @@ const TAG_CHIP_ORDER = {
 'bunrui:映像・写真':['写真','写真ベース','映像','アニメーション','マルチメディア']
 };
 function chipComparator(f, g, counts){
-const ord = TAG_CHIP_ORDER[f+':'+g] || [];
+const ord = TAG_CHIP_ORDER[f+':'+g] || (f==='undou'? (TAG_CHIP_ORDER['jidaikuni:運動・様式'] || []): []);
 const ix = t=>{ const i = ord.indexOf(t); return i<0? 9999: i; };
 return (x,y)=> (ix(x)-ix(y)) || ((counts[y]||0)-(counts[x]||0));
 }
+/* v32.4 (item 11): a tag from the old 年代・国 bucket is a movement
+   iff it is none of era / country / city — the same test the old
+   tagGroup used to file it under 運動・様式. */
+function isUndouTag(t){
+if(t.indexOf('時代：')===0) return false;
+if(TAG_NENDAI[DS] && TAG_NENDAI[DS].indexOf(t)>=0) return false;
+if(TAG_TOSHI[DS] && TAG_TOSHI[DS].indexOf(t)>=0) return false;
+if(TAG_KUNI[DS] && TAG_KUNI[DS].indexOf(t)>=0) return false;
+return true;
+}
 function tagFacet(t){
-if(t.indexOf('時代：')===0) return 'jidaikuni';
+if(t.indexOf('時代：')===0) return 'kuni'; /* era chips never render (tagChipHidden); the bucket only keeps counts sane */
 if(t.indexOf('領域：')===0) return 'bunrui';
-const ov = TAG_OVR[DS]; if(ov && ov[t]) return ov[t];
-return DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme');
+const ov = TAG_OVR[DS];
+let f = (ov && ov[t])? ov[t]: (DS==='designers'? (TAG_FACETS_D[t]||'theme'): (TAG_FACETS[t]||'theme'));
+if(f==='jidaikuni') return isUndouTag(t)? 'undou': 'kuni';
+if(f==='theme' && TAG_UNDOU[DS] && TAG_UNDOU[DS].indexOf(t)>=0) return 'undou';
+return f;
 }
 /* subgroup inside a facet panel (null = no grouping for this facet) */
 const TAG_EGAKU = ['木炭','パステル','拭う','拭き取り','消去','削る','切る','流す','引きずり','手で塗る','素手','指で描く'];
@@ -11821,11 +12146,9 @@ if(TAG_SOZAI[DS].indexOf(t)>=0) return '素材';
 if(DS==='designers' && TAG_SHOTAI_D.indexOf(t)>=0) return '書体';
 return '技法';
 }
-if(f==='jidaikuni'){
-if(t.indexOf('時代：')===0 || TAG_NENDAI[DS].indexOf(t)>=0) return '年代';
+if(f==='kuni'){
 if(TAG_TOSHI[DS] && TAG_TOSHI[DS].indexOf(t)>=0) return '都市・地域';
-if(TAG_KUNI[DS].indexOf(t)>=0) return '国・地域';
-return '運動・様式';
+return '国・地域';
 }
 if(f==='bunrui' && DS==='designers'){
 return t.indexOf('領域：')===0? '領域': '分類';
@@ -11846,7 +12169,7 @@ if(f==='gihou' && DS==='artists') return ['絵画技法','描画・消去','立�
 if(f==='bunrui' && DS==='artists') return ['絵画','立体','映像・写真','行為・その他'];
 return TAG_GROUP_ORDER[f];
 }
-const TAG_GROUP_ORDER = { gihou:['技法','素材','書体'], jidaikuni:['年代','国・地域','都市・地域','運動・様式'], bunrui:['領域','分類'] };
+const TAG_GROUP_ORDER = { gihou:['技法','素材','書体'], kuni:['国・地域','都市・地域'], bunrui:['領域','分類'] };
 function renderAbout(){
 const vb = $('verBadge'); if(vb) vb.textContent = 'v'+APP_VERSION;
 const el = $('aboutbox'); if(!el) return;
@@ -11855,7 +12178,7 @@ const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
 el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+wrk('artists')+'点 ・ デザイナー '+cnt('designers')+'名／'+wrk('designers')+'点';
 }
 function renderList(){
-document.querySelectorAll('#modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
+document.querySelectorAll('#modeseg button, .modeseg button').forEach(b=>b.classList.toggle('on', b.dataset.m===state.mode));
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 updateSearchClear();
@@ -11864,10 +12187,10 @@ updateSearchClear();
    v2.29: chips work on canonical tags (normTagSet merges notation
    variants and drops bookkeeping tags); stored data stays raw. Any
    selection saved before the curation is re-canonicalised here too. */
-if(state.tags && state.tags.size){ const nt = new Set(); state.tags.forEach(t=>{ if(!tagHidden(t)) nt.add(normTag(t)); }); state.tags = nt; }
+if(state.tags && state.tags.size){ const nt = new Set(); state.tags.forEach(t=>{ if(!tagHidden(t) && !tagChipHidden(t)) nt.add(normTag(t)); }); state.tags = nt; }
 const counts = {};
 DB.artists.forEach(a=>{ normTagSet(a).forEach(t=>{ counts[t]=(counts[t]||0)+1; }); });
-const tags = Object.keys(counts).sort((x,y)=>counts[y]-counts[x]);
+const tags = Object.keys(counts).filter(t=>!tagChipHidden(t)).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" onclick="toggleTag(\''+escA(t)+'\')">'
 +esc(chipLabel(t))+' '+counts[t]+'</button>';
@@ -11904,23 +12227,18 @@ const all = tags.filter(t=>tagFacet(t)===openF);
 if(all.length){
 let panel = '', toggleBtn = '';
 if(openF==='theme'){
-/* v2.29: theme is tiered by carrier count — 主要 (3+) always shows;
-   その他 (2), 個別 (1) and the 系譜 group open with すべて表示.
-   A tier holding a selected tag is always shown. */
+/* v32.4 (item 12): the theme panel shows the curated keep-list
+   only (TAG_THEME_KEEP) — era-like tags are gone with the era
+   chips, technique/material duplicates live in their own facet,
+   style tags moved to 運動・様式. A selected tag always shows.
+   The 系譜 group keeps its own headed row, as before. */
 const isKeifu = t=>t.indexOf('系譜：')===0 || t==='系譜';
-const tiers = [
-{label:'主要なテーマ', tags: all.filter(t=>counts[t]>=3 && !isKeifu(t))},
-{label:'その他のテーマ', tags: all.filter(t=>counts[t]===2 && !isKeifu(t))},
-{label:'個別タグ（1件のみ）', tags: all.filter(t=>counts[t]===1 && !isKeifu(t))},
-{label:'系譜', tags: all.filter(isKeifu)}
-].filter(g=>g.tags.length);
-let hiddenN = 0;
-tiers.forEach((g,ix)=>{
-const hasSel = g.tags.some(t=>state.tags.has(t));
-if(ix>0 && !state.tagsOpen && !hasSel){ hiddenN += g.tags.length; return; }
-panel += '<div class="facetgh">'+esc(g.label)+'</div><div class="taggrouprow">'+g.tags.map(tagChip).join('')+'</div>';
-});
-if(hiddenN>0 || state.tagsOpen) toggleBtn = '<button class="tagmore" onclick="toggleTagsOpen()">'+(state.tagsOpen?'タグを閉じる':'タグをすべて表示（'+all.length+'）')+'</button>';
+const keep = TAG_THEME_KEEP[DS] || null;
+const main = all.filter(t=>!isKeifu(t) && (!keep || keep.indexOf(t)>=0 || state.tags.has(t)));
+const keifu = all.filter(isKeifu);
+if(main.length) panel += '<div class="taggrouprow">'+main.map(tagChip).join('')+'</div>';
+if(keifu.length) panel += '<div class="facetgh">系譜</div><div class="taggrouprow">'+keifu.map(tagChip).join('')+'</div>';
+if(!main.length && !keifu.length) panel += '<div class="small">テーマのチップはありません</div>';
 } else {
 const order = facetGroupOrder(openF);
 const byG = {}; if(order) all.forEach(t=>{ const g = tagGroup(openF,t); (byG[g]=byG[g]||[]).push(t); });
@@ -11948,6 +12266,11 @@ tagHtml += '</div>';
 renderSymFilter();
 renderEraFilter();
 $('tagrow').innerHTML = tagHtml;
+/* v32.4 (item 9): the sticky era row mirrors the era/symbol chips
+   (they re-render themselves everywhere via renderEraFilter /
+   renderSymFilter) and names the section currently in view. */
+const _ec = $('eraChips'); if(_ec) _ec.innerHTML = eraBtnHTML() + symSecBtnHTML();
+updateEraName();
 fitToolbarTop();
 renderListBody();
 renderAbout();
@@ -12087,7 +12410,7 @@ symFilter = new Set(symDraft || symSel());
 persistSymFilter();
 symDraft = null;
 closeSymSheet();
-renderList();
+renderListKeepScroll();
 }
 function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); sheetLockSync(); symDraft = null; }
 /* compat: a programmatic single choice (older checks drive
@@ -12096,7 +12419,7 @@ function setSymFilter(g){
 symFilter = g? new Set([g]): new Set();
 persistSymFilter();
 closeSymSheet();
-renderList();
+renderListKeepScroll();
 }
 
 /* v29.0: 時代で選ぶ — the era tab immediately LEFT of the 分野
@@ -12160,7 +12483,7 @@ function setEraFilter(g){
   eraFilter = (eraFilter === g)? '' : g;
   try{ storeSet('zukan.eraFilter', eraFilter); }catch(e){}
   closeEraSheet();
-  renderList();
+  renderListKeepScroll();
 }
 
 /* v26.0 (his memo 2026-11-14): when a search matched a person through body
@@ -12400,6 +12723,23 @@ const order = [];
 DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
 arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
 order.push('');
+/* v32.4 (item 8): the SECTIONS run oldest-first too — a section's
+   key is its oldest member's birth key, so the default list opens
+   with the ancients （先史〜中世） instead of wherever the data
+   file happens to list its sections first. Stable sort; sections
+   whose members are all birth-unknown sink to the end, and the
+   unclassified '' bucket stays last. */
+const secKey = {};
+order.forEach(sec=>{
+let m = Infinity;
+arr.forEach(a=>{ if((a.section||'')===sec){ const k = birthSortKey(a); if(k<m) m = k; } });
+secKey[sec] = m;
+});
+order.sort((s1, s2)=>{
+if(s1==='') return 1; if(s2==='') return -1;
+const k1 = secKey[s1], k2 = secKey[s2];
+return k1 < k2? -1: k1 > k2? 1: 0;
+});
 order.forEach(sec=>{
 const group = arr.filter(a=>(a.section||'')===sec);
 if(!group.length) return;
@@ -14882,7 +15222,7 @@ const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getM
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const effMode = (exSortMode==='near' && !exUserPos)? 'start': exSortMode;
 const cmp = exSortCmp(effMode);
-let html = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>'
+let html = '<div class="tlhead"><h2>展示</h2></div>'
 + exNavHTML() + exRegionSegHTML()
 +'<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;"><span class="small">並び替え</span><span class="seg mini">'
 +'<button class="'+(exSortMode==='start'?'on':'')+'" onclick="setExSort(\'start\')">開始日順</button>'
@@ -14933,7 +15273,7 @@ function renderExDesigners(){
 let exs = (DB.exhibitions||[]).slice();
 if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
-const head = '<div class="tlhead"><h2>展示</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'list\')">← 一覧</button></div>' + exNavHTML() + exRegionSegHTML();
+const head = '<div class="tlhead"><h2>展示</h2></div>' + exNavHTML() + exRegionSegHTML();
 if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
@@ -15320,7 +15660,7 @@ function favsMerge(fileFavs){
   return m;
 }
 let favFilter = false;
-function toggleFavFilter(){ favFilter = !favFilter; syncFavFilterBtn(); renderListBody(); window.scrollTo(0,0); }
+function toggleFavFilter(){ favFilter = !favFilter; syncFavFilterBtn(); renderListKeepScroll(()=>{ renderListBody(); }); }
 function syncFavFilterBtn(){
   const b = $('favFilterBtn'); if(!b) return;
   const n = favPeopleCount(DS);
@@ -15555,9 +15895,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [
-  { v: null, label: 'データの更新予定', lines: ['作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします', '作家ページのドローイングを順に集めます（第1弾は登録済み）', '新しい作家の登録を順に進めます', '「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
-];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全599人中262人まで完了。残り337人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：92点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：530件・282人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い22人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像166点（作品152点・ドローイング14点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "制作ガイドの章に図版を入れる", "lines": ["解説の文章に、作品の画像・図解・表を差し込む仕組みができました（この版でアートビジネス全9章に適用済み）。", "同じ仕組みを、制作ガイドの28章にも順に広げていきます。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["美術史の年表に名前がある作家は、順に登録していきます（作品画像の権利が確認できた人から）。", "名前の表記ゆれなどで止まっている候補も、確認が取れ次第進めます。"]}, {"v": null, "label": "制作風景の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。", "どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "いまの状態：集め始めです。載せる場所は、作家ページの解剖（制作プロセス）の所を予定しています。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -15666,10 +16004,13 @@ function reqMarkOneRead(r){
   refreshReqNotifBtn();
 }
 function refreshReqNotifBtn(){
-  const b = $('navReqNotif'); if(!b) return;
+  /* v32.4: the unread badge rides the hub button now (the four
+     header buttons became one hub). */
+  const b = $('hubBadge'); if(!b) return;
   let n = 0;
   try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
-  b.innerHTML = SICON.bell + (n? '<span class="nbadge">'+n+'</span>': '');
+  b.textContent = n? String(n): '';
+  b.style.display = n? '': 'none';
 }
 /* v7.0: new-registration notifications (his ask, 2026-11-13).
    Until now only request-driven registrations produced a
@@ -15928,13 +16269,19 @@ function renderRequestNotifs(targetId){
       if(r.note) d += '<div class="nnote">'+esc(r.note)+'</div>';
       detail = '<div class="ndetail">'+d+'</div>';
     }
+    /* v32.4.0 (item 13): a person row carries the person's
+       thumbnail — the standard card form in miniature (their
+       representative work, or the initial tile). */
+    const pa = (r.kind==='works' && r.artist_id!=null)? artistById(r.artist_id): DB.artists.find(x=>x.name===resolved);
+    const pth = pa? thumbOf(pa): null;
+    const thumb = '<span class="nthumb">' + (pth? '<figure class="work"><div class="ph" data-work="'+escA(pa.id)+'">'+imgHTML(pth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(dispName||'')[0]||''))+'</span></span>') + '</span>';
     const head = '<div class="nhead"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
       + '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>'
       + (isNew? '<span class="newtag">NEW</span>': '');
     if(navigable){
-      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="reqNotifJump(\''+escA(r.id)+'\')">' + head + '<span class="upgo">›</span></div></div>' };
+      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="reqNotifJump(\''+escA(r.id)+'\')">' + thumb + head + '<span class="upgo">›</span></div></div>' };
     }
-    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')">' + head + '<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
+    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')">' + thumb + head + '<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
   });
   /* v7.0: registration detections (see detectNewPeople) ride
      the same panel. v13.1: only the current book's notes are
@@ -15964,7 +16311,10 @@ function renderRequestNotifs(targetId){
     /* v30.6: a single-person registration note — the WHOLE row
        jumps straight to the person's page (regNotifJump marks
        it seen on arrival), like the completed-request rows. */
-    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')"><div class="nhead"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div></div>' };
+    const ra = artistById(n.personId);
+    const rth = ra? thumbOf(ra): null;
+    const rthumb = '<span class="nthumb">' + (rth? '<figure class="work"><div class="ph" data-work="'+escA(ra.id)+'">'+imgHTML(rth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(n.name||'')[0]||''))+'</span></span>') + '</span>';
+    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')">' + rthumb + '<div class="nhead"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div></div>' };
   });
   /* v13.1: one chronological stream again, but only THIS
      book's rows reach it (the v13.0 sections mixed both books
@@ -15975,6 +16325,7 @@ function renderRequestNotifs(targetId){
   const all = doneRows.concat(regRows).sort((a, b)=> b.t - a.t);
   if(!all.length){ el.innerHTML = '<div class="empty">通知はまだありません</div>'; }
   else el.innerHTML = all.map(x=>x.html).join('');
+  wireListImages(el);
   /* v27.3: rendering marks NOTHING read (the v2.95 bulk
      mark-seen that lived here is gone). Read state changes
      only in reqNotifJump / regNotifJump / the expansion of a
@@ -16525,7 +16876,6 @@ function tlFrameHTML(){
 /* v30.5: the head lives inside #tlstick (one sticky block:
    head + stream buttons + map + year bar). */
 const tlHeadHTML = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表': '美術史年表')+'</h2><span class="topsp"></span>'
-+'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>';
 /* v30.0: stream buttons in his 2x2 block (top row 西洋/日本,
@@ -17877,7 +18227,21 @@ function layoutTlSpine(){
      the bottom — bright enough to read as a line, quiet
      enough to sit inside the brown ground. Only this bar
      changed: the era dots and the era bands keep eraColor. */
-  spine.style.background = 'linear-gradient(to bottom, #f2cd85 0%, #e8b45a 45%, #b57e2c 100%)';
+  /* v32.4.0 (his device recording 2026-11-16 01:55): the v32.3
+     gradient READ FLAT on the device. Diagnosis: the bar is one
+     element spanning the timeline's whole height (tens of
+     thousands of px), so inside any one viewport the color
+     moved only a few percent of the range — and at 3px wide
+     there was almost no color to read. Fix (the gold gradient
+     itself is a standing rule — never a flat color): the bar
+     is 5px wide with a soft glow, and the stops are pulled far
+     apart in brightness — pale gold #f8e2a0 at the top through
+     the accent #e8b45a to deep bronze #7d5216 at the bottom —
+     still ONE continuous gradient over the full height, now
+     with steps the eye can actually separate. validate_v32_4
+     pixel-samples the rendered bar at several heights and
+     asserts the color really changes. */
+  spine.style.background = 'linear-gradient(to bottom, #f8e2a0 0%, #eec25e 26%, #e8b45a 45%, #c07f24 72%, #7d5216 100%)';
   if(dots) dots.innerHTML = cards.map((c, i) => '<span class="tldot" style="top:'+(c.offsetTop + 20)+'px; background:'+eraColor(i, n)+';"></span>').join('');
 }
 
@@ -19349,12 +19713,13 @@ function backTarget(forSwipe){
      While a panel is open there is no view-level back target: the
      panel's own 戻る closes it (closeSettingsPanel via goBack). */
   if(view==='settings' && settingsPanel) return null;
+  if(view==='makerdetail') return 'makers';
   if(view==='quiz') return 'timeline';
   if(view==='era') return 'timeline';
   if(view==='news' || view==='cal') return 'ex';
   if(view==='bizch') return 'biz';
   if(view==='bizp') return 'biz';
-  if(view==='detail' || view==='timeline' || view==='ex' || view==='settings' || view==='biz') return 'list';
+  if(view==='detail' || view==='timeline' || view==='ex' || view==='settings' || view==='biz' || view==='makers') return 'list';
   if(forSwipe && view==='list' && prevPill && (prevPill.view!=='list' || prevPill.ds!==DS)) return prevPill.view;
   return null;
 }
@@ -19384,6 +19749,8 @@ function engageSwipe(st){
   if(st.target==='biz') renderBiz();
   if(st.target==='bizch') renderBizCh();
   if(st.target==='bizp') renderBizPrice();
+  if(st.target==='makers') renderMakers();
+  if(st.target==='makerdetail') renderMakerDetail();
   const oldEl = $(VIEW_EL[view]), newEl = $(VIEW_EL[st.target]);
   if(!oldEl || !newEl){ st.engaged = false; return; }
   st.oldEl = oldEl; st.newEl = newEl;
@@ -19446,8 +19813,8 @@ function teardownSwipe(st, commit){
     view = st.target;
     if(view!=='settings') CTX[DS].lastView = view;
 
-    $('navTimeline').classList.toggle('on', view==='timeline');
-    $('navBiz').classList.toggle('on', view==='biz' || view==='bizch' || view==='bizp');
+    const _tt = $('navTimeline'); if(_tt) _tt.classList.toggle('on', view==='timeline');
+    const _tb = $('navBiz'); if(_tb) _tb.classList.toggle('on', view==='biz' || view==='bizch' || view==='bizp');
     /* v2.58: this hand-rolled commit used to skip the header update
        entirely, so a swipe back out of その他 landed on the list
        still titled その他. showView's chrome steps apply here too. */
@@ -19560,7 +19927,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.3';
+const APP_VERSION = '32.4.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -20443,31 +20810,47 @@ function xWireMakerPlates(scope){
     else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
   });
 }
-function xOpenMakers(){
-  XSTACK.length = 0;
-  xGo('立役者', b => {
-    b.innerHTML = '<p class="bodytext">読み込んでいます…</p>';
-    xLoadMakers().then(d => {
-      if(!d){ b.innerHTML = '<p class="bodytext">立役者のデータを読み込めませんでした。通信状態を確認して、もう一度開いてください。</p>'; return; }
-      xMakersList(b, d, '');
-    });
+/* v32.4.0 (item 6): the makers are a first-class view pair —
+   viewMakers / viewMakerDetail, switched by the pill bar and
+   the slide machinery like every other view (the old xscreen
+   sheet with its 閉じる is retired). The list mirrors the artist
+   list: the app header carries title and count, then search,
+   role-group sections with sticky heads, and the same card
+   grid (portrait photo or the designed initial tile — every
+   no-photo maker gets the tile; the old generic 図版 plate some
+   no-photo makers showed is gone). The person page mirrors the
+   artist page's skeleton with makers' own section names.
+   makers.json itself is unchanged. */
+let xMakerSelId = null, xMakerQuery = '';
+function xMakerCountText(){ return (XMAKERS && XMAKERS.artists)? '全' + XMAKERS.artists.length + '名': ''; }
+function renderMakers(){
+  const v = $('viewMakers'); if(!v) return;
+  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xLoadMakers().then(() => { if(view === 'makers') renderMakers(); }); return; }
+  $('topcount').textContent = xMakerCountText();
+  v.innerHTML = makersListHTML(XMAKERS, xMakerQuery);
+  xWireMakerPlates(v);
+  const inp = $('mkq');
+  if(inp) inp.addEventListener('input', () => {
+    xMakerQuery = inp.value;
+    const pos = inp.selectionStart;
+    v.innerHTML = makersListHTML(XMAKERS, xMakerQuery);
+    xWireMakerPlates(v);
+    const n = $('mkq'); if(n){ n.focus(); try{ n.setSelectionRange(pos, pos); }catch(e){} }
   });
 }
-function xMakersList(b, d, q){
+function makersListHTML(d, q){
   const query = (q || '').trim().toLowerCase();
   const match = m => !query || (m.name + ' ' + (m.name_kana || '') + ' ' + (m.name_latin || '') + ' ' + (m.coined_terms || []).map(t => t.term).join(' ')).toLowerCase().includes(query);
-  let h = '<input class="xsearch" id="xmkq" type="text" placeholder="名前・言葉で探す" value="' + escA(q || '') + '">';
+  let h = '<input class="mksearch" id="mkq" type="search" placeholder="名前・言葉で探す" value="' + escA(q || '') + '">';
   h += '<p class="bodytext">美術史は、描く人だけでできてはいない。言葉を作った人、展覧会を作った人、売る仕組みを作った人——歴史の立役者たち。</p>';
+  let any = false;
   (d.sections || []).forEach(sec => {
     const people = (d.artists || []).filter(m => m.section === sec && match(m));
     if(!people.length) return;
-    h += '<div class="xsec">' + esc(sec) + '</div>';
-    /* v32.3: the same card display as the artist/designer
-       lists — plate (portrait or initial tile), name, years,
-       roles — in the list's own two-column grid. */
-    h += '<div class="grid def">';
+    any = true;
+    h += '<h2 class="mkgrouphead">' + esc(sec) + '</h2><div class="grid def">';
     people.forEach(m => {
-      h += '<figure class="work" onclick="xMakerDetail(' + m.id + ')">' + xMakerPlateHTML(m)
+      h += '<figure class="work" onclick="openMakerDetail(' + m.id + ')">' + xMakerPlateHTML(m)
         + '<figcaption><div class="nm">' + esc(m.name) + '</div>'
         + (m.years? '<div class="yrs">' + esc(m.years) + '</div>': '')
         + ((m.roles || []).length? '<div class="sub">' + esc(m.roles.join('・')) + '</div>': '')
@@ -20475,61 +20858,62 @@ function xMakersList(b, d, q){
     });
     h += '</div>';
   });
-  b.innerHTML = h;
-  xWireMakerPlates(b);
-  const inp = $('xmkq');
-  if(inp){ inp.addEventListener('input', () => { const v = inp.value; const pos = inp.selectionStart; xMakersList(b, d, v); const n = $('xmkq'); if(n){ n.focus(); try{ n.setSelectionRange(pos, pos); }catch(e){} } }); }
+  if(!any) h += '<div class="empty">該当する立役者はいません</div>';
+  return h;
 }
-function xMakerDetail(id){
-  const d = XMAKERS; if(!d) return;
-  const m = (d.artists || []).find(x => x.id === id); if(!m) return;
-  xGo(m.name, b => {
-    /* v32.3: the same portrait plate (or initial tile) as the
-       list card, at the head of the person page. */
-    let h = xMakerPlateHTML(m, true);
-    h += '<div style="font-family:var(--headfont); font-size:22px; font-weight:700;">' + esc(m.name) + '</div>';
-    if(m.name_kana || m.name_latin) h += '<div class="small">' + esc([m.name_kana, m.name_latin].filter(Boolean).join(' / ')) + '</div>';
-    if(m.years) h += '<div class="small">' + esc(m.years) + '</div>';
-    h += '<div style="margin-top:8px;">' + (m.roles || []).map(r => '<span class="xchip acc">' + esc(r) + '</span>').join('') + '</div>';
-    if(m.key_moves) h += '<div class="xgal"><div class="small" style="font-weight:700; margin-bottom:4px;">代表的な仕事</div><div class="bodytext">' + esc(m.key_moves) + '</div></div>';
+function openMakerDetail(id){ xMakerSelId = id; showView('makerdetail'); }
+function renderMakerDetail(){
+  const v = $('viewMakerDetail'); if(!v) return;
+  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xLoadMakers().then(() => { if(view === 'makerdetail') renderMakerDetail(); }); return; }
+  const m = (XMAKERS.artists || []).find(x => String(x.id) === String(xMakerSelId));
+  if(!m){ v.innerHTML = '<button class="backbtn" onclick="showView(\'makers\')">‹ 立役者へ戻る</button><div class="empty">立役者が見つかりません</div>'; return; }
+  let h = '<button class="backbtn" onclick="showView(\'makers\')">‹ 立役者へ戻る</button>';
+  h += xMakerPlateHTML(m, true);
+  h += '<div style="font-family:var(--headfont); font-size:22px; font-weight:700;">' + esc(m.name) + '</div>';
+  if(m.name_kana || m.name_latin) h += '<div class="small">' + esc([m.name_kana, m.name_latin].filter(Boolean).join(' / ')) + '</div>';
+  if(m.years) h += '<div class="small">' + esc(m.years) + '</div>';
+  h += '<div style="margin-top:8px;">' + (m.roles || []).map(r => '<span class="xchip acc">' + esc(r) + '</span>').join('') + '</div>';
+  if(m.key_moves || m.notes){
+    h += '<h3 class="subhead">役割・仕事</h3>';
+    if(m.key_moves) h += '<div class="bodytext">' + esc(m.key_moves) + '</div>';
     if(m.notes) h += xParas(m.notes);
-    if((m.moves || []).length){
-      h += '<div class="xsec">仕事</div>';
-      m.moves.forEach(mv => {
-        h += '<div class="xmove"><span class="xchip">' + esc(mv.type || '') + '</span> <span class="xt">' + esc(mv.title || '') + '</span>'
-          + (mv.year? ' <span class="small">' + esc(mv.year) + '</span>': '')
-          + (mv.caption? '<div class="xc">' + esc(mv.caption) + '</div>': '');
-        if((mv.linked || []).length){
-          h += '<div style="margin-top:5px;">' + mv.linked.map(aid => { const nm = xArtistName(aid); return nm? '<button class="xchip" onclick="xJumpArtist(\'' + escA(String(aid)) + '\')">' + esc(nm) + '</button>': ''; }).join('') + '</div>';
-        }
-        h += '</div>';
-      });
-    }
-    if((m.coined_terms || []).length){
-      h += '<div class="xsec">命名した言葉</div>';
-      m.coined_terms.forEach(t => {
-        h += '<div class="xbook"><span class="xt" style="font-weight:700;">' + esc(t.term || '') + '</span>'
-          + (t.year? ' <span class="small">' + esc(t.year) + '</span>': '')
-          + (t.gloss? '<div class="xc small" style="margin-top:2px;">' + esc(t.gloss) + '</div>': '') + '</div>';
-      });
-    }
-    if((m.books || []).length){
-      h += '<div class="xsec">書籍</div>';
-      m.books.forEach(bk => { h += xBookHTML(bk); });
-    }
-    if((m.linked_artists || []).length){
-      h += '<div class="xsec">関連する作家</div><div>'
-        + m.linked_artists.map(aid => { const nm = xArtistName(aid); return nm? '<button class="xchip" onclick="xJumpArtist(\'' + escA(String(aid)) + '\')">' + esc(nm) + '</button>': ''; }).join('') + '</div>';
-    }
-    if((m.sources || []).length){
-      h += '<div class="xsec">出典</div>';
-      m.sources.forEach(s => {
-        h += '<div class="small" style="margin:0 0 6px;">' + (s.url? '<a href="' + escA(s.url) + '" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline;">' + esc(s.title || s.url) + '</a>': esc(s.title || '')) + '</div>';
-      });
-    }
-    b.innerHTML = h;
-    xWireMakerPlates(b);
-  });
+  }
+  if((m.moves || []).length){
+    h += '<h3 class="subhead">動かしたこと</h3>';
+    m.moves.forEach(mv => {
+      h += '<div class="xmove"><span class="xchip">' + esc(mv.type || '') + '</span> <span class="xt">' + esc(mv.title || '') + '</span>'
+        + (mv.year? ' <span class="small">' + esc(mv.year) + '</span>': '')
+        + (mv.caption? '<div class="xc">' + esc(mv.caption) + '</div>': '');
+      if((mv.linked || []).length){
+        h += '<div style="margin-top:5px;">' + mv.linked.map(aid => { const nm = xArtistName(aid); return nm? '<button class="xchip" onclick="openCrossDetail(\'artists\',\'' + escA(String(aid)) + '\')">' + esc(nm) + '</button>': ''; }).join('') + '</div>';
+      }
+      h += '</div>';
+    });
+  }
+  if((m.coined_terms || []).length){
+    h += '<h3 class="subhead">作った言葉</h3>';
+    m.coined_terms.forEach(t => {
+      h += '<div class="xbook"><span class="xt" style="font-weight:700;">' + esc(t.term || '') + '</span>'
+        + (t.year? ' <span class="small">' + esc(t.year) + '</span>': '')
+        + (t.gloss? '<div class="xc small" style="margin-top:2px;">' + esc(t.gloss) + '</div>': '') + '</div>';
+    });
+  }
+  if((m.books || []).length){
+    h += '<h3 class="subhead">著作</h3>';
+    m.books.forEach(bk => { h += xBookHTML(bk); });
+  }
+  if((m.linked_artists || []).length){
+    h += '<h3 class="subhead">関わった作家</h3><div>'
+      + m.linked_artists.map(aid => { const nm = xArtistName(aid); return nm? '<button class="xchip" onclick="openCrossDetail(\'artists\',\'' + escA(String(aid)) + '\')">' + esc(nm) + '</button>': ''; }).join('') + '</div>';
+  }
+  if((m.sources || []).length){
+    h += '<h3 class="subhead">出典</h3>';
+    m.sources.forEach(s => {
+      h += '<div class="small" style="margin:0 0 6px;">' + (s.url? '<a href="' + escA(s.url) + '" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline;">' + esc(s.title || s.url) + '</a>': esc(s.title || '')) + '</div>';
+    });
+  }
+  v.innerHTML = h;
+  xWireMakerPlates(v);
 }
 function xBookHTML(bk){
   const meta = [bk.year, bk.publisher].filter(Boolean).join(' / ');
@@ -20553,15 +20937,41 @@ function xOpenGenealogies(){
     xLoadGen().then(d => {
       if(!d){ b.innerHTML = '<p class="bodytext">系譜データを読み込めませんでした。</p>'; return; }
       let h = '<p class="bodytext">批評や展覧会の中で実際に名づけられ、定義されてきた絵画の系譜。所属だけでなく「祖型」と「系譜の外」も区別して置く。</p>';
+      /* v32.4.0 (item 1): the genealogy list is artist-style
+         cards now. The thumbnail is the representative work of
+         a registered member （所属 first, then 祖型）; a genealogy
+         with no registered artist or no image gets the designed
+         initial tile — never an empty slot. */
+      h += '<div class="grid def">';
       (d.genealogies || []).forEach(g => {
         const reg = (g.artists || []).filter(r => r.artist_id).length;
-        h += '<button class="xcard" onclick="xGenDetail(\'' + escA(g.id) + '\')"><span class="xn">' + esc(g.name) + '</span>'
-          + '<div class="xm">' + esc(g.feel || '') + '</div>'
-          + '<div class="xm">代表 ' + (g.artists || []).length + '名（図鑑登録 ' + reg + '名）</div></button>';
+        const rep = xGenRepWork(g);
+        const plate = rep? '<div class="ph" data-work="' + escA(rep.a.id) + '" data-ds="artists">' + imgHTML(rep.w, tileSize()) + '</div>'
+          : '<div class="ph genini"><span class="genini-c">' + esc((Array.from(g.name || '')[0] || '')) + '</span></div>';
+        h += '<figure class="work gencard" onclick="xGenDetail(\'' + escA(g.id) + '\')">' + plate
+          + '<figcaption class="gencap"><div class="genname">' + esc(g.name) + '</div>'
+          + (g.feel? '<div class="genmeta">' + esc(g.feel) + '</div>': '')
+          + '<div class="genmeta">代表 ' + (g.artists || []).length + '名（図鑑登録 ' + reg + '名）</div></figcaption></figure>';
       });
+      h += '</div>';
       b.innerHTML = h;
+      wireListImages(b);
     });
   });
+}
+/* v32.4.0 (item 1): the representative work for a genealogy card —
+   the first registered artist （所属 before 祖型， in the order the
+   genealogy lists them) whose representative work has an image. */
+function xGenRepWork(g){
+  const db = CTX.artists && CTX.artists.DB; if(!db) return null;
+  const rs = (g.artists || []).filter(r => r.artist_id);
+  const ordered = rs.filter(r => r.value === '所属').concat(rs.filter(r => r.value === '祖型'), rs.filter(r => r.value !== '所属' && r.value !== '祖型'));
+  for(const r of ordered){
+    const a = db.artists.find(x => String(x.id) === String(r.artist_id)); if(!a) continue;
+    const w = thumbOf(a);
+    if(w && w.img) return { a: a, w: w };
+  }
+  return null;
 }
 function xGenDetail(gid){
   const d = XGEN; if(!d) return;
@@ -20592,6 +21002,30 @@ function xGenDetail(gid){
 
 <script>
 /* ===== v32.0 xtra module, part 2: 批評 / 作家の言葉 / hooks ===== */
+/* ---------- header hub (v32.4.0, item 2) ---------- */
+/* The four header buttons （通知・アートビジネス・制作ガイド・年表）
+   became ONE hub button; this popup carries all four functions
+   plus the two entries that used to hide in the settings screen
+   （絵画の系譜・作家の言葉）. The unread count rides the hub
+   button itself (refreshReqNotifBtn writes #hubBadge). Rows are
+   built fresh on every open so counts are current. */
+function openHub(){
+  const list = $('hublist'); if(!list) return;
+  let n = 0;
+  try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
+  const rows = [
+    ['通知（リクエスト回収）', 'openRequestNotifs()', n? '<span class="hubn">' + n + '</span>': '<span class="hubsub">回収の知らせ</span>'],
+    ['アートビジネス', 'openBiz()', '<span class="hubsub">価格と市場の仕組み</span>'],
+    ['制作ガイド', 'openGuide()', '<span class="hubsub">作り方の知識</span>'],
+    ['年表', 'openTimeline()', '<span class="hubsub">美術史の流れ</span>'],
+    ['絵画の系譜', 'xOpenGenealogies()', '<span class="hubsub">18の系譜</span>'],
+    ['作家の言葉', 'xOpenWords()', '<span class="hubsub">用語と発言の辞典</span>']
+  ];
+  list.innerHTML = rows.map(r => '<button class="hubrow" onclick="closeHub(); ' + r[1] + '">' + esc(r[0]) + r[2] + '</button>').join('');
+  $('hubsheet').classList.remove('hidden');
+  sheetLockSync();
+}
+function closeHub(){ const s = $('hubsheet'); if(s) s.classList.add('hidden'); sheetLockSync(); }
 /* ---------- critique page (D) ---------- */
 let XCRIT = null;
 function xCritLocal(){
@@ -20711,25 +21145,36 @@ function xOpenWords(){
       qs.forEach(q => { if(q && q.text) quotes.push({ q: q, aid: a.id, anm: a.name }); });
     });
     let mode = 'terms';
+    const byId = {}; d.artists.forEach(a => { byId[String(a.id)] = a; });
+    /* v32.4.0 (item 13): each entry is a card in the app's
+       standard form — the artist's representative work as the
+       thumbnail, the word/quote as the body, the artist's name
+       underlined; the whole card taps through to the artist. */
+    const card = (x, main) => {
+      const a = byId[String(x.aid)];
+      const th = a? thumbOf(a): null;
+      const plate = th? '<div class="ph" data-work="' + escA(String(x.aid)) + '" data-ds="artists">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
+        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(x.anm || '')[0] || '')) + '</span>図版なし</span></div>';
+      return '<button class="xwcard" onclick="xJumpArtist(\'' + escA(String(x.aid)) + '\')"><span class="xwfig"><figure class="work">' + plate + '</figure></span><span class="xwmain">' + main + '<span class="xwname">' + esc(x.anm) + '</span></span></button>';
+    };
     const draw = q => {
       const query = (q || '').trim().toLowerCase();
       let h = '<div class="xtabs"><button class="' + (mode === 'terms'? 'on': '') + '" onclick="xWordsTab(\'terms\')">用語 ' + terms.length + '</button><button class="' + (mode === 'quotes'? 'on': '') + '" onclick="xWordsTab(\'quotes\')">発言 ' + quotes.length + '</button></div>';
       h += '<input class="xsearch" id="xwq" type="text" placeholder="言葉で探す" value="' + escA(q || '') + '">';
       if(mode === 'terms'){
         terms.filter(x => !query || (x.t.term + ' ' + (x.t.meaning || '') + ' ' + x.anm).toLowerCase().includes(query)).forEach(x => {
-          h += '<div class="xbook"><div style="font-weight:700;">' + esc(x.t.term) + (x.t.reading? ' <span class="small">' + esc(x.t.reading) + '</span>': '') + '</div>'
-            + (x.t.meaning? '<div class="bodytext" style="margin-top:2px;">' + esc(x.t.meaning) + '</div>': '')
-            + (x.t.quote? '<div class="small" style="margin-top:2px;">「' + esc(x.t.quote) + '」</div>': '')
-            + '<div style="margin-top:4px;"><button class="xchip" onclick="xJumpArtist(\'' + escA(String(x.aid)) + '\')">' + esc(x.anm) + '</button></div></div>';
+          h += card(x, '<span style="display:block; font-weight:700; font-family:var(--serif); font-size:15.5px;">' + esc(x.t.term) + (x.t.reading? ' <span class="small" style="font-weight:400;">' + esc(x.t.reading) + '</span>': '') + '</span>'
+            + (x.t.meaning? '<span class="xwbody" style="display:block;">' + esc(x.t.meaning) + '</span>': '')
+            + (x.t.quote? '<span class="xwbody" style="display:block;">「' + esc(x.t.quote) + '」</span>': ''));
         });
       } else {
         quotes.filter(x => !query || (x.q.text + ' ' + x.anm).toLowerCase().includes(query)).forEach(x => {
-          h += '<div class="xbook"><div class="bodytext">「' + esc(x.q.text) + '」</div>'
-            + (x.q.source? '<div class="small" style="margin-top:2px;">' + esc(x.q.source) + '</div>': '')
-            + '<div style="margin-top:4px;"><button class="xchip" onclick="xJumpArtist(\'' + escA(String(x.aid)) + '\')">' + esc(x.anm) + '</button></div></div>';
+          h += card(x, '<span class="xwbody" style="display:block;">「' + esc(x.q.text) + '」</span>'
+            + (x.q.source? '<span class="xwbody" style="display:block; color:var(--muted); font-size:12px;">' + esc(x.q.source) + '</span>': ''));
         });
       }
       b.innerHTML = h;
+      wireListImages(b);
       const inp = $('xwq');
       if(inp) inp.addEventListener('input', () => { const v = inp.value; const pos = inp.selectionStart; draw(v); const n = $('xwq'); if(n){ n.focus(); try{ n.setSelectionRange(pos, pos); }catch(e){} } });
     };
@@ -20837,15 +21282,10 @@ let XDETAIL_ID = null;
   }
 })();
 function xSettingsFill(){
-  const sm = $('settingsmain'); if(!sm || $('xsetrows')) return;
-  const div = document.createElement('div');
-  div.id = 'xsetrows';
-  div.innerHTML = '<div class="groupcard">'
-    + '<button class="srow" onclick="xOpenGenealogies()"><span>絵画の系譜</span><span class="sval">›</span></button>'
-    + '<button class="srow" onclick="xOpenWords()"><span>作家の言葉（全体辞典）</span><span class="sval">›</span></button>'
-    + '<button class="srow" onclick="xOpenCritique()"><span>批評（自分の作品を置く）</span><span class="sval">›</span></button>'
-    + '</div>';
-  sm.appendChild(div);
+  /* v32.4.0 (items 2+7): the three rows that used to live here
+     moved out — 絵画の系譜 and 作家の言葉 into the header hub
+     popup, 批評 into the 制作ガイド entrance. Nothing is added
+     to the settings screen anymore. */
 }
 function xDetailFill(){
   const v = $('viewDetail'); if(!v || XDETAIL_ID == null) return;
@@ -20899,7 +21339,7 @@ function xDetailFill(){
   if(!XLOC) xLoadLoc().then(paint);
 }
 function xOpenGenealogiesDetail(gid){ XSTACK.length = 0; xOpenGenealogies(); xGenDetail(gid); }
-function xOpenMakerById(id){ XSTACK.length = 0; xGo('立役者', b => { b.innerHTML = '<p class="bodytext">読み込んでいます…</p>'; xLoadMakers().then(() => { XSTACK.pop(); xMakerDetail(id); }); }); }
+function xOpenMakerById(id){ if(typeof xClose === 'function') xClose(); openMakerDetail(id); }
 function xHaversine(lat1, lon1, lat2, lon2){
   const R = 6371, dLa = (lat2 - lat1) * Math.PI / 180, dLo = (lon2 - lon1) * Math.PI / 180;
   const s = Math.sin(dLa / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLo / 2) ** 2;
@@ -20947,8 +21387,21 @@ function xExAlert(){
   if(!soon.length) return;
   const div = document.createElement('div');
   div.id = 'xexalert'; div.className = 'xalert';
-  div.innerHTML = '<div class="xat">まもなく終了する展覧会</div>' + soon.map(x =>
-    '<div class="bodytext" style="margin:0 0 4px;">' + esc(x.e.title || '') + '（' + esc(x.e.venue || '') + '）— ' + (x.days === 0? '本日終了': 'あと' + x.days + '日・' + esc(x.e.end_date) + 'まで') + '</div>').join('');
+  /* v32.4.0 (item 4): one separated row per exhibition — artist
+     name (resolved from artist_id), title, venue (a link to the
+     venue page, same as the exhibition list), the remaining
+     days large, and the end date in short M/D form. The region
+     filter above is unchanged. */
+  div.innerHTML = '<div class="xat">まもなく終了する展覧会</div>' + soon.map(x => {
+    const e = x.e;
+    const anm = (e.artist_id != null? xArtistName(e.artist_id): null) || e.artist_name || '';
+    const md = e.end_date? (Number(e.end_date.slice(5, 7)) + '/' + Number(e.end_date.slice(8, 10))): '';
+    return '<div class="xalrow"><div class="xalmain">'
+      + (anm? '<div class="xalartist">' + esc(anm) + '</div>': '')
+      + '<div class="xaltitle">' + esc(e.title || '') + '</div>'
+      + (e.venue? '<div class="xalvenue"><button class="linkbtn" onclick="openMuseum(\'' + escA(e.venue) + '\')">' + esc(e.venue) + '</button>' + (e.city? '／' + esc(e.city): '') + '</div>': '')
+      + '</div><div class="xaldays"><b>' + (x.days === 0? '本日終了': 'あと' + x.days + '日') + '</b><span>' + md + 'まで</span></div></div>';
+  }).join('');
   const head = v.querySelector('.tlhead');
   if(head && head.nextSibling) v.insertBefore(div, head.nextSibling); else v.appendChild(div);
 }
@@ -20972,11 +21425,18 @@ function xJijiTheme(i){
   const t = (d.themes || [])[i]; if(!t) return;
   xGo(t.theme, b => {
     let h = '<p class="bodytext">' + esc(t.note || '') + '</p><div class="xsec">この問いに作品で向き合ってきた作家</div>';
+    /* v32.4.0 (item 13): artist rows are cards in the standard
+       form (representative-work thumbnail + name + the note). */
     (t.artists || []).forEach(a => {
       const nm = xArtistName(a.id) || '';
-      h += '<div class="xbook"><button class="xchip acc" onclick="xJumpArtist(\'' + escA(String(a.id)) + '\')">' + esc(nm) + '</button><div class="bodytext" style="margin-top:3px;">' + esc(a.why || '') + '</div></div>';
+      const rec = (CTX.artists.DB && CTX.artists.DB.artists || []).find(x => String(x.id) === String(a.id));
+      const th = rec? thumbOf(rec): null;
+      const plate = th? '<div class="ph" data-work="' + escA(String(a.id)) + '" data-ds="artists">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
+        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(nm || '')[0] || '')) + '</span>図版なし</span></div>';
+      h += '<button class="xwcard" onclick="xJumpArtist(\'' + escA(String(a.id)) + '\')"><span class="xwfig"><figure class="work">' + plate + '</figure></span><span class="xwmain"><span class="xwname">' + esc(nm) + '</span><span class="xwbody" style="display:block;">' + esc(a.why || '') + '</span></span></button>';
     });
     b.innerHTML = h;
+    wireListImages(b);
   });
 }
 /* K5 entry: designer timeline gets a map button */
