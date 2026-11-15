@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.7">
+<meta name="app-version" content="30.8">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -841,6 +841,8 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .worklink{background:none; border:none; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 #termsheet,#symsheet,#erasheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden,#erasheet.hidden{display:none}
+#tlmapsheet,#termsheet,#symsheet,#erasheet{overscroll-behavior:contain;}
+html.sheetlock, html.sheetlock body{overflow:hidden;}
 .secright{display:inline-flex; align-items:center; gap:8px;}
 .symsecbtn,.erasecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
 .symsecbtn.on,.erasecbtn.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
@@ -1109,6 +1111,13 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 .tlm-row.selrow .tlm-place{text-decoration:underline; text-underline-offset:3px;}
 .tlm-row.on{background:rgba(230,185,61,.10);}
 .tlm-row .tlm-t{flex:1; min-width:0;}
+.tlm-t .tlm-name{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+#tlmapsheet.compact .tlm-row{padding:4px 2px; min-height:34px;}
+#tlmapsheet.compact .tlm-chips{margin-top:2px;}
+#tlmapsheet.compact .tlm-city{padding:7px;}
+#tlmapsheet.compact .tlm-t{display:flex; align-items:center; gap:8px;}
+#tlmapsheet.compact .tlm-name{flex:0 1 auto; min-width:0;}
+#tlmapsheet.compact .tlm-chips{flex:1 1 auto; min-width:0; margin-top:0;}
 .tlm-row .tlm-y{color:var(--muted); font-size:12px; white-space:nowrap;}
 .tlm-chips{display:flex; flex-wrap:nowrap; overflow-x:auto; gap:5px; margin-top:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 .tlm-chips::-webkit-scrollbar{display:none;}
@@ -10204,8 +10213,13 @@ showView('ex');
    its slot, so the bell beside it never shifts position between
    pages (his complaint). visibility:hidden is also not tappable.
    v3.0: both datasets have a timeline now (art / design history),
-   so the button belongs to both first screens. */
-function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; const show = ((v||view)==='list'); nt.style.display = ''; nt.style.visibility = show? 'visible': 'hidden'; }
+   so the button belongs to both first screens.
+   v30.8: the first-screen-only rule is retired at his word
+   (2026-11-15 13:26 — 「結構年表アイコンが表示されてないページ
+   あるわ、その他とか展示のところとか」). The standard header
+   carries the same four buttons on every screen now; the slot
+   is still never display:none, so nothing shifts. */
+function syncTimelineBtn(v){ const nt = $('navTimeline'); if(!nt) return; nt.style.display = ''; nt.style.visibility = 'visible'; }
 /* v19.0: アートビジネス — a reading section on the art market,
    entered from the header: a gavel button between the bell and
    年表 (his placement call, 2026-11-13 23:32, superseding the
@@ -10259,7 +10273,7 @@ const GUIDE_TAX = [
      one's immediate surroundings, problems of the self, a
      painter's inner precepts. 人間としての地 is its first
      chapter; further chapters append to this subs list. */
-  { id: 'inner', label: '目に見えない部分', subs: [['人間の地', 'guide-ch-maturity']] },
+  { id: 'inner', label: '目に見えない部分', subs: [['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality']] },
   /* v28.0: the 受験 major (his 2026-11-14 call) — chapters +
      calendar staged in art-labo/exam-guide/, shipped in
      production.json as exam-ch1..7 + examCalendar.
@@ -10585,8 +10599,8 @@ function guideEnsure(){
     .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
 function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
-function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
-function closeGuide(){ guideStack = []; $('guidepanel').classList.add('hidden'); const b = $('navGuide'); if(b) b.classList.remove('on'); }
+function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
+function closeGuide(){ guideStack = []; $('guidepanel').classList.add('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.remove('on'); }
 function guideChapters(){ return (guideData && Array.isArray(guideData.chapters))? guideData.chapters: []; }
 function guideGlossary(){ return (guideData && Array.isArray(guideData.glossary))? guideData.glossary: []; }
 function guideChapterById(id){ return guideChapters().find(c=> c.id === id) || null; }
@@ -11008,8 +11022,9 @@ function openTerm(term){
   $('tsTerm').textContent = e.term;
   $('tsDef').innerHTML = (e.short? '<div>' + esc(e.short) + '</div>': '') + '<div>' + esc(e.def || '') + '</div>';
   $('termsheet').classList.remove('hidden');
+  sheetLockSync();
 }
-function closeTerm(){ const s = $('termsheet'); if(s) s.classList.add('hidden'); }
+function closeTerm(){ const s = $('termsheet'); if(s) s.classList.add('hidden'); sheetLockSync(); }
 document.addEventListener('click', e=>{
   const b = (e.target && e.target.closest)? e.target.closest('.termlink'): null;
   if(b) openTerm(b.getAttribute('data-term'));
@@ -11842,6 +11857,7 @@ if(!$('symlist')) return;
 symDraft = new Set(symSel());
 renderSymSheet();
 $('symsheet').classList.remove('hidden');
+sheetLockSync();
 }
 function renderSymSheet(){
 const list = $('symlist'); if(!list) return;
@@ -11867,7 +11883,7 @@ symDraft = null;
 closeSymSheet();
 renderList();
 }
-function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); symDraft = null; }
+function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); sheetLockSync(); symDraft = null; }
 /* compat: a programmatic single choice (older checks drive
    this entry point) still commits immediately, as before. */
 function setSymFilter(g){
@@ -11931,8 +11947,9 @@ function openEraSheet(){
   ERA_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (eraFilter === g? ' on' : '') + '" onclick="setEraFilter(\'' + g + '\')\"><span class="symg">◷</span>' + label + '（' + ERA_RANGE_TXT[g] + '）<span class="symcnt">' + counts[g] + '名' + (eraFilter === g? ' ✓' : '') + '</span></button>'; });
   list.innerHTML = h;
   $('erasheet').classList.remove('hidden');
+  sheetLockSync();
 }
-function closeEraSheet(){ const sh = $('erasheet'); if(sh) sh.classList.add('hidden'); }
+function closeEraSheet(){ const sh = $('erasheet'); if(sh) sh.classList.add('hidden'); sheetLockSync(); }
 function setEraFilter(g){
   eraFilter = (eraFilter === g)? '' : g;
   try{ storeSet('zukan.eraFilter', eraFilter); }catch(e){}
@@ -15233,8 +15250,7 @@ function renderUpdateList(){
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
 const ROADMAP_FALLBACK = [
-  { v: null, label: 'データの更新予定', lines: ['作家の発言の日本語訳（残り262件）を順に進めます', '作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします'] },
-  { v: null, label: 'その先', lines: ['「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
+  { v: null, label: 'データの更新予定', lines: ['作家の来歴の薄いところ（作家209人・デザイナー198人）を順に厚くします', '作家ページのドローイングを順に集めます（第1弾は登録済み）', '新しい作家の登録を順に進めます', '「作家の言葉」の全体辞典ページ', '会期末アラート（終わり間際の展覧会を先に知らせる）', '「一番近い収蔵美術館」の表示'] }
 ];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
@@ -16600,6 +16616,7 @@ tlBarPaint();
 if(!track._tlWired){
 track._tlWired = true;
 track.addEventListener('pointerdown', ev => {
+  if(modalSheetOpen()) return; /* v30.8: while a sheet is up, the bar underneath is inert */
   tlBar.drag = true; tlBar.settleIdx = -1; tlBarClearSettleTimers();
   tlBar.geom = tlBarMeasure();
   try{ track.setPointerCapture(ev.pointerId); }catch(e){}
@@ -16989,19 +17006,74 @@ sh.classList.remove('hidden');
 tlMapSheetPaint();
 void sh.offsetHeight;
 sh.style.visibility = '';
+sheetLockSync();
 }
-function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh){ sh.classList.add('hidden'); sh.style.visibility = ''; } }
+function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh){ sh.classList.add('hidden'); sh.style.visibility = ''; } sheetLockSync(); }
+/* v30.8: the modal sheets (map / term / filter / era) and the
+   guide panel sit over a live page, and three leaks let a
+   touch reach the screen underneath (his videos, 2026-11-15
+   13:27-13:28): the page behind scrolled — and the timeline
+   bar follows scroll, so the year and the knob moved under
+   the open map sheet; the bar's own drag could still start;
+   and a sideways touch armed the swipe-back. While any of
+   them is open: html.sheetlock stops the page scroll, the
+   document touchmove guard below lets only the sheet's own
+   scrollable regions move, the bar's drag checks
+   modalSheetOpen() first, and the swipe-back excludes the
+   sheets the same way it already excluded the guide panel. */
+function modalSheetOpen(){
+  const ids = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'];
+  for(const id of ids){ const el = $(id); if(el && !el.classList.contains('hidden')) return true; }
+  return false;
+}
+function sheetLockSync(){ document.documentElement.classList.toggle('sheetlock', modalSheetOpen()); }
+(function(){
+  const els = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'].map(id => $(id)).filter(Boolean);
+  if(window.MutationObserver && els.length){
+    const mo = new MutationObserver(sheetLockSync);
+    els.forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['class'] }));
+  }
+  sheetLockSync();
+  document.addEventListener('touchmove', e => {
+    if(!modalSheetOpen()) return;
+    let n = e.target;
+    while(n && n !== document.body){
+      const cs = getComputedStyle(n);
+      if(((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight + 1)
+        || ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth + 1)) return;
+      n = n.parentElement;
+    }
+    e.preventDefault();
+  }, { passive: false });
+})();
+let tlMapChipCap = 6;
 function tlMapSheetPaint(){
 const cv = $('tlmapBigCv'); if(!cv) return;
 const year = tlMapYearNow();
-/* v30.6: the map stays compact — at most ~30% of the screen
-   height — so the whole sheet fits one screen and only the
-   list below it scrolls (the card is a flex column now). */
-cv.style.height = Math.min(Math.round(cv.clientWidth * 145 / 360), Math.round((window.innerHeight || 800) * 0.30)) + 'px';
 const yl = $('tlmapYear');
 if(yl) yl.textContent = year == null? '': '― ' + tlYearLabel(year) + 'ごろ';
-tlMapDrawInto(cv, year, true);
-tlMapSheetBody(year);
+/* v30.6: the map stays compact — at most ~30% of the screen
+   height — so the whole sheet fits one screen (the card is a
+   flex column). v30.8: the fit is now a hard rule, not a
+   hope (his video, 2026-11-15: in a crowded year — 1977,
+   five movements — the titles wrapped into the next row and
+   the list ran off the sheet; v30.7's checks only ever
+   opened a sparse year like 1639). The paint re-runs
+   through fixed steps — smaller map, fewer chips per row
+   (the rest ride a ほかN名 chip), then tighter rows —
+   until the list needs no vertical scroll. Sparse years
+   stop at the first step, exactly as before. */
+const sh = $('tlmapsheet');
+const body = $('tlmapBody');
+const steps = [[0.30, 6, false], [0.24, 6, false], [0.24, 4, false], [0.18, 4, true], [0.15, 3, true]];
+for(const st of steps){
+  tlMapChipCap = st[1];
+  if(sh) sh.classList.toggle('compact', st[2]);
+  cv.style.height = Math.min(Math.round(cv.clientWidth * 145 / 360), Math.round((window.innerHeight || 800) * st[0])) + 'px';
+  tlMapDrawInto(cv, year, true);
+  tlMapSheetBody(year);
+  if(!body || body.scrollHeight <= body.clientHeight + 1) break;
+}
 }
 function tlMapSheetTap(ev){
 const cv = $('tlmapBigCv'); if(!cv || !cv.width) return;
@@ -17030,8 +17102,7 @@ if(!target){
 }
 tlMapSel = (target && tlMapSel !== target)? target: null;
 tlMapSelSig = tlMapSigNow();
-tlMapDrawInto(cv, tlMapYearNow(), true);
-tlMapSheetBody(tlMapYearNow());
+tlMapSheetPaint();
 tlMapPaint();
 }
 function tlMapTargetRow(pin, t, mode){
@@ -17058,11 +17129,23 @@ if(e && Array.isArray(e.artists)){
     if(target) cs2.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
     else cs2.push('<span class="tlchip">' + esc(label) + '</span>');
   });
-  if(cs2.length) chips = '<span class="tlm-chips">' + cs2.join('') + '</span>';
+  if(cs2.length){
+    /* v30.8: the sheet must fit one screen with no vertical
+       scroll even in the most crowded years — the fit pass in
+       tlMapSheetPaint lowers tlMapChipCap until the list fits,
+       and the artists past the cap ride a plain ほかN名 chip
+       instead of making the row taller. */
+    let shown = cs2;
+    if(cs2.length > tlMapChipCap){
+      shown = cs2.slice(0, tlMapChipCap);
+      shown.push('<span class="tlchip">ほか' + (cs2.length - tlMapChipCap) + '名</span>');
+    }
+    chips = '<span class="tlm-chips">' + shown.join('') + '</span>';
+  }
 }
 return '<div class="tlm-row' + (selMode? ' selrow' + (tlMapSel === pin.id? ' on': ''): '') + '" role="button" onclick="' + (selMode? 'tlMapToggleSel(\'' + pin.id + '\', event)': 'tlMapGoToIdx(' + ri + ')') + '">'
 + '<span class="tlm-place">' + esc(pin.place) + '</span>'
-+ '<span class="tlm-t">' + esc(t.title) + chips + '</span>'
++ '<span class="tlm-t"><span class="tlm-name">' + esc(t.title) + '</span>' + chips + '</span>'
 + '<span class="tlm-y">' + t.from + '–' + t.to + '</span></div>';
 }
 function tlMapSheetBody(year){
@@ -18854,6 +18937,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
     if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
+    if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
     if(e.target && e.target.closest && e.target.closest('#tlbar')) return; /* v29.3: the timeline year bar is a drag control — horizontal drags on it scrub the timeline and never arm the swipe-back (his 2026-11-14 video: bar drags engaged this gesture, the view slid to the list and back, and the engage/teardown churn — pin, WAAPI, un-pin — ghosted the card text into double print). The bar's own handler is Pointer Events; this exclusion is the same treatment #bizpillbar gets. */
@@ -18923,7 +19007,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.7';
+const APP_VERSION = '30.8';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
