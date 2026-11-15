@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#000000">
-<meta name="app-version" content="30.6">
+<meta name="app-version" content="30.7">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -857,6 +857,14 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 #tlmapsheet .tsclose{flex:none;}
 .tsterm{font-size:18px; font-weight:800; margin-bottom:6px}
 .tsclose{margin-top:14px; width:100%; min-height:48px; border:1px solid var(--line); background:var(--card2); color:var(--text); border-radius:10px; font-size:15px; font-family:inherit}
+/* v30.7: the filter sheets' apply button (multi-select: the
+   sheet stays open while choosing, this commits + closes).
+   The fixed gold-on-black pairing (see .newtag) stays
+   legible in every theme. The option list scrolls inside
+   the card; the two buttons never leave the screen. */
+.tsapply{flex:none; margin-top:14px; width:100%; min-height:48px; border:0; background:#e6b93d; color:#191204; border-radius:10px; font-size:15px; font-weight:700; font-family:inherit}
+#symlist{overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch;}
+#symsheet .tsclose{flex:none;}
 .btbox{border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 0 14px}
 .btperiod{font-size:17px; font-weight:800; margin-bottom:4px}
 .btms{margin-top:6px}
@@ -1082,17 +1090,34 @@ button.tlchip{color:var(--accent); font-weight:600; min-height:48px; display:inl
 .tlsegs .tlsegrow{padding:0;}
 .tlmap{position:relative; flex:1 1 auto; min-width:0; padding:0; margin:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent; font-family:inherit;}
 .tlmap canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
-.tlmap .tlmap-tag{position:absolute; left:7px; bottom:5px; font-size:10px; letter-spacing:.04em; color:#f2eee4; background:rgba(10,14,18,.55); border-radius:999px; padding:2px 8px; max-width:calc(100% - 14px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;}
+.tlmap .tlmap-tag{position:absolute; left:7px; bottom:5px; font-size:10px; letter-spacing:.04em; color:#f2eee4; background:rgba(10,14,18,.55); border-radius:999px; padding:2px 8px; max-width:calc(100% - 14px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:auto;}
+/* v30.7: the caption's place names are buttons (tap = light
+   that place alone). Underlined, per the app-wide promise
+   that underlined text is tappable. */
+.tlmap-name{background:none; border:0; padding:0; font:inherit; color:inherit; text-decoration:underline; text-underline-offset:2px; cursor:pointer;}
+.tlmap-name.on{color:#ffd98a; font-weight:700;}
 #tlmapsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #tlmapsheet.hidden{display:none}
 .tlmap-bigwrap{position:relative; width:100%; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card2);}
 #tlmapBigCv{display:block; width:100%;}
-.tlm-lit{margin-top:12px;}
-.tlm-row{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px; font-family:inherit; color:var(--text); cursor:pointer; min-height:44px;}
+.tlm-lit{margin-top:8px;}
+/* v30.7: rows are tighter (his 1639 sheet did not fit three
+   places on one screen) — the artist chips no longer wrap
+   into a tower; they ride one horizontally scrolling line. */
+.tlm-row{display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:7px 2px; font-family:inherit; color:var(--text); cursor:pointer; min-height:40px;}
 .tlm-row .tlm-place{font-weight:700; white-space:nowrap;}
+.tlm-row.selrow .tlm-place{text-decoration:underline; text-underline-offset:3px;}
+.tlm-row.on{background:rgba(230,185,61,.10);}
 .tlm-row .tlm-t{flex:1; min-width:0;}
 .tlm-row .tlm-y{color:var(--muted); font-size:12px; white-space:nowrap;}
-.tlm-city{margin-top:12px; border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--card2);}
+.tlm-chips{display:flex; flex-wrap:nowrap; overflow-x:auto; gap:5px; margin-top:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+.tlm-chips::-webkit-scrollbar{display:none;}
+.tlm-chips .tlchip{flex:none; white-space:nowrap;}
+/* the sheet's chip strip is the one place the app-wide
+   48px tap height for button chips is overridden: at 48px
+   the rows could not fit the sheet (his fit request). */
+.tlm-chips button.tlchip{min-height:30px;}
+.tlm-city{margin-top:10px; border:1px solid var(--line); border-radius:12px; padding:10px; background:var(--card2);}
 /* v29.0: the curated photo slot (e.photo {artist,title,year,
    holder}) — rendered ONLY when a photo URL is present; the
    slots ship empty in v29.0 (photos are sourced in v29.3). */
@@ -1335,9 +1360,9 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizCh" class="hidden"></main>
 <main id="viewBizPrice" class="hidden"></main>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
-<div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div id="symlist"></div><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
+<div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
-<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small" style="margin-bottom:8px;">年表の年と連動しています。光っている場所が、その年ごろに動いていた場所です。光のそばに地名が出ます。地図をタップすると、その場所の動きが見られます。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
+<div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTlMapSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div id="tlmapBody"></div><button class="tsclose" onclick="closeTlMapSheet()">閉じる</button></div></div>
 <div id="guidepanel" class="hidden" role="dialog"><div class="gpcard"><div class="gphead"><span class="gptitle">制作ガイド</span><button class="gpuse" id="gpuse" onclick="openGuideIndex()">使い方</button></div><div class="gpsub"><button class="gpclose" onclick="closeGuide()">閉じる</button></div><div class="gpbody" id="gpbody"></div><div class="gppills" id="gppills"></div></div></div>
 
 <main id="viewSettings" class="hidden">
@@ -11325,7 +11350,8 @@ arr = arr.filter(a=>artistMatches(a, toks));
 if(state.tags.size){
 arr = arr.filter(a=>{ const ts = normTagSet(a); for(const t of state.tags){ if(!ts.has(t)) return false;} return true;});
 }
-if(symFilter) arr = arr.filter(a=> fieldSymsList(a).includes(symFilter));
+const _symSel = symSel();
+if(_symSel.size) arr = arr.filter(a=> fieldSymsList(a).some(g => _symSel.has(g)));
 if(eraFilter) arr = arr.filter(a=> eraOf(a) === eraFilter);
 if(favFilter) arr = arr.filter(a=> isFavPerson(DS, a.id));
 return arr;
@@ -11763,35 +11789,90 @@ return '<div class="fsyms">' + syms.join(' ') + '</div>';
    choice persists across visits and datasets, and auto-clears
    when the family does not exist in the current book. */
 const SYM_TABS = [['▣','絵画'],['◆','彫刻'],['▦','版画'],['◎','写真'],['▶','映像'],['✦','アニメ'],['⌂','建築'],['■','プロダクト'],['◐','デザイン'],['◇','ファッション'],['◈','工芸'],['◉','舞台'],['✧','コンセプト'],['⌘','コンピュータ'],['♪','音楽'],['π','数学'],['φ','哲学'],['¶','文学'],['✺','万能人']];
-let symFilter = '';
-try{ symFilter = storeGet('zukan.symFilter') || ''; }catch(e){}
+/* v30.7: the discipline filter is multi-select now (his
+   words: 「これ複数選択できるようにして欲しい」). symFilter
+   is a Set of glyphs; an artist passes when ANY selected
+   discipline is among theirs (OR within the field). The
+   sheet edits a DRAFT (symDraft): rows toggle in place and
+   the sheet stays open; the 「N名を見る」 button commits —
+   N is the OR total for the current draft — saves to the
+   same store key as the other filter conditions
+   (zukan.symFilter, now a comma-joined glyph list; a
+   pre-v30.7 single glyph reads back as a one-element set)
+   and closes. 閉じる / the backdrop discard the draft.
+   「すべて」 clears the draft. */
+let symFilter = new Set();
+try{ const sv = storeGet('zukan.symFilter') || ''; String(sv).split(',').forEach(g => { if(g) symFilter.add(g); }); }catch(e){}
+let symDraft = null;
+function symSel(){
+if(!(symFilter instanceof Set)) symFilter = symFilter? new Set([String(symFilter)]): new Set();
+return symFilter;
+}
+function persistSymFilter(){ try{ storeSet('zukan.symFilter', [...symSel()].join(',')); }catch(e){} }
+function symLabelText(){
+const tabs = SYM_TABS.filter(([g]) => symSel().has(g));
+if(!tabs.length) return '';
+return tabs[0][0] + ' ' + tabs[0][1] + (tabs.length > 1? ' ほか' + (tabs.length - 1) + '件': '');
+}
 function symSecBtnHTML(){
-const cur = SYM_TABS.find(([g]) => g === symFilter);
-return '<button class="symsecbtn' + (cur? ' on': '') + '" onclick="openSymSheet()">' + (cur? cur[0] + ' ' + cur[1] : 'すべて ▾') + '</button>';
+const lab = symLabelText();
+return '<button class="symsecbtn' + (lab? ' on': '') + '" onclick="openSymSheet()">' + (lab || 'すべて ▾') + '</button>';
 }
 function renderSymFilter(){
 const present = new Set();
 DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
-if(symFilter && !present.has(symFilter)){ symFilter = ''; try{ storeSet('zukan.symFilter', ''); }catch(e){} }
-const cur = SYM_TABS.find(([g]) => g === symFilter);
+const sel = symSel();
+let dropped = false;
+sel.forEach(g => { if(!present.has(g)){ sel.delete(g); dropped = true; } });
+if(dropped) persistSymFilter();
+const lab = symLabelText();
 document.querySelectorAll('.symsecbtn').forEach(el => {
-  el.textContent = cur? (cur[0] + ' ' + cur[1]) : 'すべて ▾';
-  el.classList.toggle('on', !!cur);
+  el.textContent = lab || 'すべて ▾';
+  el.classList.toggle('on', !!lab);
 });
 }
+function symMatchCount(sel){
+if(!sel || !sel.size) return DB.artists.length;
+let n = 0;
+DB.artists.forEach(a => { if(fieldSymsList(a).some(g => sel.has(g))) n++; });
+return n;
+}
 function openSymSheet(){
-const list = $('symlist'); if(!list) return;
-const counts = {};
-DB.artists.forEach(a => fieldSymsList(a).forEach(g => { counts[g] = (counts[g] || 0) + 1; }));
-let h = '<button class="symopt' + (symFilter? '' : ' on') + '" onclick="setSymFilter(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (symFilter? '' : ' ✓') + '</span></button>';
-SYM_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (symFilter === g? ' on' : '') + '" onclick="setSymFilter(\'' + g + '\')"><span class="symg">' + g + '</span>' + label + '<span class="symcnt">' + counts[g] + '名' + (symFilter === g? ' ✓' : '') + '</span></button>'; });
-list.innerHTML = h;
+if(!$('symlist')) return;
+symDraft = new Set(symSel());
+renderSymSheet();
 $('symsheet').classList.remove('hidden');
 }
-function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); }
+function renderSymSheet(){
+const list = $('symlist'); if(!list) return;
+const sel = symDraft || symSel();
+const counts = {};
+DB.artists.forEach(a => fieldSymsList(a).forEach(g => { counts[g] = (counts[g] || 0) + 1; }));
+let h = '<button class="symopt' + (sel.size? '' : ' on') + '" onclick="toggleSymDraft(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (sel.size? '' : ' ✓') + '</span></button>';
+SYM_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (sel.has(g)? ' on' : '') + '" onclick="toggleSymDraft(\'' + g + '\')"><span class="symg">' + g + '</span>' + label + '<span class="symcnt">' + counts[g] + '名' + (sel.has(g)? ' ✓' : '') + '</span></button>'; });
+list.innerHTML = h;
+const ap = $('symApply'); if(ap) ap.textContent = symMatchCount(sel) + '名を見る';
+}
+function toggleSymDraft(g){
+if(!symDraft) symDraft = new Set(symSel());
+if(g === '') symDraft.clear();
+else if(symDraft.has(g)) symDraft.delete(g);
+else symDraft.add(g);
+renderSymSheet();
+}
+function applySymSheet(){
+symFilter = new Set(symDraft || symSel());
+persistSymFilter();
+symDraft = null;
+closeSymSheet();
+renderList();
+}
+function closeSymSheet(){ const sh = $('symsheet'); if(sh) sh.classList.add('hidden'); symDraft = null; }
+/* compat: a programmatic single choice (older checks drive
+   this entry point) still commits immediately, as before. */
 function setSymFilter(g){
-symFilter = (symFilter === g)? '' : g;
-try{ storeSet('zukan.symFilter', symFilter); }catch(e){}
+symFilter = g? new Set([g]): new Set();
+persistSymFilter();
 closeSymSheet();
 renderList();
 }
@@ -16018,7 +16099,6 @@ const oldItems = tlBarItems, oldN = oldItems.length;
 const _fi = oldN? tlBarFirstIdx(): -1;
 const curIdx = _fi >= 0? _fi: (oldN > 1? Math.max(0, Math.min(oldN - 1, tlBar.idx || 0)): 0);
 const curYear = oldN? tlBigYearNum(oldItems[curIdx]): null;
-const dir = segDir(TL_STREAM_ORDER, tlRegion, r);
 let backIdx = -1;
 const _a = tlAnchors[tlRegion];
 if(_a && _a.fromStream === r && curIdx === _a.landedIdx) backIdx = _a.fromIdx;
@@ -16040,47 +16120,85 @@ tlBarGoTo(target);
    the landing's verification tail (at most one correction,
    disarmed the moment the reader scrolls away). */
 tlBarArmSettle(target, 4000);
-/* v30.3: no full-view drift on a stream switch. The list is
-   rebuilt completely in one innerHTML swap (asserted in
-   validate_v30_3), but animating the whole very tall view —
-   opacity .3 -> 1 over a transformed layer — is the channel
-   through which the previous stream's list ghosted through on
-   device. The motion cue now rides the sticky frame only (a
-   small layer) and the list itself swaps instantly. */
-const _stick = $('tlstick'); if(_stick) driftIn(_stick, dir);
+/* v30.3: no full-view drift on a stream switch (animating the
+   whole very tall view let the previous stream ghost through).
+   v30.7: the drift cue on the sticky frame is gone too, and
+   the frame itself is no longer rebuilt on a switch at all
+   (see renderTimeline) — the only thing a switch replaces is
+   the list under the frame, instantly. */
 }
 function toggleTlBg(key){ tlOpenBg[key] = !tlOpenBg[key]; renderTimeline(); }
-function renderTimeline(){
-const v = $('viewTimeline'); if(!v) return;
-/* v30.5: the head is emitted inside #tlstick below (one sticky
-   block: head + stream buttons + map + year bar), so it is
-   built as a fragment here and placed at the frame's top. */
+/* v30.7: the sticky frame (head + stream buttons + map +
+   year bar) is built ONCE and then stays resident in the
+   view; a re-render — stream switch, background toggle,
+   data sync — replaces only the list below it (#tlbody).
+   Through v30.6 every render rebuilt the frame inside the
+   same innerHTML swap as the list, and a stream switch
+   additionally animated the frame (driftIn): on device the
+   old frame's composited layer could paint through at the
+   switch, so the head, the buttons and the bar knob were
+   seen doubled (his 2026-11-15 video). Now nothing about
+   the frame is rebuilt or animated on a switch: the seg
+   buttons only trade their .on class in place, and the
+   knob is a single element whose position tlBarPaint
+   rewrites in place — it is never recreated. The frame is
+   rebuilt only when the dataset side changes (the streams
+   signature differs), a full context change, not a switch
+   between streams. */
+let tlFrameSig = '';
+function tlFrameHTML(){
+/* v30.5: the head lives inside #tlstick (one sticky block:
+   head + stream buttons + map + year bar). */
 const tlHeadHTML = '<div class="tlhead"><h2>'+(DS==='designers'? 'デザイン史年表': '美術史年表')+'</h2><span class="topsp"></span>'
 +'<button class="txtbtn" onclick="showView(\'list\')">← 一覧</button>'
 +(quizAvailable()? '<button class="txtbtn" onclick="startQuiz()">クイズ</button>': '')
 +'</div>';
-let html = '';
 /* v30.0: stream buttons in his 2x2 block (top row 西洋/日本,
    second row 世界史/日本史); the world map panel fills the
    right side across both rows; the year bar stays full width
    below. Designers keep a single row and no map. */
 const tlStreamsNow = tlStreams();
-if(!tlStreamsNow.some(s => s.key === tlRegion)) tlRegion = 'west';
 const tlRows = DS === 'designers'? [tlStreamsNow] : [tlStreamsNow.slice(0, 2), tlStreamsNow.slice(2)];
 let tlSegs = '';
-tlRows.forEach(row => { tlSegs += '<div class="tlsegrow"><span class="seg">' + row.map(s => '<button class="'+(tlRegion===s.key?'on':'')+'" onclick="setTlRegion(\''+s.key+'\')">'+s.label+'</button>').join('') + '</span></div>'; });
-html += '<div class="tlstick" id="tlstick">' + tlHeadHTML + '<div class="tl-toprow"><div class="tlsegs">' + tlSegs + '</div>'
-+(DS === 'designers'? '': '<button type="button" class="tlmap" id="tlmap" onclick="openTlMapSheet()" aria-label="世界地図を大きく開く"><canvas id="tlmapCv"></canvas><span class="tlmap-tag">世界地図</span></button>')
-+'</div>';
-const t = timelineOf();
-if(!t){ v.innerHTML = html + '</div><div class="empty">年表データはまだありません</div>'; return; }
-const entries = t[tlRegion] || [];
-if(!entries.length){ v.innerHTML = html + '</div><div class="empty">年表データはまだありません</div>'; return; }
+tlRows.forEach(row => { tlSegs += '<div class="tlsegrow"><span class="seg">' + row.map(s => '<button class="'+(tlRegion===s.key?'on':'')+'" data-skey="'+s.key+'" onclick="setTlRegion(\''+s.key+'\')">'+s.label+'</button>').join('') + '</span></div>'; });
+/* v30.7: the map panel is a div, not a <button> — the place
+   names in its caption are buttons of their own (item 3),
+   and a button cannot contain buttons. Tapping the panel
+   anywhere else still opens the sheet. */
+return '<div class="tlstick" id="tlstick">' + tlHeadHTML + '<div class="tl-toprow"><div class="tlsegs">' + tlSegs + '</div>'
++(DS === 'designers'? '': '<div class="tlmap" id="tlmap" role="button" aria-label="世界地図を大きく開く" onclick="openTlMapSheet()"><canvas id="tlmapCv"></canvas><span class="tlmap-tag">世界地図</span></div>')
++'</div>'
 /* v29.2: the year bar sits between the region segment and the
    cards, sticky under the app header (see tlBarWire). */
-html += '<div class="tlbar" id="tlbar"><div class="tlbar-lab"><div class="tlbar-year" id="tlbarYear"></div><div class="tlbar-title" id="tlbarTitle"></div></div>'
++'<div class="tlbar" id="tlbar"><div class="tlbar-lab"><div class="tlbar-year" id="tlbarYear"></div><div class="tlbar-title" id="tlbarTitle"></div></div>'
 +'<div class="tlbar-track" id="tlbarTrack"><div class="tlbar-ticks" id="tlbarTicks"></div><div class="tlbar-fill" id="tlbarFill"></div><div class="tlbar-knob" id="tlbarKnob"></div></div></div></div>';
-html += '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
+}
+function renderTimeline(){
+const v = $('viewTimeline'); if(!v) return;
+const tlStreamsNow = tlStreams();
+if(!tlStreamsNow.some(s => s.key === tlRegion)) tlRegion = 'west';
+const sig = DS + '|' + tlStreamsNow.map(s => s.key).join(',');
+let frame = $('tlstick');
+if(!frame || frame.parentNode !== v || tlFrameSig !== sig){
+  v.innerHTML = tlFrameHTML() + '<div id="tlbody"></div>';
+  tlFrameSig = sig;
+  frame = $('tlstick');
+} else {
+  frame.querySelectorAll('button[data-skey]').forEach(b => { b.classList.toggle('on', b.getAttribute('data-skey') === tlRegion); });
+}
+const body = $('tlbody'); if(!body) return;
+const bar = $('tlbar');
+const t = timelineOf();
+const entries = t? (t[tlRegion] || []): [];
+if(!entries.length){
+  if(bar) bar.style.display = 'none';
+  tlBarItems = [];
+  tlCardsCache = null;
+  body.innerHTML = '<div class="empty">年表データはまだありません</div>';
+  return;
+}
+if(bar) bar.style.display = '';
+let html = '<div class="tlwrap" id="tlwrap"><div class="tlspine" id="tlspine"></div><div id="tldots"></div>';
 const spans = tlEraSpans(entries);
 const stripWiring = [];
 tlBarItems = [];
@@ -16124,8 +16242,8 @@ html += '<div style="margin-top:10px;"><button class="linkbtn" onclick="openEra(
 html += '</div>';
 });
 html += '</div>';
-v.innerHTML = html;
-v.querySelectorAll('.tlthumb .imgholder').forEach((span, k)=>{ const w = stripWiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+body.innerHTML = html;
+body.querySelectorAll('.tlthumb .imgholder').forEach((span, k)=>{ const w = stripWiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 tlBarWire();
 requestAnimationFrame(layoutTlSpine);
 }
@@ -16181,8 +16299,35 @@ if(max <= min) max = min + 1;
 tlAxisMemo = { min: min, max: max };
 return tlAxisMemo;
 }
-function tlYearFrac(y){ const a = tlAxisRange(); return Math.max(0, Math.min(1, (y - a.min) / (a.max - a.min))); }
-function tlFracYear(f){ const a = tlAxisRange(); return a.min + Math.max(0, Math.min(1, f)) * (a.max - a.min); }
+/* v30.7: the mapping is no longer a straight ruler. A linear
+   axis over the artists range (-17000..2023, 19023 years)
+   crushes the modern era into the last few percent of the
+   track — near 1950 a 10px drag crossed centuries, so the
+   knob could not be aimed at a year at all (his words,
+   2026-11-15: 「最近に近づくにつれてぎゅうぎゅうで調節も
+   できない」). The axis now allocates width by HOW LONG AGO
+   a year is, on an offset log scale: width follows
+   log(1 + yearsAgo / TL_AXIS_OFF), so a millennium in the
+   deep past and a century near the present take comparable
+   room, and the recent centuries — where the entries crowd
+   — get the fine control. The mapping is still ONE function
+   shared by every stream of the dataset (same year, same
+   position, in every stream), still spans exactly the data
+   range (endpoints land on 0 and 1), and tlFracYear is its
+   exact inverse. Drags still convert position -> year ->
+   nearest entry, so landings keep their precision; what
+   changes is how many years a pixel is worth, by era. */
+const TL_AXIS_OFF = 40;
+function tlYearFrac(y){
+const a = tlAxisRange(); const span = a.max - a.min; if(span <= 0) return 0;
+const ago = Math.max(0, Math.min(span, a.max - y));
+return 1 - Math.log(1 + ago / TL_AXIS_OFF) / Math.log(1 + span / TL_AXIS_OFF);
+}
+function tlFracYear(f){
+const a = tlAxisRange(); const span = a.max - a.min; if(span <= 0) return a.min;
+const fr = Math.max(0, Math.min(1, f));
+return a.max - TL_AXIS_OFF * (Math.exp((1 - fr) * Math.log(1 + span / TL_AXIS_OFF)) - 1);
+}
 /* the year of tlBarItems[i]; an entry without a parseable year
    borrows its nearest dated neighbour's, so the axis mapping
    stays total over the list. */
@@ -16229,10 +16374,18 @@ tlMapPaint();
    it keeps 0.08 of the track clear of every label already
    placed (list order is the priority), so labels never
    collide even where the modern years crowd together. */
+/* v30.7: the candidate set is re-spread for the compressed
+   axis (positions via tlYearFrac below): on the artists axis
+   these land at roughly 2/7/16/22/30/36/41/47/57/64/69/77/
+   83/93% of the track, so tick lines no longer comb into
+   the right edge the way the modern years did on the linear
+   axis (his 「メモリが右つめ」 report). List order remains
+   the label priority for layoutTlTickLabels. */
 const TL_TICK_YEARS = [
-  { y: 2000, lab: '2000' }, { y: 1, lab: '1' }, { y: -5000, lab: '前5000' }, { y: -10000, lab: '前10000' },
-  { y: 1000, lab: '1000' }, { y: 1900, lab: '1900' }, { y: 1950, lab: '1950' }, { y: 500, lab: '500' },
-  { y: 1800, lab: '1800' }, { y: 1500, lab: '1500' }, { y: -1000, lab: '前1000' }, { y: -15000, lab: '前15000' }
+  { y: 2000, lab: '2000' }, { y: -10000, lab: '前10000' }, { y: 1000, lab: '1000' }, { y: -5000, lab: '前5000' },
+  { y: 1900, lab: '1900' }, { y: 1, lab: '1' }, { y: 1500, lab: '1500' }, { y: -1000, lab: '前1000' },
+  { y: 1950, lab: '1950' }, { y: 500, lab: '500' }, { y: 1800, lab: '1800' }, { y: -3000, lab: '前3000' },
+  { y: 1700, lab: '1700' }, { y: -15000, lab: '前15000' }
 ];
 function tlBarTicks(){
 const host = $('tlbarTicks'); if(!host) return;
@@ -16241,7 +16394,7 @@ if(tlBarItems.length < 2) return;
 const a = tlAxisRange();
 TL_TICK_YEARS.forEach(c => {
   if(c.y < a.min || c.y > a.max) return;
-  const f = (c.y - a.min) / (a.max - a.min);
+  const f = tlYearFrac(c.y);
   const d = document.createElement('div');
   d.className = 'tlbar-tick' + (f < 0.07? ' edge-l': f > 0.93? ' edge-r': '');
   d.style.left = (f * 100).toFixed(2) + '%';
@@ -16439,6 +16592,13 @@ tlCardsCache = null;
 tlAxisMemo = null; /* v30.5: the shared axis is rebuilt from the data this render carries */
 tlBarTicks();
 tlBarPaint();
+/* v30.7: the frame is resident now, so the track element
+   survives re-renders — its drag listeners are attached
+   exactly once per element (the part above is per-render
+   state only). A rebuilt frame makes a fresh track, which
+   has no flag and is wired then. */
+if(!track._tlWired){
+track._tlWired = true;
 track.addEventListener('pointerdown', ev => {
   tlBar.drag = true; tlBar.settleIdx = -1; tlBarClearSettleTimers();
   tlBar.geom = tlBarMeasure();
@@ -16464,6 +16624,7 @@ const end = () => {
 };
 track.addEventListener('pointerup', end);
 track.addEventListener('pointercancel', end);
+}
 requestAnimationFrame(()=>{ tlBarSyncFromScroll(); layoutTlTickLabels(); });
 }
 window.addEventListener('scroll', ()=>{
@@ -16664,13 +16825,20 @@ const lightBg = (document.documentElement.dataset.theme || '') === 'kinari';
 ctx.save();
 if(!lightBg) ctx.globalCompositeOperation = 'lighter';
 TL_MAP.pins.forEach(pin => {
+  /* v30.7: a place selection isolates the glow (his words:
+     「地名押したらそこだけ光るようにして欲しい。地名を選択
+     してない時は全部光るように」) — with a selection, only
+     that place lights and every other glow is off; the land
+     itself is drawn as always. With no selection, every lit
+     place glows, as before. */
+  if(tlMapSel && pin.id !== tlMapSel) return;
   const st = tlPinState(pin, year);
   if(st.o <= 0.03) return;
   const xy = tlMapPoint(pin.lat, pin.lon, pw, ph);
   const full = st.lit.filter(l => l.s >= 0.999).length;
   let R = mw * (big? 0.062: 0.078) * (full >= 2? 1.35: 1);
   let a = st.o;
-  if(big && tlMapSel && pin.id === tlMapSel){ R *= 1.45; a = Math.min(1, a * 1.25 + 0.25); }
+  if(tlMapSel && pin.id === tlMapSel){ R *= 1.45; a = Math.min(1, a * 1.25 + 0.25); }
   const g = ctx.createRadialGradient(xy[0], xy[1], 0, xy[0], xy[1], R);
   g.addColorStop(0, 'rgba(255,233,196,' + (0.95 * a).toFixed(3) + ')');
   g.addColorStop(0.28, 'rgba(255,183,92,' + (0.52 * a).toFixed(3) + ')');
@@ -16729,45 +16897,100 @@ if(big){
       ctx.strokeText(name, sp.x + pad, sp.y);
       ctx.fillStyle = lightBg? '#22301f': '#fff6e0';
       ctx.fillText(name, sp.x + pad, sp.y);
-      tlMapLastLabels.push({ name: name, x: (sp.x + pad) / dpr, y: sp.y / dpr });
+      /* v30.7: the record also carries the pin id and the
+         label's box (CSS px), so a tap ON the name itself —
+         offset from the glow's centre — can select the
+         place (tlMapSheetTap hit-tests these boxes). */
+      tlMapLastLabels.push({ id: c.pin.id, name: name, x: (sp.x + pad) / ratio, y: sp.y / ratio, w: tw / ratio, h: fs / ratio });
       break;
     }
   });
   ctx.restore();
 }
 }
+/* v30.7: the place selection (item 3) is view state only —
+   never saved — and it belongs to the dataset + stream +
+   year it was made in. tlMapSelSig records that context;
+   tlMapPaint releases the selection the moment the context
+   no longer matches (the year scrolled on, the stream
+   switched), so one place is never left lit for another
+   year. */
+let tlMapSelSig = '';
+function tlMapSigNow(){ return DS + '|' + tlRegion + '|' + tlMapYearNow(); }
+function tlMapToggleSel(id, ev){
+if(ev && ev.stopPropagation) ev.stopPropagation();
+tlMapSel = (tlMapSel === id)? null: id;
+tlMapSelSig = tlMapSigNow();
+const sh = $('tlmapsheet');
+if(sh && !sh.classList.contains('hidden')){
+  const bcv = $('tlmapBigCv');
+  if(bcv) tlMapDrawInto(bcv, tlMapYearNow(), true);
+  tlMapSheetBody(tlMapYearNow());
+}
+tlMapPaint();
+}
 function tlMapPaint(){
 const cv = document.getElementById('tlmapCv');
 if(!cv) return;
 const year = tlMapYearNow();
+if(tlMapSel && tlMapSelSig !== tlMapSigNow()) tlMapSel = null;
 tlMapDrawInto(cv, year, false);
 /* v30.6: the panel's caption names the places glowing right
    now (strongest first, up to three + a count), so the small
-   map answers "where is that?" without opening the sheet. */
+   map answers "where is that?" without opening the sheet.
+   v30.7: each name is its own button — tapping it lights
+   that place alone (tlMapToggleSel); while a selection is
+   active the caption is that place alone, marked. The '・'
+   separators stay as text between the buttons, so the
+   caption reads exactly as before. The caption DOM is only
+   rewritten when its content actually changes (this paint
+   runs on every scroll frame). */
 const tag = document.querySelector('#tlmap .tlmap-tag');
 if(tag){
-  let txt = '世界地図';
-  if(year != null){
-    const lit = [];
-    TL_MAP.pins.forEach(pin => {
-      const st = tlPinState(pin, year);
-      if(st.o >= 0.5) lit.push({ name: String(pin.place || '').split('（')[0], o: st.o, from: Math.min.apply(null, (pin.targets && pin.targets.length? pin.targets: [{ from: 0 }]).map(t => t.from)) });
-    });
-    lit.sort((a, b)=> (b.o - a.o) || (a.from - b.from));
-    if(lit.length) txt = lit.slice(0, 3).map(x => x.name).join('・') + (lit.length > 3? ' ほか' + (lit.length - 3) + '件': '');
+  const nameBtn = (id, name, on) => '<button type="button" class="tlmap-name' + (on? ' on': '') + '" onclick="tlMapToggleSel(\'' + id + '\', event)">' + esc(name) + '</button>';
+  let h = null;
+  if(tlMapSel){
+    const pin = TL_MAP.pins.find(p => p.id === tlMapSel);
+    if(pin) h = nameBtn(pin.id, String(pin.place || '').split('（')[0], true);
   }
-  if(tag.textContent !== txt) tag.textContent = txt;
+  if(h == null){
+    h = '世界地図';
+    if(year != null){
+      const lit = [];
+      TL_MAP.pins.forEach(pin => {
+        const st = tlPinState(pin, year);
+        if(st.o >= 0.5) lit.push({ id: pin.id, name: String(pin.place || '').split('（')[0], o: st.o, from: Math.min.apply(null, (pin.targets && pin.targets.length? pin.targets: [{ from: 0 }]).map(t => t.from)) });
+      });
+      lit.sort((a, b)=> (b.o - a.o) || (a.from - b.from));
+      if(lit.length) h = lit.slice(0, 3).map(x => nameBtn(x.id, x.name, false)).join('・') + (lit.length > 3? ' ほか' + (lit.length - 3) + '件': '');
+    }
+  }
+  if(tag._tlH !== h){ tag._tlH = h; tag.innerHTML = h; }
 }
 }
 function tlYearLabel(y){ return y < 0? '紀元前' + (-y) + '年': y + '年'; }
 function openTlMapSheet(){
 const sh = $('tlmapsheet'); if(!sh) return;
-tlMapSel = null;
-sh.classList.remove('hidden');
 const bcv = $('tlmapBigCv'); if(bcv) bcv.onclick = tlMapSheetTap;
-requestAnimationFrame(() => tlMapSheetPaint());
+/* v30.7: the sheet is painted BEFORE it is presented.
+   Through v30.6 it was unhidden first and painted a frame
+   later (rAF), so the first presented frame showed the
+   stale canvas — previous size, previous year — stretched
+   into place while the card settled: the smeared, doubled
+   title and labels in his video. Now the sheet is laid out
+   invisibly, sized, drawn and filled in one synchronous
+   pass, layout is committed, and only then is it shown —
+   the first frame presented is the finished one, drawn
+   exactly once. A place selection made on the panel is
+   kept across the open, so the place he chose is the one
+   lit here. */
+sh.style.visibility = 'hidden';
+sh.classList.remove('hidden');
+tlMapSheetPaint();
+void sh.offsetHeight;
+sh.style.visibility = '';
 }
-function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh) sh.classList.add('hidden'); }
+function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh){ sh.classList.add('hidden'); sh.style.visibility = ''; } }
 function tlMapSheetPaint(){
 const cv = $('tlmapBigCv'); if(!cv) return;
 const year = tlMapYearNow();
@@ -16783,23 +17006,44 @@ tlMapSheetBody(year);
 function tlMapSheetTap(ev){
 const cv = $('tlmapBigCv'); if(!cv || !cv.width) return;
 const r = cv.getBoundingClientRect();
-const x = (ev.clientX - r.left) * (cv.width / r.width);
-const y = (ev.clientY - r.top) * (cv.height / r.height);
-let best = null, bd = Infinity;
-TL_MAP.pins.forEach(pin => {
-  const xy = tlMapPoint(pin.lat, pin.lon, cv.width, cv.height);
-  const d = Math.hypot(xy[0] - x, xy[1] - y);
-  if(d < bd){ bd = d; best = pin; }
-});
-if(best && bd <= 26 * Math.min(2, window.devicePixelRatio || 1)){
-  tlMapSel = best.id;
-  tlMapDrawInto(cv, tlMapYearNow(), true);
-  tlMapSheetBody(tlMapYearNow());
+const cx = ev.clientX - r.left, cy = ev.clientY - r.top;
+/* v30.7: a tap on a place NAME selects it too — the drawn
+   label sits offset from the glow's centre, so the pin
+   distance test alone missed names. The label boxes are
+   the ones the last draw recorded (CSS px, hit-tested
+   first). A tap on the selected place again, or on empty
+   map, releases the selection and every lit place glows
+   again; a tap near another glow selects that place. */
+let target = null;
+for(const L of tlMapLastLabels){
+  if(cx >= L.x - 3 && cx <= L.x + L.w + 3 && cy >= L.y - L.h / 2 - 3 && cy <= L.y + L.h / 2 + 3){ target = L.id; break; }
 }
+if(!target){
+  const x = cx * (cv.width / r.width), y = cy * (cv.height / r.height);
+  let bd = Infinity;
+  TL_MAP.pins.forEach(pin => {
+    const xy = tlMapPoint(pin.lat, pin.lon, cv.width, cv.height);
+    const d = Math.hypot(xy[0] - x, xy[1] - y);
+    if(d < bd){ bd = d; target = pin.id; }
+  });
+  if(!(bd <= 26 * Math.min(2, window.devicePixelRatio || 1))) target = null;
 }
-function tlMapTargetRow(pin, t){
-const ri = tlMapRows.length;
-tlMapRows.push({ side: t.side, title: t.title });
+tlMapSel = (target && tlMapSel !== target)? target: null;
+tlMapSelSig = tlMapSigNow();
+tlMapDrawInto(cv, tlMapYearNow(), true);
+tlMapSheetBody(tlMapYearNow());
+tlMapPaint();
+}
+function tlMapTargetRow(pin, t, mode){
+/* v30.7: two row kinds. In the year's list (mode 'sel') a
+   row tap selects its place — only that place stays lit —
+   and tapping it again releases; these rows do not jump.
+   In the selected place's own block (default mode) a row
+   tap jumps into the timeline at that movement, as before;
+   only those rows register in tlMapRows. */
+const selMode = mode === 'sel';
+let ri = -1;
+if(!selMode){ ri = tlMapRows.length; tlMapRows.push({ side: t.side, title: t.title }); }
 const tlo = timelineOf();
 const entries = tlo? tlo[t.side]: null;
 const e = Array.isArray(entries)? entries.find(x => x.title === t.title): null;
@@ -16814,9 +17058,9 @@ if(e && Array.isArray(e.artists)){
     if(target) cs2.push('<button type="button" class="tlchip" onclick="event.stopPropagation(); tlMapOpenArtist(\'' + escA(target.id) + '\')">' + esc(label) + '</button>');
     else cs2.push('<span class="tlchip">' + esc(label) + '</span>');
   });
-  if(cs2.length) chips = '<span style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">' + cs2.join('') + '</span>';
+  if(cs2.length) chips = '<span class="tlm-chips">' + cs2.join('') + '</span>';
 }
-return '<div class="tlm-row" role="button" onclick="tlMapGoToIdx(' + ri + ')">'
+return '<div class="tlm-row' + (selMode? ' selrow' + (tlMapSel === pin.id? ' on': ''): '') + '" role="button" onclick="' + (selMode? 'tlMapToggleSel(\'' + pin.id + '\', event)': 'tlMapGoToIdx(' + ri + ')') + '">'
 + '<span class="tlm-place">' + esc(pin.place) + '</span>'
 + '<span class="tlm-t">' + esc(t.title) + chips + '</span>'
 + '<span class="tlm-y">' + t.from + '–' + t.to + '</span></div>';
@@ -16849,7 +17093,7 @@ TL_MAP.pins.forEach(pin => {
 litRows.sort((a, b) => a.t.from - b.t.from);
 html += '<div class="tlm-lit"><div class="tsterm" style="font-size:15px;">その年の動き <span class="small" style="color:var(--muted)">' + litRows.length + '件</span></div>';
 if(litRows.length){
-  litRows.forEach(r => { html += tlMapTargetRow(r.pin, r.t); });
+  litRows.forEach(r => { html += tlMapTargetRow(r.pin, r.t, 'sel'); });
 } else {
   let best = null;
   TL_MAP.pins.forEach(pin => pin.targets.forEach(t => {
@@ -18679,7 +18923,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '30.6';
+const APP_VERSION = '30.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
