@@ -1,6 +1,13 @@
 {
   "art": [
     {
+      "date": "2026-11-13",
+      "note": "純宗の逝去100周年を記念し、ソウル・国立故宮博物館「大韓帝国」室で11月13日から公開（入場無料）。1902年に宮廷画家の趙錫晋と安中植が描いた皇太子時代の肖像は、1954年の火災で顔を含む約半分が焼け、今回が初の一般公開。1928年に金恩鎬が写真をもとに描いた皇帝時代の肖像も、右半分が火災で失われている。",
+      "source": "聯合ニュース",
+      "title": "大韓帝国最後の皇帝・純宗の肖像画2点、ソウル国立故宮博物館で公開 2点とも火災で半分が焼失",
+      "url": "https://www.yna.co.kr/view/AKR20261113090800005"
+    },
+    {
       "date": "2026-11-14",
       "img": {
         "url": "https://drive.google.com/thumbnail?id=17Dn0DOMRB4599Y0fWeUAKHXQQtTf_LdR&sz=w1200"
@@ -149,5 +156,5 @@
       "url": "https://www.asahi.com/articles/ASVCF771GVCFUHBI008M.html?iref=ogimage_rek"
     }
   ],
-  "updatedAt": "2026-11-14T09:52:51+09:00"
+  "updatedAt": "2026-11-15T12:51:31+09:00"
 }
