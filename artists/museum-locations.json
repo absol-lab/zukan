@@ -1,0 +1,572 @@
+[
+ {
+  "key": "ニューヨーク近代美術館（MoMA）",
+  "name": "Museum of Modern Art (MoMA)",
+  "city": "New York",
+  "country": "USA",
+  "lat": 40.7614,
+  "lng": -73.9776,
+  "works_count": 626,
+  "notes": "表記ゆれ5種を合算（ニューヨーク近代美術館／The Museum of Modern Art, New York／MoMA／MoMA（ニューヨーク近代美術館））"
+ },
+ {
+  "key": "テート",
+  "name": "Tate",
+  "city": "London",
+  "country": "UK",
+  "lat": 51.5076,
+  "lng": -0.0994,
+  "works_count": 549,
+  "notes": "テート・モダンの位置。表記ゆれ3種を合算（テート（ロンドン）／Tate, London）"
+ },
+ {
+  "key": "ヴィクトリア・アンド・アルバート博物館",
+  "name": "Victoria and Albert Museum",
+  "city": "London",
+  "country": "UK",
+  "lat": 51.4966,
+  "lng": -0.1722,
+  "works_count": 478,
+  "notes": "表記ゆれ4種を合算"
+ },
+ {
+  "key": "クリーブランド美術館",
+  "name": "Cleveland Museum of Art",
+  "city": "Cleveland",
+  "country": "USA",
+  "lat": 41.508,
+  "lng": -81.6119,
+  "works_count": 451,
+  "notes": "表記ゆれ2種を合算（クリーヴランド美術館）"
+ },
+ {
+  "key": "メトロポリタン美術館",
+  "name": "Metropolitan Museum of Art",
+  "city": "New York",
+  "country": "USA",
+  "lat": 40.7794,
+  "lng": -73.9632,
+  "works_count": 351,
+  "notes": "表記ゆれ3種を合算（（ニューヨーク）／クロイスターズ分館含む）"
+ },
+ {
+  "key": "ナショナル・ギャラリー・オブ・アート（ワシントン）",
+  "name": "National Gallery of Art",
+  "city": "Washington, D.C.",
+  "country": "USA",
+  "lat": 38.8913,
+  "lng": -77.02,
+  "works_count": 230,
+  "notes": "表記ゆれ4種を合算（ナショナル・ギャラリー（ワシントン）ほか）"
+ },
+ {
+  "key": "東京国立近代美術館",
+  "name": "National Museum of Modern Art, Tokyo (MOMAT)",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.69,
+  "lng": 139.7546,
+  "works_count": 153
+ },
+ {
+  "key": "ホイットニー美術館",
+  "name": "Whitney Museum of American Art",
+  "city": "New York",
+  "country": "USA",
+  "lat": 40.7397,
+  "lng": -74.0089,
+  "works_count": 148,
+  "notes": "英語表記1件を合算"
+ },
+ {
+  "key": "サンフランシスコ近代美術館",
+  "name": "San Francisco Museum of Modern Art (SFMOMA)",
+  "city": "San Francisco",
+  "country": "USA",
+  "lat": 37.7857,
+  "lng": -122.4011,
+  "works_count": 74,
+  "notes": "表記ゆれ2種を合算"
+ },
+ {
+  "key": "ナショナル・ギャラリー（ロンドン）",
+  "name": "National Gallery",
+  "city": "London",
+  "country": "UK",
+  "lat": 51.5089,
+  "lng": -0.1283,
+  "works_count": 46,
+  "notes": "ロンドン・ナショナル・ギャラリー2件を合算"
+ },
+ {
+  "key": "ルーヴル美術館",
+  "name": "Musée du Louvre",
+  "city": "Paris",
+  "country": "France",
+  "lat": 48.8606,
+  "lng": 2.3376,
+  "works_count": 44
+ },
+ {
+  "key": "国立国際美術館",
+  "name": "National Museum of Art, Osaka (NMAO)",
+  "city": "Osaka",
+  "country": "Japan",
+  "lat": 34.6917,
+  "lng": 135.4921,
+  "works_count": 39
+ },
+ {
+  "key": "京都国立近代美術館",
+  "name": "National Museum of Modern Art, Kyoto (MOMAK)",
+  "city": "Kyoto",
+  "country": "Japan",
+  "lat": 35.015,
+  "lng": 135.782,
+  "works_count": 33
+ },
+ {
+  "key": "グッゲンハイム美術館",
+  "name": "Solomon R. Guggenheim Museum",
+  "city": "New York",
+  "country": "USA",
+  "lat": 40.7829,
+  "lng": -73.9589,
+  "works_count": 19,
+  "notes": "ソロモン・R・グッゲンハイム美術館1件を合算"
+ },
+ {
+  "key": "オルセー美術館",
+  "name": "Musée d'Orsay",
+  "city": "Paris",
+  "country": "France",
+  "lat": 48.86,
+  "lng": 2.3266,
+  "works_count": 18
+ },
+ {
+  "key": "東京国立博物館",
+  "name": "Tokyo National Museum",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.7188,
+  "lng": 139.7765,
+  "works_count": 17
+ },
+ {
+  "key": "ウフィツィ美術館",
+  "name": "Uffizi Galleries",
+  "city": "Florence",
+  "country": "Italy",
+  "lat": 43.7687,
+  "lng": 11.2553,
+  "works_count": 14,
+  "notes": "ウフィツィ美術館（フィレンツェ）1件を合算"
+ },
+ {
+  "key": "美術史美術館（ウィーン）",
+  "name": "Kunsthistorisches Museum",
+  "city": "Vienna",
+  "country": "Austria",
+  "lat": 48.2039,
+  "lng": 16.3618,
+  "works_count": 13,
+  "notes": "地名なし表記「美術史美術館」3件は作品キャプションでウィーンと確認し合算"
+ },
+ {
+  "key": "スウェーデン国立美術館",
+  "name": "Nationalmuseum",
+  "city": "Stockholm",
+  "country": "Sweden",
+  "lat": 59.3285,
+  "lng": 18.0783,
+  "works_count": 11,
+  "notes": "国立美術館（ストックホルム）2件を合算"
+ },
+ {
+  "key": "チャゼン美術館",
+  "name": "Chazen Museum of Art",
+  "city": "Madison, Wisconsin",
+  "country": "USA",
+  "lat": 43.0737,
+  "lng": -89.3997,
+  "works_count": 10,
+  "notes": "ウィスコンシン大学マディソン校。都市レベル座標"
+ },
+ {
+  "key": "プラド美術館",
+  "name": "Museo del Prado",
+  "city": "Madrid",
+  "country": "Spain",
+  "lat": 40.4138,
+  "lng": -3.6921,
+  "works_count": 9
+ },
+ {
+  "key": "バルジェッロ国立美術館",
+  "name": "Bargello National Museum",
+  "city": "Florence",
+  "country": "Italy",
+  "lat": 43.7704,
+  "lng": 11.2583,
+  "works_count": 9
+ },
+ {
+  "key": "大英博物館",
+  "name": "British Museum",
+  "city": "London",
+  "country": "UK",
+  "lat": 51.5194,
+  "lng": -0.127,
+  "works_count": 8
+ },
+ {
+  "key": "シカゴ美術館",
+  "name": "Art Institute of Chicago",
+  "city": "Chicago",
+  "country": "USA",
+  "lat": 41.8796,
+  "lng": -87.6237,
+  "works_count": 6
+ },
+ {
+  "key": "ティッセン＝ボルネミッサ美術館",
+  "name": "Thyssen-Bornemisza National Museum",
+  "city": "Madrid",
+  "country": "Spain",
+  "lat": 40.416,
+  "lng": -3.695,
+  "works_count": 6,
+  "notes": "ティッセン・ボルネミッサ美術館1件を合算（カルメン・ティッセン・コレクション1件は別扱いで除外）"
+ },
+ {
+  "key": "フィラデルフィア美術館",
+  "name": "Philadelphia Museum of Art",
+  "city": "Philadelphia",
+  "country": "USA",
+  "lat": 39.9656,
+  "lng": -75.181,
+  "works_count": 5
+ },
+ {
+  "key": "ハンブルク美術館",
+  "name": "Hamburger Kunsthalle",
+  "city": "Hamburg",
+  "country": "Germany",
+  "lat": 53.5554,
+  "lng": 10.0031,
+  "works_count": 5
+ },
+ {
+  "key": "東京都現代美術館",
+  "name": "Museum of Contemporary Art Tokyo (MOT)",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.68,
+  "lng": 139.8082,
+  "works_count": 5
+ },
+ {
+  "key": "ソフィア王妃芸術センター（マドリード）",
+  "name": "Museo Nacional Centro de Arte Reina Sofía",
+  "city": "Madrid",
+  "country": "Spain",
+  "lat": 40.408,
+  "lng": -3.694,
+  "works_count": 5,
+  "notes": "地名なし表記1件を合算"
+ },
+ {
+  "key": "ナポリ国立考古学博物館",
+  "name": "Naples National Archaeological Museum",
+  "city": "Naples",
+  "country": "Italy",
+  "lat": 40.8534,
+  "lng": 14.2505,
+  "works_count": 5
+ },
+ {
+  "key": "ボルゲーゼ美術館",
+  "name": "Galleria Borghese",
+  "city": "Rome",
+  "country": "Italy",
+  "lat": 41.9142,
+  "lng": 12.4921,
+  "works_count": 5
+ },
+ {
+  "key": "ブランカッチ礼拝堂",
+  "name": "Brancacci Chapel (Santa Maria del Carmine)",
+  "city": "Florence",
+  "country": "Italy",
+  "lat": 43.7679,
+  "lng": 11.2433,
+  "works_count": 5,
+  "notes": "美術館ではなく教会内の礼拝堂（フレスコ画の現地保存）"
+ },
+ {
+  "key": "金刀比羅宮",
+  "name": "Kotohira-gu Shrine",
+  "city": "Kotohira, Kagawa",
+  "country": "Japan",
+  "lat": 34.184,
+  "lng": 133.809,
+  "works_count": 5,
+  "notes": "美術館ではなく神社（書院の障壁画等）。町レベル座標"
+ },
+ {
+  "key": "大聖堂オペラ美術館",
+  "name": "Museo dell'Opera del Duomo",
+  "city": "Florence",
+  "country": "Italy",
+  "lat": 43.773,
+  "lng": 11.258,
+  "works_count": 5,
+  "notes": "作品キャプションでフィレンツェ大聖堂付属と確認。フィレンツェ大聖堂オペラ美術館1件も合算したため実合算は5件"
+ },
+ {
+  "key": "ブロード美術館",
+  "name": "The Broad",
+  "city": "Los Angeles",
+  "country": "USA",
+  "lat": 34.0545,
+  "lng": -118.2505,
+  "works_count": 4
+ },
+ {
+  "key": "PARCO MUSEUM TOKYO",
+  "name": "PARCO Museum Tokyo",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.662,
+  "lng": 139.6986,
+  "works_count": 4,
+  "notes": "渋谷PARCO内"
+ },
+ {
+  "key": "旧国立美術館（ベルリン）",
+  "name": "Alte Nationalgalerie",
+  "city": "Berlin",
+  "country": "Germany",
+  "lat": 52.5208,
+  "lng": 13.3985,
+  "works_count": 4
+ },
+ {
+  "key": "メニル・コレクション",
+  "name": "Menil Collection",
+  "city": "Houston",
+  "country": "USA",
+  "lat": 29.737,
+  "lng": -95.398,
+  "works_count": 4
+ },
+ {
+  "key": "アルタミラ洞窟・多彩色の間",
+  "name": "Altamira Cave / Museum of Altamira",
+  "city": "Santillana del Mar",
+  "country": "Spain",
+  "lat": 43.377,
+  "lng": -4.122,
+  "works_count": 4,
+  "notes": "洞窟遺跡と隣接博物館の位置。町レベル座標"
+ },
+ {
+  "key": "アルテ・マイスター絵画館",
+  "name": "Gemäldegalerie Alte Meister",
+  "city": "Dresden",
+  "country": "Germany",
+  "lat": 51.0523,
+  "lng": 13.7346,
+  "works_count": 4,
+  "notes": "ツヴィンガー内"
+ },
+ {
+  "key": "ボストン美術館",
+  "name": "Museum of Fine Arts, Boston",
+  "city": "Boston",
+  "country": "USA",
+  "lat": 42.3394,
+  "lng": -71.0939,
+  "works_count": 4
+ },
+ {
+  "key": "国立美術館（メキシコシティ）",
+  "name": "Museo Nacional de Arte (MUNAL)",
+  "city": "Mexico City",
+  "country": "Mexico",
+  "lat": 19.4363,
+  "lng": -99.1392,
+  "works_count": 4
+ },
+ {
+  "key": "トレチャコフ美術館",
+  "name": "State Tretyakov Gallery",
+  "city": "Moscow",
+  "country": "Russia",
+  "lat": 55.7414,
+  "lng": 37.6209,
+  "works_count": 4
+ },
+ {
+  "key": "東京藝術大学大学美術館",
+  "name": "University Art Museum, Tokyo University of the Arts",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.7195,
+  "lng": 139.7725,
+  "works_count": 4
+ },
+ {
+  "key": "クレラー・ミュラー美術館",
+  "name": "Kröller-Müller Museum",
+  "city": "Otterlo",
+  "country": "Netherlands",
+  "lat": 52.0956,
+  "lng": 5.8167,
+  "works_count": 4,
+  "notes": "クレラー＝ミュラー美術館1件を合算"
+ },
+ {
+  "key": "バーゼル市立美術館",
+  "name": "Kunstmuseum Basel",
+  "city": "Basel",
+  "country": "Switzerland",
+  "lat": 47.5545,
+  "lng": 7.5942,
+  "works_count": 4,
+  "notes": "バーゼル美術館1件・（クンストムゼウム・バーゼル）表記1件を合算"
+ },
+ {
+  "key": "プリンストン大学美術館",
+  "name": "Princeton University Art Museum",
+  "city": "Princeton, New Jersey",
+  "country": "USA",
+  "lat": 40.3566,
+  "lng": -74.6585,
+  "works_count": 3
+ },
+ {
+  "key": "ベルリン絵画館",
+  "name": "Gemäldegalerie",
+  "city": "Berlin",
+  "country": "Germany",
+  "lat": 52.5085,
+  "lng": 13.3647,
+  "works_count": 3
+ },
+ {
+  "key": "クラクフ国立美術館",
+  "name": "National Museum in Krakow",
+  "city": "Krakow",
+  "country": "Poland",
+  "lat": 50.06,
+  "lng": 19.9236,
+  "works_count": 3
+ },
+ {
+  "key": "デトロイト美術館",
+  "name": "Detroit Institute of Arts",
+  "city": "Detroit",
+  "country": "USA",
+  "lat": 42.3594,
+  "lng": -83.0645,
+  "works_count": 3
+ },
+ {
+  "key": "ミネアポリス美術館",
+  "name": "Minneapolis Institute of Art",
+  "city": "Minneapolis",
+  "country": "USA",
+  "lat": 44.9585,
+  "lng": -93.2743,
+  "works_count": 3
+ },
+ {
+  "key": "ホノルル美術館",
+  "name": "Honolulu Museum of Art",
+  "city": "Honolulu",
+  "country": "USA",
+  "lat": 21.3035,
+  "lng": -157.8489,
+  "works_count": 3
+ },
+ {
+  "key": "ギュスターヴ・モロー美術館",
+  "name": "Musée Gustave Moreau",
+  "city": "Paris",
+  "country": "France",
+  "lat": 48.8779,
+  "lng": 2.3344,
+  "works_count": 3
+ },
+ {
+  "key": "ドロレス・オルメド美術館",
+  "name": "Museo Dolores Olmedo",
+  "city": "Mexico City",
+  "country": "Mexico",
+  "lat": 19.2659,
+  "lng": -99.1259,
+  "works_count": 3,
+  "notes": "UNVERIFIED: 元ソチミルコ館の位置。館は閉館し収蔵品は移転したとされるため、現行の公開場所は未確認。都市（メキシコシティ）レベルの距離順には使える"
+ },
+ {
+  "key": "モーリッツブルク美術館",
+  "name": "Kunstmuseum Moritzburg Halle (Saale)",
+  "city": "Halle (Saale)",
+  "country": "Germany",
+  "lat": 51.4862,
+  "lng": 11.9635,
+  "works_count": 3,
+  "notes": "都市レベル座標"
+ },
+ {
+  "key": "ノヴェチェント美術館",
+  "name": "Museo del Novecento",
+  "city": "Milan",
+  "country": "Italy",
+  "lat": 45.4636,
+  "lng": 9.1903,
+  "works_count": 3
+ },
+ {
+  "key": "スコットランド国立美術館",
+  "name": "National Galleries of Scotland (National Gallery)",
+  "city": "Edinburgh",
+  "country": "UK",
+  "lat": 55.9509,
+  "lng": -3.1956,
+  "works_count": 3,
+  "notes": "スコットランド・ナショナル・ギャラリー1件を合算"
+ },
+ {
+  "key": "国立西洋美術館",
+  "name": "National Museum of Western Art, Tokyo",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.7155,
+  "lng": 139.7758,
+  "works_count": 2,
+  "notes": "2件で同点の館が多数ある中、日本の館を優先して60位以内に収録（同点の海外館は次点）"
+ },
+ {
+  "key": "千葉市美術館",
+  "name": "Chiba City Museum of Art",
+  "city": "Chiba",
+  "country": "Japan",
+  "lat": 35.6047,
+  "lng": 140.1223,
+  "works_count": 2,
+  "notes": "同点多数の中から日本・近距離の館を優先して収録"
+ },
+ {
+  "key": "SOMPO美術館",
+  "name": "SOMPO Museum of Art",
+  "city": "Tokyo",
+  "country": "Japan",
+  "lat": 35.6926,
+  "lng": 139.6926,
+  "works_count": 2,
+  "notes": "同点多数の中から日本の館を優先して収録"
+ }
+]
