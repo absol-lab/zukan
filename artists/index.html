@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.1">
+<meta name="app-version" content="32.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -489,6 +489,9 @@ button.inflrow{cursor:pointer;}
 .inflmain{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
 .inflname{font-size:14.5px; line-height:1.45;}
 .inflnote{font-size:12.5px; color:var(--muted); line-height:1.5;}
+/* v32.2: relations rows — the name carries the underline that
+   marks it as tappable (the app-wide promise). */
+.relname{font-size:14.5px; line-height:1.45; text-decoration:underline; text-underline-offset:3px;}
 .inflgo{flex:none; color:var(--muted); font-size:18px;}
 .bizpills{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 10px; scrollbar-width:none;}
 .bizpills::-webkit-scrollbar{display:none;}
@@ -12488,8 +12491,12 @@ openSettingsPanel('reqnotif');
    作品 / 特徴 / 来歴 / 制作プロセス / 発言 / インタビュー / 影響 /
    作品集 / 価格.
    v30.6: ドローイング joins immediately after 作品 (his order) —
-   作品 / ドローイング / 特徴 / 来歴 / … */
-const DTABS = ['works','drawings','feat','bio','process','quotes','interviews','influences','books','prices'];
+   作品 / ドローイング / 特徴 / 来歴 / …
+   v32.2: 関係 (relations) joins immediately after 特徴 (his pick,
+   2026-11-15 23:56 — a standalone item right after 特徴, not inside
+   it, not at the page bottom, not mixed into 来歴) —
+   作品 / ドローイング / 特徴 / 関係 / 来歴 / … */
+const DTABS = ['works','drawings','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -12824,7 +12831,63 @@ const FX_ASOF = '2026-11-13';
 function jpyOf(p){ if(!p || p.price == null) return null; if(!p.currency || p.currency === 'JPY') return p.price; const r = FX_JPY[p.currency]; return r ? Math.round(p.price * r) : null; }
 function fmtJPY(n){ return '¥' + Math.round(n).toLocaleString('ja-JP'); }
 function fmtJPYShort(n){ if(n >= 1e8){ const v = n / 1e8; return '¥' + (v >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + '億'; } if(n >= 1e4){ const v = n / 1e4; return '¥' + (v >= 100 ? Math.round(v) : Math.round(v * 10) / 10) + '万'; } return fmtJPY(n); }
+/* v32.2: 関係のある作家・似た作家 — the relations tab right after
+   特徴. Data: relations.json beside the app (repo-side, like
+   galleries.json), 530 verified records prepared 2026-11-15
+   (~/workspace/art-labo/relations/). Loading follows the
+   guideEnsure pattern: fetch once, and if a detail page is open
+   when it lands, re-render keeping the scroll position — until
+   then the tab simply does not exist yet.
+   Records are one-directional (from → to) and each note is
+   written from the FROM side. The panel shows both directions:
+   - 影響 splits by direction （影響を受けた作家 / 影響を与えた作家）,
+     the same convention as the 影響 tab — the headings carry the
+     direction, so the note rides as written.
+   - 師弟・つながり and 比較される share one heading each across
+     both directions; on the reverse side the note is prefixed
+     with the other artist's name (「○○の記述：」) because shown
+     bare it would misattribute the subject (Cranston's
+     「在学時の師」 on Doig's page must still point at Doig).
+   - 同じ系譜 is symmetric; a pair recorded in both directions
+     is shown once.
+   Rows whose other end does not resolve in this dataset are
+   skipped. The data covers artists only — on the designers side
+   nothing is computed and the tab never appears. */
+let RELS = null, relsFailed = false;
+function relsEnsure(){
+if(RELS || relsFailed) return;
+fetch('relations.json', { cache: 'no-cache' })
+.then(r=>{ if(!r.ok) throw new Error('relations.json'); return r.json(); })
+.then(j=>{ RELS = (j && Array.isArray(j.relations))? j.relations: [];
+const vd = $('viewDetail');
+if(vd && !vd.classList.contains('hidden') && state.detailId != null){ const y = window.scrollY || 0; renderDetail(); window.scrollTo(0, y); } })
+.catch(()=>{ relsFailed = true; });
+}
+function relationsFor(a){
+const g = { received: [], given: [], ties: [], genealogy: [], compared: [] };
+if(!RELS || DS !== 'artists') return g;
+const seenGen = {};
+RELS.forEach(r=>{
+let other = null, dir = '';
+if(String(r.from) === String(a.id)){ other = r.to; dir = 'out'; }
+else if(String(r.to) === String(a.id)){ other = r.from; dir = 'in'; }
+else return;
+const t = artistById(other); if(!t) return;
+const row = { id: t.id, name: t.name, note: r.note || '', pfx: dir === 'in' };
+if(r.kind === '影響') (dir === 'out'? g.received: g.given).push(row);
+else if(r.kind === '師弟・つながり') g.ties.push(row);
+else if(r.kind === '同じ系譜'){ const k = String(t.id); if(seenGen[k]) return; seenGen[k] = 1; g.genealogy.push(row); }
+else if(r.kind === '比較される') g.compared.push(row);
+});
+return g;
+}
+function relRowHTML(r, withPrefix){
+const note = r.note? (withPrefix && r.pfx? esc(r.name)+'の記述：' + esc(r.note): esc(r.note)): '';
+const inner = '<span class="inflmain"><span class="relname">'+esc(r.name)+'</span>'+(note? '<span class="inflnote">'+note+'</span>': '')+'</span>';
+return '<button class="inflrow" onclick="openDetail(\''+escA(r.id)+'\')">'+inner+'<span class="inflgo">›</span></button>';
+}
 function renderDetail(){
+relsEnsure();
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
 const ws = displayWorks(a);
 /* v30.6: drawings （ドローイング) — shown as their own tab right
@@ -12870,11 +12933,17 @@ if(String(x.id)===String(a.id) || !Array.isArray(x.influences)) return;
 const hit = x.influences.find(inf=> (inf.id != null && String(inf.id)===String(a.id)) || (inf.id == null && !!inf.name && (inf.name===a.name || (!!a.name_latin && inf.name===a.name_latin))));
 if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
 });
+/* v32.2: relations for this artist — computed once here so the
+   tab button, the fallback below and the panel all read the
+   same result. */
+const relGroups = relationsFor(a);
+const relCount = relGroups.received.length + relGroups.given.length + relGroups.ties.length + relGroups.genealogy.length + relGroups.compared.length;
 if(state.tab==='drawings' && !dws.length) state.tab = 'works';
 if(state.tab==='process' && !hasProcessContent) state.tab = 'works';
 if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
+if(state.tab==='relations' && !relCount) state.tab = 'works';
 let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
@@ -12889,6 +12958,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
+'<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+(relCount? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(hasProcessContent? '': ' style="display:none"')+'>制作プロセス</button>'+
 '<button class="'+(state.tab==='quotes'?'on':'')+'" onclick="setTab(\'quotes\')"'+(hasQuotesTab? '': ' style="display:none"')+'>発言</button>'+
@@ -13208,10 +13278,22 @@ const inner = '<span class="inflmain"><span class="inflname">'+esc(g.name)+'</sp
 return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner+'<span class="inflgo">›</span></button>';
 }).join('');
 }
+/* v32.2: the relations panel — subheads carry the kind (and,
+   for 影響, the direction); ties and compared rows shown from
+   the reverse side carry the name-prefixed note (see
+   relationsFor). Empty for artists with no relations, who
+   never see the tab. */
+let relationsHTML = '';
+if(relGroups.received.length) relationsHTML += '<h3 class="subhead">影響を受けた作家</h3>' + relGroups.received.map(r=>relRowHTML(r, false)).join('');
+if(relGroups.given.length) relationsHTML += '<h3 class="subhead">影響を与えた作家</h3>' + relGroups.given.map(r=>relRowHTML(r, false)).join('');
+if(relGroups.ties.length) relationsHTML += '<h3 class="subhead">師弟・つながり</h3>' + relGroups.ties.map(r=>relRowHTML(r, true)).join('');
+if(relGroups.genealogy.length) relationsHTML += '<h3 class="subhead">同じ系譜の作家</h3>' + relGroups.genealogy.map(r=>relRowHTML(r, false)).join('');
+if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較される作家</h3>' + relGroups.compared.map(r=>relRowHTML(r, true)).join('');
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
++'<div class="dpage" data-dtab="relations">'+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
 +'<div class="dpage" data-dtab="quotes">'+quotesHTML+'</div>'
@@ -19382,7 +19464,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.1';
+const APP_VERSION = '32.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
