@@ -7,7 +7,17 @@
   "lat": 40.7614,
   "lng": -73.9776,
   "works_count": 626,
-  "notes": "表記ゆれ5種を合算（ニューヨーク近代美術館／The Museum of Modern Art, New York／MoMA／MoMA（ニューヨーク近代美術館））"
+  "notes": "表記ゆれ5種を合算（ニューヨーク近代美術館／The Museum of Modern Art, New York／MoMA／MoMA（ニューヨーク近代美術館））",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/themuseumofmodernart/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.moma.org"
+   }
+  ]
  },
  {
   "key": "テート",
@@ -17,7 +27,17 @@
   "lat": 51.5076,
   "lng": -0.0994,
   "works_count": 549,
-  "notes": "テート・モダンの位置。表記ゆれ3種を合算（テート（ロンドン）／Tate, London）"
+  "notes": "テート・モダンの位置。表記ゆれ3種を合算（テート（ロンドン）／Tate, London）",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/tate/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.tate.org.uk"
+   }
+  ]
  },
  {
   "key": "ヴィクトリア・アンド・アルバート博物館",
@@ -27,7 +47,17 @@
   "lat": 51.4966,
   "lng": -0.1722,
   "works_count": 478,
-  "notes": "表記ゆれ4種を合算"
+  "notes": "表記ゆれ4種を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/vamuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.vam.ac.uk"
+   }
+  ]
  },
  {
   "key": "クリーブランド美術館",
@@ -37,7 +67,17 @@
   "lat": 41.508,
   "lng": -81.6119,
   "works_count": 451,
-  "notes": "表記ゆれ2種を合算（クリーヴランド美術館）"
+  "notes": "表記ゆれ2種を合算（クリーヴランド美術館）",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/clevelandmuseumofart/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.clevelandart.org"
+   }
+  ]
  },
  {
   "key": "メトロポリタン美術館",
@@ -47,7 +87,17 @@
   "lat": 40.7794,
   "lng": -73.9632,
   "works_count": 351,
-  "notes": "表記ゆれ3種を合算（（ニューヨーク）／クロイスターズ分館含む）"
+  "notes": "表記ゆれ3種を合算（（ニューヨーク）／クロイスターズ分館含む）",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/metmuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.metmuseum.org"
+   }
+  ]
  },
  {
   "key": "ナショナル・ギャラリー・オブ・アート（ワシントン）",
@@ -57,7 +107,17 @@
   "lat": 38.8913,
   "lng": -77.02,
   "works_count": 230,
-  "notes": "表記ゆれ4種を合算（ナショナル・ギャラリー（ワシントン）ほか）"
+  "notes": "表記ゆれ4種を合算（ナショナル・ギャラリー（ワシントン）ほか）",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/ngadc/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.nga.gov"
+   }
+  ]
  },
  {
   "key": "東京国立近代美術館",
@@ -66,7 +126,13 @@
   "country": "Japan",
   "lat": 35.69,
   "lng": 139.7546,
-  "works_count": 153
+  "works_count": 153,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.momat.go.jp"
+   }
+  ]
  },
  {
   "key": "ホイットニー美術館",
@@ -76,7 +142,17 @@
   "lat": 40.7397,
   "lng": -74.0089,
   "works_count": 148,
-  "notes": "英語表記1件を合算"
+  "notes": "英語表記1件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/whitneymuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://whitney.org"
+   }
+  ]
  },
  {
   "key": "サンフランシスコ近代美術館",
@@ -86,7 +162,17 @@
   "lat": 37.7857,
   "lng": -122.4011,
   "works_count": 74,
-  "notes": "表記ゆれ2種を合算"
+  "notes": "表記ゆれ2種を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/sfmoma/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.sfmoma.org"
+   }
+  ]
  },
  {
   "key": "ナショナル・ギャラリー（ロンドン）",
@@ -96,7 +182,17 @@
   "lat": 51.5089,
   "lng": -0.1283,
   "works_count": 46,
-  "notes": "ロンドン・ナショナル・ギャラリー2件を合算"
+  "notes": "ロンドン・ナショナル・ギャラリー2件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/nationalgallery/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.nationalgallery.org.uk"
+   }
+  ]
  },
  {
   "key": "ルーヴル美術館",
@@ -105,7 +201,17 @@
   "country": "France",
   "lat": 48.8606,
   "lng": 2.3376,
-  "works_count": 44
+  "works_count": 44,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museelouvre/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.louvre.fr"
+   }
+  ]
  },
  {
   "key": "国立国際美術館",
@@ -114,7 +220,13 @@
   "country": "Japan",
   "lat": 34.6917,
   "lng": 135.4921,
-  "works_count": 39
+  "works_count": 39,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.nmao.go.jp"
+   }
+  ]
  },
  {
   "key": "京都国立近代美術館",
@@ -123,7 +235,13 @@
   "country": "Japan",
   "lat": 35.015,
   "lng": 135.782,
-  "works_count": 33
+  "works_count": 33,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.momak.go.jp"
+   }
+  ]
  },
  {
   "key": "グッゲンハイム美術館",
@@ -133,7 +251,17 @@
   "lat": 40.7829,
   "lng": -73.9589,
   "works_count": 19,
-  "notes": "ソロモン・R・グッゲンハイム美術館1件を合算"
+  "notes": "ソロモン・R・グッゲンハイム美術館1件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/guggenheim/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.guggenheim.org"
+   }
+  ]
  },
  {
   "key": "オルセー美術館",
@@ -142,7 +270,13 @@
   "country": "France",
   "lat": 48.86,
   "lng": 2.3266,
-  "works_count": 18
+  "works_count": 18,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museeorsay/"
+   }
+  ]
  },
  {
   "key": "東京国立博物館",
@@ -151,7 +285,13 @@
   "country": "Japan",
   "lat": 35.7188,
   "lng": 139.7765,
-  "works_count": 17
+  "works_count": 17,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.tnm.jp"
+   }
+  ]
  },
  {
   "key": "ウフィツィ美術館",
@@ -161,7 +301,17 @@
   "lat": 43.7687,
   "lng": 11.2553,
   "works_count": 14,
-  "notes": "ウフィツィ美術館（フィレンツェ）1件を合算"
+  "notes": "ウフィツィ美術館（フィレンツェ）1件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/uffizigalleries/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.uffizi.it"
+   }
+  ]
  },
  {
   "key": "美術史美術館（ウィーン）",
@@ -171,7 +321,17 @@
   "lat": 48.2039,
   "lng": 16.3618,
   "works_count": 13,
-  "notes": "地名なし表記「美術史美術館」3件は作品キャプションでウィーンと確認し合算"
+  "notes": "地名なし表記「美術史美術館」3件は作品キャプションでウィーンと確認し合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/kunsthistorischesmuseumvienna/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.khm.at"
+   }
+  ]
  },
  {
   "key": "スウェーデン国立美術館",
@@ -181,7 +341,17 @@
   "lat": 59.3285,
   "lng": 18.0783,
   "works_count": 11,
-  "notes": "国立美術館（ストックホルム）2件を合算"
+  "notes": "国立美術館（ストックホルム）2件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/nationalmuseumswe/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.nationalmuseum.se"
+   }
+  ]
  },
  {
   "key": "チャゼン美術館",
@@ -191,7 +361,13 @@
   "lat": 43.0737,
   "lng": -89.3997,
   "works_count": 10,
-  "notes": "ウィスコンシン大学マディソン校。都市レベル座標"
+  "notes": "ウィスコンシン大学マディソン校。都市レベル座標",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://chazen.wisc.edu"
+   }
+  ]
  },
  {
   "key": "プラド美術館",
@@ -200,7 +376,17 @@
   "country": "Spain",
   "lat": 40.4138,
   "lng": -3.6921,
-  "works_count": 9
+  "works_count": 9,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museoprado/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.museodelprado.es"
+   }
+  ]
  },
  {
   "key": "バルジェッロ国立美術館",
@@ -209,7 +395,13 @@
   "country": "Italy",
   "lat": 43.7704,
   "lng": 11.2583,
-  "works_count": 9
+  "works_count": 9,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://bargellomusei.it"
+   }
+  ]
  },
  {
   "key": "大英博物館",
@@ -218,7 +410,17 @@
   "country": "UK",
   "lat": 51.5194,
   "lng": -0.127,
-  "works_count": 8
+  "works_count": 8,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/britishmuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.britishmuseum.org"
+   }
+  ]
  },
  {
   "key": "シカゴ美術館",
@@ -227,7 +429,17 @@
   "country": "USA",
   "lat": 41.8796,
   "lng": -87.6237,
-  "works_count": 6
+  "works_count": 6,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/artinstitutechi/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.artic.edu"
+   }
+  ]
  },
  {
   "key": "ティッセン＝ボルネミッサ美術館",
@@ -237,7 +449,17 @@
   "lat": 40.416,
   "lng": -3.695,
   "works_count": 6,
-  "notes": "ティッセン・ボルネミッサ美術館1件を合算（カルメン・ティッセン・コレクション1件は別扱いで除外）"
+  "notes": "ティッセン・ボルネミッサ美術館1件を合算（カルメン・ティッセン・コレクション1件は別扱いで除外）",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museothyssen/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.museothyssen.org"
+   }
+  ]
  },
  {
   "key": "フィラデルフィア美術館",
@@ -246,7 +468,21 @@
   "country": "USA",
   "lat": 39.9656,
   "lng": -75.181,
-  "works_count": 5
+  "works_count": 5,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/philamuseumart/"
+   },
+   {
+    "kind": "x",
+    "url": "https://x.com/philamuseumart"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.philamuseum.org"
+   }
+  ]
  },
  {
   "key": "ハンブルク美術館",
@@ -255,7 +491,13 @@
   "country": "Germany",
   "lat": 53.5554,
   "lng": 10.0031,
-  "works_count": 5
+  "works_count": 5,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.hamburger-kunsthalle.de"
+   }
+  ]
  },
  {
   "key": "東京都現代美術館",
@@ -264,7 +506,13 @@
   "country": "Japan",
   "lat": 35.68,
   "lng": 139.8082,
-  "works_count": 5
+  "works_count": 5,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.mot-art-museum.jp"
+   }
+  ]
  },
  {
   "key": "ソフィア王妃芸術センター（マドリード）",
@@ -274,7 +522,17 @@
   "lat": 40.408,
   "lng": -3.694,
   "works_count": 5,
-  "notes": "地名なし表記1件を合算"
+  "notes": "地名なし表記1件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museoreinasofia/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.museoreinasofia.es"
+   }
+  ]
  },
  {
   "key": "ナポリ国立考古学博物館",
@@ -283,7 +541,17 @@
   "country": "Italy",
   "lat": 40.8534,
   "lng": 14.2505,
-  "works_count": 5
+  "works_count": 5,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museoarcheologiconapoli/"
+   },
+   {
+    "kind": "web",
+    "url": "https://mann-napoli.it"
+   }
+  ]
  },
  {
   "key": "ボルゲーゼ美術館",
@@ -292,7 +560,13 @@
   "country": "Italy",
   "lat": 41.9142,
   "lng": 12.4921,
-  "works_count": 5
+  "works_count": 5,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/galleriaborgheseufficiale/"
+   }
+  ]
  },
  {
   "key": "ブランカッチ礼拝堂",
@@ -312,7 +586,13 @@
   "lat": 34.184,
   "lng": 133.809,
   "works_count": 5,
-  "notes": "美術館ではなく神社（書院の障壁画等）。町レベル座標"
+  "notes": "美術館ではなく神社（書院の障壁画等）。町レベル座標",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.konpira.or.jp"
+   }
+  ]
  },
  {
   "key": "大聖堂オペラ美術館",
@@ -322,7 +602,13 @@
   "lat": 43.773,
   "lng": 11.258,
   "works_count": 5,
-  "notes": "作品キャプションでフィレンツェ大聖堂付属と確認。フィレンツェ大聖堂オペラ美術館1件も合算したため実合算は5件"
+  "notes": "作品キャプションでフィレンツェ大聖堂付属と確認。フィレンツェ大聖堂オペラ美術館1件も合算したため実合算は5件",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://duomo.firenze.it"
+   }
+  ]
  },
  {
   "key": "ブロード美術館",
@@ -331,7 +617,17 @@
   "country": "USA",
   "lat": 34.0545,
   "lng": -118.2505,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/thebroadmuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.thebroad.org"
+   }
+  ]
  },
  {
   "key": "PARCO MUSEUM TOKYO",
@@ -341,7 +637,13 @@
   "lat": 35.662,
   "lng": 139.6986,
   "works_count": 4,
-  "notes": "渋谷PARCO内"
+  "notes": "渋谷PARCO内",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://art.parco.jp"
+   }
+  ]
  },
  {
   "key": "旧国立美術館（ベルリン）",
@@ -350,7 +652,13 @@
   "country": "Germany",
   "lat": 52.5208,
   "lng": 13.3985,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/staatlichemuseenzuberlin/"
+   }
+  ]
  },
  {
   "key": "メニル・コレクション",
@@ -359,7 +667,17 @@
   "country": "USA",
   "lat": 29.737,
   "lng": -95.398,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/menilcollection/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.menil.org"
+   }
+  ]
  },
  {
   "key": "アルタミラ洞窟・多彩色の間",
@@ -369,7 +687,17 @@
   "lat": 43.377,
   "lng": -4.122,
   "works_count": 4,
-  "notes": "洞窟遺跡と隣接博物館の位置。町レベル座標"
+  "notes": "洞窟遺跡と隣接博物館の位置。町レベル座標",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museodealtamira/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.museodealtamira.es"
+   }
+  ]
  },
  {
   "key": "アルテ・マイスター絵画館",
@@ -379,7 +707,13 @@
   "lat": 51.0523,
   "lng": 13.7346,
   "works_count": 4,
-  "notes": "ツヴィンガー内"
+  "notes": "ツヴィンガー内",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://gemaeldegalerie.skd.museum"
+   }
+  ]
  },
  {
   "key": "ボストン美術館",
@@ -388,7 +722,17 @@
   "country": "USA",
   "lat": 42.3394,
   "lng": -71.0939,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/mfaboston/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.mfa.org"
+   }
+  ]
  },
  {
   "key": "国立美術館（メキシコシティ）",
@@ -397,7 +741,13 @@
   "country": "Mexico",
   "lat": 19.4363,
   "lng": -99.1392,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://munal.mx"
+   }
+  ]
  },
  {
   "key": "トレチャコフ美術館",
@@ -406,7 +756,17 @@
   "country": "Russia",
   "lat": 55.7414,
   "lng": 37.6209,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/tretyakov_gallery/"
+   },
+   {
+    "kind": "web",
+    "url": "https://tretyakovgallery.ru"
+   }
+  ]
  },
  {
   "key": "東京藝術大学大学美術館",
@@ -415,7 +775,13 @@
   "country": "Japan",
   "lat": 35.7195,
   "lng": 139.7725,
-  "works_count": 4
+  "works_count": 4,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://museum.geidai.ac.jp"
+   }
+  ]
  },
  {
   "key": "クレラー・ミュラー美術館",
@@ -425,7 +791,17 @@
   "lat": 52.0956,
   "lng": 5.8167,
   "works_count": 4,
-  "notes": "クレラー＝ミュラー美術館1件を合算"
+  "notes": "クレラー＝ミュラー美術館1件を合算",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/krollermullermuseum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.krollermuller.nl"
+   }
+  ]
  },
  {
   "key": "バーゼル市立美術館",
@@ -435,7 +811,13 @@
   "lat": 47.5545,
   "lng": 7.5942,
   "works_count": 4,
-  "notes": "バーゼル美術館1件・（クンストムゼウム・バーゼル）表記1件を合算"
+  "notes": "バーゼル美術館1件・（クンストムゼウム・バーゼル）表記1件を合算",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.kunstmuseumbasel.ch"
+   }
+  ]
  },
  {
   "key": "プリンストン大学美術館",
@@ -444,7 +826,13 @@
   "country": "USA",
   "lat": 40.3566,
   "lng": -74.6585,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://artmuseum.princeton.edu"
+   }
+  ]
  },
  {
   "key": "ベルリン絵画館",
@@ -453,7 +841,13 @@
   "country": "Germany",
   "lat": 52.5085,
   "lng": 13.3647,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/staatlichemuseenzuberlin/"
+   }
+  ]
  },
  {
   "key": "クラクフ国立美術館",
@@ -462,7 +856,13 @@
   "country": "Poland",
   "lat": 50.06,
   "lng": 19.9236,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://mnk.pl"
+   }
+  ]
  },
  {
   "key": "デトロイト美術館",
@@ -471,7 +871,17 @@
   "country": "USA",
   "lat": 42.3594,
   "lng": -83.0645,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/diadetroit/"
+   },
+   {
+    "kind": "web",
+    "url": "https://dia.org"
+   }
+  ]
  },
  {
   "key": "ミネアポリス美術館",
@@ -480,7 +890,17 @@
   "country": "USA",
   "lat": 44.9585,
   "lng": -93.2743,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/artsmia/"
+   },
+   {
+    "kind": "web",
+    "url": "https://new.artsmia.org"
+   }
+  ]
  },
  {
   "key": "ホノルル美術館",
@@ -489,7 +909,13 @@
   "country": "USA",
   "lat": 21.3035,
   "lng": -157.8489,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://honolulumuseum.org"
+   }
+  ]
  },
  {
   "key": "ギュスターヴ・モロー美術館",
@@ -498,7 +924,17 @@
   "country": "France",
   "lat": 48.8779,
   "lng": 2.3344,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/museegustavemoreau/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.musee-moreau.fr"
+   }
+  ]
  },
  {
   "key": "ドロレス・オルメド美術館",
@@ -518,7 +954,13 @@
   "lat": 51.4862,
   "lng": 11.9635,
   "works_count": 3,
-  "notes": "都市レベル座標"
+  "notes": "都市レベル座標",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.kunstmuseum-moritzburg.de"
+   }
+  ]
  },
  {
   "key": "ノヴェチェント美術館",
@@ -527,7 +969,13 @@
   "country": "Italy",
   "lat": 45.4636,
   "lng": 9.1903,
-  "works_count": 3
+  "works_count": 3,
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://museodelnovecento.org"
+   }
+  ]
  },
  {
   "key": "スコットランド国立美術館",
@@ -537,7 +985,13 @@
   "lat": 55.9509,
   "lng": -3.1956,
   "works_count": 3,
-  "notes": "スコットランド・ナショナル・ギャラリー1件を合算"
+  "notes": "スコットランド・ナショナル・ギャラリー1件を合算",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.nationalgalleries.org"
+   }
+  ]
  },
  {
   "key": "国立西洋美術館",
@@ -547,7 +1001,17 @@
   "lat": 35.7155,
   "lng": 139.7758,
   "works_count": 2,
-  "notes": "2件で同点の館が多数ある中、日本の館を優先して60位以内に収録（同点の海外館は次点）"
+  "notes": "2件で同点の館が多数ある中、日本の館を優先して60位以内に収録（同点の海外館は次点）",
+  "sns": [
+   {
+    "kind": "x",
+    "url": "https://x.com/NMWATokyo"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.nmwa.go.jp"
+   }
+  ]
  },
  {
   "key": "千葉市美術館",
@@ -557,7 +1021,13 @@
   "lat": 35.6047,
   "lng": 140.1223,
   "works_count": 2,
-  "notes": "同点多数の中から日本・近距離の館を優先して収録"
+  "notes": "同点多数の中から日本・近距離の館を優先して収録",
+  "sns": [
+   {
+    "kind": "web",
+    "url": "https://www.ccma-net.jp"
+   }
+  ]
  },
  {
   "key": "SOMPO美術館",
@@ -567,6 +1037,16 @@
   "lat": 35.6926,
   "lng": 139.6926,
   "works_count": 2,
-  "notes": "同点多数の中から日本の館を優先して収録"
+  "notes": "同点多数の中から日本の館を優先して収録",
+  "sns": [
+   {
+    "kind": "instagram",
+    "url": "https://www.instagram.com/sompo_museum/"
+   },
+   {
+    "kind": "web",
+    "url": "https://www.sompo-museum.org"
+   }
+  ]
  }
 ]
