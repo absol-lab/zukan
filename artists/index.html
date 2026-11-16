@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.17.2">
+<meta name="app-version" content="32.17.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10688,98 +10688,125 @@ const cap = work.caption||'';
    typographic plate instead. v2.31: the failure plate now also arms
    the self-heal above (maybeRearmImg) when the work has a Drive image. */
 const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
-if(work.img && work.img.fileId){
-const fid = work.img.fileId;
-if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; phFitSpan(span); return;}
-span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
-Promise.race([loadDriveImage(fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
-if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">'; phFitSpan(span);} else fail();
-}).catch(fail);
+/* v32.17.3: ONE bounded candidate walk replaces the three separate
+   branches (fileId-only / URL-with-retries / local). Diagnosis from
+   his 2026-11-17 device reports (Tillmans works tab: only the first
+   card — the one already in the HTTP cache from the artist list —
+   showed a photo; the rest sat at the loading label forever or
+   settled into the 図版 plate, on 4G and on good Wi-Fi alike; the
+   parent verified all 20 stored thumbnail URLs answer 200):
+   (a) LIVELock — the v2.34 watchdog capped each URL attempt at 7s
+   and every retry restarted the download from byte 0 under a
+   cache-buster URL, so on a phone route where a plate (w800,
+   ~160KB, behind a 302 hop, 8 loads sharing the connection) needs
+   longer than the cap, NO attempt could ever finish: four
+   attempts x 7s of restarted downloads, then the plate.
+   (b) HANG — the local-candidate chain was error-driven only,
+   with no timeout at all: a candidate that neither loaded nor
+   errored (a stalled connection) blocked the chain indefinitely
+   and the card sat at 読み込んでいます… forever.
+   (c) DEAD ROUTE — a {fileId} work had exactly one candidate, the
+   OAuth-token fetch (loadDriveImage); in relay mode (his phone
+   syncs via the relay, no OAuth token) it returns null at once,
+   so those cards could NEVER show their photo even though the
+   same file is servable anonymously via the thumbnail endpoint.
+   The walk below tries, in order: the stored direct URL sized for
+   the placement; the stored URL at its stored size (a different
+   cache entry, in case the sized variant is the broken one); for
+   {fileId} works the derived direct thumbnail URL, then the OAuth
+   route (bounded as before); the primary direct URL once more
+   with a cache-buster (the v2.20 transient-failure retry, exactly
+   once — no retry multiplication); the local files. EVERY attempt
+   is bounded by a hard timeout and advances on error OR timeout;
+   the failure plate runs only after the last candidate has
+   definitively failed — while candidates remain, the card stays
+   in the loading state (a load failure must not masquerade as
+   "no photo"). The scheduler still bounds concurrency per
+   attempt, and the v2.31 re-arm behind fail() is unchanged. */
+const IMG_ATTEMPT_TIMEOUT_MS = 12000;
+const IMG_LOCAL_TIMEOUT_MS = 6000;
+const hasUrl = !!(work.img && work.img.url);
+const hasFid = !!(work.img && work.img.fileId);
+if(hasFid && driveImgCache[work.img.fileId]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[work.img.fileId]+'" alt="'+escA(cap)+'">'; phFitSpan(span); return; }
+if(span._imgJob) return; /* a candidate walk is already queued/running for this span */
+const wantSz = parseInt(span.getAttribute('data-size'), 10);
+const sz = isNaN(wantSz)? 0: wantSz;
+const attempts = [];
+let primaryUrl = '';
+if(hasUrl){
+primaryUrl = sizedThumbUrl(String(work.img.url), sz);
+attempts.push({ t:'url', u: primaryUrl });
+const storedUrl = sizedThumbUrl(String(work.img.url), 1200);
+if(storedUrl !== primaryUrl) attempts.push({ t:'url', u: storedUrl });
+}
+if(hasFid){
+const du = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(work.img.fileId) + '&sz=w' + (sz || 1200);
+if(!attempts.some(a=> a.u === du)) attempts.push({ t:'url', u: du });
+attempts.push({ t:'drive', fid: work.img.fileId });
+if(!primaryUrl) primaryUrl = du;
+}
+if(primaryUrl) attempts.push({ t:'url', u: primaryUrl + '&retry=1' });
+if(work.file) localCandidates(work.file).forEach(u=> attempts.push({ t:'url', u: u, local: true }));
+if(!attempts.length){ fail(); return; }
+span._imgJob = true;
+if(!span.querySelector('img')) span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
+let ai = 0;
+const succeed = (im, url)=>{
+span._imgJob = false;
+if(url != null){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">'; phFitSpan(span); }
+else { imgLoadDone(span); if(im) phFit(im); }
+};
+const advance = ()=>{
+ai++;
+if(ai >= attempts.length){ span._imgJob = false; fail(); return; }
+runAttempt();
+};
+const runAttempt = ()=>{
+const at = attempts[ai];
+if(at.t === 'drive'){
+/* the OAuth route, bounded by the same 10s race as before; a
+   null (no token in relay mode, a Drive error) simply advances
+   the walk instead of ending it. */
+Promise.race([loadDriveImage(at.fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
+if(!span.isConnected){ span._imgJob = false; return; }
+if(url) succeed(null, url); else advance();
+}).catch(()=>{ if(span.isConnected) advance(); else span._imgJob = false; });
 return;
 }
-const tryLocal = ()=>{
-const cands = localCandidates(work.file);
-if(!cands.length){ fail(); return;}
+imgSlotAcquire(span, ()=>{
+if(!span.isConnected){ imgSlotRelease(); span._imgJob = false; return; }
+const im = document.createElement('img');
+im.loading = 'eager'; im.alt = cap;
+let settled = false;
+const settle = (isOk)=>{
+if(settled) return; settled = true;
+imgSlotRelease();
+if(isOk) succeed(im, null); else advance();
+};
+im.onload = ()=> settle(true);
+im.onerror = ()=> settle(false);
+span.innerHTML = ''; span.appendChild(im);
 /* NOTE: the <img> must be inserted into the document BEFORE setting src.
    A detached Image() with loading="eager" never starts loading in Chrome/
    WebKit (lazy defers until the element is in the document near the
    viewport), so preload-then-append-on-load deadlocks: no request, no
    onload, no onerror — the plate stays empty forever. */
-const im = document.createElement('img');
-im.loading = 'eager'; im.alt = cap;
-let i = 0;
-im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
-im.onload = ()=>{ imgLoadDone(span); phFit(im); };
-span.innerHTML=''; span.appendChild(im);
-im.src = cands[0];
-/* v29.1: say so while the local fetch is in flight (a cached
-   candidate is already complete and gets no label) */
+im.src = at.u;
+/* the fetch is the loading the user actually waits on — label it
+   (an instantly-cached answer is already complete and gets no
+   label; the label comes off in onload, and a terminal failure
+   replaces the holder content wholesale). */
 if(!im.complete) imgLoadLabel(span, true);
-};
-if(work.img && work.img.url){
-/* v2.20: retry the Drive URL with backoff before giving up on it.
-   A single transient failure (burst throttling when a whole grid loads at
-   once, an HTTP/2 reset, a momentary network drop) used to be permanent:
-   onerror fell straight through to the local file candidates — which do
-   not exist in the standalone app — and then to the failure plate, so one
-   bad moment could plate every tile on screen (the "all photos gone"
-   outage). The local fallback now runs only after the retries are
-   exhausted, and fail() only after that. */
-if(span._imgJob) return; /* a load chain is already queued/running for this span (v2.55) */
-span._imgJob = true;
-const wantSz = parseInt(span.getAttribute('data-size'), 10);
-const fullUrl = sizedThumbUrl(String(work.img.url), isNaN(wantSz)? 0: wantSz);
-const RETRY_WAITS = [350, 1000, 2200];
-const IMG_LOAD_TIMEOUT_MS = 7000;
-let attemptNo = 0;
-const tryUrl = ()=>{
-attemptNo++;
-/* v2.55: every attempt — first tries and retries alike — takes a
-   scheduler slot, so a retry storm can no longer multiply a burst. */
-imgSlotAcquire(span, ()=>{
-if(!span.isConnected){ imgSlotRelease(); span._imgJob = false; return; }
-const uim = document.createElement('img');
-uim.loading = 'eager'; uim.alt = cap;
-let settled = false;
-const settle = (ok)=>{
-if(settled) return; settled = true;
-imgSlotRelease();
-if(ok) span._imgJob = false;
-};
-const failAttempt = ()=>{
-if(settled) return; settle(false);
-if(attemptNo <= RETRY_WAITS.length && span.isConnected){
-span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
-setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
-} else { span._imgJob = false; tryLocal(); }
-};
-uim.onload = ()=>{ settle(true); imgLoadDone(span); phFit(uim); };
-uim.onerror = failAttempt;
-span.innerHTML=''; span.appendChild(uim);
-/* retries carry a cache-buster: a second <img> for the identical URL
-   joins the SAME in-flight fetch, so retrying a hung request with the
-   clean URL would just hang on the same connection. The thumbnail
-   endpoint ignores unknown params. */
-uim.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
-/* v29.1: the fetch is the loading the user actually waits on —
-   label it (an instantly-cached answer is already complete and
-   gets no label; the label comes off in uim.onload, and a
-   terminal failure replaces the holder content wholesale). */
-if(!uim.complete) imgLoadLabel(span, true);
-/* v2.34: load watchdog. On the user's device, thumbnail requests were
-   observed to neither load nor error — the tile stayed a black box
-   forever because the wordmark had already been erased and the retry
-   chain is error-driven. A request that has not completed within
-   IMG_LOAD_TIMEOUT_MS is treated as failed, so the chain (and the
-   v2.31 self-heal behind it) can move and the tile can fall back to a
-   captioned plate instead of a silent void. */
-setTimeout(()=>{ if(!settled && !uim.complete) failAttempt(); }, IMG_LOAD_TIMEOUT_MS);
+/* hard timeout: an attempt that has neither loaded nor errored
+   within the cap counts as failed and the walk moves on. The cap
+   is 12s, not the old 7s: the old cap aborted slow-but-healthy
+   mobile loads mid-flight, and with restarts from byte 0 that
+   livelocked the chain (diagnosis (a) above). Local candidates
+   are same-origin and get a shorter cap. */
+setTimeout(()=>{ if(!settled && !im.complete) settle(false); }, at.local? IMG_LOCAL_TIMEOUT_MS: IMG_ATTEMPT_TIMEOUT_MS);
 });
 };
-tryUrl();
-return;
-}
-tryLocal();
+runAttempt();
 }
 const imgObserver = ('IntersectionObserver' in window)? new IntersectionObserver(entries=>{
 entries.forEach(en=>{
@@ -18103,7 +18130,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計36点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、ベーコン2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは212件。残り572件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計36点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、ベーコン2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは296件。残り488件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22188,7 +22215,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.17.2';
+const APP_VERSION = '32.17.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
