@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.15.0">
+<meta name="app-version" content="32.16.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -407,6 +407,18 @@ figure.work .ph{position:relative; aspect-ratio:4/3; background:var(--bg2); disp
 .hiresdot{position:absolute; top:3px; right:3px; width:9px; height:9px; border-radius:50%; background:#EBCB6B; border:1px solid rgba(16,14,10,.65); z-index:2; pointer-events:none;}
 .biothumb,.tlthumb{position:relative;}
 figure.work .ph img{width:100%; height:100%; object-fit:cover; display:block;}
+/* v32.16.0 (fix 3): the holder fills the frame, and once the
+   image lands phFit() sets the frame's aspect-ratio to the
+   image's own (clamped), so a wide work no longer sits in a
+   square frame with a void under it (his Warhol report). At the
+   exact ratio, cover == the whole image — nothing is cropped.
+   Beyond the clamps (panoramas, long scrolls) the frame stops
+   at the cap and the image letterboxes (contain) instead of
+   being cropped. The person-list grid keeps its uniform frames
+   (phFit skips #listbody — the pinned list design). */
+figure.work .ph>.imgholder{width:100%; height:100%; display:flex; align-items:center; justify-content:center;}
+figure.work .ph.arx img{object-fit:contain;}
+.grid figure.work:has(>.ph.arnat), .gallery figure.work:has(>.ph.arnat){align-self:start;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
 /* v27.9 (§6.4-3 of the return-jump diagnosis): a plate whose image
    has not arrived yet must read as "loading", never as a black void
@@ -891,17 +903,19 @@ h3.subhead:first-child{margin-top:8px;}
 #viewer .vbar button{background:none; border:1px solid var(--lineStrong); color:var(--text); padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
 #viewer .vcount{color:var(--muted); font-size:13px;}
 /* exhibitions */
-.exitem{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:12px; display:flex; gap:12px;}
-.exitem .exbody{flex:1; min-width:0;}
-.exitem .ea{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.4; margin-top:1px;}
-.exrep{flex:0 0 104px; width:104px; height:138px; border-radius:10px; overflow:hidden; background:var(--bg2); border:none; padding:0; cursor:pointer;}
-.exrep .ph{width:100%; height:100%;}
-.exrep .ph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
-.exrep .ph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
-.exitem .et{font-family:var(--serif); font-size:16px; line-height:1.45;}
-.exitem .em{font-size:13.5px; color:var(--muted); margin-top:2px;}
-.exitem .edates{font-size:13.5px; margin-top:2px;}
-.exitem .days{color:var(--accent); font-weight:600;}
+/* v32.16.0: the exhibitions view / museum exhibition lists are
+   grid cards now (the pinned card form — image on top, meta
+   below, the surface's own 5-mode switch swapping grid classes).
+   The old .exitem horizontal rows are retired. */
+.exgridcard .calbadge{vertical-align:2px; margin-left:6px;}
+.exgridcard .exartist{font-family:var(--serif); font-size:13.5px; font-weight:600; margin-top:2px;}
+.exgridcard .exvenue{font-size:12.5px; color:var(--muted); margin-top:2px;}
+.exgridcard .exvenue .linkbtn{font-size:12.5px; min-height:0; padding:0; text-decoration:underline;}
+.exgridcard .exdays{color:var(--accent); font-weight:600; font-size:12.5px; margin-top:2px;}
+.exgridcard .exnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.exgridcard .exacts{display:flex; gap:16px; margin-top:2px;}
+.exgridcard .exacts .linkbtn{font-size:12.5px; min-height:40px; padding:0; text-decoration:underline;}
+.exgridcard .exacts a{display:inline-flex; align-items:center; min-height:40px; font-size:12.5px;}
 button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px; font-weight:600; padding:0 6px; min-height:48px; display:inline-flex; align-items:center;}
 /* v2.37: gallery links at the top of the exhibitions view.
    v2.39: compact 2-column grid (23 full rows pushed the exhibition
@@ -952,14 +966,10 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .grid.mini .exdcard .exdmeta{display:none;}
 .grid.micro .exdcard .exdmeta{display:none;}
 .grid.micro .exdcard .exdbadge{display:none;}
-:root[data-exmode="wide"] .exitem .exposter, :root[data-exmode="wide"] .exitem .exrep{flex-basis:150px; width:150px; height:199px;}
-:root[data-exmode="compact"] .exitem .exposter, :root[data-exmode="compact"] .exitem .exrep{flex-basis:80px; width:80px; height:106px;}
-:root[data-exmode="mini"] .exitem .exposter, :root[data-exmode="mini"] .exitem .exrep{flex-basis:58px; width:58px; height:77px;}
-:root[data-exmode="micro"] .exitem .exposter, :root[data-exmode="micro"] .exitem .exrep{display:none;}
-:root[data-bpmode="wide"] .bpcard .bpfig{width:118px;}
-:root[data-bpmode="compact"] .bpcard .bpfig{width:64px;}
-:root[data-bpmode="mini"] .bpcard .bpfig{width:48px;}
-:root[data-bpmode="micro"] .bpcard .bpfig{display:none;}
+/* v32.16.0: the data-exmode / data-bpmode row-sizing rules are
+   retired — the exhibitions view and the price table are grid
+   cards now and their 5-mode switches swap grid classes in
+   place (setExMode / setBpMode), like every other surface. */
 .galrow{position:relative; display:flex; align-items:baseline; gap:10px; padding:10px 30px 10px 2px; min-height:40px; box-sizing:border-box; border-bottom:1px solid var(--line); text-decoration:none; color:var(--text);}
 /* v2.62: gallery section collapses to one row by default */
 .galhead{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:16.5px; font-weight:700; letter-spacing:.04em; padding:14px 2px 10px; margin-top:14px; min-height:52px; text-align:left; cursor:pointer;}
@@ -1087,7 +1097,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .exnavcard svg{width:25px; height:25px; color:var(--tag); flex:none;}
 .exnavt{display:block; font-size:16.5px; font-weight:700; line-height:1.3;}
 .exnavs{display:block; font-size:11.5px; color:var(--muted); margin-top:1px;}
-.exitem .calbadge{vertical-align:2px; margin-left:7px;}
+
 /* v2.63: works-request bar at the top of the detail works tab */
 .worksreq{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px;}
 .worksreq.wrap{justify-content:flex-start; flex-wrap:wrap; gap:6px 10px;}
@@ -1207,12 +1217,8 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .bpchart{border:1px solid var(--line); border-radius:12px; padding:8px 6px 2px; background:var(--card); margin:0 0 8px}
 .bpdetail{display:flex; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--card2); margin-top:10px}
 .bplink{background:none; border:none; padding:2px 0; color:#d9a441; font-size:13.5px; font-weight:700; cursor:pointer; text-align:left}
-.bprow{display:flex; gap:10px; align-items:center; padding:8px 4px; border-bottom:1px solid var(--line); cursor:pointer}
-.bprank{flex:0 0 26px; text-align:right; font-size:12px; color:var(--muted); font-weight:700}
-.bpcover{flex:0 0 44px; width:44px; height:44px; border-radius:8px; overflow:hidden}
-.bpcover img{width:100%; height:100%; object-fit:cover; display:block}
-.bpprice{margin-left:auto; text-align:right; font-weight:700; font-size:14px; white-space:nowrap}
-.bpprice .pjpy{display:block; font-weight:400}
+/* v32.16.0: .bprow / .bprank / .bpcover / .bpprice (the old
+   price-row CSS) retired with the row markup — see .bpgrid. */
 .biztitle{font-size:21px; font-weight:800; margin:10px 0 8px}
 .bizp{margin:0 0 12px}
 .bizchrow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 14px; margin:0 0 8px; min-height:56px; color:var(--text); font-family:inherit}
@@ -1704,7 +1710,7 @@ button.txtbtn::after{content:''; position:absolute; left:0; right:0; top:-9px; b
 .workedit .txtbtn{min-height:48px; display:inline-flex; align-items:center; padding:6px 12px;}
 .workedit .txtbtn::after{content:none;}
 .workedit input[type=file]{min-height:48px;}
-.exitem a{display:inline-flex; align-items:center; min-height:48px;}
+
 /* focus visibility + input boundaries (3:1) */
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 input.textin:focus, select.textin:focus, textarea.textin:focus, .searchrow input[type=search]:focus{border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);}
@@ -1806,7 +1812,7 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .glossterm{font-family:var(--headfont); font-weight:700;}
 .gterm{font-family:var(--headfont);}
 .proctitle{font-family:var(--headfont); font-weight:700;}
-.exitem .et{font-family:var(--headfont);}
+.exgridcard .nm{font-family:var(--headfont);}
 .tlhead h2{font-family:var(--headfont);}
 .tlbig{font-family:var(--headfont);}
 .tltitle{font-family:var(--headfont);}
@@ -1898,19 +1904,16 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .xaldays{flex:none; text-align:center; background:var(--accent); color:var(--bg); border-radius:10px; padding:7px 9px; min-width:58px; box-sizing:border-box;}
 .xaldays b{display:block; font-size:15px; line-height:1.15;}
 .xaldays span{font-size:11px;}
-/* price cards (item 13) */
-.bpcard{display:flex; gap:11px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
-.bpcard .bpfig{flex:none; width:86px;}
-.bpcard .bpfig figure.work{margin:0;}
-.bpinfo{flex:1; min-width:0;}
-.bpinfo>span{display:block;}
-.bpfig .ph{border-radius:8px; overflow:hidden;}
-.bprank{display:inline-block; background:var(--accent); color:var(--bg); font-size:11px; font-weight:700; border-radius:999px; padding:1px 8px; margin-bottom:4px;}
-.bptitle{font-family:var(--serif); font-size:14.5px; font-weight:600; line-height:1.4;}
-.bpartist{color:var(--muted); font-size:12.5px; margin-top:2px; text-decoration:underline;}
-.bpprice{font-size:16.5px; font-weight:700; margin-top:5px;}
-.bpprice .bpjpy{color:var(--accent); font-size:13px; font-weight:600; margin-left:6px;}
-.bpmeta{color:var(--muted); font-size:11.5px; margin-top:3px; line-height:1.5;}
+/* price cards — v32.16.0: the price table is the pinned grid
+   card form now (image on top; title, artist, price, house/year
+   below), its 5-mode switch swapping the .bpgrid mode class.
+   The v32.4.0 horizontal .bpcard rows are retired. */
+.bpgrid figure.work{position:relative;}
+.bprankchip{position:absolute; top:6px; left:6px; z-index:3; background:var(--accent); color:var(--bg); font-size:11.5px; font-weight:700; border-radius:999px; padding:2px 9px;}
+.bpprice2{font-size:16.5px; font-weight:700; margin-top:4px;}
+.bpprice2 .bpjpy{color:var(--accent); font-size:13px; font-weight:600; margin-left:6px;}
+.bpgrid .bparticle{font-size:12.5px; color:var(--muted); margin-top:2px; text-decoration:underline;}
+.bpgrid .bpmeta2{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
 /* word / jiji artist cards (item 13) */
 .xwcard{display:flex; gap:11px; align-items:center; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
 .xwcard .xwfig{flex:none; width:64px;}
@@ -1935,6 +1938,19 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .figtable{width:100%; border-collapse:collapse; font-size:13px;}
 .figtable th, .figtable td{border:1px solid var(--line); padding:8px 9px; text-align:left; line-height:1.5; vertical-align:top;}
 .figtable th{background:var(--bg2); font-family:var(--serif);}
+/* v32.16.0 (fix 1): figures open large on tap. The hint sits
+   under every zoomable figure; the overlay re-renders the same
+   SVG/table at ~1.9x in a scrollable stage, closed by a pill
+   back button that never scrolls away (flex head row). */
+.figzoomhint{font-size:11px; color:var(--muted); text-align:right; margin-top:4px;}
+.figsvg.zoomable, .figtablewrap.zoomable{cursor:zoom-in;}
+#figzoom{position:fixed; inset:0; z-index:120; background:var(--bg); display:flex; flex-direction:column;}
+#figzoom.hidden{display:none;}
+#figzoom .fzhead{flex:none; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center;}
+#figzoom .fzstage{flex:1 1 auto; overflow:auto; padding:10px 14px calc(18px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch;}
+#figzoom .fzstage .figsvg{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:14px 12px; display:inline-block;}
+#figzoom .fzstage .figtable{font-size:16.5px; background:var(--bg2);}
+#figzoom .fzstage .figtable th, #figzoom .fzstage .figtable td{padding:10px 11px;}
 /* makers views (item 6) */
 .mksearch{width:100%; box-sizing:border-box; background:var(--bg2); border:1px solid var(--line); border-radius:999px; color:var(--text); padding:10px 14px; font-size:15px; margin:10px 0 4px;}
 .mkgrouphead{position:sticky; top:var(--hdrh); z-index:5; background:var(--bg); padding:10px 2px 6px; font-family:var(--serif); font-size:16px; font-weight:600;}
@@ -2035,6 +2051,11 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
 </nav>
 <div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
+
+<div id="figzoom" class="hidden" role="dialog" aria-label="図の拡大表示">
+  <div class="fzhead"><button class="backbtn" onclick="closeFigZoom()">‹ 戻る</button></div>
+  <div class="fzstage" id="fzstage"></div>
+</div>
 
 <div id="viewer">
   <button id="vthumb" onclick="viewerSetThumb()">サムネにする</button>
@@ -10418,6 +10439,31 @@ imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive);
 q.run();
 }
 }
+/* v32.16.0 (fix 3): once a work image lands, fit its .ph frame
+   to the image's own aspect ratio (clamped 0.55..2.0) so wide
+   or tall works leave no void in the frame and are not cropped
+   either; beyond the clamps the frame stops at the cap and the
+   image letterboxes (.arx -> contain). Excluded: the person
+   list (#listbody — uniform frames are the pinned list design),
+   maker surfaces (.mkph is not a .ph; the makers grid uses its
+   own tiles) and the exhibition poster block (.exposter keeps
+   its designed frame). */
+function phFit(img){
+if(!img || !img.naturalWidth || !img.naturalHeight) return;
+const ph = img.closest('.ph'); if(!ph) return;
+if(ph.closest('#listbody') || ph.closest('.exposter')) return;
+let r = img.naturalWidth / img.naturalHeight;
+const clamped = Math.max(0.55, Math.min(2.0, r));
+if(clamped !== r) ph.classList.add('arx'); else ph.classList.remove('arx');
+ph.style.aspectRatio = clamped.toFixed(3) + ' / 1';
+ph.classList.add('arnat');
+}
+function phFitSpan(span){
+if(!span) return;
+const im = span.querySelector('img'); if(!im) return;
+if(im.complete && im.naturalWidth) phFit(im);
+else im.addEventListener('load', ()=> phFit(im));
+}
 function hydrateImg(span, work){
 if(!span ||!work) return;
 if(span.dataset && span.dataset.mkinitial != null){ const ph0 = span.closest('.ph'); if(ph0) ph0.classList.remove('mkini'); }
@@ -10429,10 +10475,10 @@ const cap = work.caption||'';
 const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
-if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
+if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; phFitSpan(span); return;}
 span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
 Promise.race([loadDriveImage(fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
-if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">';} else fail();
+if(url){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">'; phFitSpan(span);} else fail();
 }).catch(fail);
 return;
 }
@@ -10448,7 +10494,7 @@ const im = document.createElement('img');
 im.loading = 'eager'; im.alt = cap;
 let i = 0;
 im.onerror = ()=>{ i++; if(i<cands.length){ im.src = cands[i];} else fail();};
-im.onload = ()=>{ imgLoadDone(span); };
+im.onload = ()=>{ imgLoadDone(span); phFit(im); };
 span.innerHTML=''; span.appendChild(im);
 im.src = cands[0];
 /* v29.1: say so while the local fetch is in flight (a cached
@@ -10492,7 +10538,7 @@ span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
 setTimeout(tryUrl, RETRY_WAITS[attemptNo-1] + Math.floor(Math.random()*250));
 } else { span._imgJob = false; tryLocal(); }
 };
-uim.onload = ()=>{ settle(true); imgLoadDone(span); };
+uim.onload = ()=>{ settle(true); imgLoadDone(span); phFit(uim); };
 uim.onerror = failAttempt;
 span.innerHTML=''; span.appendChild(uim);
 /* retries carry a cache-buster: a second <img> for the identical URL
@@ -11832,14 +11878,17 @@ function renderBizPrice(){
   if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
   h += '<div class="smodewrap">' + surfModebarHTML('bp', 'setBpMode') + '</div>';
   const rows = pts.slice().sort((a, b) => (b.jpy == null ? -1 : b.jpy) - (a.jpy == null ? -1 : a.jpy));
-  /* v32.4.0 (item 13): the price table is cards now — the app's
-     standard form (thumbnail + title + name + the number large).
-     The image is the priced work's own photo when the record
-     carries one; otherwise the artist's representative work;
-     otherwise the designed initial tile — never a bare text row
-     and never a stuck loading plate. */
+  /* v32.16.0 (fix 2): the price table is the pinned GRID card
+     form — large image on top, then title, artist, the price
+     large, house ・ year; the rank rides as a chip on the
+     image. The 5-mode switch (zukan.smode.bp) swaps the grid's
+     mode class in place (setBpMode). The image is the priced
+     work's own photo when the record carries one; otherwise
+     the artist's representative work; otherwise the designed
+     initial tile. (v32.4.0's horizontal row "cards" were what
+     his 2026-11-16 22:09 screenshot flagged as not cards.) */
   const bpFigStore = [];
-  h += rows.map((pt, i) => {
+  h += '<div class="grid bpgrid ' + SURF.bp + '" id="bpgrid">' + rows.map((pt, i) => {
     const p = pt.raw;
     let fig;
     if(p.img && p.img.url){
@@ -11851,14 +11900,14 @@ function renderBizPrice(){
       fig = th? '<div class="ph" data-work="' + escA(pt.pid) + '" data-ds="' + pt.ds + '">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
         : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(pt.artist || '')[0] || '')) + '</span>図版なし</span></div>';
     }
-    return '<button class="bpcard" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
-      + '<span class="bpfig"><figure class="work">' + fig + '</figure></span>'
-      + '<span class="bpinfo"><span class="bprank">' + (i + 1) + '位</span>'
-      + '<span class="bptitle">' + esc(p.work) + '</span>'
-      + '<span class="bpartist">' + esc(pt.artist) + '</span>'
-      + '<span class="bpprice">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="bpjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</span>'
-      + '<span class="bpmeta">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</span></span></button>';
-  }).join('');
+    return '<figure class="work" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
+      + fig
+      + '<span class="bprankchip">' + (i + 1) + '位</span>'
+      + '<figcaption><div class="nm">' + esc(p.work) + '</div>'
+      + '<div class="bparticle">' + esc(pt.artist) + '</div>'
+      + '<div class="bpprice2">' + esc(bpFmtPrice(p)) + (pt.jpy != null && p.currency && p.currency !== 'JPY' ? '<span class="bpjpy">≈ ' + esc(fmtJPYShort(pt.jpy)) + '</span>' : '') + '</div>'
+      + '<div class="bpmeta2">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div></figcaption></figure>';
+  }).join('') + '</div>';
   el.innerHTML = h + '</div>';
   wireListImages(el);
   el.querySelectorAll('[data-bpfig]').forEach(ph=>{
@@ -11944,6 +11993,31 @@ function figOpenDetail(ds, id){
   if(gp && !gp.classList.contains('hidden')) closeGuide();
   openCrossDetail(ds, id);
 }
+/* v32.16.0 (fix 1): tap-to-enlarge for article figures. The
+   tapped figure's SVG (or table) is cloned into a full-screen
+   stage at ~1.9x and panned by scrolling; the pill back button
+   in the overlay's head row closes it. 'works' figures are not
+   zoomed this way — their cards open the artist / the viewer. */
+function openFigZoom(el){
+  const stage = $('fzstage'), ov = $('figzoom'); if(!stage || !ov) return;
+  const src = el.querySelector('svg') || el.querySelector('table'); if(!src) return;
+  stage.innerHTML = '';
+  const clone = src.cloneNode(true);
+  if(clone.tagName.toLowerCase() === 'svg'){
+    const vb = (clone.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+    const wrap = document.createElement('div'); wrap.className = 'figsvg';
+    if(vb.length === 4 && vb[2] > 0){ clone.style.width = Math.round(vb[2] * 1.9) + 'px'; clone.style.height = 'auto'; }
+    wrap.appendChild(clone); stage.appendChild(wrap);
+  } else {
+    stage.appendChild(clone);
+  }
+  ov.classList.remove('hidden');
+  stage.scrollTop = 0; stage.scrollLeft = 0;
+}
+function closeFigZoom(){
+  const ov = $('figzoom'); if(ov) ov.classList.add('hidden');
+  const stage = $('fzstage'); if(stage) stage.innerHTML = '';
+}
 function bizFigsHTML(figs){
   if(!Array.isArray(figs) || !figs.length) return '';
   return figs.map(f=>{
@@ -11961,11 +12035,11 @@ function bizFigsHTML(figs){
     if(f.type === 'table'){
       const head = (f.head || []).map(c=>'<th>' + esc(c) + '</th>').join('');
       const rows = (f.rows || []).map(r=>'<tr>' + r.map(c=>'<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
-      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<table class="figtable">' + (head? '<tr>' + head + '</tr>': '') + rows + '</table>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figtablewrap zoomable" onclick="openFigZoom(this)"><table class="figtable">' + (head? '<tr>' + head + '</tr>': '') + rows + '</table></div><div class="figzoomhint">表はタップで拡大できます</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     if(f.type === 'svg'){
       const inner = bizFigSVG(f); if(!inner) return '';
-      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figsvg">' + inner + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figsvg zoomable" onclick="openFigZoom(this)">' + inner + '</div><div class="figzoomhint">図はタップで拡大できます</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     return '';
   }).join('');
@@ -12000,6 +12074,28 @@ function bizFigSVG(f){
   }
   if(f.kind === 'flow'){
     const steps = f.steps || []; if(steps.length < 2) return '';
+    if(steps.length >= 3){
+      /* v32.16.0 (fix 1): 3+ steps reflow VERTICALLY. The
+         horizontal chain for a 5-step flow is 662 units wide;
+         at a ~358px phone column its 12px titles landed at
+         ~6.5px (his 2026-11-16 22:04 screenshot of the money
+         flow in 「懐と生活」). Stacked full-width boxes keep
+         titles at 13.5 units and subs at 11 — full size at the
+         same column width. 2-step flows stay horizontal (260
+         units wide, they scale UP to the column). */
+      const W = 340, bx = 4, bw2 = W - 8, cx = W / 2, agap = 16;
+      let y = 4, body = '';
+      steps.forEach((st, i)=>{
+        const tl = sSplit(st.t, 16), sl = st.s? sSplit(st.s, 24): [];
+        const bh2 = 12 + tl.length * 15 + (sl.length? 3 + sl.length * 14.5: 0) + 8;
+        body += box(bx, y, bw2, bh2);
+        body += tl.map((ln, li)=> '<text x="' + cx + '" y="' + (y + 12 + 13.5 + li * 15) + '" font-size="13.5" font-weight="600" fill="var(--text)" text-anchor="middle" font-family="var(--serif)">' + esc(ln) + '</text>').join('');
+        body += sl.map((ln, li)=> '<text x="' + cx + '" y="' + (y + 12 + tl.length * 15 + 3 + 12 + li * 14.5) + '" font-size="12" fill="var(--muted)" text-anchor="middle">' + esc(ln) + '</text>').join('');
+        if(i < steps.length - 1) body += '<path d="M' + cx + ' ' + (y + bh2 + 2) + ' L' + cx + ' ' + (y + bh2 + agap - 2) + '" stroke="var(--accent)" stroke-width="1.6"/><path d="M' + (cx - 4) + ' ' + (y + bh2 + agap - 7) + ' L' + cx + ' ' + (y + bh2 + agap - 1) + ' L' + (cx + 4) + ' ' + (y + bh2 + agap - 7) + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/>';
+        y += bh2 + agap;
+      });
+      return '<svg viewBox="0 0 ' + W + ' ' + (y - agap + 4) + '" role="img">' + body + '</svg>';
+    }
     const bw = 118, bh = 62, gap = 16, W = steps.length * bw + (steps.length - 1) * gap + 8, H = bh + 16;
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
     steps.forEach((st, i)=>{ const x = 4 + i * (bw + gap); s += box(x, 8, bw, bh) + T(x + bw / 2, 30, st.t, 12, 'middle', 600) + S2(x + bw / 2, 45, st.s, 11); if(i < steps.length - 1) s += '<path d="M' + (x + bw + 2) + ' ' + (8 + bh / 2) + ' L' + (x + bw + gap - 2) + ' ' + (8 + bh / 2) + '" stroke="var(--accent)" stroke-width="1.6"/><path d="M' + (x + bw + gap - 7) + ' ' + (8 + bh / 2 - 4) + ' L' + (x + bw + gap - 2) + ' ' + (8 + bh / 2) + ' L' + (x + bw + gap - 7) + ' ' + (8 + bh / 2 + 4) + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/>'; });
@@ -12468,11 +12564,12 @@ function modeIcon(m){
    carries the 5-mode switch, each with its OWN stored setting
    (zukan.smode.<key>) so surfaces never fight over the list's
    state.mode. gal/gen swap grid classes in place; ex/bp ride a
-   data attribute on <html> that the CSS reads. */
+   data attribute on <html> that the CSS reads.
+   v32.16.0: ex/bp are grid cards now too — their switches swap
+   grid classes in place like all the others, and the <html>
+   data attributes are retired. */
 const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def', exd:'def' };
 Object.keys(SURF).forEach(k=>{ const v = storeGet('zukan.smode.'+k); if(MODES.indexOf(v) >= 0) SURF[k] = v; });
-document.documentElement.dataset.exmode = SURF.ex;
-document.documentElement.dataset.bpmode = SURF.bp;
 function surfModebarHTML(key, fn){
   return '<div class="modebar" data-smodebar="' + key + '" role="group" aria-label="表示の大きさ">'
     + MODES.map(m=> '<button class="' + (SURF[key]===m? 'on': '') + '" onclick="' + fn + '(\'' + m + '\')" aria-label="' + modeLabel(m) + '">' + modeIcon(m) + '</button>').join('') + '</div>';
@@ -12487,9 +12584,9 @@ function setGalMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gal = m; storeSet(
 function setGenMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gen = m; storeSet('zukan.smode.gen', m);
   const g = $('gengrid'); if(g) g.className = 'grid ' + m; syncSurfBar('gen'); }
 function setExMode(m){ if(MODES.indexOf(m) < 0) return; SURF.ex = m; storeSet('zukan.smode.ex', m);
-  document.documentElement.dataset.exmode = m; syncSurfBar('ex'); }
+  document.querySelectorAll('.exgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); }); syncSurfBar('ex'); }
 function setBpMode(m){ if(MODES.indexOf(m) < 0) return; SURF.bp = m; storeSet('zukan.smode.bp', m);
-  document.documentElement.dataset.bpmode = m; syncSurfBar('bp'); }
+  const g = $('bpgrid'); if(g) g.className = 'grid bpgrid ' + m; syncSurfBar('bp'); }
 /* v32.10.0: the Art Business index grid swaps its mode class
    in place, exactly like the genealogy grid (setGenMode) —
    no re-render, no scroll loss. Own stored key, as always. */
@@ -16615,7 +16712,7 @@ function hiresDotHTML(w){ return (w && w.hires)? '<span class="hiresdot"></span>
    ascending, then 過去の展示 newest first, accumulated below.
    "Today" is the device's date at runtime. Cards ride the
    house grid form: the exhibition's poster when the record
-   carries one (e.poster / e.img — the exPosterHTML routes),
+   carries one (e.poster / e.img — the keyWork image route),
    else the artist's representative work works[0] (the v32.8.0
    exhibition-card rule), else no plate at all. There is no
    exhibition detail route in the app, so the card's tap opens
@@ -16663,22 +16760,10 @@ function artistExhibitionsHTML(a, exsOfA){
   if(past.length) h += '<h3 class="subhead">過去の展示</h3><div class="grid exdgrid ' + SURF.exd + '">' + past.map(e=> card(e, false)).join('') + '</div>';
   return h;
 }
-function exPosterHTML(e, idx){
-/* v32.8.0: e.poster (a Drive fileId on the exhibition record)
-   rides the works image route via keyWork — the v32.7.1 Fix A
-   lesson: never build a second image route. */
-if(e && e.poster) return '<div class="exposter" data-exi="'+idx+'" data-poster="1">'+imgHTML(keyWork(e.poster, e.title||''), IMG_SIZE.plate)+'</div>';
-if(!(e && e.img && e.img.url)) return '';
-return '<div class="exposter" data-exi="'+idx+'">'+imgHTML({ caption: e.title||'', img: e.img }, IMG_SIZE.plate)+'</div>';
-}
-function hydrateExPosters(v, exs){
-v.querySelectorAll('.exposter').forEach(el=>{
-const e = exs[+el.getAttribute('data-exi')]; if(!e) return;
-const span = el.querySelector('.imgholder'); if(!span) return;
-span._work = el.hasAttribute('data-poster')? keyWork(e.poster, e.title||''): { caption: e.title||'', img: e.img };
-if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
-});
-}
+/* v32.16.0: exPosterHTML / hydrateExPosters retired with the
+   .exitem rows — exhibition posters now ride the grid cards'
+   data-exg wiring (exGridCardHTML / wireExGrid), still on the
+   works image route via keyWork (the v32.7.1 Fix A lesson). */
 /* v32.8.0: the exhibition card's visual anchor. The point (his
    words) is that the artist is identifiable at a glance, without
    opening the card: a poster when the exhibition has one, else
@@ -16695,12 +16780,45 @@ function exArtistRef(e){
   }
   return null;
 }
-function exVisualHTML(e, idx){
-  if(e && (e.poster || (e.img && e.img.url))) return exPosterHTML(e, idx);
-  const ref = exArtistRef(e); if(!ref) return '';
-  const w = thumbOf(ref.a); if(!w) return '';
-  const click = (view === 'museum')? 'openCrossDetail(\'' + ref.kind + '\',\'' + escA(ref.a.id) + '\')': 'openDetail(\'' + escA(ref.a.id) + '\')';
-  return '<button class="exrep" onclick="' + click + '" aria-label="' + escA(ref.a.name || '') + 'のページ"><div class="ph" data-work="' + escA(ref.a.id) + '" data-ds="' + ref.kind + '">' + imgHTML(w, IMG_SIZE.thumb) + '</div></button>';
+/* v32.16.0 (fix 2): the exhibitions view and the museum page's
+   exhibition list render as GRID CARDS (the pinned form),
+   replacing the .exitem horizontal rows and exVisualHTML.
+   Visual: the poster when the exhibition has one, else the
+   artist's representative work — the v32.8.0 exhibition-card
+   rule. Poster plates ride the works image route via a wiring
+   array (the exdcard pattern); representative-work plates keep
+   the data-work route that wireListImages binds. */
+let exGridWiring = [];
+function exGridCardHTML(e, o){
+  o = o || {};
+  let ph = '';
+  if(e.poster || (e.img && e.img.url)){
+    const wobj = e.poster? keyWork(e.poster, e.title || ''): { caption: e.title || '', img: e.img };
+    const gi = exGridWiring.length; exGridWiring.push(wobj);
+    ph = '<div class="ph" data-exg="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>';
+  } else {
+    const ref = exArtistRef(e);
+    const w = ref? thumbOf(ref.a): null;
+    if(w) ph = '<div class="ph" data-work="' + escA(ref.a.id) + '" data-ds="' + ref.kind + '">' + imgHTML(w, IMG_SIZE.thumb) + '</div>';
+  }
+  let acts = '';
+  if(e.url) acts += '<a href="' + escA(e.url) + '" target="_blank" rel="noopener">公式ページ</a>';
+  if(o.artistBtn) acts += o.artistBtn;
+  return '<figure class="work exgridcard">' + ph + '<figcaption>'
+    + '<div class="nm">' + esc(e.title || '') + (o.badge || '') + '</div>'
+    + (e.artist_name? '<div class="exartist">' + esc(e.artist_name) + '</div>': '')
+    + (o.venueHTML || '')
+    + (o.dates? '<div class="exdmeta dates">' + esc(o.dates) + '</div>': '')
+    + (o.extra || '')
+    + (e.note? '<div class="exnote">' + esc(e.note) + '</div>': '')
+    + (acts? '<div class="exacts">' + acts + '</div>': '')
+    + '</figcaption></figure>';
+}
+function wireExGrid(v){
+  v.querySelectorAll('[data-exg]').forEach(ph=>{
+    const w = exGridWiring[+ph.dataset.exg]; if(!w) return;
+    const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
+  });
 }
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
 let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied | off */
@@ -16963,19 +17081,15 @@ if(dlabel){
   const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
-return '<div class="exitem">'+exVisualHTML(e, exs.indexOf(e))+'<div class="exbody"><div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
-'<div class="edates">'+esc(dates)+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
-(e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
-'<div style="margin-top:4px; display:flex; gap:16px;">'+
-(e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
-(e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
-'</div></div></div>';
+const venueHTML = e.venue? '<div class="exvenue"><button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):'')+'</div>': (e.city? '<div class="exvenue">'+esc(e.city)+'</div>': '');
+const artistBtn = (e.artist_id!=null && artistById(e.artist_id))? '<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>': '';
+return exGridCardHTML(e, { badge: badge, venueHTML: venueHTML, dates: dates, extra: (dk!=null? '<div class="exdays">現在地から約'+(Math.round(dk*10)/10)+'km</div>': ''), artistBtn: artistBtn });
 };
-if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
-if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
+exGridWiring = [];
+if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + cur.map(item).join('') + '</div>';
+if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
 v.innerHTML = html;
-hydrateExPosters(v, exs); wireGalCards(v); wireListImages(v);
+wireExGrid(v); wireGalCards(v); wireListImages(v);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
@@ -17002,20 +17116,16 @@ if(dlabel){
   const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
-return '<div class="exitem">'+exVisualHTML(e, exs.indexOf(e))+'<div class="exbody"><div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
-'<div class="edates">'+esc(dates)+'</div>'+
-(e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
-'<div style="margin-top:4px; display:flex; gap:16px;">'+
-(e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
-(e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
-'</div></div></div>';
+const venueHTML = e.venue? '<div class="exvenue"><button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):'')+'</div>': (e.city? '<div class="exvenue">'+esc(e.city)+'</div>': '');
+const artistBtn = (e.artist_id!=null && artistById(e.artist_id))? '<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>': '';
+return exGridCardHTML(e, { badge: badge, venueHTML: venueHTML, dates: dates, artistBtn: artistBtn });
 };
 let html = head + galleryLinksHTML(exs) + '<div class="smodewrap">' + surfModebarHTML('ex', 'setExMode') + '</div>';
-if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
-if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
+exGridWiring = [];
+if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + cur.map(item).join('') + '</div>';
+if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
-hydrateExPosters(v, exs); wireGalCards(v); wireListImages(v);
+wireExGrid(v); wireGalCards(v); wireListImages(v);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -17094,21 +17204,14 @@ return out;
 }
 function museumExItemHTML(e, i){
 const dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
-let artistLink = '';
+let artistBtn = '';
 if(e.artist_id != null){
 for(const kind of ['artists','designers']){
 const c = CTX[kind];
-if(c && c.DB && c.DB.artists.some(a=>String(a.id)===String(e.artist_id))){ artistLink = '<button class="linkbtn" onclick="openCrossDetail(\''+kind+'\', \''+escA(e.artist_id)+'\')">図鑑で見る</button>'; break; }
+if(c && c.DB && c.DB.artists.some(a=>String(a.id)===String(e.artist_id))){ artistBtn = '<button class="linkbtn" onclick="openCrossDetail(\''+kind+'\', \''+escA(e.artist_id)+'\')">図鑑で見る</button>'; break; }
 }
 }
-return '<div class="exitem">'+exVisualHTML(e, i)+'<div class="exbody"><div class="et">'+esc(e.title||'')+'</div>'
-+'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.city?'　'+esc(e.city):'')+'</div>'
-+'<div class="edates">'+esc(dates)+'</div>'
-+(e.note? '<div class="em">'+esc(e.note)+'</div>': '')
-+'<div style="margin-top:4px; display:flex; gap:16px;">'
-+(e.url? '<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
-+artistLink
-+'</div></div></div>';
+return exGridCardHTML(e, { venueHTML: (e.city? '<div class="exvenue">'+esc(e.city)+'</div>': ''), dates: dates, artistBtn: artistBtn });
 }
 function openMuseumWork(i){
 const e = museumWiring[i]; if(!e) return;
@@ -17131,7 +17234,7 @@ const held = holdingsFor(name);
 museumWiring = held;
 museumExList = museumExhibitions(name);
 const city = (museumExList.find(e=>e.city)||{}).city || (galE? galE.label: '');
-let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+let html = '<button class="backbtn" onclick="showView(\'ex\')">‹ 展示へ戻る</button><div class="tlhead"><h2>'+esc(name)+'</h2></div>';
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
 const shelfWide = (workMode==='wide');
@@ -17148,14 +17251,15 @@ html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.l
 }
 html += '<h2 class="sechead"><span>展示情報</span><span class="cnt">'+museumExList.length+'件</span></h2>';
 if(museumExList.length) html += '<div class="smodewrap">' + surfModebarHTML('ex', 'setExMode') + '</div>';
-html += museumExList.length? museumExList.map((e, i)=> museumExItemHTML(e, i)).join(''): '<div class="empty">この美術館の展示データはまだありません</div>';
+exGridWiring = [];
+html += museumExList.length? '<div class="grid exgrid ' + SURF.ex + '">' + museumExList.map((e, i)=> museumExItemHTML(e, i)).join('') + '</div>': '<div class="empty">この美術館の展示データはまだありません</div>';
 v.innerHTML = html;
 v.querySelectorAll('.mtile .imgholder').forEach((span, i)=>{
 const e = museumWiring[i]; if(!e) return;
 span._work = e.work;
 if(imgObserver) imgObserver.observe(span); else hydrateImg(span, e.work);
 });
-hydrateExPosters(v, museumExList); wireListImages(v);
+wireExGrid(v); wireListImages(v);
 }
 
 /* ---------- news （時事）: v2.62 ----------
@@ -17620,7 +17724,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全605人中346人まで完了。残り259人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：124点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は19人・計31点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は16人（カプーア／安藤忠雄／クランストン／シャーマン／岡崎乾二郎／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は454件入っています。ポスター（キービジュアル）の画像があるのは125件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全605人中346人まで完了。残り259人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は21人・計34点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は18人（カプーア／安藤忠雄／クランストン／ウォーホル／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は484件入っています。展示の画像（ポスターやキービジュアル）があるのは125件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -18082,7 +18186,7 @@ function newsDateLabel(iso){
 function renderNews(){
   const v = $('viewNews'); if(!v) return;
   const d = newsData;
-  let html = '<div class="tlhead"><h2>時事</h2><span class="topsp"></span><button class="txtbtn" onclick="fetchNews()">更新</button><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+  let html = '<button class="backbtn" onclick="showView(\'ex\')">‹ 展示へ戻る</button><div class="tlhead"><h2>時事</h2><span class="topsp"></span><button class="txtbtn" onclick="fetchNews()">更新</button></div>';
   if(!d || !d.updatedAt){
     html += '<div class="empty" style="margin-top:26px">まだ配信がありません。<br>次回の収穫で、社会とアートの時事が届きます。</div>';
     v.innerHTML = html;
@@ -18303,7 +18407,7 @@ function renderCal(){
     Object.values(byDay).forEach(list => list.sort((a,b)=> kindRank[a.kind]-kindRank[b.kind] || String(a.e.title||'').localeCompare(String(b.e.title||''))));
     return byDay;
   };
-  let html = '<div class="tlhead"><h2>展示カレンダー</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'ex\')">← 展示</button></div>';
+  let html = '<button class="backbtn" onclick="showView(\'ex\')">‹ 展示へ戻る</button><div class="tlhead"><h2>展示カレンダー</h2></div>';
   html += '<div class="calsticky" style="top:'+hdrH+'px"><div class="calnav" style="margin-top:0"><button class="btn" onclick="calJump(-1)">‹</button><span class="caltitle" id="calTitle">'+now.getFullYear()+'年'+(now.getMonth()+1)+'月</span><button class="btn" onclick="calJump(1)">›</button><span class="topsp"></span><button class="txtbtn" onclick="calToday()">今月</button></div>';
   html += '<div style="display:flex; align-items:center; gap:10px; margin-top:8px"><span class="seg"><button class="'+(calMode==='grid'?'on':'')+'" onclick="calSetMode(\'grid\')">カレンダー</button><button class="'+(calMode==='bars'?'on':'')+'" onclick="calSetMode(\'bars\')">会期</button></span><span class="small">'+(calMode==='bars'? '期間そのものを横棒で見る': '初日・最終日をチップで見る')+'</span></div>';
   html += exRegionSegHTML();
@@ -20089,11 +20193,10 @@ renderQuiz();
 function renderQuiz(){
 const v = $('viewQuiz'); if(!v) return;
 const s = quizState;
-if(!s){ v.innerHTML = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button></div><div class="empty">クイズデータはまだありません</div>'; return; }
+if(!s){ v.innerHTML = '<button class="backbtn" onclick="showView(\'timeline\')">‹ 年表へ戻る</button><div class="tlhead"><h2>クイズ</h2></div><div class="empty">クイズデータはまだありません</div>'; return; }
 if(s.mode==='cards'){
 const total = s.items.length;
-let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span>'
-+'<button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button>'
+let html = '<button class="backbtn" onclick="showView(\'timeline\')">‹ 年表へ戻る</button><div class="tlhead"><h2>クイズ</h2><span class="topsp"></span>'
 +'<span class="seg"><button class="'+(qzRegion==='west'?'on':'')+'" onclick="setQuizRegion(\'west\')">西洋</button>'
 +'<button class="'+(qzRegion==='japan'?'on':'')+'" onclick="setQuizRegion(\'japan\')">日本</button></span></div>';
 if(!total){ v.innerHTML = html + '<div class="empty">この地域のクイズはまだありません</div>'; return; }
@@ -20123,7 +20226,7 @@ return;
 /* multiple-choice mode (v2.1 shapes) */
 const total = s.items.length;
 if(s.idx >= total){
-v.innerHTML = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button></div>'
+v.innerHTML = '<button class="backbtn" onclick="showView(\'timeline\')">‹ 年表へ戻る</button><div class="tlhead"><h2>クイズ</h2></div>'
 +'<div class="qcard"><div class="qq">'+total+'問中 '+s.score+'問 正解</div>'
 +'<div class="qfeedback">'+(s.score===total? '全問正解です。': (s.score*2>=total? 'よくできました。': 'おつかれさまでした。'))+'</div>'
 +'<button class="blockbtn primary" onclick="startQuiz()">もう一度</button>'
@@ -20131,7 +20234,7 @@ v.innerHTML = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span>
 return;
 }
 const it = s.items[s.idx];
-let html = '<div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><button class="txtbtn" onclick="showView(\'timeline\')">← 年表</button><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
+let html = '<button class="backbtn" onclick="showView(\'timeline\')">‹ 年表へ戻る</button><div class="tlhead"><h2>クイズ</h2><span class="topsp"></span><span class="small">第'+(s.idx+1)+'問 ／ 全'+total+'問</span></div>';
 html += '<div class="qcard"><div class="qq">'+esc(it.q)+'</div>';
 it.choices.forEach((c,i)=>{
 let cls = 'qchoice';
@@ -21687,7 +21790,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.15.0';
+const APP_VERSION = '32.16.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
