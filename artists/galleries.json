@@ -48,6 +48,424 @@
      "kind": "web",
      "url": "https://www.pacegallery.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Gideon Appah"
+    },
+    {
+     "id": null,
+     "name": "Jo Baer"
+    },
+    {
+     "id": null,
+     "name": "Yto Barrada"
+    },
+    {
+     "id": null,
+     "name": "Lynda Benglis"
+    },
+    {
+     "id": "constantin-brancusi",
+     "name": "Constantin Brancusi"
+    },
+    {
+     "id": null,
+     "name": "David Byrne"
+    },
+    {
+     "id": "alexander-calder",
+     "name": "Alexander Calder"
+    },
+    {
+     "id": null,
+     "name": "Harry Callahan"
+    },
+    {
+     "id": "chuck-close",
+     "name": "Chuck Close"
+    },
+    {
+     "id": null,
+     "name": "Nigel Cooke"
+    },
+    {
+     "id": null,
+     "name": "Mary Corse"
+    },
+    {
+     "id": "willem-de-kooning",
+     "name": "Willem de Kooning"
+    },
+    {
+     "id": null,
+     "name": "Huong Dodinh"
+    },
+    {
+     "id": null,
+     "name": "Tara Donovan"
+    },
+    {
+     "id": 106,
+     "name": "Jean Dubuffet"
+    },
+    {
+     "id": null,
+     "name": "Nathalie Du Pasquier"
+    },
+    {
+     "id": null,
+     "name": "Torkwase Dyson"
+    },
+    {
+     "id": null,
+     "name": "Latifa Echakhch"
+    },
+    {
+     "id": "elmgreen-and-dragset",
+     "name": "Elmgreen & Dragset"
+    },
+    {
+     "id": 214,
+     "name": "Pam Evelyn"
+    },
+    {
+     "id": null,
+     "name": "Robert Frank"
+    },
+    {
+     "id": 104,
+     "name": "Adrian Ghenie"
+    },
+    {
+     "id": "sam-gilliam",
+     "name": "Sam Gilliam"
+    },
+    {
+     "id": null,
+     "name": "Sonia Gomes"
+    },
+    {
+     "id": null,
+     "name": "Adolph Gottlieb"
+    },
+    {
+     "id": null,
+     "name": "Emmet Gowin"
+    },
+    {
+     "id": "barbara-hepworth",
+     "name": "Barbara Hepworth"
+    },
+    {
+     "id": 77,
+     "name": "David Hockney"
+    },
+    {
+     "id": 119,
+     "name": "Loie Hollowell"
+    },
+    {
+     "id": null,
+     "name": "Robert Indiana"
+    },
+    {
+     "id": null,
+     "name": "Robert Irwin"
+    },
+    {
+     "id": null,
+     "name": "Matthew Day Jackson"
+    },
+    {
+     "id": null,
+     "name": "Alfred Jensen"
+    },
+    {
+     "id": null,
+     "name": "Emily Kam Kngwarray"
+    },
+    {
+     "id": null,
+     "name": "Kiki Kogelnik"
+    },
+    {
+     "id": null,
+     "name": "Friedrich Kunath"
+    },
+    {
+     "id": 160,
+     "name": "Alicja Kwade"
+    },
+    {
+     "id": null,
+     "name": "Richard Learoyd"
+    },
+    {
+     "id": null,
+     "name": "Lee Kun-Yong"
+    },
+    {
+     "id": 82,
+     "name": "Lee Ufan"
+    },
+    {
+     "id": 74,
+     "name": "Sol LeWitt"
+    },
+    {
+     "id": null,
+     "name": "Li Songsong"
+    },
+    {
+     "id": 215,
+     "name": "Li Hei Di"
+    },
+    {
+     "id": null,
+     "name": "Asher Liftin"
+    },
+    {
+     "id": null,
+     "name": "Maya Lin"
+    },
+    {
+     "id": null,
+     "name": "Robert Longo"
+    },
+    {
+     "id": 211,
+     "name": "David Lynch"
+    },
+    {
+     "id": null,
+     "name": "Sylvia Plimack Mangold"
+    },
+    {
+     "id": null,
+     "name": "Robert Mangold"
+    },
+    {
+     "id": null,
+     "name": "Kylie Manning"
+    },
+    {
+     "id": null,
+     "name": "Mao Yan"
+    },
+    {
+     "id": 105,
+     "name": "Agnes Martin"
+    },
+    {
+     "id": "roberto-matta",
+     "name": "Roberto Matta"
+    },
+    {
+     "id": null,
+     "name": "Prabhavathi Meppayil"
+    },
+    {
+     "id": null,
+     "name": "Beatriz Milhazes"
+    },
+    {
+     "id": null,
+     "name": "Richard Misrach"
+    },
+    {
+     "id": "amedeo-modigliani",
+     "name": "Amedeo Modigliani"
+    },
+    {
+     "id": null,
+     "name": "Maysha Mohamedi"
+    },
+    {
+     "id": 164,
+     "name": "William Monk"
+    },
+    {
+     "id": 90,
+     "name": "Yoshitomo Nara"
+    },
+    {
+     "id": 118,
+     "name": "Robert Nava"
+    },
+    {
+     "id": "kohei-nawa",
+     "name": "Kohei Nawa"
+    },
+    {
+     "id": null,
+     "name": "Louise Nevelson"
+    },
+    {
+     "id": null,
+     "name": "Kenneth Noland"
+    },
+    {
+     "id": null,
+     "name": "Thomas Nozkowski"
+    },
+    {
+     "id": 44,
+     "name": "Kenjiro Okazaki"
+    },
+    {
+     "id": null,
+     "name": "Oldenburg/van Bruggen"
+    },
+    {
+     "id": null,
+     "name": "Paulina Olowska"
+    },
+    {
+     "id": null,
+     "name": "Trevor Paglen"
+    },
+    {
+     "id": null,
+     "name": "Adam Pendleton"
+    },
+    {
+     "id": null,
+     "name": "Irving Penn"
+    },
+    {
+     "id": null,
+     "name": "Marina Perez Simão"
+    },
+    {
+     "id": 63,
+     "name": "Pablo Picasso"
+    },
+    {
+     "id": null,
+     "name": "Alejandro Piñeiro Bello"
+    },
+    {
+     "id": null,
+     "name": "Richard Pousette-Dart"
+    },
+    {
+     "id": 126,
+     "name": "Lauren Quin"
+    },
+    {
+     "id": 70,
+     "name": "Mark Rothko"
+    },
+    {
+     "id": null,
+     "name": "Michal Rovner"
+    },
+    {
+     "id": null,
+     "name": "Lucas Samaras"
+    },
+    {
+     "id": "julian-schnabel",
+     "name": "Julian Schnabel"
+    },
+    {
+     "id": null,
+     "name": "Joel Shapiro"
+    },
+    {
+     "id": null,
+     "name": "Raqib Shaw"
+    },
+    {
+     "id": null,
+     "name": "Arlene Shechet"
+    },
+    {
+     "id": null,
+     "name": "Tony Smith"
+    },
+    {
+     "id": "kiki-smith",
+     "name": "Kiki Smith"
+    },
+    {
+     "id": null,
+     "name": "Song Dong"
+    },
+    {
+     "id": null,
+     "name": "Saul Steinberg"
+    },
+    {
+     "id": null,
+     "name": "Mika Tajima"
+    },
+    {
+     "id": 194,
+     "name": "Antoni Tàpies"
+    },
+    {
+     "id": null,
+     "name": "Paul Thek"
+    },
+    {
+     "id": null,
+     "name": "Hank Willis Thomas"
+    },
+    {
+     "id": 6,
+     "name": "James Turrell"
+    },
+    {
+     "id": null,
+     "name": "Richard Tuttle"
+    },
+    {
+     "id": null,
+     "name": "Leo Villareal"
+    },
+    {
+     "id": null,
+     "name": "Wang Guangle"
+    },
+    {
+     "id": null,
+     "name": "Lawrence Weiner"
+    },
+    {
+     "id": null,
+     "name": "John Wesley"
+    },
+    {
+     "id": null,
+     "name": "Robert Whitman"
+    },
+    {
+     "id": null,
+     "name": "Fred Wilson"
+    },
+    {
+     "id": null,
+     "name": "Anicka Yi"
+    },
+    {
+     "id": null,
+     "name": "Yin Xiuzhen"
+    },
+    {
+     "id": null,
+     "name": "Yoo Youngkuk"
+    },
+    {
+     "id": null,
+     "name": "Zhang Huan"
+    },
+    {
+     "id": null,
+     "name": "Zhang Xiaogang"
+    }
    ]
   },
   {
@@ -88,6 +506,352 @@
      "kind": "web",
      "url": "https://www.davidzwirner.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Tomma Abts"
+    },
+    {
+     "id": null,
+     "name": "Njideka Akunyili Crosby"
+    },
+    {
+     "id": null,
+     "name": "Anni Albers"
+    },
+    {
+     "id": "josef-albers",
+     "name": "Josef Albers"
+    },
+    {
+     "id": null,
+     "name": "Francis Alÿs"
+    },
+    {
+     "id": null,
+     "name": "Mamma Andersson"
+    },
+    {
+     "id": null,
+     "name": "Diane Arbus"
+    },
+    {
+     "id": null,
+     "name": "Michael Armitage"
+    },
+    {
+     "id": null,
+     "name": "Lucas Arruda"
+    },
+    {
+     "id": null,
+     "name": "Ruth Asawa"
+    },
+    {
+     "id": 117,
+     "name": "Katherine Bernhardt"
+    },
+    {
+     "id": null,
+     "name": "Huma Bhabha"
+    },
+    {
+     "id": 93,
+     "name": "Michaël Borremans"
+    },
+    {
+     "id": null,
+     "name": "Joe Bradley"
+    },
+    {
+     "id": null,
+     "name": "R. Crumb"
+    },
+    {
+     "id": null,
+     "name": "Noah Davis"
+    },
+    {
+     "id": null,
+     "name": "Raoul De Keyser"
+    },
+    {
+     "id": null,
+     "name": "Roy DeCarava"
+    },
+    {
+     "id": null,
+     "name": "Philip-Lorca diCorcia"
+    },
+    {
+     "id": null,
+     "name": "Stan Douglas"
+    },
+    {
+     "id": 95,
+     "name": "Marlene Dumas"
+    },
+    {
+     "id": null,
+     "name": "Marcel Dzama"
+    },
+    {
+     "id": null,
+     "name": "William Eggleston"
+    },
+    {
+     "id": "dan-flavin",
+     "name": "Dan Flavin"
+    },
+    {
+     "id": "louis-fratino",
+     "name": "Louis Fratino"
+    },
+    {
+     "id": null,
+     "name": "Suzan Frecon"
+    },
+    {
+     "id": "isa-genzken",
+     "name": "Isa Genzken"
+    },
+    {
+     "id": "felix-gonzalez-torres",
+     "name": "Felix Gonzalez-Torres"
+    },
+    {
+     "id": 219,
+     "name": "Sasha Gordon"
+    },
+    {
+     "id": null,
+     "name": "Scott Kahn"
+    },
+    {
+     "id": 84,
+     "name": "On Kawara"
+    },
+    {
+     "id": null,
+     "name": "Toba Khedoori"
+    },
+    {
+     "id": 20,
+     "name": "Paul Klee"
+    },
+    {
+     "id": "barbara-kruger",
+     "name": "Barbara Kruger"
+    },
+    {
+     "id": null,
+     "name": "Shio Kusaka"
+    },
+    {
+     "id": 88,
+     "name": "Yayoi Kusama"
+    },
+    {
+     "id": null,
+     "name": "Liu Ye"
+    },
+    {
+     "id": null,
+     "name": "Nate Lowman"
+    },
+    {
+     "id": null,
+     "name": "Victor Man"
+    },
+    {
+     "id": 11,
+     "name": "Kerry James Marshall"
+    },
+    {
+     "id": 31,
+     "name": "Gordon Matta-Clark"
+    },
+    {
+     "id": null,
+     "name": "John McCracken"
+    },
+    {
+     "id": null,
+     "name": "Emma McIntyre"
+    },
+    {
+     "id": null,
+     "name": "Sarah Michelson"
+    },
+    {
+     "id": "joan-mitchell",
+     "name": "Joan Mitchell"
+    },
+    {
+     "id": null,
+     "name": "Giorgio Morandi"
+    },
+    {
+     "id": null,
+     "name": "Juan Muñoz"
+    },
+    {
+     "id": null,
+     "name": "Oscar Murillo"
+    },
+    {
+     "id": 90,
+     "name": "Yoshitomo Nara"
+    },
+    {
+     "id": 49,
+     "name": "Alice Neel"
+    },
+    {
+     "id": null,
+     "name": "Yu Nishimura"
+    },
+    {
+     "id": 115,
+     "name": "Chris Ofili"
+    },
+    {
+     "id": null,
+     "name": "Palermo"
+    },
+    {
+     "id": null,
+     "name": "Raymond Pettibon"
+    },
+    {
+     "id": 116,
+     "name": "Elizabeth Peyton"
+    },
+    {
+     "id": "sigmar-polke",
+     "name": "Sigmar Polke"
+    },
+    {
+     "id": null,
+     "name": "Walter Price"
+    },
+    {
+     "id": 97,
+     "name": "Neo Rauch"
+    },
+    {
+     "id": null,
+     "name": "Jason Rhoades"
+    },
+    {
+     "id": 75,
+     "name": "Gerhard Richter"
+    },
+    {
+     "id": "bridget-riley",
+     "name": "Bridget Riley"
+    },
+    {
+     "id": "thomas-ruff",
+     "name": "Thomas Ruff"
+    },
+    {
+     "id": null,
+     "name": "Robert Ryman"
+    },
+    {
+     "id": null,
+     "name": "Fred Sandback"
+    },
+    {
+     "id": null,
+     "name": "Raymond Saunders"
+    },
+    {
+     "id": 112,
+     "name": "Dana Schutz"
+    },
+    {
+     "id": "richard-serra",
+     "name": "Richard Serra"
+    },
+    {
+     "id": null,
+     "name": "Steven Shearer"
+    },
+    {
+     "id": null,
+     "name": "Amy Sillman"
+    },
+    {
+     "id": null,
+     "name": "Josh Smith"
+    },
+    {
+     "id": null,
+     "name": "Al Taylor"
+    },
+    {
+     "id": null,
+     "name": "Diana Thater"
+    },
+    {
+     "id": null,
+     "name": "Robert Therrien"
+    },
+    {
+     "id": "wolfgang-tillmans",
+     "name": "Wolfgang Tillmans"
+    },
+    {
+     "id": "rirkrit-tiravanija",
+     "name": "Rirkrit Tiravanija"
+    },
+    {
+     "id": 48,
+     "name": "Luc Tuymans"
+    },
+    {
+     "id": null,
+     "name": "Andra Ursuţa"
+    },
+    {
+     "id": null,
+     "name": "Merrill Wagner"
+    },
+    {
+     "id": null,
+     "name": "James Welling"
+    },
+    {
+     "id": null,
+     "name": "Franz West"
+    },
+    {
+     "id": null,
+     "name": "Doug Wheeler"
+    },
+    {
+     "id": null,
+     "name": "Christopher Williams"
+    },
+    {
+     "id": null,
+     "name": "Jordan Wolfson"
+    },
+    {
+     "id": 114,
+     "name": "Rose Wylie"
+    },
+    {
+     "id": 113,
+     "name": "Lisa Yuskavage"
+    },
+    {
+     "id": null,
+     "name": "Portia Zvavahera"
+    }
    ]
   },
   {
@@ -106,6 +870,196 @@
     {
      "kind": "web",
      "url": "https://www.victoria-miro.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Doug Aitken"
+    },
+    {
+     "id": null,
+     "name": "Njideka Akunyili Crosby"
+    },
+    {
+     "id": 9,
+     "name": "Milton Avery"
+    },
+    {
+     "id": null,
+     "name": "Jules de Balincourt"
+    },
+    {
+     "id": null,
+     "name": "Ali Banisadr"
+    },
+    {
+     "id": null,
+     "name": "Hernan Bas"
+    },
+    {
+     "id": null,
+     "name": "María Berrío"
+    },
+    {
+     "id": null,
+     "name": "Saskia Colwell"
+    },
+    {
+     "id": null,
+     "name": "Verne Dawson"
+    },
+    {
+     "id": null,
+     "name": "Stan Douglas"
+    },
+    {
+     "id": "elmgreen-and-dragset",
+     "name": "Elmgreen & Dragset"
+    },
+    {
+     "id": null,
+     "name": "Inka Essenhigh"
+    },
+    {
+     "id": null,
+     "name": "Ian Hamilton Finlay"
+    },
+    {
+     "id": null,
+     "name": "David Harrison"
+    },
+    {
+     "id": null,
+     "name": "NS Harsha"
+    },
+    {
+     "id": null,
+     "name": "Alex Hartley"
+    },
+    {
+     "id": null,
+     "name": "Secundino Hernández"
+    },
+    {
+     "id": null,
+     "name": "Ilse D'Hollander"
+    },
+    {
+     "id": null,
+     "name": "Christian Holstad"
+    },
+    {
+     "id": "kudzanai-violet-hwami",
+     "name": "Kudzanai-Violet Hwami"
+    },
+    {
+     "id": null,
+     "name": "Chantal Joffe"
+    },
+    {
+     "id": null,
+     "name": "Isaac Julien"
+    },
+    {
+     "id": null,
+     "name": "Idris Khan"
+    },
+    {
+     "id": 88,
+     "name": "Yayoi Kusama"
+    },
+    {
+     "id": null,
+     "name": "John Kørner"
+    },
+    {
+     "id": null,
+     "name": "Doron Langberg"
+    },
+    {
+     "id": null,
+     "name": "Wangechi Mutu"
+    },
+    {
+     "id": 49,
+     "name": "Alice Neel"
+    },
+    {
+     "id": null,
+     "name": "Maria Nepomuceno"
+    },
+    {
+     "id": 115,
+     "name": "Chris Ofili"
+    },
+    {
+     "id": null,
+     "name": "Jorge Pardo"
+    },
+    {
+     "id": null,
+     "name": "Celia Paul"
+    },
+    {
+     "id": null,
+     "name": "Grayson Perry"
+    },
+    {
+     "id": null,
+     "name": "Paula Rego"
+    },
+    {
+     "id": null,
+     "name": "Tal R"
+    },
+    {
+     "id": null,
+     "name": "Emil Sands"
+    },
+    {
+     "id": null,
+     "name": "Conrad Shawcross"
+    },
+    {
+     "id": null,
+     "name": "Shahzia Sikander"
+    },
+    {
+     "id": null,
+     "name": "Hedda Sterne"
+    },
+    {
+     "id": 132,
+     "name": "Do Ho Suh"
+    },
+    {
+     "id": "sarah-sze",
+     "name": "Sarah Sze"
+    },
+    {
+     "id": null,
+     "name": "Khalif Tahir Thompson"
+    },
+    {
+     "id": null,
+     "name": "Adriana Varejão"
+    },
+    {
+     "id": null,
+     "name": "Barbara Walker"
+    },
+    {
+     "id": null,
+     "name": "Stephen Willats"
+    },
+    {
+     "id": null,
+     "name": "Clare Woods"
+    },
+    {
+     "id": "flora-yukhnovich",
+     "name": "Flora Yukhnovich"
     }
    ]
   },
@@ -126,6 +1080,348 @@
      "kind": "web",
      "url": "https://www.mariangoodman.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Cecile Abish"
+    },
+    {
+     "id": null,
+     "name": "Eija-Liisa Ahtila"
+    },
+    {
+     "id": null,
+     "name": "Chantal Akerman"
+    },
+    {
+     "id": null,
+     "name": "Giovanni Anselmo"
+    },
+    {
+     "id": null,
+     "name": "Leonor Antunes"
+    },
+    {
+     "id": null,
+     "name": "Arakawa"
+    },
+    {
+     "id": null,
+     "name": "Arman"
+    },
+    {
+     "id": null,
+     "name": "Richard Artschwager"
+    },
+    {
+     "id": null,
+     "name": "Nairy Baghramian"
+    },
+    {
+     "id": null,
+     "name": "John Baldessari"
+    },
+    {
+     "id": null,
+     "name": "Lothar Baumgarten"
+    },
+    {
+     "id": null,
+     "name": "Larry Bell & Eric Orr"
+    },
+    {
+     "id": null,
+     "name": "Dara Birnbaum"
+    },
+    {
+     "id": "christian-boltanski",
+     "name": "Christian Boltanski"
+    },
+    {
+     "id": null,
+     "name": "Daniel Boyd"
+    },
+    {
+     "id": "marcel-broodthaers",
+     "name": "Marcel Broodthaers"
+    },
+    {
+     "id": 133,
+     "name": "Maurizio Cattelan"
+    },
+    {
+     "id": null,
+     "name": "James Coleman"
+    },
+    {
+     "id": null,
+     "name": "Tony Cragg"
+    },
+    {
+     "id": null,
+     "name": "Richard Deacon"
+    },
+    {
+     "id": null,
+     "name": "Tacita Dean"
+    },
+    {
+     "id": null,
+     "name": "Edith Dekyndt"
+    },
+    {
+     "id": null,
+     "name": "Rineke Dijkstra"
+    },
+    {
+     "id": null,
+     "name": "Michaela Eichwald"
+    },
+    {
+     "id": null,
+     "name": "Cerith Wyn Evans"
+    },
+    {
+     "id": "dan-flavin",
+     "name": "Dan Flavin"
+    },
+    {
+     "id": null,
+     "name": "Andrea Fraser"
+    },
+    {
+     "id": "bernard-frize",
+     "name": "Bernard Frize"
+    },
+    {
+     "id": null,
+     "name": "David Goldblatt"
+    },
+    {
+     "id": null,
+     "name": "Nan Goldin"
+    },
+    {
+     "id": null,
+     "name": "Dan Graham"
+    },
+    {
+     "id": null,
+     "name": "Pierre Huyghe"
+    },
+    {
+     "id": "cristina-iglesias",
+     "name": "Cristina Iglesias"
+    },
+    {
+     "id": null,
+     "name": "Amar Kanwar"
+    },
+    {
+     "id": null,
+     "name": "Gerard & Kelly"
+    },
+    {
+     "id": "william-kentridge",
+     "name": "William Kentridge"
+    },
+    {
+     "id": null,
+     "name": "Agnieszka Kurant"
+    },
+    {
+     "id": null,
+     "name": "Louise Lawler"
+    },
+    {
+     "id": null,
+     "name": "An-My Lê"
+    },
+    {
+     "id": 74,
+     "name": "Sol Lewitt"
+    },
+    {
+     "id": "roy-lichtenstein",
+     "name": "Roy Lichtenstein"
+    },
+    {
+     "id": null,
+     "name": "Marisol"
+    },
+    {
+     "id": "steve-mcqueen",
+     "name": "Steve McQueen"
+    },
+    {
+     "id": 212,
+     "name": "Julie Mehretu"
+    },
+    {
+     "id": 131,
+     "name": "Ana Mendieta"
+    },
+    {
+     "id": null,
+     "name": "Annette Messager"
+    },
+    {
+     "id": null,
+     "name": "Boris Mikhailov"
+    },
+    {
+     "id": null,
+     "name": "Delcy Morelos"
+    },
+    {
+     "id": null,
+     "name": "Sabine Moritz"
+    },
+    {
+     "id": null,
+     "name": "Juan Muñoz"
+    },
+    {
+     "id": 27,
+     "name": "Bruce Nauman"
+    },
+    {
+     "id": null,
+     "name": "Maria Nordman"
+    },
+    {
+     "id": "claes-oldenburg",
+     "name": "Claes Oldenburg"
+    },
+    {
+     "id": 235,
+     "name": "Gabriel Orozco"
+    },
+    {
+     "id": null,
+     "name": "Giulio Paolini"
+    },
+    {
+     "id": null,
+     "name": "Giuseppe Penone"
+    },
+    {
+     "id": null,
+     "name": "Edi Rama"
+    },
+    {
+     "id": "robert-rauschenberg",
+     "name": "Robert Rauschenberg"
+    },
+    {
+     "id": 75,
+     "name": "Gerhard Richter"
+    },
+    {
+     "id": null,
+     "name": "James Rosenquist"
+    },
+    {
+     "id": "ed-ruscha",
+     "name": "Ed Ruscha"
+    },
+    {
+     "id": null,
+     "name": "Anri Sala"
+    },
+    {
+     "id": null,
+     "name": "Fred Sandback"
+    },
+    {
+     "id": null,
+     "name": "Matt Saunders"
+    },
+    {
+     "id": null,
+     "name": "Tino Sehgal"
+    },
+    {
+     "id": null,
+     "name": "Allan Sekula"
+    },
+    {
+     "id": null,
+     "name": "Paul Sietsema"
+    },
+    {
+     "id": "robert-smithson",
+     "name": "Robert Smithson"
+    },
+    {
+     "id": null,
+     "name": "Ettore Spalletti"
+    },
+    {
+     "id": null,
+     "name": "Tavares Strachan"
+    },
+    {
+     "id": null,
+     "name": "Thomas Struth"
+    },
+    {
+     "id": 86,
+     "name": "Hiroshi Sugimoto"
+    },
+    {
+     "id": null,
+     "name": "Niele Toroni"
+    },
+    {
+     "id": null,
+     "name": "Richard Tuttle"
+    },
+    {
+     "id": null,
+     "name": "Álvaro Urbano"
+    },
+    {
+     "id": null,
+     "name": "Adrián Villar Rojas"
+    },
+    {
+     "id": null,
+     "name": "Danh Vo"
+    },
+    {
+     "id": "jeff-wall",
+     "name": "Jeff Wall"
+    },
+    {
+     "id": 71,
+     "name": "Andy Warhol"
+    },
+    {
+     "id": null,
+     "name": "Lawrence Weiner"
+    },
+    {
+     "id": null,
+     "name": "James Welling"
+    },
+    {
+     "id": "tom-wesselmann",
+     "name": "Tom Wesselmann"
+    },
+    {
+     "id": null,
+     "name": "Robert Wilson"
+    },
+    {
+     "id": null,
+     "name": "Yang Fudong"
+    },
+    {
+     "id": null,
+     "name": "Jongsuk Yoon"
+    }
    ]
   },
   {
@@ -144,6 +1440,328 @@
     {
      "kind": "web",
      "url": "https://ropac.net"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Cory Arcangel"
+    },
+    {
+     "id": null,
+     "name": "Jules de Balincourt"
+    },
+    {
+     "id": null,
+     "name": "Stephan Balkenhol"
+    },
+    {
+     "id": null,
+     "name": "Ali Banisadr"
+    },
+    {
+     "id": null,
+     "name": "Miquel Barceló"
+    },
+    {
+     "id": null,
+     "name": "Alvaro Barrington"
+    },
+    {
+     "id": 102,
+     "name": "Georg Baselitz"
+    },
+    {
+     "id": null,
+     "name": "Oliver Beer"
+    },
+    {
+     "id": null,
+     "name": "Joseph Beuys Estate"
+    },
+    {
+     "id": null,
+     "name": "Marc Brandenburg"
+    },
+    {
+     "id": null,
+     "name": "Lisa Brice"
+    },
+    {
+     "id": null,
+     "name": "Jean-Marc Bustamante"
+    },
+    {
+     "id": null,
+     "name": "Jordan Casteel"
+    },
+    {
+     "id": null,
+     "name": "Heemin Chung"
+    },
+    {
+     "id": null,
+     "name": "Tony Cragg"
+    },
+    {
+     "id": null,
+     "name": "Richard Deacon"
+    },
+    {
+     "id": null,
+     "name": "Martha Diamond"
+    },
+    {
+     "id": 64,
+     "name": "Marcel Duchamp"
+    },
+    {
+     "id": null,
+     "name": "Mandy El-Sayegh"
+    },
+    {
+     "id": null,
+     "name": "VALIE EXPORT"
+    },
+    {
+     "id": null,
+     "name": "Harun Farocki Estate"
+    },
+    {
+     "id": null,
+     "name": "Sylvie Fleury"
+    },
+    {
+     "id": null,
+     "name": "Denzil Forrester"
+    },
+    {
+     "id": 104,
+     "name": "Adrian Ghenie"
+    },
+    {
+     "id": null,
+     "name": "Gilbert & George"
+    },
+    {
+     "id": null,
+     "name": "Amos Gitaï"
+    },
+    {
+     "id": null,
+     "name": "Antony Gormley"
+    },
+    {
+     "id": null,
+     "name": "Han Bing"
+    },
+    {
+     "id": null,
+     "name": "Florentina Holzinger"
+    },
+    {
+     "id": null,
+     "name": "Hans Josephsohn Estate"
+    },
+    {
+     "id": null,
+     "name": "Donald Judd Foundation"
+    },
+    {
+     "id": null,
+     "name": "Martha Jungwirth"
+    },
+    {
+     "id": null,
+     "name": "Ilya & Emilia Kabakov"
+    },
+    {
+     "id": null,
+     "name": "Lee Kang So"
+    },
+    {
+     "id": 10,
+     "name": "Alex Katz"
+    },
+    {
+     "id": 78,
+     "name": "Anselm Kiefer"
+    },
+    {
+     "id": null,
+     "name": "Imi Knoebel"
+    },
+    {
+     "id": null,
+     "name": "Wolfgang Laib"
+    },
+    {
+     "id": null,
+     "name": "Jonathan Lasker"
+    },
+    {
+     "id": null,
+     "name": "Leoncillo Foundation"
+    },
+    {
+     "id": "roy-lichtenstein",
+     "name": "Roy Lichtenstein"
+    },
+    {
+     "id": null,
+     "name": "Robert Longo"
+    },
+    {
+     "id": null,
+     "name": "Liza Lou"
+    },
+    {
+     "id": null,
+     "name": "Marcin Maciejowski"
+    },
+    {
+     "id": null,
+     "name": "Robert Mapplethorpe Foundation"
+    },
+    {
+     "id": null,
+     "name": "Jason Martin"
+    },
+    {
+     "id": null,
+     "name": "Bjarne Melgaard"
+    },
+    {
+     "id": null,
+     "name": "Vera Molnár"
+    },
+    {
+     "id": "ron-mueck",
+     "name": "Ron Mueck"
+    },
+    {
+     "id": null,
+     "name": "Patrick Neu"
+    },
+    {
+     "id": null,
+     "name": "Nick Oberthaler"
+    },
+    {
+     "id": null,
+     "name": "Eva Helene Pade"
+    },
+    {
+     "id": null,
+     "name": "Irving Penn Foundation"
+    },
+    {
+     "id": 116,
+     "name": "Elizabeth Peyton"
+    },
+    {
+     "id": null,
+     "name": "Jack Pierson"
+    },
+    {
+     "id": null,
+     "name": "Rona Pondick"
+    },
+    {
+     "id": null,
+     "name": "Imran Qureshi"
+    },
+    {
+     "id": 201,
+     "name": "Arnulf Rainer"
+    },
+    {
+     "id": null,
+     "name": "Robert Rauschenberg Foundation"
+    },
+    {
+     "id": 210,
+     "name": "Daniel Richter"
+    },
+    {
+     "id": null,
+     "name": "Gerwald Rockenschaub"
+    },
+    {
+     "id": null,
+     "name": "Megan Rooney"
+    },
+    {
+     "id": null,
+     "name": "James Rosenquist Estate"
+    },
+    {
+     "id": null,
+     "name": "Tom Sachs"
+    },
+    {
+     "id": null,
+     "name": "David Salle"
+    },
+    {
+     "id": null,
+     "name": "Markus Schinwald"
+    },
+    {
+     "id": null,
+     "name": "Sean Scully"
+    },
+    {
+     "id": null,
+     "name": "Raqib Shaw"
+    },
+    {
+     "id": null,
+     "name": "Andreas Slominski"
+    },
+    {
+     "id": null,
+     "name": "Joan Snyder"
+    },
+    {
+     "id": null,
+     "name": "Sturtevant Estate"
+    },
+    {
+     "id": null,
+     "name": "Emilio Vedova Foundation"
+    },
+    {
+     "id": null,
+     "name": "Banks Violette"
+    },
+    {
+     "id": null,
+     "name": "Not Vital"
+    },
+    {
+     "id": 71,
+     "name": "Andy Warhol"
+    },
+    {
+     "id": null,
+     "name": "Lawrence Weiner"
+    },
+    {
+     "id": null,
+     "name": "Robert Wilson"
+    },
+    {
+     "id": null,
+     "name": "Erwin Wurm"
+    },
+    {
+     "id": null,
+     "name": "Zadie Xa"
+    },
+    {
+     "id": null,
+     "name": "Yan Pei-Ming"
     }
    ]
   },
@@ -165,6 +1783,184 @@
      "kind": "web",
      "url": "https://www.paulacoopergallery.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Terry Adkins"
+    },
+    {
+     "id": "carl-andre",
+     "name": "Carl Andre"
+    },
+    {
+     "id": null,
+     "name": "Tauba Auerbach"
+    },
+    {
+     "id": null,
+     "name": "Jennifer Bartlett"
+    },
+    {
+     "id": "bernd-hilla-becher",
+     "name": "Bernd & Hilla Becher"
+    },
+    {
+     "id": null,
+     "name": "Céleste Boursier-Mougenot"
+    },
+    {
+     "id": 94,
+     "name": "Cecily Brown"
+    },
+    {
+     "id": null,
+     "name": "Sophie Calle"
+    },
+    {
+     "id": null,
+     "name": "Beatrice Caracciolo"
+    },
+    {
+     "id": null,
+     "name": "Sarah Charlesworth"
+    },
+    {
+     "id": 205,
+     "name": "Bruce Conner"
+    },
+    {
+     "id": null,
+     "name": "Jay DeFeo"
+    },
+    {
+     "id": null,
+     "name": "Mark di Suvero"
+    },
+    {
+     "id": null,
+     "name": "Sam Durant"
+    },
+    {
+     "id": null,
+     "name": "Luciano Fabro"
+    },
+    {
+     "id": null,
+     "name": "Matias Faldbakken"
+    },
+    {
+     "id": null,
+     "name": "Ja'Tovia Gary"
+    },
+    {
+     "id": null,
+     "name": "Liz Glynn"
+    },
+    {
+     "id": null,
+     "name": "Robert Grosvenor"
+    },
+    {
+     "id": "hans-haacke",
+     "name": "Hans Haacke"
+    },
+    {
+     "id": null,
+     "name": "Cynthia Hawkins"
+    },
+    {
+     "id": null,
+     "name": "Douglas Huebler"
+    },
+    {
+     "id": null,
+     "name": "Ralph Lemon"
+    },
+    {
+     "id": null,
+     "name": "Julian Lethbridge"
+    },
+    {
+     "id": 74,
+     "name": "Sol LeWitt"
+    },
+    {
+     "id": null,
+     "name": "Eric N. Mack"
+    },
+    {
+     "id": null,
+     "name": "Christian Marclay"
+    },
+    {
+     "id": null,
+     "name": "Justin Matherly"
+    },
+    {
+     "id": null,
+     "name": "Peter Moore"
+    },
+    {
+     "id": null,
+     "name": "David Novros"
+    },
+    {
+     "id": "claes-oldenburg",
+     "name": "Claes Oldenburg"
+    },
+    {
+     "id": null,
+     "name": "Oldenburg & van Bruggen"
+    },
+    {
+     "id": null,
+     "name": "Paul Pfeiffer"
+    },
+    {
+     "id": null,
+     "name": "Walid Raad"
+    },
+    {
+     "id": null,
+     "name": "Veronica Ryan"
+    },
+    {
+     "id": null,
+     "name": "Joel Shapiro"
+    },
+    {
+     "id": null,
+     "name": "Frank Stella"
+    },
+    {
+     "id": null,
+     "name": "Rudolf Stingel"
+    },
+    {
+     "id": null,
+     "name": "Kelley Walker"
+    },
+    {
+     "id": null,
+     "name": "Dan Walsh"
+    },
+    {
+     "id": null,
+     "name": "Meg Webster"
+    },
+    {
+     "id": null,
+     "name": "Robert Wilson"
+    },
+    {
+     "id": null,
+     "name": "Jackie Winsor"
+    },
+    {
+     "id": null,
+     "name": "Carey Young"
+    }
    ]
   },
   {
@@ -183,6 +1979,328 @@
     {
      "kind": "web",
      "url": "https://spruethmagers.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Henni Alftan"
+    },
+    {
+     "id": null,
+     "name": "Kenneth Anger"
+    },
+    {
+     "id": null,
+     "name": "Keith Arnatt Estate"
+    },
+    {
+     "id": null,
+     "name": "Richard Artschwager Estate"
+    },
+    {
+     "id": null,
+     "name": "Oliver Bak"
+    },
+    {
+     "id": null,
+     "name": "Estate of John Baldessari"
+    },
+    {
+     "id": null,
+     "name": "Estate Bernd & Hilla Becher"
+    },
+    {
+     "id": null,
+     "name": "Gretchen Bender Estate"
+    },
+    {
+     "id": null,
+     "name": "John Bock"
+    },
+    {
+     "id": null,
+     "name": "Alighiero Boetti"
+    },
+    {
+     "id": null,
+     "name": "Cao Fei"
+    },
+    {
+     "id": 92,
+     "name": "George Condo"
+    },
+    {
+     "id": null,
+     "name": "Estate of Walter Dahn"
+    },
+    {
+     "id": null,
+     "name": "Hanne Darboven Foundation"
+    },
+    {
+     "id": null,
+     "name": "Thomas Demand"
+    },
+    {
+     "id": null,
+     "name": "Philip-Lorca diCorcia"
+    },
+    {
+     "id": null,
+     "name": "Thea Djordjadze"
+    },
+    {
+     "id": null,
+     "name": "Lucy Dodd"
+    },
+    {
+     "id": null,
+     "name": "Robert Elfgen"
+    },
+    {
+     "id": null,
+     "name": "Peter Fischli David Weiss Estate"
+    },
+    {
+     "id": null,
+     "name": "Lizzie Fitch / Ryan Trecartin"
+    },
+    {
+     "id": null,
+     "name": "Sylvie Fleury"
+    },
+    {
+     "id": null,
+     "name": "Cyprien Gaillard"
+    },
+    {
+     "id": null,
+     "name": "Gilbert & George"
+    },
+    {
+     "id": "andreas-gursky",
+     "name": "Andreas Gursky"
+    },
+    {
+     "id": null,
+     "name": "Nancy Holt"
+    },
+    {
+     "id": "jenny-holzer",
+     "name": "Jenny Holzer"
+    },
+    {
+     "id": null,
+     "name": "Gary Hume"
+    },
+    {
+     "id": null,
+     "name": "Anne Imhof"
+    },
+    {
+     "id": null,
+     "name": "Robert Irwin"
+    },
+    {
+     "id": null,
+     "name": "Arthur Jafa"
+    },
+    {
+     "id": 73,
+     "name": "Donald Judd"
+    },
+    {
+     "id": null,
+     "name": "Axel Kasseböhmer"
+    },
+    {
+     "id": null,
+     "name": "Craig Kauffman Estate"
+    },
+    {
+     "id": null,
+     "name": "Karen Kilimnik"
+    },
+    {
+     "id": null,
+     "name": "Astrid Klein"
+    },
+    {
+     "id": "joseph-kosuth",
+     "name": "Joseph Kosuth"
+    },
+    {
+     "id": null,
+     "name": "Kraftwerk"
+    },
+    {
+     "id": "barbara-kruger",
+     "name": "Barbara Kruger"
+    },
+    {
+     "id": null,
+     "name": "David Lamelas"
+    },
+    {
+     "id": null,
+     "name": "Louise Lawler"
+    },
+    {
+     "id": null,
+     "name": "Mire Lee"
+    },
+    {
+     "id": null,
+     "name": "David Maljkovic"
+    },
+    {
+     "id": "anthony-mccall",
+     "name": "Anthony McCall"
+    },
+    {
+     "id": null,
+     "name": "Robert Morris"
+    },
+    {
+     "id": null,
+     "name": "Reinhard Mucha"
+    },
+    {
+     "id": null,
+     "name": "Jean-Luc Mylayne"
+    },
+    {
+     "id": null,
+     "name": "Senga Nengudi"
+    },
+    {
+     "id": null,
+     "name": "David Ostrowski"
+    },
+    {
+     "id": null,
+     "name": "Otto Piene Estate"
+    },
+    {
+     "id": null,
+     "name": "Michail Pirgelis"
+    },
+    {
+     "id": null,
+     "name": "Nina Pohl"
+    },
+    {
+     "id": null,
+     "name": "Gala Porras-Kim"
+    },
+    {
+     "id": null,
+     "name": "Stephen Prina"
+    },
+    {
+     "id": null,
+     "name": "Jon Rafman"
+    },
+    {
+     "id": "bridget-riley",
+     "name": "Bridget Riley"
+    },
+    {
+     "id": null,
+     "name": "Pamela Rosenkranz"
+    },
+    {
+     "id": null,
+     "name": "Sterling Ruby"
+    },
+    {
+     "id": "thomas-ruff",
+     "name": "Thomas Ruff"
+    },
+    {
+     "id": "ed-ruscha",
+     "name": "Ed Ruscha"
+    },
+    {
+     "id": null,
+     "name": "Analia Saban"
+    },
+    {
+     "id": null,
+     "name": "David Salle"
+    },
+    {
+     "id": null,
+     "name": "Salvo"
+    },
+    {
+     "id": null,
+     "name": "Thomas Scheibitz"
+    },
+    {
+     "id": null,
+     "name": "Andreas Schulze"
+    },
+    {
+     "id": 79,
+     "name": "Cindy Sherman"
+    },
+    {
+     "id": null,
+     "name": "Stephen Shore"
+    },
+    {
+     "id": null,
+     "name": "Alexandre Singh"
+    },
+    {
+     "id": null,
+     "name": "Hyun-Sook Song"
+    },
+    {
+     "id": null,
+     "name": "Frank Stella"
+    },
+    {
+     "id": null,
+     "name": "Martine Syms"
+    },
+    {
+     "id": null,
+     "name": "Ryan Trecartin"
+    },
+    {
+     "id": null,
+     "name": "Rosemarie Trockel"
+    },
+    {
+     "id": null,
+     "name": "Nora Turato"
+    },
+    {
+     "id": null,
+     "name": "Kaari Upson Estate"
+    },
+    {
+     "id": null,
+     "name": "Marcel van Eeden"
+    },
+    {
+     "id": "kara-walker",
+     "name": "Kara Walker"
+    },
+    {
+     "id": null,
+     "name": "John Waters"
+    },
+    {
+     "id": null,
+     "name": "Andro Wekua"
+    },
+    {
+     "id": null,
+     "name": "Andrea Zittel"
     }
    ]
   },
@@ -203,6 +2321,164 @@
      "kind": "web",
      "url": "https://www.thomasdanegallery.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Igshaan Adams"
+    },
+    {
+     "id": null,
+     "name": "Terry Adkins"
+    },
+    {
+     "id": null,
+     "name": "Hurvin Anderson"
+    },
+    {
+     "id": null,
+     "name": "Lynda Benglis"
+    },
+    {
+     "id": null,
+     "name": "Walead Beshty"
+    },
+    {
+     "id": 94,
+     "name": "Cecily Brown"
+    },
+    {
+     "id": null,
+     "name": "Abraham Cruzvillegas"
+    },
+    {
+     "id": null,
+     "name": "Alexandre da Cunha"
+    },
+    {
+     "id": null,
+     "name": "José Damasceno"
+    },
+    {
+     "id": null,
+     "name": "Michel François"
+    },
+    {
+     "id": null,
+     "name": "Anya Gallaccio"
+    },
+    {
+     "id": null,
+     "name": "Luigi Ghirri"
+    },
+    {
+     "id": null,
+     "name": "Jake Grewal"
+    },
+    {
+     "id": null,
+     "name": "Anthea Hamilton"
+    },
+    {
+     "id": null,
+     "name": "Arturo Herrera"
+    },
+    {
+     "id": null,
+     "name": "Barbara Kasten"
+    },
+    {
+     "id": null,
+     "name": "Phillip King"
+    },
+    {
+     "id": null,
+     "name": "Ella Kruglyanskaya"
+    },
+    {
+     "id": null,
+     "name": "Luisa Lambri"
+    },
+    {
+     "id": null,
+     "name": "Michael Landy"
+    },
+    {
+     "id": null,
+     "name": "Patricia Leite"
+    },
+    {
+     "id": null,
+     "name": "Glenn Ligon"
+    },
+    {
+     "id": "steve-mcqueen",
+     "name": "Steve McQueen"
+    },
+    {
+     "id": null,
+     "name": "Marisa Merz"
+    },
+    {
+     "id": null,
+     "name": "Jean-Luc Moulène"
+    },
+    {
+     "id": null,
+     "name": "Magdalene Odundo"
+    },
+    {
+     "id": null,
+     "name": "Catherine Opie"
+    },
+    {
+     "id": null,
+     "name": "Paul Pfeiffer"
+    },
+    {
+     "id": null,
+     "name": "Jimmy Robert"
+    },
+    {
+     "id": 112,
+     "name": "Dana Schutz"
+    },
+    {
+     "id": null,
+     "name": "Amie Siegel"
+    },
+    {
+     "id": null,
+     "name": "Amy Sillman"
+    },
+    {
+     "id": null,
+     "name": "Caragh Thuring"
+    },
+    {
+     "id": null,
+     "name": "Salman Toor"
+    },
+    {
+     "id": null,
+     "name": "Kelley Walker"
+    },
+    {
+     "id": null,
+     "name": "Xie Nanxing"
+    },
+    {
+     "id": null,
+     "name": "Akram Zaatari"
+    },
+    {
+     "id": 205,
+     "name": "Bruce Conner"
+    },
+    {
+     "id": null,
+     "name": "Bob Law"
+    }
    ]
   },
   {
@@ -220,6 +2496,300 @@
      "kind": "web",
      "url": "https://www.galleriacontinua.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Adel Abdessemed"
+    },
+    {
+     "id": "etel-adnan",
+     "name": "Etel Adnan"
+    },
+    {
+     "id": "ai-weiwei",
+     "name": "Ai Weiwei"
+    },
+    {
+     "id": null,
+     "name": "Leila Alaoui"
+    },
+    {
+     "id": null,
+     "name": "Juan Araujo"
+    },
+    {
+     "id": null,
+     "name": "Kader Attia"
+    },
+    {
+     "id": null,
+     "name": "Barbana Bojadzi"
+    },
+    {
+     "id": null,
+     "name": "Mohamed Bourouissa"
+    },
+    {
+     "id": 168,
+     "name": "Daniel Buren"
+    },
+    {
+     "id": "cai-guo-qiang",
+     "name": "Cai Guo-Qiang"
+    },
+    {
+     "id": null,
+     "name": "Alejandro Campins"
+    },
+    {
+     "id": null,
+     "name": "Iván Capote"
+    },
+    {
+     "id": null,
+     "name": "Yoan Capote"
+    },
+    {
+     "id": null,
+     "name": "Laura Carralero"
+    },
+    {
+     "id": null,
+     "name": "Loris Cecchini"
+    },
+    {
+     "id": null,
+     "name": "Elizabet Cerviño"
+    },
+    {
+     "id": null,
+     "name": "Chen Zhen"
+    },
+    {
+     "id": null,
+     "name": "Nikhil Chopra"
+    },
+    {
+     "id": null,
+     "name": "Marcelo Cidade"
+    },
+    {
+     "id": null,
+     "name": "Carlos Cruz-Diez"
+    },
+    {
+     "id": null,
+     "name": "Jonathas de Andrade"
+    },
+    {
+     "id": null,
+     "name": "Berlinde De Bruyckere"
+    },
+    {
+     "id": null,
+     "name": "Leandro Erlich"
+    },
+    {
+     "id": null,
+     "name": "Carlos Garaicoa"
+    },
+    {
+     "id": null,
+     "name": "Osvaldo González"
+    },
+    {
+     "id": null,
+     "name": "Antony Gormley"
+    },
+    {
+     "id": null,
+     "name": "Gu Dexin"
+    },
+    {
+     "id": null,
+     "name": "Shilpa Gupta"
+    },
+    {
+     "id": null,
+     "name": "Subodh Gupta"
+    },
+    {
+     "id": null,
+     "name": "Carsten Höller"
+    },
+    {
+     "id": null,
+     "name": "Eva Jospin"
+    },
+    {
+     "id": null,
+     "name": "JR"
+    },
+    {
+     "id": null,
+     "name": "Ilya & Emilia Kabakov"
+    },
+    {
+     "id": null,
+     "name": "Zhanna Kadyrova"
+    },
+    {
+     "id": null,
+     "name": "Kan Xuan"
+    },
+    {
+     "id": 3,
+     "name": "Anish Kapoor"
+    },
+    {
+     "id": null,
+     "name": "André Komatsu"
+    },
+    {
+     "id": "jannis-kounellis",
+     "name": "Jannis Kounellis"
+    },
+    {
+     "id": 160,
+     "name": "Alicja Kwade"
+    },
+    {
+     "id": null,
+     "name": "Julio Le Parc"
+    },
+    {
+     "id": null,
+     "name": "Luis López-Chávez"
+    },
+    {
+     "id": null,
+     "name": "Jorge Macchi"
+    },
+    {
+     "id": null,
+     "name": "Ahmed Mater"
+    },
+    {
+     "id": null,
+     "name": "Cildo Meireles"
+    },
+    {
+     "id": null,
+     "name": "José Mesías"
+    },
+    {
+     "id": null,
+     "name": "Sabrina Mezzaqui"
+    },
+    {
+     "id": null,
+     "name": "Moataz Nasr"
+    },
+    {
+     "id": null,
+     "name": "Rudi Ninov"
+    },
+    {
+     "id": null,
+     "name": "Ni Youyu"
+    },
+    {
+     "id": null,
+     "name": "Hans Op de Beeck"
+    },
+    {
+     "id": null,
+     "name": "Ornaghi & Prestinari"
+    },
+    {
+     "id": null,
+     "name": "Giovanni Ozzola"
+    },
+    {
+     "id": null,
+     "name": "Susana Pilar"
+    },
+    {
+     "id": "michelangelo-pistoletto",
+     "name": "Michelangelo Pistoletto"
+    },
+    {
+     "id": null,
+     "name": "Qiu Zhijie"
+    },
+    {
+     "id": null,
+     "name": "Tobias Rehberger"
+    },
+    {
+     "id": null,
+     "name": "Arcangelo Sassolino"
+    },
+    {
+     "id": null,
+     "name": "Manuela Sedmach"
+    },
+    {
+     "id": null,
+     "name": "Serse"
+    },
+    {
+     "id": "kiki-smith",
+     "name": "Kiki Smith"
+    },
+    {
+     "id": null,
+     "name": "Nedko Solakov"
+    },
+    {
+     "id": null,
+     "name": "Marta Spagnoli"
+    },
+    {
+     "id": null,
+     "name": "José Antonio Suárez Londoño"
+    },
+    {
+     "id": 86,
+     "name": "Hiroshi Sugimoto"
+    },
+    {
+     "id": null,
+     "name": "Sun Yuan & Peng Yu"
+    },
+    {
+     "id": null,
+     "name": "Ana Maria Tavares"
+    },
+    {
+     "id": null,
+     "name": "Pascale Marthine Tayou"
+    },
+    {
+     "id": null,
+     "name": "Armando Testa"
+    },
+    {
+     "id": null,
+     "name": "Hank Willis Thomas"
+    },
+    {
+     "id": null,
+     "name": "Nari Ward"
+    },
+    {
+     "id": null,
+     "name": "Sislej Xhafa"
+    },
+    {
+     "id": null,
+     "name": "José Yaque"
+    },
+    {
+     "id": null,
+     "name": "Zhuang Hui"
+    }
    ]
   },
   {
@@ -236,6 +2806,168 @@
     {
      "kind": "web",
      "url": "https://mennour.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Georges Adéagbo"
+    },
+    {
+     "id": null,
+     "name": "Mohammad AlFaraj"
+    },
+    {
+     "id": null,
+     "name": "Neïl Beloufa"
+    },
+    {
+     "id": null,
+     "name": "Hicham Berrada"
+    },
+    {
+     "id": null,
+     "name": "Mohamed Bourouissa"
+    },
+    {
+     "id": null,
+     "name": "Marie Bovo"
+    },
+    {
+     "id": 168,
+     "name": "Daniel Buren"
+    },
+    {
+     "id": null,
+     "name": "Ymane Chabi-Gara"
+    },
+    {
+     "id": null,
+     "name": "Liam Everett"
+    },
+    {
+     "id": null,
+     "name": "Sidival Fila"
+    },
+    {
+     "id": null,
+     "name": "Claire Fontaine"
+    },
+    {
+     "id": null,
+     "name": "Ryan Gander"
+    },
+    {
+     "id": null,
+     "name": "Alberto Garcia Alix"
+    },
+    {
+     "id": null,
+     "name": "Douglas Gordon"
+    },
+    {
+     "id": null,
+     "name": "Dhewadi Hadjab"
+    },
+    {
+     "id": null,
+     "name": "Petrit Halilaj"
+    },
+    {
+     "id": null,
+     "name": "Camille Henrot"
+    },
+    {
+     "id": null,
+     "name": "David Hominal"
+    },
+    {
+     "id": null,
+     "name": "Elizabeth Jaeger"
+    },
+    {
+     "id": null,
+     "name": "Cameron Jamie"
+    },
+    {
+     "id": null,
+     "name": "Ann Veronica Janssens"
+    },
+    {
+     "id": 3,
+     "name": "Anish Kapoor"
+    },
+    {
+     "id": 231,
+     "name": "Tadashi Kawamata"
+    },
+    {
+     "id": null,
+     "name": "Idris Khan"
+    },
+    {
+     "id": 160,
+     "name": "Alicja Kwade"
+    },
+    {
+     "id": null,
+     "name": "Bertrand Lavier"
+    },
+    {
+     "id": 82,
+     "name": "Lee Ufan"
+    },
+    {
+     "id": null,
+     "name": "Matthew Lutz-Kinoy"
+    },
+    {
+     "id": null,
+     "name": "Théo Mercier"
+    },
+    {
+     "id": null,
+     "name": "Christodoulos Panayiotou"
+    },
+    {
+     "id": 158,
+     "name": "Philippe Parreno"
+    },
+    {
+     "id": null,
+     "name": "Adam Pendleton"
+    },
+    {
+     "id": null,
+     "name": "Robin Rhode"
+    },
+    {
+     "id": 135,
+     "name": "Ugo Rondinone"
+    },
+    {
+     "id": null,
+     "name": "Zineb Sedira"
+    },
+    {
+     "id": null,
+     "name": "Yinka Shonibare"
+    },
+    {
+     "id": null,
+     "name": "Brooklin A. Soumahoro"
+    },
+    {
+     "id": null,
+     "name": "Tavares Strachan"
+    },
+    {
+     "id": null,
+     "name": "Mircea Suciu"
+    },
+    {
+     "id": null,
+     "name": "Shen Yuan"
     }
    ]
   },
@@ -316,6 +3048,124 @@
      "kind": "web",
      "url": "https://ts4312r.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "松野純子"
+    },
+    {
+     "id": null,
+     "name": "田中偉一郎"
+    },
+    {
+     "id": null,
+     "name": "西垣肇也樹"
+    },
+    {
+     "id": null,
+     "name": "吉竹昌子"
+    },
+    {
+     "id": null,
+     "name": "蛇目"
+    },
+    {
+     "id": null,
+     "name": "宮本万智"
+    },
+    {
+     "id": null,
+     "name": "山本直彰"
+    },
+    {
+     "id": null,
+     "name": "松倉麗美"
+    },
+    {
+     "id": null,
+     "name": "松澤宥"
+    },
+    {
+     "id": null,
+     "name": "古山結"
+    },
+    {
+     "id": null,
+     "name": "ワーニャ"
+    },
+    {
+     "id": null,
+     "name": "亀井佐知子"
+    },
+    {
+     "id": null,
+     "name": "澤登恭子"
+    },
+    {
+     "id": 83,
+     "name": "高松次郎"
+    },
+    {
+     "id": null,
+     "name": "光藤雄介"
+    },
+    {
+     "id": null,
+     "name": "田淵安一"
+    },
+    {
+     "id": null,
+     "name": "山本努"
+    },
+    {
+     "id": "arisa-nakabayashi",
+     "name": "ナカバヤシアリサ"
+    },
+    {
+     "id": null,
+     "name": "青木悠太朗"
+    },
+    {
+     "id": null,
+     "name": "樋口亜弥"
+    },
+    {
+     "id": null,
+     "name": "陳亭君"
+    },
+    {
+     "id": null,
+     "name": "北村紀子"
+    },
+    {
+     "id": null,
+     "name": "古川流雄"
+    },
+    {
+     "id": null,
+     "name": "日原聖子"
+    },
+    {
+     "id": null,
+     "name": "井上瑞貴"
+    },
+    {
+     "id": null,
+     "name": "賀来庭辰"
+    },
+    {
+     "id": null,
+     "name": "倉田紗希"
+    },
+    {
+     "id": 183,
+     "name": "小林正人"
+    },
+    {
+     "id": null,
+     "name": "三川義久"
+    }
    ]
   },
   {
@@ -332,6 +3182,124 @@
     {
      "kind": "web",
      "url": "https://www.scaithebathhouse.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": 159,
+     "name": "Tony Oursler"
+    },
+    {
+     "id": "genpei-akasegawa",
+     "name": "Genpei Akasegawa"
+    },
+    {
+     "id": null,
+     "name": "Darren Almond"
+    },
+    {
+     "id": "apichatpong-weerasethakul",
+     "name": "Apichatpong Weerasethakul"
+    },
+    {
+     "id": null,
+     "name": "Alfredo Jaar"
+    },
+    {
+     "id": null,
+     "name": "Toshikatsu Endo"
+    },
+    {
+     "id": null,
+     "name": "Daisuke Ohba"
+    },
+    {
+     "id": 3,
+     "name": "Anish Kapoor"
+    },
+    {
+     "id": null,
+     "name": "Yusuke Komuta"
+    },
+    {
+     "id": null,
+     "name": "Pratchaya Phinthong"
+    },
+    {
+     "id": null,
+     "name": "Atsushi Saga"
+    },
+    {
+     "id": null,
+     "name": "Tomoaki Suzuki"
+    },
+    {
+     "id": null,
+     "name": "Bosco Sodi"
+    },
+    {
+     "id": null,
+     "name": "Yuji Takeoka"
+    },
+    {
+     "id": null,
+     "name": "Vajiko Chachkhiani"
+    },
+    {
+     "id": null,
+     "name": "Nobuko Tsuchiya"
+    },
+    {
+     "id": 171,
+     "name": "Natsuyuki Nakanishi"
+    },
+    {
+     "id": "kohei-nawa",
+     "name": "Kohei Nawa"
+    },
+    {
+     "id": null,
+     "name": "Jeppe Hein"
+    },
+    {
+     "id": null,
+     "name": "He Xiangyu"
+    },
+    {
+     "id": "jenny-holzer",
+     "name": "Jenny Holzer"
+    },
+    {
+     "id": "tatsuo-miyajima",
+     "name": "Tatsuo Miyajima"
+    },
+    {
+     "id": null,
+     "name": "Mitsuko Miwa"
+    },
+    {
+     "id": null,
+     "name": "mé"
+    },
+    {
+     "id": null,
+     "name": "Moon Kyungwon & Jeon Joon"
+    },
+    {
+     "id": 180,
+     "name": "Mariko Mori"
+    },
+    {
+     "id": "tadanori-yokoo",
+     "name": "Tadanori Yokoo"
+    },
+    {
+     "id": 82,
+     "name": "Lee Ufan"
+    },
+    {
+     "id": null,
+     "name": "Reijiro Wada"
     }
    ]
   },
@@ -352,6 +3320,212 @@
      "kind": "web",
      "url": "https://www.takaishiigallery.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "AAWAA"
+    },
+    {
+     "id": null,
+     "name": "Tadaaki Kuwayama"
+    },
+    {
+     "id": null,
+     "name": "Amy Adler"
+    },
+    {
+     "id": null,
+     "name": "Sean Landers"
+    },
+    {
+     "id": null,
+     "name": "Leonor Antunes"
+    },
+    {
+     "id": null,
+     "name": "Hendl Helen Mirra"
+    },
+    {
+     "id": null,
+     "name": "Ei Arakawa-Nash"
+    },
+    {
+     "id": 87,
+     "name": "Daido Moriyama"
+    },
+    {
+     "id": "nobuyoshi-araki",
+     "name": "Nobuyoshi Araki"
+    },
+    {
+     "id": "kyoko-murase",
+     "name": "Kyoko Murase"
+    },
+    {
+     "id": null,
+     "name": "Thomas Demand"
+    },
+    {
+     "id": null,
+     "name": "Oscar Murillo"
+    },
+    {
+     "id": "elmgreen-and-dragset",
+     "name": "Elmgreen & Dragset"
+    },
+    {
+     "id": "rei-naito",
+     "name": "Rei Naito"
+    },
+    {
+     "id": null,
+     "name": "Cerith Wyn Evans"
+    },
+    {
+     "id": null,
+     "name": "Shota Nakamura"
+    },
+    {
+     "id": 122,
+     "name": "Jadé Fadojutimi"
+    },
+    {
+     "id": "rika-noguchi",
+     "name": "Rika Noguchi"
+    },
+    {
+     "id": null,
+     "name": "Luke Fowler"
+    },
+    {
+     "id": null,
+     "name": "William J. O'Brien"
+    },
+    {
+     "id": null,
+     "name": "Mario Garcia Torres"
+    },
+    {
+     "id": 161,
+     "name": "Silke Otto-Knapp"
+    },
+    {
+     "id": null,
+     "name": "Yann Gerstberger"
+    },
+    {
+     "id": null,
+     "name": "Sterling Ruby"
+    },
+    {
+     "id": 148,
+     "name": "Tomoo Gokita"
+    },
+    {
+     "id": null,
+     "name": "Hiroe Saeki"
+    },
+    {
+     "id": null,
+     "name": "Dan Graham"
+    },
+    {
+     "id": null,
+     "name": "Makoto Saito"
+    },
+    {
+     "id": "naoya-hatakeyama",
+     "name": "Naoya Hatakeyama"
+    },
+    {
+     "id": null,
+     "name": "Kunié Sugiura"
+    },
+    {
+     "id": null,
+     "name": "Nobuya Hoki"
+    },
+    {
+     "id": null,
+     "name": "Risaku Suzuki"
+    },
+    {
+     "id": null,
+     "name": "Takashi Ishida"
+    },
+    {
+     "id": 176,
+     "name": "Kei Takemura"
+    },
+    {
+     "id": null,
+     "name": "Naoki Ishikawa"
+    },
+    {
+     "id": null,
+     "name": "Maria Taniguchi"
+    },
+    {
+     "id": null,
+     "name": "Zon Ito"
+    },
+    {
+     "id": null,
+     "name": "Sofu Teshigahara"
+    },
+    {
+     "id": null,
+     "name": "Goro Kakei"
+    },
+    {
+     "id": null,
+     "name": "Hirofumi Toyama"
+    },
+    {
+     "id": null,
+     "name": "Sanya Kantarovsky"
+    },
+    {
+     "id": null,
+     "name": "Marijke van Warmerdam"
+    },
+    {
+     "id": null,
+     "name": "Naoto Kawahara"
+    },
+    {
+     "id": null,
+     "name": "Christopher Wool"
+    },
+    {
+     "id": null,
+     "name": "Annette Kelm"
+    },
+    {
+     "id": 177,
+     "name": "Kohei Yamada"
+    },
+    {
+     "id": null,
+     "name": "Yuki Kimura"
+    },
+    {
+     "id": null,
+     "name": "Kansuke Yamamoto"
+    },
+    {
+     "id": "martin-kippenberger",
+     "name": "Martin Kippenberger"
+    },
+    {
+     "id": null,
+     "name": "Hiroka Yamashita"
+    },
+    {
+     "id": null,
+     "name": "Shinpei Kusanagi"
+    }
    ]
   },
   {
@@ -371,6 +3545,244 @@
      "kind": "web",
      "url": "https://www.tomiokoyamagallery.com"
     }
+   ],
+   "artists": [
+    {
+     "id": "ando-masako",
+     "name": "安藤正子"
+    },
+    {
+     "id": null,
+     "name": "青木克世"
+    },
+    {
+     "id": null,
+     "name": "伊藤彩"
+    },
+    {
+     "id": null,
+     "name": "伊藤慶二"
+    },
+    {
+     "id": null,
+     "name": "上田義彦"
+    },
+    {
+     "id": null,
+     "name": "大竹利絵子"
+    },
+    {
+     "id": null,
+     "name": "大野智史"
+    },
+    {
+     "id": null,
+     "name": "大宮エリー"
+    },
+    {
+     "id": null,
+     "name": "岡崎裕子"
+    },
+    {
+     "id": null,
+     "name": "落合多武"
+    },
+    {
+     "id": "yoko-ono",
+     "name": "オノ・ヨーコ"
+    },
+    {
+     "id": 128,
+     "name": "ヴァルダ・カイヴァーノ"
+    },
+    {
+     "id": null,
+     "name": "柏原由佳"
+    },
+    {
+     "id": null,
+     "name": "加藤美佳"
+    },
+    {
+     "id": "hideaki-kawashima",
+     "name": "川島秀明"
+    },
+    {
+     "id": null,
+     "name": "キャサリン・ブラッドフォード"
+    },
+    {
+     "id": 143,
+     "name": "工藤麻紀子"
+    },
+    {
+     "id": null,
+     "name": "国川広"
+    },
+    {
+     "id": null,
+     "name": "倉田悟"
+    },
+    {
+     "id": null,
+     "name": "桑久保徹"
+    },
+    {
+     "id": null,
+     "name": "桑原正彦"
+    },
+    {
+     "id": null,
+     "name": "小出ナオキ"
+    },
+    {
+     "id": 181,
+     "name": "坂本夏子"
+    },
+    {
+     "id": null,
+     "name": "佐藤翠"
+    },
+    {
+     "id": null,
+     "name": "トム・サックス"
+    },
+    {
+     "id": null,
+     "name": "クゥワイ・サムナン"
+    },
+    {
+     "id": null,
+     "name": "シュ・ニン（許寧）"
+    },
+    {
+     "id": 170,
+     "name": "菅木志雄"
+    },
+    {
+     "id": 149,
+     "name": "杉戸洋"
+    },
+    {
+     "id": null,
+     "name": "須藤由希子"
+    },
+    {
+     "id": null,
+     "name": "スナ・フジタ"
+    },
+    {
+     "id": null,
+     "name": "シュシ・スライマン"
+    },
+    {
+     "id": null,
+     "name": "染谷悠子"
+    },
+    {
+     "id": null,
+     "name": "リチャード・タトル"
+    },
+    {
+     "id": null,
+     "name": "シャルロット・デュマ"
+    },
+    {
+     "id": 144,
+     "name": "長井朋子"
+    },
+    {
+     "id": 1,
+     "name": "中園孔二"
+    },
+    {
+     "id": null,
+     "name": "名知聡子"
+    },
+    {
+     "id": null,
+     "name": "エルネスト・ネト"
+    },
+    {
+     "id": "mika-ninagawa",
+     "name": "蜷川実花"
+    },
+    {
+     "id": null,
+     "name": "ベンジャミン・バトラー"
+    },
+    {
+     "id": null,
+     "name": "シュテファン・バルケンホール"
+    },
+    {
+     "id": null,
+     "name": "日高理恵子"
+    },
+    {
+     "id": null,
+     "name": "ソピアップ・ピッチ"
+    },
+    {
+     "id": null,
+     "name": "廣瀬智央"
+    },
+    {
+     "id": null,
+     "name": "風能奈々"
+    },
+    {
+     "id": null,
+     "name": "サム・フォールズ"
+    },
+    {
+     "id": null,
+     "name": "福井篤"
+    },
+    {
+     "id": null,
+     "name": "福永大介"
+    },
+    {
+     "id": null,
+     "name": "藤田匠平"
+    },
+    {
+     "id": null,
+     "name": "増井淑乃"
+    },
+    {
+     "id": "rika-minamitani",
+     "name": "南谷理加"
+    },
+    {
+     "id": null,
+     "name": "ライアン・マッギンレー"
+    },
+    {
+     "id": null,
+     "name": "三宅信太郎"
+    },
+    {
+     "id": null,
+     "name": "パウロ・モンテイロ"
+    },
+    {
+     "id": null,
+     "name": "山野千里"
+    },
+    {
+     "id": null,
+     "name": "山本桂輔"
+    },
+    {
+     "id": null,
+     "name": "油野愛子"
+    },
+    {
+     "id": null,
+     "name": "和田咲良"
+    }
    ]
   },
   {
@@ -387,6 +3799,76 @@
     {
      "kind": "web",
      "url": "https://shugoarts.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": 175,
+     "name": "Masaya Chiba"
+    },
+    {
+     "id": "yukio-fujimoto",
+     "name": "Yukio Fujimoto"
+    },
+    {
+     "id": null,
+     "name": "Carsten Höller"
+    },
+    {
+     "id": 183,
+     "name": "Masato Kobayashi"
+    },
+    {
+     "id": 172,
+     "name": "Lee Kit"
+    },
+    {
+     "id": 178,
+     "name": "Naofumi Maruyama"
+    },
+    {
+     "id": null,
+     "name": "Rina Matsudaira"
+    },
+    {
+     "id": null,
+     "name": "Anju Michele"
+    },
+    {
+     "id": 188,
+     "name": "Ritsue Mishima"
+    },
+    {
+     "id": "yasumasa-morimura",
+     "name": "Yasumasa Morimura"
+    },
+    {
+     "id": null,
+     "name": "Yuji Ono"
+    },
+    {
+     "id": null,
+     "name": "Clara Spilliaert"
+    },
+    {
+     "id": null,
+     "name": "Yoriko Takabatake"
+    },
+    {
+     "id": "shigeo-toya",
+     "name": "Shigeo Toya"
+    },
+    {
+     "id": null,
+     "name": "Atsushi Yamamoto"
+    },
+    {
+     "id": null,
+     "name": "Kan Yasuda"
+    },
+    {
+     "id": "tomoko-yoneda",
+     "name": "Tomoko Yoneda"
     }
    ]
   },
@@ -424,6 +3906,112 @@
      "kind": "web",
      "url": "https://www.imuraart.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Yasuko Iba"
+    },
+    {
+     "id": null,
+     "name": "Jumpei Ueda"
+    },
+    {
+     "id": null,
+     "name": "Masanori Umeda"
+    },
+    {
+     "id": null,
+     "name": "Toru Kamiya"
+    },
+    {
+     "id": null,
+     "name": "Aya Kawato"
+    },
+    {
+     "id": null,
+     "name": "Hideki Kimura"
+    },
+    {
+     "id": null,
+     "name": "Masaharu Sato"
+    },
+    {
+     "id": null,
+     "name": "Suna Fujita"
+    },
+    {
+     "id": null,
+     "name": "Satoshi Someya"
+    },
+    {
+     "id": null,
+     "name": "Kanna Takase"
+    },
+    {
+     "id": null,
+     "name": "Etsuko Tashima"
+    },
+    {
+     "id": null,
+     "name": "Yui Tsujimura"
+    },
+    {
+     "id": null,
+     "name": "Shiro Tsujimura"
+    },
+    {
+     "id": null,
+     "name": "Chihiro Nakahara"
+    },
+    {
+     "id": null,
+     "name": "Chihiro Nagashima"
+    },
+    {
+     "id": null,
+     "name": "Keikou Nishimura"
+    },
+    {
+     "id": null,
+     "name": "Takashi Hinoda"
+    },
+    {
+     "id": null,
+     "name": "Sadaharu Horio"
+    },
+    {
+     "id": null,
+     "name": "Keisuke Matsuura"
+    },
+    {
+     "id": null,
+     "name": "Natsunosuke Mise"
+    },
+    {
+     "id": null,
+     "name": "Yoshimi Miyamoto"
+    },
+    {
+     "id": null,
+     "name": "Fumio Yamazaki"
+    },
+    {
+     "id": null,
+     "name": "Taro Yamamoto"
+    },
+    {
+     "id": null,
+     "name": "Mai Yoneyama"
+    },
+    {
+     "id": null,
+     "name": "Masaomi Raku"
+    },
+    {
+     "id": null,
+     "name": "Kaori Watanabe"
+    }
    ]
   },
   {
@@ -440,6 +4028,76 @@
     {
      "kind": "web",
      "url": "https://www.takeninagawa.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "青木陵子"
+    },
+    {
+     "id": null,
+     "name": "泉太郎"
+    },
+    {
+     "id": null,
+     "name": "ヤン・ヴォ―"
+    },
+    {
+     "id": null,
+     "name": "アンドロ・ウェクア"
+    },
+    {
+     "id": "shinro-ohtake",
+     "name": "大竹伸朗"
+    },
+    {
+     "id": null,
+     "name": "ケン・オキイシ"
+    },
+    {
+     "id": 153,
+     "name": "鴨治晃次"
+    },
+    {
+     "id": null,
+     "name": "河井美咲"
+    },
+    {
+     "id": 174,
+     "name": "笹本晃"
+    },
+    {
+     "id": null,
+     "name": "䑓原蓉子"
+    },
+    {
+     "id": null,
+     "name": "テア・ジョルジャゼ"
+    },
+    {
+     "id": null,
+     "name": "シャルロッテ・ポゼネンスケ"
+    },
+    {
+     "id": null,
+     "name": "松本力"
+    },
+    {
+     "id": null,
+     "name": "宮本和子"
+    },
+    {
+     "id": null,
+     "name": "山崎つる子"
+    },
+    {
+     "id": null,
+     "name": "吉増剛造"
+    },
+    {
+     "id": null,
+     "name": "ワン・ビン（王兵）"
     }
    ]
   },
@@ -505,6 +4163,304 @@
      "kind": "web",
      "url": "https://www.whitecube.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Tunji Adeniyi-Jones"
+    },
+    {
+     "id": "etel-adnan",
+     "name": "Etel Adnan"
+    },
+    {
+     "id": null,
+     "name": "Alia Ahmad"
+    },
+    {
+     "id": null,
+     "name": "Darren Almond"
+    },
+    {
+     "id": null,
+     "name": "Ellen Altfest"
+    },
+    {
+     "id": null,
+     "name": "David Altmejd"
+    },
+    {
+     "id": null,
+     "name": "Michael Armitage"
+    },
+    {
+     "id": null,
+     "name": "Christine Ay Tjoe"
+    },
+    {
+     "id": null,
+     "name": "Miroslaw Balka"
+    },
+    {
+     "id": 102,
+     "name": "Georg Baselitz"
+    },
+    {
+     "id": null,
+     "name": "Bram Bogart"
+    },
+    {
+     "id": "cai-guo-qiang",
+     "name": "Cai Guo-Qiang"
+    },
+    {
+     "id": "chuck-close",
+     "name": "Chuck Close"
+    },
+    {
+     "id": "julie-curtiss",
+     "name": "Julie Curtiss"
+    },
+    {
+     "id": null,
+     "name": "Enrico David"
+    },
+    {
+     "id": null,
+     "name": "Lynne Drexler"
+    },
+    {
+     "id": 103,
+     "name": "Tracey Emin"
+    },
+    {
+     "id": null,
+     "name": "Cerith Wyn Evans"
+    },
+    {
+     "id": null,
+     "name": "Sara Flores"
+    },
+    {
+     "id": null,
+     "name": "Katharina Fritsch"
+    },
+    {
+     "id": "theaster-gates",
+     "name": "Theaster Gates"
+    },
+    {
+     "id": null,
+     "name": "Gilbert & George"
+    },
+    {
+     "id": null,
+     "name": "Louise Giovanelli"
+    },
+    {
+     "id": null,
+     "name": "Antony Gormley"
+    },
+    {
+     "id": "katharina-grosse",
+     "name": "Katharina Grosse"
+    },
+    {
+     "id": "andreas-gursky",
+     "name": "Andreas Gursky"
+    },
+    {
+     "id": "david-hammons",
+     "name": "David Hammons"
+    },
+    {
+     "id": "mona-hatoum",
+     "name": "Mona Hatoum"
+    },
+    {
+     "id": null,
+     "name": "Al Held"
+    },
+    {
+     "id": 52,
+     "name": "Damien Hirst"
+    },
+    {
+     "id": null,
+     "name": "Klára Hosnedlová"
+    },
+    {
+     "id": null,
+     "name": "Marguerite Humeau"
+    },
+    {
+     "id": null,
+     "name": "Richard Hunt"
+    },
+    {
+     "id": null,
+     "name": "Robert Irwin"
+    },
+    {
+     "id": null,
+     "name": "Sergej Jensen"
+    },
+    {
+     "id": null,
+     "name": "Suleman Aqeel Khilji"
+    },
+    {
+     "id": 78,
+     "name": "Anselm Kiefer"
+    },
+    {
+     "id": null,
+     "name": "Rachel Kneebone"
+    },
+    {
+     "id": null,
+     "name": "Imi Knoebel"
+    },
+    {
+     "id": null,
+     "name": "Firenze Lai"
+    },
+    {
+     "id": null,
+     "name": "Liu Wei"
+    },
+    {
+     "id": null,
+     "name": "Danica Lundy"
+    },
+    {
+     "id": "ibrahim-mahama",
+     "name": "Ibrahim Mahama"
+    },
+    {
+     "id": null,
+     "name": "Christian Marclay"
+    },
+    {
+     "id": "yoko-matsumoto",
+     "name": "Yoko Matsumoto"
+    },
+    {
+     "id": null,
+     "name": "Josiah McElheny"
+    },
+    {
+     "id": 212,
+     "name": "Julie Mehretu"
+    },
+    {
+     "id": null,
+     "name": "Beatriz Milhazes"
+    },
+    {
+     "id": null,
+     "name": "Harland Miller"
+    },
+    {
+     "id": null,
+     "name": "Sarah Morris"
+    },
+    {
+     "id": 27,
+     "name": "Bruce Nauman"
+    },
+    {
+     "id": "isamu-noguchi",
+     "name": "Isamu Noguchi"
+    },
+    {
+     "id": null,
+     "name": "Minoru Nomata"
+    },
+    {
+     "id": 235,
+     "name": "Gabriel Orozco"
+    },
+    {
+     "id": null,
+     "name": "Shigeo Otake"
+    },
+    {
+     "id": null,
+     "name": "Virginia Overton"
+    },
+    {
+     "id": null,
+     "name": "Lygia Pape"
+    },
+    {
+     "id": "park-seo-bo",
+     "name": "Park Seo-Bo"
+    },
+    {
+     "id": null,
+     "name": "Howardena Pindell"
+    },
+    {
+     "id": null,
+     "name": "Magnus Plessen"
+    },
+    {
+     "id": null,
+     "name": "Jessica Rankin"
+    },
+    {
+     "id": null,
+     "name": "Marina Rheingantz"
+    },
+    {
+     "id": null,
+     "name": "Doris Salcedo"
+    },
+    {
+     "id": null,
+     "name": "Cinga Samson"
+    },
+    {
+     "id": null,
+     "name": "Ilana Savdie"
+    },
+    {
+     "id": null,
+     "name": "Shao Fan"
+    },
+    {
+     "id": null,
+     "name": "Raqib Shaw"
+    },
+    {
+     "id": null,
+     "name": "Takis"
+    },
+    {
+     "id": null,
+     "name": "TARWUK"
+    },
+    {
+     "id": 124,
+     "name": "Tesfaye Urgessa"
+    },
+    {
+     "id": null,
+     "name": "Danh Vo"
+    },
+    {
+     "id": "jeff-wall",
+     "name": "Jeff Wall"
+    },
+    {
+     "id": null,
+     "name": "Emmi Whitehorse"
+    },
+    {
+     "id": null,
+     "name": "Léon Wuidar"
+    }
    ]
   },
   {
@@ -522,6 +4478,328 @@
      "kind": "web",
      "url": "https://www.perrotin.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Nina Chanel Abney"
+    },
+    {
+     "id": null,
+     "name": "Young-Il Ahn"
+    },
+    {
+     "id": null,
+     "name": "Alma Allen"
+    },
+    {
+     "id": null,
+     "name": "Jean-Marie Appriou"
+    },
+    {
+     "id": null,
+     "name": "Iván Argote"
+    },
+    {
+     "id": null,
+     "name": "Daniel Arsham"
+    },
+    {
+     "id": null,
+     "name": "Cristina BanBan"
+    },
+    {
+     "id": null,
+     "name": "Ali Banisadr"
+    },
+    {
+     "id": null,
+     "name": "Hernan Bas"
+    },
+    {
+     "id": null,
+     "name": "Genesis Belanger"
+    },
+    {
+     "id": null,
+     "name": "Anna-Eva Bergman"
+    },
+    {
+     "id": null,
+     "name": "Jason Boyd Kinsella"
+    },
+    {
+     "id": null,
+     "name": "Sophie Calle"
+    },
+    {
+     "id": 133,
+     "name": "Maurizio Cattelan"
+    },
+    {
+     "id": null,
+     "name": "Lynn Chadwick"
+    },
+    {
+     "id": null,
+     "name": "Julian Charrière"
+    },
+    {
+     "id": null,
+     "name": "Chen Fei"
+    },
+    {
+     "id": null,
+     "name": "Chen Ke"
+    },
+    {
+     "id": null,
+     "name": "Johan Creten"
+    },
+    {
+     "id": null,
+     "name": "Jean-Philippe Delhomme"
+    },
+    {
+     "id": null,
+     "name": "Wim Delvoye"
+    },
+    {
+     "id": null,
+     "name": "Mathilde Denize"
+    },
+    {
+     "id": null,
+     "name": "Nick Doyle"
+    },
+    {
+     "id": null,
+     "name": "Oli Epp"
+    },
+    {
+     "id": null,
+     "name": "Jens Fänge"
+    },
+    {
+     "id": "bernard-frize",
+     "name": "Bernard Frize"
+    },
+    {
+     "id": null,
+     "name": "GELITIN"
+    },
+    {
+     "id": null,
+     "name": "Mehdi Ghadyanloo"
+    },
+    {
+     "id": null,
+     "name": "Elizabeth Glaessner"
+    },
+    {
+     "id": "laurent-grasso",
+     "name": "Laurent Grasso"
+    },
+    {
+     "id": null,
+     "name": "Nancy Graves"
+    },
+    {
+     "id": null,
+     "name": "Todd Gray"
+    },
+    {
+     "id": null,
+     "name": "Vivian Greven"
+    },
+    {
+     "id": null,
+     "name": "Hans Hartung"
+    },
+    {
+     "id": null,
+     "name": "Jeppe Hein"
+    },
+    {
+     "id": null,
+     "name": "Thilo Heinzmann"
+    },
+    {
+     "id": null,
+     "name": "John Henderson"
+    },
+    {
+     "id": null,
+     "name": "Leslie Hewitt"
+    },
+    {
+     "id": null,
+     "name": "Gregor Hildebrandt"
+    },
+    {
+     "id": null,
+     "name": "JR"
+    },
+    {
+     "id": null,
+     "name": "Jesper Just"
+    },
+    {
+     "id": null,
+     "name": "Susumu Kamijo"
+    },
+    {
+     "id": 139,
+     "name": "Izumi Kato"
+    },
+    {
+     "id": null,
+     "name": "Bharti Kher"
+    },
+    {
+     "id": null,
+     "name": "Koak"
+    },
+    {
+     "id": null,
+     "name": "Klara Kristalova"
+    },
+    {
+     "id": null,
+     "name": "Lee Bae"
+    },
+    {
+     "id": null,
+     "name": "Lee Mingwei"
+    },
+    {
+     "id": null,
+     "name": "Nikki Maloof"
+    },
+    {
+     "id": null,
+     "name": "Georges Mathieu"
+    },
+    {
+     "id": null,
+     "name": "Gabriel de la Mora"
+    },
+    {
+     "id": null,
+     "name": "Mr."
+    },
+    {
+     "id": null,
+     "name": "MSCHF"
+    },
+    {
+     "id": 89,
+     "name": "Takashi Murakami"
+    },
+    {
+     "id": null,
+     "name": "Danielle Orchard"
+    },
+    {
+     "id": null,
+     "name": "Otani Workshop"
+    },
+    {
+     "id": null,
+     "name": "Jean-Michel Othoniel"
+    },
+    {
+     "id": null,
+     "name": "GaHee Park"
+    },
+    {
+     "id": "park-seo-bo",
+     "name": "Park Seo-Bo"
+    },
+    {
+     "id": null,
+     "name": "Paul Pfeiffer"
+    },
+    {
+     "id": null,
+     "name": "Paola Pivi"
+    },
+    {
+     "id": null,
+     "name": "Christiane Pooley"
+    },
+    {
+     "id": null,
+     "name": "Gabriel Rico"
+    },
+    {
+     "id": null,
+     "name": "Claude Rutault"
+    },
+    {
+     "id": null,
+     "name": "Mark Ryden"
+    },
+    {
+     "id": null,
+     "name": "Sigrid Sandström"
+    },
+    {
+     "id": null,
+     "name": "Shim Moon-Seup"
+    },
+    {
+     "id": null,
+     "name": "Emily Mae Smith"
+    },
+    {
+     "id": null,
+     "name": "Jesús Rafael Soto"
+    },
+    {
+     "id": "pierre-soulages",
+     "name": "Pierre Soulages"
+    },
+    {
+     "id": null,
+     "name": "Josh Sperling"
+    },
+    {
+     "id": null,
+     "name": "Kathia St. Hilaire"
+    },
+    {
+     "id": null,
+     "name": "Tavares Strachan"
+    },
+    {
+     "id": 121,
+     "name": "Claire Tabouret"
+    },
+    {
+     "id": null,
+     "name": "Aya Takano"
+    },
+    {
+     "id": null,
+     "name": "Xavier Veilhan"
+    },
+    {
+     "id": null,
+     "name": "Bernar Venet"
+    },
+    {
+     "id": null,
+     "name": "Pieter Vermeersch"
+    },
+    {
+     "id": null,
+     "name": "Xiyao Wang"
+    },
+    {
+     "id": null,
+     "name": "Emma Webster"
+    }
    ]
   },
   {
@@ -538,6 +4816,296 @@
     {
      "kind": "web",
      "url": "https://www.lissongallery.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": "marina-abramovic",
+     "name": "Marina Abramović"
+    },
+    {
+     "id": "ai-weiwei",
+     "name": "Ai Weiwei"
+    },
+    {
+     "id": null,
+     "name": "Kelly Akashi"
+    },
+    {
+     "id": null,
+     "name": "John Akomfrah"
+    },
+    {
+     "id": null,
+     "name": "Allora & Calzadilla"
+    },
+    {
+     "id": null,
+     "name": "Olga de Amaral"
+    },
+    {
+     "id": null,
+     "name": "Cory Arcangel"
+    },
+    {
+     "id": null,
+     "name": "Art & Language"
+    },
+    {
+     "id": null,
+     "name": "Dana Awartani"
+    },
+    {
+     "id": null,
+     "name": "Tony Bechara"
+    },
+    {
+     "id": null,
+     "name": "Garrett Bradley"
+    },
+    {
+     "id": 168,
+     "name": "Daniel Buren"
+    },
+    {
+     "id": null,
+     "name": "Gerard Byrne"
+    },
+    {
+     "id": null,
+     "name": "Antonio Calderara"
+    },
+    {
+     "id": null,
+     "name": "Elaine Cameron-Weir"
+    },
+    {
+     "id": null,
+     "name": "Roy Colmer"
+    },
+    {
+     "id": null,
+     "name": "Tony Cragg"
+    },
+    {
+     "id": null,
+     "name": "Sarah Cunningham"
+    },
+    {
+     "id": null,
+     "name": "Dexter Dalwood"
+    },
+    {
+     "id": null,
+     "name": "Richard Deacon"
+    },
+    {
+     "id": null,
+     "name": "Ding Yi"
+    },
+    {
+     "id": null,
+     "name": "Nathalie Djurberg & Hans Berg"
+    },
+    {
+     "id": null,
+     "name": "Spencer Finch"
+    },
+    {
+     "id": null,
+     "name": "Ceal Floyer"
+    },
+    {
+     "id": null,
+     "name": "Ryan Gander"
+    },
+    {
+     "id": null,
+     "name": "Dan Graham"
+    },
+    {
+     "id": null,
+     "name": "Rodney Graham"
+    },
+    {
+     "id": null,
+     "name": "Van Hanos"
+    },
+    {
+     "id": null,
+     "name": "Hugh Hayden"
+    },
+    {
+     "id": null,
+     "name": "Carmen Herrera"
+    },
+    {
+     "id": null,
+     "name": "Susan Hiller"
+    },
+    {
+     "id": null,
+     "name": "Channa Horwitz"
+    },
+    {
+     "id": null,
+     "name": "Shirazeh Houshiary"
+    },
+    {
+     "id": null,
+     "name": "Tishan Hsu"
+    },
+    {
+     "id": "leiko-ikemura",
+     "name": "Leiko Ikemura"
+    },
+    {
+     "id": null,
+     "name": "Oliver Lee Jackson"
+    },
+    {
+     "id": null,
+     "name": "Christian Jankowski"
+    },
+    {
+     "id": null,
+     "name": "Peter Joseph"
+    },
+    {
+     "id": 3,
+     "name": "Anish Kapoor"
+    },
+    {
+     "id": null,
+     "name": "Josh Kline"
+    },
+    {
+     "id": null,
+     "name": "Christopher Le Brun"
+    },
+    {
+     "id": 82,
+     "name": "Lee Ufan"
+    },
+    {
+     "id": null,
+     "name": "Li Ran"
+    },
+    {
+     "id": null,
+     "name": "Liu Xiaodong"
+    },
+    {
+     "id": null,
+     "name": "Richard Long"
+    },
+    {
+     "id": null,
+     "name": "Haroon Mirza"
+    },
+    {
+     "id": "tatsuo-miyajima",
+     "name": "Tatsuo Miyajima"
+    },
+    {
+     "id": null,
+     "name": "Otobong Nkanga"
+    },
+    {
+     "id": null,
+     "name": "Hélio Oiticica"
+    },
+    {
+     "id": null,
+     "name": "Julian Opie"
+    },
+    {
+     "id": 159,
+     "name": "Tony Oursler"
+    },
+    {
+     "id": null,
+     "name": "Dalton Paula"
+    },
+    {
+     "id": null,
+     "name": "Joyce Pensato"
+    },
+    {
+     "id": null,
+     "name": "Jack Pierson"
+    },
+    {
+     "id": null,
+     "name": "Bernard Piffaretti"
+    },
+    {
+     "id": null,
+     "name": "Joanna Pousette-Dart"
+    },
+    {
+     "id": null,
+     "name": "Laure Prouvost"
+    },
+    {
+     "id": null,
+     "name": "Lucy Raven"
+    },
+    {
+     "id": null,
+     "name": "Pedro Reyes"
+    },
+    {
+     "id": null,
+     "name": "Mira Schendel"
+    },
+    {
+     "id": null,
+     "name": "Carolee Schneemann"
+    },
+    {
+     "id": null,
+     "name": "Sean Scully"
+    },
+    {
+     "id": null,
+     "name": "Wael Shawky"
+    },
+    {
+     "id": null,
+     "name": "Leon Polk Smith"
+    },
+    {
+     "id": 86,
+     "name": "Hiroshi Sugimoto"
+    },
+    {
+     "id": null,
+     "name": "Cheyney Thompson"
+    },
+    {
+     "id": null,
+     "name": "Tunga"
+    },
+    {
+     "id": null,
+     "name": "Lawrence Weiner"
+    },
+    {
+     "id": null,
+     "name": "Richard Wentworth"
+    },
+    {
+     "id": null,
+     "name": "Masaomi Yasunaga"
+    },
+    {
+     "id": null,
+     "name": "Yu Hong"
+    },
+    {
+     "id": null,
+     "name": "Zhao Gang"
     }
    ]
   },
@@ -581,6 +5149,60 @@
     {
      "kind": "web",
      "url": "https://en.gallery-kaikaikiki.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Virgil Abloh"
+    },
+    {
+     "id": null,
+     "name": "Chiho Aoshima"
+    },
+    {
+     "id": null,
+     "name": "Emi Kuraya"
+    },
+    {
+     "id": null,
+     "name": "Kasing Lung"
+    },
+    {
+     "id": null,
+     "name": "MADSAKI"
+    },
+    {
+     "id": null,
+     "name": "Mr."
+    },
+    {
+     "id": null,
+     "name": "Shoko Nakazawa"
+    },
+    {
+     "id": 89,
+     "name": "Takashi Murakami"
+    },
+    {
+     "id": null,
+     "name": "ob"
+    },
+    {
+     "id": null,
+     "name": "Otani Workshop"
+    },
+    {
+     "id": null,
+     "name": "AYA TAKANO"
+    },
+    {
+     "id": null,
+     "name": "Yuji Toma"
+    },
+    {
+     "id": null,
+     "name": "Tomoyumi"
     }
    ]
   },
@@ -633,6 +5255,72 @@
      "kind": "web",
      "url": "https://www.gallerykoyanagi.com"
     }
+   ],
+   "artists": [
+    {
+     "id": 93,
+     "name": "ミヒャエル・ボレマンス"
+    },
+    {
+     "id": null,
+     "name": "ソフィ・カル"
+    },
+    {
+     "id": null,
+     "name": "ジャネット・カーディフ＆ジョージ・ビュレス・ミラー"
+    },
+    {
+     "id": 95,
+     "name": "マルレーネ・デュマス"
+    },
+    {
+     "id": null,
+     "name": "熊谷亜莉沙"
+    },
+    {
+     "id": null,
+     "name": "ルイザ・ランブリ"
+    },
+    {
+     "id": null,
+     "name": "マーク・マンダース"
+    },
+    {
+     "id": null,
+     "name": "クリスチャン・マークレー"
+    },
+    {
+     "id": null,
+     "name": "中村裕太"
+    },
+    {
+     "id": "thomas-ruff",
+     "name": "トーマス・ルフ"
+    },
+    {
+     "id": 152,
+     "name": "須田悦弘"
+    },
+    {
+     "id": 86,
+     "name": "杉本博司"
+    },
+    {
+     "id": 189,
+     "name": "束芋"
+    },
+    {
+     "id": null,
+     "name": "寺崎百合子"
+    },
+    {
+     "id": null,
+     "name": "ヘレン・ファン・ミーネ"
+    },
+    {
+     "id": null,
+     "name": "ユアサエボシ"
+    }
    ]
   },
   {
@@ -652,6 +5340,244 @@
      "kind": "web",
      "url": "https://www.ceyssonbenetiere.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Wilfrid Almendra"
+    },
+    {
+     "id": null,
+     "name": "Amina Benbouchta"
+    },
+    {
+     "id": null,
+     "name": "Trudy Benson"
+    },
+    {
+     "id": null,
+     "name": "Roger Bissière"
+    },
+    {
+     "id": null,
+     "name": "Robert Brandy"
+    },
+    {
+     "id": null,
+     "name": "Pierre Buraglio"
+    },
+    {
+     "id": null,
+     "name": "Franck Chalendard"
+    },
+    {
+     "id": null,
+     "name": "Alan Charlton"
+    },
+    {
+     "id": null,
+     "name": "Max Charvolen"
+    },
+    {
+     "id": null,
+     "name": "Claire Chesnier"
+    },
+    {
+     "id": null,
+     "name": "Robert Combas"
+    },
+    {
+     "id": null,
+     "name": "Stephané Edith Conradie"
+    },
+    {
+     "id": null,
+     "name": "mounir fatmi"
+    },
+    {
+     "id": null,
+     "name": "Philippe Favier"
+    },
+    {
+     "id": null,
+     "name": "Christian Floquet"
+    },
+    {
+     "id": null,
+     "name": "Clédia Fourniau"
+    },
+    {
+     "id": null,
+     "name": "Gloria Friedmann"
+    },
+    {
+     "id": null,
+     "name": "Nancy Graves"
+    },
+    {
+     "id": 155,
+     "name": "Peter Halley"
+    },
+    {
+     "id": null,
+     "name": "Antwan Horfee"
+    },
+    {
+     "id": null,
+     "name": "Rémy Jacquier"
+    },
+    {
+     "id": null,
+     "name": "Phillip King"
+    },
+    {
+     "id": null,
+     "name": "Sadie Laska"
+    },
+    {
+     "id": null,
+     "name": "Jérémy Liron"
+    },
+    {
+     "id": null,
+     "name": "Lauren Luloff"
+    },
+    {
+     "id": null,
+     "name": "Jean Messagier"
+    },
+    {
+     "id": null,
+     "name": "Champion Métadier"
+    },
+    {
+     "id": null,
+     "name": "Nicolas Momein"
+    },
+    {
+     "id": null,
+     "name": "Tania Mouraud"
+    },
+    {
+     "id": null,
+     "name": "Alexander Nolan"
+    },
+    {
+     "id": null,
+     "name": "ORLAN"
+    },
+    {
+     "id": null,
+     "name": "Aurélie Pétrel"
+    },
+    {
+     "id": null,
+     "name": "Bernard Piffaretti"
+    },
+    {
+     "id": null,
+     "name": "Florian Pugnaire & David Raffini"
+    },
+    {
+     "id": null,
+     "name": "Roland Quetsch"
+    },
+    {
+     "id": null,
+     "name": "Lionel Sabatté"
+    },
+    {
+     "id": null,
+     "name": "Frank Stella"
+    },
+    {
+     "id": null,
+     "name": "Rachael Tarravechia"
+    },
+    {
+     "id": null,
+     "name": "Nam Tchun-Mo"
+    },
+    {
+     "id": null,
+     "name": "David Tremlett"
+    },
+    {
+     "id": null,
+     "name": "Mitja Tušek"
+    },
+    {
+     "id": null,
+     "name": "Bernar Venet"
+    },
+    {
+     "id": null,
+     "name": "Jean-Luc Verna"
+    },
+    {
+     "id": null,
+     "name": "Bao Vuong"
+    },
+    {
+     "id": null,
+     "name": "Wallace Whitney"
+    },
+    {
+     "id": null,
+     "name": "Jesse Willenbring"
+    },
+    {
+     "id": null,
+     "name": "Yves Zurstrassen"
+    },
+    {
+     "id": null,
+     "name": "André-Pierre Arnal"
+    },
+    {
+     "id": null,
+     "name": "Vincent Bioulès"
+    },
+    {
+     "id": null,
+     "name": "Louis Cane"
+    },
+    {
+     "id": null,
+     "name": "Marc Devade"
+    },
+    {
+     "id": null,
+     "name": "Daniel Dezeuze"
+    },
+    {
+     "id": null,
+     "name": "Noël Dolla"
+    },
+    {
+     "id": null,
+     "name": "Toni Grand"
+    },
+    {
+     "id": null,
+     "name": "Bernard Pagès"
+    },
+    {
+     "id": null,
+     "name": "Jean-Pierre Pincemin"
+    },
+    {
+     "id": null,
+     "name": "Patrick Saytour"
+    },
+    {
+     "id": null,
+     "name": "André Valensi"
+    },
+    {
+     "id": null,
+     "name": "Claude Viallat"
+    }
    ]
   },
   {
@@ -666,6 +5592,300 @@
     {
      "kind": "web",
      "url": "https://sofievandevelde.be"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Amber Andrews"
+    },
+    {
+     "id": null,
+     "name": "Jean Brusselmans"
+    },
+    {
+     "id": null,
+     "name": "Felix De Clercq"
+    },
+    {
+     "id": null,
+     "name": "Ilse D'Hollander"
+    },
+    {
+     "id": null,
+     "name": "Stef Driesen"
+    },
+    {
+     "id": 222,
+     "name": "Gommaar Gilliams"
+    },
+    {
+     "id": null,
+     "name": "Ritsart Gobyn"
+    },
+    {
+     "id": null,
+     "name": "Kees Goudzwaard"
+    },
+    {
+     "id": null,
+     "name": "Karin Hanssen"
+    },
+    {
+     "id": null,
+     "name": "Pieter Jennes"
+    },
+    {
+     "id": null,
+     "name": "Folkert de Jong"
+    },
+    {
+     "id": null,
+     "name": "Mattias De Leeuw"
+    },
+    {
+     "id": null,
+     "name": "Bernd Lohaus"
+    },
+    {
+     "id": null,
+     "name": "Natasja Mabesoone"
+    },
+    {
+     "id": null,
+     "name": "Ives Maes"
+    },
+    {
+     "id": null,
+     "name": "Guy Mees"
+    },
+    {
+     "id": null,
+     "name": "Joris Van de Moortel"
+    },
+    {
+     "id": null,
+     "name": "Christopher Colm Morrin"
+    },
+    {
+     "id": null,
+     "name": "Femmy Otten"
+    },
+    {
+     "id": null,
+     "name": "Max Pinckers"
+    },
+    {
+     "id": null,
+     "name": "Shirley Villavicencio Pizango"
+    },
+    {
+     "id": null,
+     "name": "Charlotte Posenenske"
+    },
+    {
+     "id": null,
+     "name": "Eline Rausenberger"
+    },
+    {
+     "id": null,
+     "name": "Roger Raveel"
+    },
+    {
+     "id": null,
+     "name": "Klaas Rommelaere"
+    },
+    {
+     "id": null,
+     "name": "Dirk Van Saene"
+    },
+    {
+     "id": null,
+     "name": "Willy De Sauter"
+    },
+    {
+     "id": null,
+     "name": "Sara Sizer"
+    },
+    {
+     "id": null,
+     "name": "John Stezaker"
+    },
+    {
+     "id": null,
+     "name": "Jesse Tomballe"
+    },
+    {
+     "id": null,
+     "name": "Dittmar Viane"
+    },
+    {
+     "id": null,
+     "name": "Sarah De Vos"
+    },
+    {
+     "id": null,
+     "name": "Marina Yee"
+    },
+    {
+     "id": null,
+     "name": "Christo"
+    },
+    {
+     "id": null,
+     "name": "Johanna von Monkiewitsch"
+    },
+    {
+     "id": null,
+     "name": "Walter Van Beirendonck"
+    },
+    {
+     "id": null,
+     "name": "Bram Bogart"
+    },
+    {
+     "id": "marcel-broodthaers",
+     "name": "Marcel Broodthaers"
+    },
+    {
+     "id": null,
+     "name": "Edouard Devriendt"
+    },
+    {
+     "id": "jim-dine",
+     "name": "Jim Dine"
+    },
+    {
+     "id": 106,
+     "name": "Jean Dubuffet"
+    },
+    {
+     "id": 64,
+     "name": "Marcel Duchamp"
+    },
+    {
+     "id": "james-ensor",
+     "name": "James Ensor"
+    },
+    {
+     "id": null,
+     "name": "Bendt Eyckermans"
+    },
+    {
+     "id": "richard-hamilton",
+     "name": "Richard Hamilton"
+    },
+    {
+     "id": 22,
+     "name": "Wassily Kandinsky"
+    },
+    {
+     "id": null,
+     "name": "Raoul De Keyser"
+    },
+    {
+     "id": null,
+     "name": "Fernand Khnopff"
+    },
+    {
+     "id": "roy-lichtenstein",
+     "name": "Roy Lichtenstein"
+    },
+    {
+     "id": null,
+     "name": "Jacques Lipchitz"
+    },
+    {
+     "id": "rene-magritte",
+     "name": "René Magritte"
+    },
+    {
+     "id": null,
+     "name": "Piero Manzoni"
+    },
+    {
+     "id": null,
+     "name": "Neo Matloga"
+    },
+    {
+     "id": 27,
+     "name": "Bruce Nauman"
+    },
+    {
+     "id": "claes-oldenburg",
+     "name": "Claes Oldenburg"
+    },
+    {
+     "id": null,
+     "name": "Niki de Saint Phalle"
+    },
+    {
+     "id": null,
+     "name": "Francis Picabia"
+    },
+    {
+     "id": 63,
+     "name": "Pablo Picasso"
+    },
+    {
+     "id": null,
+     "name": "Heidrun Rathgeb"
+    },
+    {
+     "id": "robert-rauschenberg",
+     "name": "Robert Rauschenberg"
+    },
+    {
+     "id": "auguste-rodin",
+     "name": "Auguste Rodin"
+    },
+    {
+     "id": null,
+     "name": "Jules Schmalzigaug"
+    },
+    {
+     "id": null,
+     "name": "Victor Servranckx"
+    },
+    {
+     "id": null,
+     "name": "Philippe Van Snick"
+    },
+    {
+     "id": null,
+     "name": "Léon Spilliaert"
+    },
+    {
+     "id": 47,
+     "name": "Cy Twombly"
+    },
+    {
+     "id": null,
+     "name": "Charline Tyberghein"
+    },
+    {
+     "id": null,
+     "name": "Georges Vantongerloo"
+    },
+    {
+     "id": null,
+     "name": "Leon Vranken"
+    },
+    {
+     "id": 71,
+     "name": "Andy Warhol"
+    },
+    {
+     "id": "tom-wesselmann",
+     "name": "Tom Wesselmann"
+    },
+    {
+     "id": null,
+     "name": "Cristof Yvoré"
+    },
+    {
+     "id": null,
+     "name": "Ossip Zadkine"
     }
    ]
   },
@@ -683,6 +5903,96 @@
     {
      "kind": "web",
      "url": "https://www.galleriafumagalli.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Filippo Armellin"
+    },
+    {
+     "id": null,
+     "name": "Nidaa Badwan"
+    },
+    {
+     "id": null,
+     "name": "Marinus Boezem"
+    },
+    {
+     "id": null,
+     "name": "Luca Boffi"
+    },
+    {
+     "id": null,
+     "name": "Mattia Bosco"
+    },
+    {
+     "id": null,
+     "name": "Thorsten Brinkmann"
+    },
+    {
+     "id": null,
+     "name": "Giacomo Cossio"
+    },
+    {
+     "id": null,
+     "name": "Sang A Han"
+    },
+    {
+     "id": "jannis-kounellis",
+     "name": "Jannis Kounellis"
+    },
+    {
+     "id": null,
+     "name": "Chiara Lecca"
+    },
+    {
+     "id": null,
+     "name": "Christopher Makos"
+    },
+    {
+     "id": null,
+     "name": "Allan McCollum"
+    },
+    {
+     "id": null,
+     "name": "Maurizio Nannucci"
+    },
+    {
+     "id": null,
+     "name": "Maria Elisabetta Novello"
+    },
+    {
+     "id": null,
+     "name": "Luigi Pensa"
+    },
+    {
+     "id": null,
+     "name": "Anne & Patrick Poirier"
+    },
+    {
+     "id": null,
+     "name": "Stefano Scheda"
+    },
+    {
+     "id": null,
+     "name": "Keith Sonnier"
+    },
+    {
+     "id": null,
+     "name": "Marco Tirelli"
+    },
+    {
+     "id": null,
+     "name": "Peter Welz"
+    },
+    {
+     "id": null,
+     "name": "Richard Wilson"
+    },
+    {
+     "id": null,
+     "name": "Peter Wuethrich"
     }
    ]
   },
@@ -720,6 +6030,136 @@
      "kind": "web",
      "url": "https://www.hl-projects.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Haseeb Ahmed"
+    },
+    {
+     "id": null,
+     "name": "Amélie Bouvier"
+    },
+    {
+     "id": null,
+     "name": "Sean Crossley"
+    },
+    {
+     "id": null,
+     "name": "Marcin Dudek"
+    },
+    {
+     "id": null,
+     "name": "Willehad Eilers"
+    },
+    {
+     "id": null,
+     "name": "TR Ericsson"
+    },
+    {
+     "id": null,
+     "name": "Andrea Éva Győri Estate"
+    },
+    {
+     "id": null,
+     "name": "Jeroen Jongeleen"
+    },
+    {
+     "id": null,
+     "name": "Ella Littwitz"
+    },
+    {
+     "id": null,
+     "name": "Sheida Soleimani"
+    },
+    {
+     "id": null,
+     "name": "Emmanuel Van der Auwera"
+    },
+    {
+     "id": null,
+     "name": "Ria Verhaeghe"
+    },
+    {
+     "id": null,
+     "name": "Rebecca Jane Arthur"
+    },
+    {
+     "id": null,
+     "name": "Julius Von Bismarck"
+    },
+    {
+     "id": null,
+     "name": "Orso Caël"
+    },
+    {
+     "id": null,
+     "name": "Constance DeJong"
+    },
+    {
+     "id": null,
+     "name": "elephy"
+    },
+    {
+     "id": null,
+     "name": "Jonas Englert"
+    },
+    {
+     "id": null,
+     "name": "Omer Fast"
+    },
+    {
+     "id": null,
+     "name": "Frog King Kwok Mang Ho"
+    },
+    {
+     "id": null,
+     "name": "Dani Ghercã"
+    },
+    {
+     "id": null,
+     "name": "Aziz Hazara"
+    },
+    {
+     "id": null,
+     "name": "Ermias Kifleyesus"
+    },
+    {
+     "id": null,
+     "name": "Vivienne Koorland"
+    },
+    {
+     "id": null,
+     "name": "Mehdi-Georges Lahlou"
+    },
+    {
+     "id": null,
+     "name": "Ira Lombardia"
+    },
+    {
+     "id": null,
+     "name": "Isadora Neves Marques"
+    },
+    {
+     "id": null,
+     "name": "Angyvir Padilla"
+    },
+    {
+     "id": null,
+     "name": "Max Pinckers"
+    },
+    {
+     "id": null,
+     "name": "Yoel Pytowski"
+    },
+    {
+     "id": null,
+     "name": "Jonathan Sullam"
+    },
+    {
+     "id": null,
+     "name": "Antwoine Washington"
+    }
    ]
   },
   {
@@ -736,6 +6176,240 @@
     {
      "kind": "web",
      "url": "https://www.sadiecoles.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Michele Abeles"
+    },
+    {
+     "id": null,
+     "name": "Uri Aran"
+    },
+    {
+     "id": null,
+     "name": "Karimah Ashadu"
+    },
+    {
+     "id": null,
+     "name": "Darren Bader"
+    },
+    {
+     "id": "matthew-barney",
+     "name": "Matthew Barney"
+    },
+    {
+     "id": null,
+     "name": "Alvaro Barrington"
+    },
+    {
+     "id": null,
+     "name": "Meriem Bennani"
+    },
+    {
+     "id": null,
+     "name": "John Bock"
+    },
+    {
+     "id": null,
+     "name": "Lisa Brice"
+    },
+    {
+     "id": null,
+     "name": "Don Brown"
+    },
+    {
+     "id": null,
+     "name": "Monster Chetwynd"
+    },
+    {
+     "id": 100,
+     "name": "John Currin"
+    },
+    {
+     "id": null,
+     "name": "Alex Da Corte"
+    },
+    {
+     "id": null,
+     "name": "Isabella Ducrot"
+    },
+    {
+     "id": null,
+     "name": "Shannon Ebner"
+    },
+    {
+     "id": null,
+     "name": "Nicole Eisenman"
+    },
+    {
+     "id": 156,
+     "name": "Urs Fischer"
+    },
+    {
+     "id": null,
+     "name": "Georgia Gardner Gray"
+    },
+    {
+     "id": null,
+     "name": "Kati Heck"
+    },
+    {
+     "id": null,
+     "name": "Georg Herold"
+    },
+    {
+     "id": null,
+     "name": "Jonathan Horowitz"
+    },
+    {
+     "id": null,
+     "name": "Arthur Jafa"
+    },
+    {
+     "id": null,
+     "name": "Yu Ji"
+    },
+    {
+     "id": null,
+     "name": "Dada Khanyisa"
+    },
+    {
+     "id": null,
+     "name": "David Korty"
+    },
+    {
+     "id": null,
+     "name": "Gabriel Kuri"
+    },
+    {
+     "id": null,
+     "name": "Jim Lambie"
+    },
+    {
+     "id": null,
+     "name": "Lawrence Lek"
+    },
+    {
+     "id": null,
+     "name": "Tau Lewis"
+    },
+    {
+     "id": null,
+     "name": "Klara Liden"
+    },
+    {
+     "id": null,
+     "name": "Hilary Lloyd"
+    },
+    {
+     "id": null,
+     "name": "Sarah Lucas"
+    },
+    {
+     "id": null,
+     "name": "Jonathan Lyndon Chase"
+    },
+    {
+     "id": null,
+     "name": "Diego Marcon"
+    },
+    {
+     "id": null,
+     "name": "Helen Marten"
+    },
+    {
+     "id": null,
+     "name": "Victoria Morton"
+    },
+    {
+     "id": null,
+     "name": "Nabuqi"
+    },
+    {
+     "id": null,
+     "name": "Yu Nishimura"
+    },
+    {
+     "id": 12,
+     "name": "Laura Owens"
+    },
+    {
+     "id": null,
+     "name": "Simon Periton"
+    },
+    {
+     "id": null,
+     "name": "Raymond Pettibon"
+    },
+    {
+     "id": null,
+     "name": "Seth Price"
+    },
+    {
+     "id": null,
+     "name": "Richard Prince"
+    },
+    {
+     "id": 135,
+     "name": "Ugo Rondinone"
+    },
+    {
+     "id": null,
+     "name": "Borna Sammak"
+    },
+    {
+     "id": 120,
+     "name": "Wilhelm Sasnal"
+    },
+    {
+     "id": null,
+     "name": "Agnes Scherer"
+    },
+    {
+     "id": null,
+     "name": "Katja Seib"
+    },
+    {
+     "id": null,
+     "name": "Daniel Sinsel"
+    },
+    {
+     "id": null,
+     "name": "Christiana Soulou"
+    },
+    {
+     "id": null,
+     "name": "Rudolf Stingel"
+    },
+    {
+     "id": null,
+     "name": "Ryan Sullivan"
+    },
+    {
+     "id": null,
+     "name": "Martine Syms"
+    },
+    {
+     "id": null,
+     "name": "Nicola Tyson"
+    },
+    {
+     "id": null,
+     "name": "Paloma Varga Weisz"
+    },
+    {
+     "id": null,
+     "name": "TJ Wilcox"
+    },
+    {
+     "id": null,
+     "name": "Jordan Wolfson"
+    },
+    {
+     "id": null,
+     "name": "Andrea Zittel"
     }
    ]
   },
@@ -754,6 +6428,224 @@
      "kind": "web",
      "url": "https://www.xavierhufkens.com"
     }
+   ],
+   "artists": [
+    {
+     "id": 224,
+     "name": "Richard Aldrich"
+    },
+    {
+     "id": null,
+     "name": "David Altmejd"
+    },
+    {
+     "id": null,
+     "name": "Richard Artschwager"
+    },
+    {
+     "id": 9,
+     "name": "Milton Avery"
+    },
+    {
+     "id": null,
+     "name": "Lynda Benglis"
+    },
+    {
+     "id": null,
+     "name": "Huma Bhabha"
+    },
+    {
+     "id": null,
+     "name": "McArthur Binion"
+    },
+    {
+     "id": "louise-bourgeois",
+     "name": "Louise Bourgeois"
+    },
+    {
+     "id": null,
+     "name": "Joe Bradley"
+    },
+    {
+     "id": 168,
+     "name": "Daniel Buren"
+    },
+    {
+     "id": 92,
+     "name": "George Condo"
+    },
+    {
+     "id": null,
+     "name": "Matt Connors"
+    },
+    {
+     "id": null,
+     "name": "Thierry De Cordier"
+    },
+    {
+     "id": 103,
+     "name": "Tracey Emin"
+    },
+    {
+     "id": null,
+     "name": "Michel François"
+    },
+    {
+     "id": null,
+     "name": "Adam Fuss"
+    },
+    {
+     "id": null,
+     "name": "Sayre Gomez"
+    },
+    {
+     "id": null,
+     "name": "Antony Gormley"
+    },
+    {
+     "id": null,
+     "name": "Giorgio Griffa"
+    },
+    {
+     "id": null,
+     "name": "Nathanaëlle Herbelin"
+    },
+    {
+     "id": null,
+     "name": "Charline von Heyl"
+    },
+    {
+     "id": null,
+     "name": "Evan Holloway"
+    },
+    {
+     "id": null,
+     "name": "Roni Horn"
+    },
+    {
+     "id": null,
+     "name": "Thomas Houseago"
+    },
+    {
+     "id": null,
+     "name": "Ulala Imai"
+    },
+    {
+     "id": null,
+     "name": "Esther Kläs"
+    },
+    {
+     "id": null,
+     "name": "Leon Kossoff"
+    },
+    {
+     "id": null,
+     "name": "Bertrand Lavier"
+    },
+    {
+     "id": null,
+     "name": "Sherrie Levine"
+    },
+    {
+     "id": null,
+     "name": "Mark Manders"
+    },
+    {
+     "id": null,
+     "name": "Robert Mapplethorpe"
+    },
+    {
+     "id": null,
+     "name": "Paul McCarthy"
+    },
+    {
+     "id": null,
+     "name": "Malcolm Morley"
+    },
+    {
+     "id": null,
+     "name": "Cassi Namoda"
+    },
+    {
+     "id": 49,
+     "name": "Alice Neel"
+    },
+    {
+     "id": null,
+     "name": "Constantin Nitsche"
+    },
+    {
+     "id": null,
+     "name": "Magdalene Odundo"
+    },
+    {
+     "id": 107,
+     "name": "Nicolas Party"
+    },
+    {
+     "id": "qiu-xiaofei",
+     "name": "Qiu Xiaofei"
+    },
+    {
+     "id": null,
+     "name": "Sterling Ruby"
+    },
+    {
+     "id": null,
+     "name": "Robert Ryman"
+    },
+    {
+     "id": null,
+     "name": "Joan Semmel"
+    },
+    {
+     "id": null,
+     "name": "Josh Smith"
+    },
+    {
+     "id": null,
+     "name": "Walter Swennen"
+    },
+    {
+     "id": null,
+     "name": "Tatiana Trouvé"
+    },
+    {
+     "id": null,
+     "name": "Lesley Vance"
+    },
+    {
+     "id": null,
+     "name": "Jan Vercruysse"
+    },
+    {
+     "id": null,
+     "name": "Cecilia Vicuña"
+    },
+    {
+     "id": null,
+     "name": "Danh Vō"
+    },
+    {
+     "id": null,
+     "name": "Frank Walter"
+    },
+    {
+     "id": "cathy-wilkes",
+     "name": "Cathy Wilkes"
+    },
+    {
+     "id": null,
+     "name": "Rachel Eulena Williams"
+    },
+    {
+     "id": null,
+     "name": "Christopher Wool"
+    },
+    {
+     "id": null,
+     "name": "Zhang Enli"
+    }
    ]
   },
   {
@@ -771,6 +6663,188 @@
      "kind": "web",
      "url": "https://www.lehmannmaupin.com"
     }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Kader Attia"
+    },
+    {
+     "id": null,
+     "name": "Hernan Bas"
+    },
+    {
+     "id": null,
+     "name": "Rana Begum"
+    },
+    {
+     "id": null,
+     "name": "Loriel Beltrán"
+    },
+    {
+     "id": null,
+     "name": "McArthur Binion"
+    },
+    {
+     "id": null,
+     "name": "Heidi Bucher"
+    },
+    {
+     "id": null,
+     "name": "Dominic Chambers"
+    },
+    {
+     "id": null,
+     "name": "Billy Childish"
+    },
+    {
+     "id": null,
+     "name": "Freya Douglas-Morris"
+    },
+    {
+     "id": null,
+     "name": "Mandy El-Sayegh"
+    },
+    {
+     "id": null,
+     "name": "Teresita Fernández"
+    },
+    {
+     "id": null,
+     "name": "Tom Friedman"
+    },
+    {
+     "id": null,
+     "name": "Gilbert & George"
+    },
+    {
+     "id": null,
+     "name": "Todd Gray"
+    },
+    {
+     "id": null,
+     "name": "Nicholas Hlobo"
+    },
+    {
+     "id": null,
+     "name": "Shirazeh Houshiary"
+    },
+    {
+     "id": null,
+     "name": "Chantal Joffe"
+    },
+    {
+     "id": null,
+     "name": "Kim Yun Shin"
+    },
+    {
+     "id": null,
+     "name": "Klara Kristalova"
+    },
+    {
+     "id": null,
+     "name": "Liu Wei"
+    },
+    {
+     "id": null,
+     "name": "Liza Lou"
+    },
+    {
+     "id": null,
+     "name": "Marilyn Minter"
+    },
+    {
+     "id": null,
+     "name": "Mr."
+    },
+    {
+     "id": null,
+     "name": "Tammy Nguyen"
+    },
+    {
+     "id": null,
+     "name": "Arcmanoro Niles"
+    },
+    {
+     "id": null,
+     "name": "Catherine Opie"
+    },
+    {
+     "id": null,
+     "name": "OSGEMEOS"
+    },
+    {
+     "id": 159,
+     "name": "Tony Oursler"
+    },
+    {
+     "id": null,
+     "name": "Anna Park"
+    },
+    {
+     "id": null,
+     "name": "Oren Pinhassi"
+    },
+    {
+     "id": null,
+     "name": "Lari Pittman"
+    },
+    {
+     "id": null,
+     "name": "Alex Prager"
+    },
+    {
+     "id": null,
+     "name": "Calida Rawles"
+    },
+    {
+     "id": null,
+     "name": "Robin Rhode"
+    },
+    {
+     "id": null,
+     "name": "David Salle"
+    },
+    {
+     "id": null,
+     "name": "Teresa Solar Abboud"
+    },
+    {
+     "id": null,
+     "name": "Jennifer Steinkamp"
+    },
+    {
+     "id": 132,
+     "name": "Do Ho Suh"
+    },
+    {
+     "id": null,
+     "name": "Suh Se Ok"
+    },
+    {
+     "id": null,
+     "name": "Sung Neung Kyung"
+    },
+    {
+     "id": null,
+     "name": "Cecilia Vicuña"
+    },
+    {
+     "id": null,
+     "name": "Nari Ward"
+    },
+    {
+     "id": null,
+     "name": "Erwin Wurm"
+    },
+    {
+     "id": null,
+     "name": "Guimi You"
+    },
+    {
+     "id": null,
+     "name": "Billie Zangewa"
+    }
    ]
   },
   {
@@ -787,6 +6861,180 @@
     {
      "kind": "web",
      "url": "https://www.kurimanzutto.com"
+    }
+   ],
+   "artists": [
+    {
+     "id": null,
+     "name": "Abraham Cruzvillegas"
+    },
+    {
+     "id": null,
+     "name": "Adrián Villar Rojas"
+    },
+    {
+     "id": null,
+     "name": "Akram Zaatari"
+    },
+    {
+     "id": null,
+     "name": "Alexandra Bachzetsis"
+    },
+    {
+     "id": null,
+     "name": "Allora & Calzadilla"
+    },
+    {
+     "id": null,
+     "name": "Ana Segovia"
+    },
+    {
+     "id": null,
+     "name": "Anri Sala"
+    },
+    {
+     "id": "apichatpong-weerasethakul",
+     "name": "Apichatpong Weerasethakul"
+    },
+    {
+     "id": null,
+     "name": "Bárbara Sánchez-Kane"
+    },
+    {
+     "id": null,
+     "name": "Carlos Amorales"
+    },
+    {
+     "id": null,
+     "name": "Damián Ortega"
+    },
+    {
+     "id": null,
+     "name": "Danh Vo"
+    },
+    {
+     "id": null,
+     "name": "Daniel Guzmán"
+    },
+    {
+     "id": null,
+     "name": "Dr. Lakra"
+    },
+    {
+     "id": null,
+     "name": "Duane Linklater"
+    },
+    {
+     "id": null,
+     "name": "Eduardo Abaroa"
+    },
+    {
+     "id": null,
+     "name": "Felipe Baeza"
+    },
+    {
+     "id": null,
+     "name": "Fernando Ortega"
+    },
+    {
+     "id": null,
+     "name": "Gabriel Kuri"
+    },
+    {
+     "id": 235,
+     "name": "Gabriel Orozco"
+    },
+    {
+     "id": null,
+     "name": "Gabriel Sierra"
+    },
+    {
+     "id": null,
+     "name": "Gala Porras-Kim"
+    },
+    {
+     "id": null,
+     "name": "Haegue Yang"
+    },
+    {
+     "id": null,
+     "name": "Jimmie Durham"
+    },
+    {
+     "id": null,
+     "name": "John Giorno Estate"
+    },
+    {
+     "id": null,
+     "name": "Leonor Antunes"
+    },
+    {
+     "id": null,
+     "name": "Mariana Castillo Deball"
+    },
+    {
+     "id": null,
+     "name": "Marieta Chirulescu"
+    },
+    {
+     "id": null,
+     "name": "Marta Minujín"
+    },
+    {
+     "id": null,
+     "name": "Miguel Calderón"
+    },
+    {
+     "id": null,
+     "name": "Minerva Cuevas"
+    },
+    {
+     "id": null,
+     "name": "Monika Sosnowska"
+    },
+    {
+     "id": null,
+     "name": "Nairy Baghramian"
+    },
+    {
+     "id": null,
+     "name": "Oscar Murillo"
+    },
+    {
+     "id": null,
+     "name": "Petrit Halilaj"
+    },
+    {
+     "id": "rirkrit-tiravanija",
+     "name": "Rirkrit Tiravanija"
+    },
+    {
+     "id": null,
+     "name": "Roberto Gil de Montes"
+    },
+    {
+     "id": null,
+     "name": "Roman Ondak"
+    },
+    {
+     "id": null,
+     "name": "Sarah Lucas"
+    },
+    {
+     "id": null,
+     "name": "Sofía Táboas"
+    },
+    {
+     "id": null,
+     "name": "Tarek Atoui"
+    },
+    {
+     "id": null,
+     "name": "WangShui"
+    },
+    {
+     "id": null,
+     "name": "Wilfredo Prieto"
     }
    ]
   }
