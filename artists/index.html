@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.7.0">
+<meta name="app-version" content="32.7.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -636,6 +636,16 @@ button.backbtn{background:var(--bg); border:1.5px solid var(--lineStrong); borde
    this full-height wrapper — that mechanism is unchanged. */
 .detailhead{background:var(--bg);}
 button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:var(--bg);}
+/* v32.7.1 (fix C): on the artist page the back-button row is a
+   full-width OPAQUE BAND (.dhbar) that pins as one piece. The
+   lone pill pinned by itself let the artist name slide half
+   under the pill — glyphs peeking around its rounded ends
+   (his bio-tab screenshot, 2026-11-16). Under the band the
+   name passes fully behind an opaque strip, the way content
+   passes under the app header: never half-shown. Loose back
+   buttons elsewhere keep pinning themselves (the rule above);
+   the band wraps only the detail head's first row. */
+.dhbar{position:sticky; top:var(--hdrh, 56px); z-index:26; background:var(--bg); display:flow-root; padding:0 0 6px;}
 #gpbody button.backbtn{top:0;}
 .dname{font-family:var(--serif); font-size:26px; line-height:1.3; margin:6px 0 0; letter-spacing:.05em;}
 .dlatin{font-size:14px; color:var(--muted); margin-top:2px;}
@@ -873,13 +883,20 @@ button.inflrow{cursor:pointer;}
 .cherabar{position:fixed; left:0; right:0; z-index:29; background:var(--bg); border-bottom:1px solid var(--line); padding:7px 10px;}
 /* v32.6 (item J): bio head (portrait + details) and the
    process-photo work link */
-.biohead{display:flex; gap:14px; align-items:flex-start; margin:2px 0 14px;}
-.bioportrait{flex:0 0 37%; min-width:0;}
-.bioportrait .ph{display:block; aspect-ratio:4/5; border-radius:12px; overflow:hidden; background:var(--card); border:1px solid var(--line);}
+/* v32.7.1 (fix B): the bio head is ONE panel — a modest photo
+   column (31%, capped 148px) and the details centred against
+   it, no card inside a card; the source rides as a small note
+   under the photo. A portrait that cannot load settles as a
+   small plain placeholder (.portraitfail), never the big
+   name-text plate (see hydrateImg's fail). */
+.biohead{display:flex; gap:14px; align-items:stretch; margin:2px 0 14px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px;}
+.bioportrait{flex:0 0 31%; max-width:148px; min-width:0;}
+.bioportrait .ph{display:block; aspect-ratio:4/5; border-radius:10px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
 .bioportrait .imgholder{display:block; width:100%; height:100%;}
 .bioportrait img{width:100%; height:100%; object-fit:cover; display:block;}
-.portraitsrc{font-size:11px; color:var(--muted); margin-top:5px; line-height:1.55;}
-.biodetails{flex:1; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 13px;}
+.bioportrait .ph.portraitfail{aspect-ratio:auto; height:72px;}
+.portraitsrc{font-size:10.5px; color:var(--muted); margin-top:5px; line-height:1.5;}
+.biodetails{flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; padding:2px 0;}
 .biodetails .bdrow{display:flex; gap:10px; padding:3px 0; font-size:13.5px; line-height:1.5;}
 .biodetails .bdk{flex:0 0 3.4em; color:var(--muted); font-size:12px; letter-spacing:.06em; padding-top:1px;}
 .procworklink{background:none; border:none; padding:2px 0 0; color:var(--accent); text-decoration:underline; font-size:12.5px; cursor:pointer; text-align:left; font-family:var(--sans);}
@@ -1107,7 +1124,11 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 /* v32.6.1 (fix 5): the works tab's controls — count, the
    request button, sort, display modes — live in ONE shelf
    panel with even spacing, instead of two loose rows with
-   dead space around the request button (his device note). */
+   dead space around the request button (his device note).
+   v32.7.1: inside the shelf there are THREE rows again —
+   count+request / sort / display. The v32.6.1 packing put
+   sort and display on one shared row and it overflowed on
+   his phone (see the worksHTML builder note). */
 .worksreq.shelf{display:block; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin:0 0 10px;}
 .wrrow{display:flex; align-items:center; justify-content:space-between; gap:10px;}
 .wrrow + .wrrow{margin-top:9px;}
@@ -10129,10 +10150,19 @@ function drawingsOf(a){
 /* v32.6 (item J): process photos + portraits ride the app's
    image-KEY convention (the makers' photo rule): an http(s) key
    is a URL, anything else is a Drive file id. keyWork shapes a
-   key into the work-like object hydrateImg / the viewer eat. */
+   key into the work-like object hydrateImg / the viewer eat.
+   v32.7.1 (fix A): a file-id key is shaped into the WORKS form —
+   a drive.google.com/thumbnail URL — never {img:{fileId}}. The
+   fileId form routed through loadDriveImage (an OAuth-token
+   fetch with no relay awareness); on his phone, which syncs
+   via the relay, it returned null and every portrait and
+   process photo landed on the failure plate while the works
+   (URL form, loaded directly) showed fine. The files' Drive
+   sharing is identical to the works files (anyone-with-link
+   reader, verified 2026-11-16), so the URL form is the fix. */
 function keyWork(key, caption){
   const k = String(key || '');
-  return /^https?:\/\//.test(k)? { img: { url: k }, caption: caption || '' }: { img: { fileId: k }, caption: caption || '' };
+  return /^https?:\/\//.test(k)? { img: { url: k }, caption: caption || '' }: { img: { url: 'https://drive.google.com/thumbnail?id=' + k + '&sz=w1200' }, caption: caption || '' };
 }
 function processPhotosOf(a){
   return (a && Array.isArray(a.process_photos)? a.process_photos: []).slice();
@@ -10379,7 +10409,7 @@ const cap = work.caption||'';
    see the CSS note. The tile keeps its exact geometry and shows the
    typographic plate instead. v2.31: the failure plate now also arms
    the self-heal above (maybeRearmImg) when the work has a Drive image. */
-const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
+const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
 if(work.img && work.img.fileId){
 const fid = work.img.fileId;
 if(driveImgCache[fid]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[fid]+'" alt="'+escA(cap)+'">'; return;}
@@ -10994,7 +11024,12 @@ const BIZ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICON; }
 const GUIDE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18.6 2.6l2.8 2.8L13 13.8l-2.8-2.8z"/><path d="M10.2 11C7.4 13.6 5.3 16.6 4.3 20.4c3.8-1 6.8-3.1 9.4-5.7"/></svg>';
 function refreshGuideBtn(){ const b = $('navGuide'); if(b) b.innerHTML = GUIDE_ICON; }
-const TL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5v17"/><path d="M6.5 6.6h7"/><path d="M6.5 9.9h3.2"/><path d="M6.5 13.2h10"/><path d="M6.5 16.5h3.2"/><path d="M6.5 19.4h7"/></svg>';
+/* v32.7.1 (fix 6): the timeline icon is the v27.5 ORIGINAL,
+   recovered verbatim from the repo history (commit 48625774,
+   TL_ICON) after his verdict on the v32.6.1 redraw — a
+   horizontal line with three filled dots ON it. The redrawn
+   vertical-line version is discarded. */
+const TL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><circle cx="7.5" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="12.3" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="17.1" cy="12" r="1.9" fill="currentColor" stroke="none"/></svg>';
 function refreshTlBtn(){ const b = $('navTimeline'); if(b) b.innerHTML = TL_ICON; }
 let bizData = null, bizError = false, bizChapterId = null;
 function openBiz(){ showView('biz'); bizEnsure(); }
@@ -13489,7 +13524,11 @@ openSettingsPanel('reqnotif');
    2026-11-15 23:56 — a standalone item right after 特徴, not inside
    it, not at the page bottom, not mixed into 来歴) —
    作品 / ドローイング / 特徴 / 関係 / 来歴 / … */
-const DTABS = ['works','drawings','proc','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
+/* v32.7.1: 制作風景 (proc) merges into 制作プロセス (process) —
+   one tab named 制作過程 at the process position (his decision,
+   2026-11-16). A restored state.tab of 'proc' no longer
+   resolves in DTABS and falls back to 'works'. */
+const DTABS = ['works','drawings','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -13872,7 +13911,7 @@ function chEraTopOffset(){
      has scrolled away — max() of the two live rects gives both
      states and the glide between them, so the bar never overlaps
      the head and never floats over the text. */
-  const bb = document.querySelector('#viewDetail .detailhead .backbtn');
+  const bb = document.querySelector('#viewDetail .detailhead .dhbar') || document.querySelector('#viewDetail .detailhead .backbtn');
   const tabs = document.querySelector('#viewDetail .dtabs');
   let t = 0;
   if(bb) t = Math.max(t, Math.round(bb.getBoundingClientRect().bottom));
@@ -14170,15 +14209,14 @@ if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
 const relGroups = relationsFor(a);
 const relCount = relGroups.received.length + relGroups.given.length + relGroups.ties.length + relGroups.genealogy.length + relGroups.compared.length;
 if(state.tab==='drawings' && !dws.length) state.tab = 'works';
-if(state.tab==='proc' && !pps.length) state.tab = 'works';
-if(state.tab==='process' && !hasProcessContent) state.tab = 'works';
+if(state.tab==='process' && !hasProcessContent && !pps.length) state.tab = 'works';
 if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 if(state.tab==='relations' && !relCount) state.tab = 'works';
-let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
-'<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div>'+
+'<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(a.name)+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
 ((a.name_latin||a.name_native||snsLinksHTML(a))? '<div class="dlatinrow"><span class="dlatin">'+esc(a.name_latin||'')+(a.name_native?'　'+esc(a.name_native):'')+'</span>'+snsLinksHTML(a)+'</div>': '')+
 '<div class="dmeta">'+
@@ -14189,11 +14227,10 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
-'<button class="'+(state.tab==='proc'?'on':'')+'" onclick="setTab(\'proc\')"'+(pps.length? '': ' style="display:none"')+'>制作風景</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+(relCount? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
-'<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+(hasProcessContent? '': ' style="display:none"')+'>制作プロセス</button>'+
+'<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+((hasProcessContent || pps.length)? '': ' style="display:none"')+'>制作過程</button>'+
 '<button class="'+(state.tab==='quotes'?'on':'')+'" onclick="setTab(\'quotes\')"'+(hasQuotesTab? '': ' style="display:none"')+'>発言</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+(intvArr.length? '': ' style="display:none"')+'>インタビュー</button>'+
 '<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+((inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>影響</button>'+
@@ -14214,16 +14251,18 @@ worksHTML += '</div>';
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
 worksHTML = '<div class="worksreq shelf"><div class="wrrow"><span class="small">作品 '+ws.length+'点</span><button class="btn" onclick="requestWorks()">'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'</button></div>' +
-/* v4.5: sort + display share ONE row. The works tab used to
-   stack three control bands (request / sort / display) above
-   the gallery; on the user's phone those bands piled into the
-   header zone while scrolling (his "帯" report). One cluster,
-   wrapping as a unit when narrow, reads as a single shelf. */
+/* v32.7.1: sort and display each get their OWN row again.
+   v4.5 merged them into one row and v32.6.1 kept that inside
+   the shelf; on his phone the shared row overflowed — the
+   sort chip 「新しい順」 was cut to 「新」 and the display
+   buttons ran off the right edge (his 2026-11-16 device
+   verdict: 「さっきの2列に戻して」). Three even rows in the
+   shelf: count+request / sort / display. */
 '<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
 '<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">古い順</button>' +
 '<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">新しい順</button>' +
-'</span><span class="seg mini" role="group" aria-label="表示">' +
+'</span></div><div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
 /* v32.6.0 (item 2): the works mode seg is generated from the
    SAME MODES array as the list side — five stops including
    micro, grid glyphs included — so the two switchers can
@@ -14247,17 +14286,19 @@ drawingsHTML += '</div>';
 /* v32.6 (item J-A): the process-photos panel — the works
    gallery's card + viewer manners over process_photos[]; a photo
    that shows a registered work in progress links to that work. */
-let procHTML = '';
-if(!pps.length) procHTML = '<div class="empty">制作風景の写真はまだありません</div>';
-else{
-procHTML = '<div class="worksreq"><span class="small">制作風景 '+pps.length+'点</span></div>' +
-'<div class="gallery wm-'+workMode+'">';
+/* v32.7.1: the photos gallery alone — it now leads the merged
+   制作過程 panel (under a 制作風景 heading) instead of living
+   on its own tab; the old count bar and empty state go with
+   the tab. */
+let procGalleryHTML = '';
+if(pps.length){
+procGalleryHTML = '<div class="gallery wm-'+workMode+'">';
 pps.forEach((p,i)=>{
 const wobj = keyWork(p.img, p.caption||'');
 const wi = p.work? ws.findIndex(w => (w.caption||'').includes('《'+p.work+'》')): -1;
-procHTML += '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>';
+procGalleryHTML += '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>';
 });
-procHTML += '</div>';
+procGalleryHTML += '</div>';
 }
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
@@ -14430,6 +14471,10 @@ if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="
    never papered over. Rendered purely from the fields — a
    designer record simply carries none yet. */
 let processHTML = '';
+/* v32.7.1: the merged 制作過程 panel — the process photos lead
+   under their own 制作風景 heading; the making dossier follows.
+   Either side alone still fills the tab. */
+if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
 if(procObj){
 if(procObj.summary) processHTML += '<div class="bodytext">'+pTermEsc(procObj.summary)+'</div>';
 if(procObj.steps && procObj.steps.length){
@@ -14550,7 +14595,6 @@ if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較され
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
-+'<div class="dpage" data-dtab="proc">'+procHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'<div class="dpage" data-dtab="relations">'+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
@@ -20882,7 +20926,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.7.0';
+const APP_VERSION = '32.7.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -21774,11 +21818,14 @@ async function xLoadMakers(){
 /* v32.3: a maker's portrait work object — makers.json carries
    it as photo (a Drive fileId in the 図鑑画像 folder; a plain
    URL is also accepted). No photo -> null, and the plate
-   falls back to the designed initial tile. */
+   falls back to the designed initial tile.
+   v32.7.1 (fix A): the fileId branch takes the works URL form
+   too — the {img:{fileId}} route (loadDriveImage) is the one
+   that fails on his relay-synced phone; see keyWork. */
 function xMakerWork(m){
   if(!m || !m.photo) return null;
   const p = String(m.photo);
-  return /^https?:\/\//.test(p)? { img: { url: p }, caption: m.name || '' }: { img: { fileId: p }, caption: m.name || '' };
+  return /^https?:\/\//.test(p)? { img: { url: p }, caption: m.name || '' }: { img: { url: 'https://drive.google.com/thumbnail?id=' + p + '&sz=w1200' }, caption: m.name || '' };
 }
 function xMakerPlateHTML(m, big){
   const w = xMakerWork(m);
@@ -21791,7 +21838,7 @@ function xWireMakerPlates(scope){
     const span = ph.querySelector('.imgholder'); if(!span) return;
     span.dataset.mkinitial = (Array.from(ph.dataset.mkname || '')[0] || '');
     const p = ph.dataset.mkphoto;
-    span._work = /^https?:\/\//.test(p)? { img: { url: p }, caption: ph.dataset.mkname || '' }: { img: { fileId: p }, caption: ph.dataset.mkname || '' };
+    span._work = /^https?:\/\//.test(p)? { img: { url: p }, caption: ph.dataset.mkname || '' }: { img: { url: 'https://drive.google.com/thumbnail?id=' + p + '&sz=w1200' }, caption: ph.dataset.mkname || '' };
     const sr = span.getBoundingClientRect();
     if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, span._work);
     else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
@@ -22111,7 +22158,7 @@ function xGenDetail(gid){
    the v32.4.0 rows'. */
 const HUB_ICONS = {
   biz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v15.5h16"/><polyline points="7.5,15 11,10.5 14,12.5 18.5,6.5"/><circle cx="18.5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/></svg>',
-  timeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5v17"/><path d="M6.5 6.6h7"/><path d="M6.5 9.9h3.2"/><path d="M6.5 13.2h10"/><path d="M6.5 16.5h3.2"/><path d="M6.5 19.4h7"/></svg>',
+  timeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><circle cx="7.5" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="12.3" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="17.1" cy="12" r="1.9" fill="currentColor" stroke="none"/></svg>',
   /* v32.6.0 (his call 2026-11-16 08:34): the genealogy icon is
      flipped vertically — a genealogy branches DOWNWARD from one
      root, not upward. Same shapes, sizes and stroke; every y is
