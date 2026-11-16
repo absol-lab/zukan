@@ -3860,6 +3860,13 @@
    "kind": "影響",
    "note": "「大切なのは半径3メートル」という言葉を本人がステートメントで引用し、獸の構築原理に取り込んでいる",
    "source": "図鑑 artists.json の influences 記録（本人の発言・インタビューなど、出典つきで裏取り済みの既存記録）"
+  },
+  {
+   "from": 17,
+   "to": "adrian-berg",
+   "kind": "師弟・つながり",
+   "note": "ロイヤル・カレッジ・オブ・アート（1994–96）在学時の師。ピーター・ドイグとともにクランストンを教えた。",
+   "source": "スコットランド国立美術館の作家略歴（RCAでドイグとエイドリアン・バーグが指導者と明記）https://www.nationalgalleries.org/art-and-artists/artists/andrew-cranston"
   }
  ]
 }

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.5.0">
+<meta name="app-version" content="32.6.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -376,6 +376,7 @@ figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{color:var(--te
 .ysthumb .imgload{font-size:min(8.5px, 2.35vw);}
 .grid.compact figure.work .ph .imgload, .gallery.wm-compact figure.work .ph .imgload, .mgrid.compact .mtile .imgload{font-size:min(11px, 2.3vw); letter-spacing:.03em; padding:2px 3px;}
 .grid.mini figure.work .ph .imgload, .gallery.wm-mini figure.work .ph .imgload, .mgrid.mini .mtile .imgload{font-size:min(11px, 1.6vw); letter-spacing:.02em; padding:2px;}
+.gallery.wm-micro figure.work .ph .imgload, .mgrid.micro .mtile .imgload{font-size:min(10px, 1.3vw); letter-spacing:.01em; padding:1px;}
 .grid.micro figure.work .ph .imgload{font-size:min(10px, 1.25vw); letter-spacing:.02em; padding:2px;}
 .bookcover .imgload{font-size:6.5px; letter-spacing:.02em; padding:2px;}
 .exposter .imgload{font-size:12px;}
@@ -609,6 +610,92 @@ button.inflrow{cursor:pointer;}
 .chconst:last-child{border-bottom:none;}
 .chcno{flex:0 0 22px; font-family:var(--sans); font-size:12px; font-weight:700; color:var(--bg); background:var(--ink); border-radius:50%; width:22px; height:22px; line-height:22px; text-align:center; margin-top:2px;}
 .chct{font-family:var(--serif); font-weight:700; font-size:calc(var(--fs) * .97); line-height:1.5; margin-bottom:3px;}
+/* v32.6.0: the chronicle rebuilt on the reference pattern
+   (chronology-design/DESIGN.md). Colour means something here and
+   nowhere else on the page: vermilion = the years and
+   何を描いていたか (the work itself), steel blue =
+   何をしていたか (activity and events). */
+:root{--chred:#e2704e; --chblue:#7fa8d9;}
+.chekicker{font-family:var(--sans); font-size:11.5px; font-weight:700; letter-spacing:.34em; color:var(--muted); margin:8px 0 4px;}
+.chetitle{font-family:var(--serif); font-size:calc(var(--fs) * 1.5); font-weight:700; line-height:1.4; margin:0 0 10px;}
+.chehowto{border:1px solid var(--line); border-radius:12px; background:var(--card); padding:12px 14px; margin:14px 0 4px;}
+.chehowto-h{font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.12em; color:var(--accent); margin-bottom:5px;}
+.chehowto p{font-family:var(--serif); font-size:calc(var(--fs) * .94); line-height:var(--lh); margin:0;}
+.cheov{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 2px;}
+.cheovcard{text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px;}
+.cheovcard span{display:block;}
+.cheovcard .e1{font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--chred);}
+.cheovcard .e2{font-family:var(--serif); font-size:calc(var(--fs) * 1.02); font-weight:700; line-height:1.4; margin-top:1px;}
+.cheovcard .e3{font-size:12px; color:var(--muted); line-height:1.5; margin-top:1px; font-family:var(--serif);}
+.chera{padding:22px 0 8px; border-top:1px solid var(--line); margin-top:20px;}
+.cherahead{display:flex; align-items:center; gap:9px; flex-wrap:wrap;}
+.cherano{font-family:var(--sans); font-size:11.5px; font-weight:700; letter-spacing:.12em; color:var(--chred); border:1px solid var(--chred); border-radius:999px; padding:1px 8px;}
+.cherayears{font-family:var(--sans); font-size:12.5px; font-weight:700; letter-spacing:.06em; color:var(--chred);}
+.cheratitle{font-family:var(--serif); font-size:calc(var(--fs) * 1.28); font-weight:700; line-height:1.45; margin-top:7px;}
+.cherasub{font-family:var(--serif); font-size:calc(var(--fs) * .95); color:var(--muted); line-height:1.5; margin-top:1px;}
+.cherasum{font-family:var(--serif); font-size:calc(var(--fs) * .97); line-height:var(--lh); margin:10px 0 0;}
+.cheaxis{margin-top:12px; padding:2px 0 2px 12px; border-left:3px solid;}
+.cheaxis.painted{border-color:var(--chred);}
+.cheaxis.did{border-color:var(--chblue);}
+.cheaxis-h{font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.1em; margin-bottom:3px;}
+.cheaxis.painted .cheaxis-h{color:var(--chred);}
+.cheaxis.did .cheaxis-h{color:var(--chblue);}
+.cheaxis p{font-family:var(--serif); font-size:calc(var(--fs) * .95); line-height:var(--lh); margin:0;}
+.chestyle{font-size:13.5px; line-height:1.8; font-family:var(--serif); border:1px dashed var(--line); border-radius:10px; padding:9px 12px; margin-top:12px;}
+.chestyle .tag{font-family:var(--sans); font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.08em; display:block; margin-bottom:2px;}
+.chemeta{font-family:var(--sans); font-size:12px; color:var(--muted); line-height:1.7; letter-spacing:.03em; margin-top:10px;}
+.chemeta b{color:var(--text); font-weight:600;}
+.chefigs{margin-top:12px;}
+.chefigs figure.work{margin:0 0 16px;}
+.chefigcap{font-family:var(--serif); font-size:13.5px; line-height:1.7; margin-top:6px;}
+.chefigwhy{font-size:12.5px; line-height:1.7; color:var(--muted); margin-top:2px;}
+.chefigwhy .lb{font-family:var(--sans); font-size:10.5px; font-weight:700; letter-spacing:.06em; color:var(--accent); margin-right:5px;}
+.cheunres{font-size:13px; font-family:var(--serif); border:1px solid var(--line); border-radius:8px; padding:7px 10px; margin:0 0 10px; color:var(--muted);}
+.chenowork{border:1px dashed var(--line); border-radius:10px; padding:10px 12px; margin-top:12px; font-size:13px; line-height:1.8; font-family:var(--serif); color:var(--muted);}
+.chenowork b{color:var(--text); font-family:var(--sans); font-size:11px; letter-spacing:.08em; display:block; margin-bottom:2px;}
+.cheqrow{padding:9px 0; border-bottom:1px solid var(--line);}
+.cheqrow:last-child{border-bottom:none;}
+.cheq1{font-family:var(--sans); font-size:12px; font-weight:700; color:var(--chred); letter-spacing:.04em;}
+.cheq2{font-family:var(--serif); font-weight:700; font-size:calc(var(--fs) * .98); line-height:1.5; margin:1px 0 2px;}
+.cheq3{font-size:13px; line-height:1.7; font-family:var(--serif);}
+.cheq3 .lb{font-family:var(--sans); font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.06em; margin-right:5px;}
+.cheev{margin-top:5px; font-size:11.5px; line-height:1.65; color:var(--muted); font-family:var(--sans);}
+.chesrc{font-size:12.5px; line-height:1.8; color:var(--muted); font-family:var(--sans); overflow-wrap:anywhere;}
+.checaut{font-size:12.5px; line-height:1.8; color:var(--muted); font-family:var(--serif); margin:4px 0 0;}
+/* v32.6.0: the resident era-chip bar — a fixed layer (sticky is
+   inert inside the pager's overflow axes), opaque, updated by
+   class toggles only. Its top is set in JS to the measured
+   header + detail-head height. */
+.cherabar{position:fixed; left:0; right:0; z-index:29; background:var(--bg); border-bottom:1px solid var(--line); padding:7px 10px;}
+/* v32.6 (item J): bio head (portrait + details) and the
+   process-photo work link */
+.biohead{display:flex; gap:14px; align-items:flex-start; margin:2px 0 14px;}
+.bioportrait{flex:0 0 37%; min-width:0;}
+.bioportrait .ph{display:block; aspect-ratio:4/5; border-radius:12px; overflow:hidden; background:var(--card); border:1px solid var(--line);}
+.bioportrait .imgholder{display:block; width:100%; height:100%;}
+.bioportrait img{width:100%; height:100%; object-fit:cover; display:block;}
+.portraitsrc{font-size:11px; color:var(--muted); margin-top:5px; line-height:1.55;}
+.biodetails{flex:1; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 13px;}
+.biodetails .bdrow{display:flex; gap:10px; padding:3px 0; font-size:13.5px; line-height:1.5;}
+.biodetails .bdk{flex:0 0 3.4em; color:var(--muted); font-size:12px; letter-spacing:.06em; padding-top:1px;}
+.procworklink{background:none; border:none; padding:2px 0 0; color:var(--accent); text-decoration:underline; font-size:12.5px; cursor:pointer; text-align:left; font-family:var(--sans);}
+.cherabar-in{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+.cherabar-in::-webkit-scrollbar{display:none;}
+.cherachip{flex:none; display:inline-flex; align-items:baseline; gap:6px; background:var(--card); border:1px solid var(--line); color:var(--text); border-radius:999px; padding:5px 11px; min-height:32px; font-family:var(--sans); cursor:pointer;}
+.cherachip .cy{font-size:11px; font-weight:700; color:var(--chred); letter-spacing:.03em;}
+.cherachip .ct{font-size:12.5px; font-family:var(--serif);}
+.cherachip.on{border-color:var(--accent); background:var(--card2);}
+.cherachip.on .ct{font-weight:700;}
+/* v32.6.0 (item 2): the works gallery gains the fifth stop
+   (micro = 5 across), and its mode-seg glyphs get the size the
+   list-side .modebar rule always gave its own — the seg buttons
+   had no svg size at all, so on the phone the grid glyphs
+   collapsed and the pills read as empty (his Klimt screenshot). */
+#viewDetail .gallery.wm-micro{grid-template-columns:repeat(5, 1fr); gap:7px 5px;}
+#viewDetail .gallery.wm-micro figcaption .sub{font-size:10px; line-height:1.3;}
+#viewDetail .worksreq .seg button svg{width:17px; height:17px; display:block;}
+.mgrid.micro{grid-template-columns:repeat(5, 1fr); gap:7px 5px;}
+.mgrid.micro .mcap{font-size:10.5px; line-height:1.3;}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
@@ -936,7 +1023,7 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 #tlmapsheet,#termsheet,#symsheet,#erasheet{overscroll-behavior:contain;}
 html.sheetlock, html.sheetlock body{overflow:hidden;}
 .secright{display:inline-flex; align-items:center; gap:8px;}
-.symsecbtn,.erasecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
+.symsecbtn,.erasecbtn,.mksecbtn{flex:none; white-space:nowrap; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:3px 9px; font-size:12px; min-height:26px; font-weight:400; letter-spacing:.03em;}
 .symsecbtn.on,.erasecbtn.on{border-color:var(--accent); color:var(--accent); font-weight:600;}
 .symopt{display:flex; align-items:center; width:100%; min-height:48px; padding:8px 6px; border:0; border-bottom:1px solid var(--line); background:none; color:var(--text); font-size:14.5px; text-align:left;}
 .symopt .symg{display:inline-block; width:30px; font-size:15px;}
@@ -1512,14 +1599,25 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 #hubsheet{position:fixed; inset:0; z-index:320;}
 #hubsheet.hidden{display:none;}
 .hubpop{position:absolute; top:calc(var(--hdrh, 56px) + 6px); right:10px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px; box-shadow:0 14px 34px rgba(0,0,0,.45);}
+/* v32.6 (item G): field-symbol legend — icon button in the sticky
+   bars (left of the era chip), popup in the hub's manner */
+.legendbtn{flex:none; display:inline-flex; align-items:center; justify-content:center; width:34px; height:26px; margin:0; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:0; cursor:pointer;}
+.legendbtn svg{width:19px; height:19px; display:block;}
+#legendsheet{position:fixed; inset:0; z-index:320;}
+#legendsheet.hidden{display:none;}
+.legendpop{position:absolute; top:calc(var(--hdrh, 56px) + 52px); left:10px; right:10px; max-width:430px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px; box-shadow:0 14px 34px rgba(0,0,0,.45); line-height:2;}
+.legendpop .legendttl{font-weight:700; margin-bottom:2px;}
+.legendpop .legendent{display:inline-block; margin-right:14px; white-space:nowrap; font-size:14px;}
+.legendpop .legendent b{margin-right:3px;}
 .hubgrid{display:grid; grid-template-columns:repeat(3, 52px); gap:8px;}
-.hubrow{display:flex; align-items:center; justify-content:center; width:52px; height:52px; padding:0; background:var(--bg2); border:1px solid var(--line); border-radius:14px; color:var(--text); cursor:pointer;}
+.hubrow{position:relative; display:flex; align-items:center; justify-content:center; width:52px; height:52px; padding:0; background:var(--bg2); border:1px solid var(--line); border-radius:14px; color:var(--text); cursor:pointer;}
+#hublist .hubrow .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
 .hubrow svg{width:24px; height:24px;}
 /* sticky era row (item 9) */
 .erarow{display:flex; align-items:center; gap:8px; padding:5px 2px 7px; border-top:1px solid var(--line); min-height:34px; box-sizing:border-box;}
 .eraname{font-family:var(--serif); font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0;}
 .erachips{display:flex; gap:6px; align-items:center; flex:none;}
-.erachips .erasecbtn, .erachips .symsecbtn{margin:0;}
+.erachips .erasecbtn, .erachips .symsecbtn, .erachips .mksecbtn{margin:0;}
 /* v32.4.1: the small duplicate mode seg inside the era row is gone
    (his call, 2026-11-16: 「これいらないよ」) — the display switcher
    lives only in the header modebar. With the seg removed the era
@@ -1650,6 +1748,8 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <main id="viewBizCh" class="hidden"></main>
 <main id="viewBizPrice" class="hidden"></main>
 <div id="hubsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeHub()"><div class="hubpop"><div class="hubgrid" id="hublist"></div></div></div>
+<div id="legendsheet" class="hidden" role="dialog" aria-label="分野マークの凡例" onclick="if(event.target===this) closeSymLegend()"><div class="legendpop"><div class="legendttl">分野マークの凡例</div><div id="legendbody"></div></div></div>
+<div id="cherabar" class="cherabar hidden" role="navigation" aria-label="年代記の時代"><div class="cherabar-in" id="cherabarIn"></div></div>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
@@ -9774,13 +9874,57 @@ function displayWorks(a){
 function drawingsOf(a){
   return (a && Array.isArray(a.drawings)? a.drawings: []).slice();
 }
+/* v32.6 (item J): process photos + portraits ride the app's
+   image-KEY convention (the makers' photo rule): an http(s) key
+   is a URL, anything else is a Drive file id. keyWork shapes a
+   key into the work-like object hydrateImg / the viewer eat. */
+function keyWork(key, caption){
+  const k = String(key || '');
+  return /^https?:\/\//.test(k)? { img: { url: k }, caption: caption || '' }: { img: { fileId: k }, caption: caption || '' };
+}
+function processPhotosOf(a){
+  return (a && Array.isArray(a.process_photos)? a.process_photos: []).slice();
+}
+/* v32.6 (item J-B): the bio tab's head — portrait left, structured
+   details right, prose below (the prose is appended by the
+   caller). Details are built mechanically from what the record
+   already carries (years split into birth/death, birthplace /
+   base fields when present, the field's place token); a missing
+   item is simply not shown, and with no portrait there is NO
+   photo frame at all (his 画像なしはなし rule). */
+function bioHeadHTML(a){
+  const rows = [];
+  const yrs = String(a.years || '');
+  const m = yrs.match(/(\d{3,4})\s*[–—\-〜~]\s*(\d{3,4})?/);
+  if(m){ rows.push(['生年', m[1] + '年']); if(m[2]) rows.push(['没年', m[2] + '年']); }
+  if(a.birthplace) rows.push(['出生地', a.birthplace]);
+  if(a.base) rows.push(['拠点', a.base]);
+  const from = (a.field || '').split('、')[0];
+  if(from && from !== a.birthplace && !/絵画|彫刻|写真|工芸|デザイン|建築|版画|音楽|文学/.test(from)) rows.push(['出身', from]);
+  const hasPortrait = !!a.portrait;
+  if(!hasPortrait && !rows.length) return '';
+  let h = '<div class="biohead">';
+  if(hasPortrait){
+    h += '<div class="bioportrait"><div class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.plate) + '</div>'
+      + (a.portrait_src? '<div class="portraitsrc">' + esc(a.portrait_src) + '</div>': '') + '</div>';
+  }
+  if(rows.length){
+    h += '<div class="biodetails">' + rows.map(r => '<div class="bdrow"><span class="bdk">' + r[0] + '</span><span class="bdv">' + esc(r[1]) + '</span></div>').join('') + '</div>';
+  }
+  return h + '</div>';
+}
 function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
 /* v4.3: display modes for the detail works grid (his ask: the
    works list gets the same ワイド/標準/小/ミニ stops as the
    artist list). Device-local, shared across datasets. */
 let workMode = 'def';
 try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
-function setWorkModeCore(m){ workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
+/* v32.6.0 (item 2): the saved stop is validated against the
+   same stop list the list side uses (MODES, defined below), so
+   the works gallery, the drawings and the museum shelf share
+   the list's five stops and its save/restore discipline. */
+if(['wide','def','compact','mini','micro'].indexOf(workMode) < 0) workMode = 'def';
+function setWorkModeCore(m){ if(MODES.indexOf(m) < 0) m = 'def'; workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
 function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
 /* v11.0: the museum shelf shares the works display mode —
    'wide' there means one large tile per row.
@@ -10202,7 +10346,24 @@ vtForceDir = 0;
    one scrollTo, all in one task — there is no frame in which two
    biz screens exist together. */
 const bizFam = vv => vv==='biz' || vv==='bizch' || vv==='bizp';
-const wantAnim = FORWARD_ANIM && !vtNoAnim && prev!==v && !document.hidden && !reducedMotion() && !(bizFam(v) && bizFam(prev));
+/* v32.6.0 (item 3, his 2026-11-16 recording): the pill surfaces
+   join the atomic family — and not only within the family: ANY
+   switch touching a surface （立役者 / 展示 family) is atomic.
+   Item 9 fixed only the biz family's INTERNAL switches, so the
+   pill switches kept riding vtSlide, which pins both views as
+   fixed layers and paints them together for ~330ms; on his
+   iPhone the old layer kept showing through the new screen
+   (makers tiles over an artist page, the artists and designers
+   lists over each other, a doubled search field where the two
+   views' sticky toolbars stacked). Surface switches are context
+   changes, not drill-downs: they take the backToListSync
+   philosophy — old view hidden, new view shown, one scroll, all
+   in one task, so no frame ever paints two surfaces. (The list
+   itself already returns via backToListSync and dataset
+   switches were made atomic in v2.32.) Drill-down slides that
+   touch no surface (list <-> detail and kin) are unchanged. */
+const surfFam = vv => vv==='makers' || vv==='ex' || vv==='news' || vv==='cal';
+const wantAnim = FORWARD_ANIM && !vtNoAnim && prev!==v && !document.hidden && !reducedMotion() && !(bizFam(v) && bizFam(prev)) && !surfFam(v) && !surfFam(prev);
 view = v;
 if(v!=='settings' && v!=='makers' && v!=='makerdetail') CTX[DS].lastView = v;
 /* v2.58: leaving the list saves its scroll position; entering it
@@ -10271,6 +10432,16 @@ if(v==='timeline' && typeof tlMapMaybeRestore === 'function'){
 if(vtBusy){ const pf = vtAfterFinish; vtAfterFinish = ()=>{ if(pf) pf(); tlMapMaybeRestore(); }; }
 else tlMapMaybeRestore();
 }
+if(typeof chEraBarSync === 'function') chEraBarSync();
+/* v32.6 (item F): EVERY surface switch re-derives the sticky
+   bars' section labels once the new surface is laid out and its
+   scroll position is restored — a label from the previous
+   surface or position can never survive a switch. Both sync
+   functions guard on their own view, so calling both is safe. */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+if(typeof updateEraName === 'function') updateEraName();
+if(typeof updateMakerEraName === 'function') updateMakerEraName();
+}));
 }
 function vtSlide(oldEl, newEl, dir, restoreY){
 vtBusy = true;
@@ -10554,7 +10725,7 @@ const BIZ_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 function refreshBizBtn(){ const b = $('navBiz'); if(b) b.innerHTML = BIZ_ICON; }
 const GUIDE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18.6 2.6l2.8 2.8L13 13.8l-2.8-2.8z"/><path d="M10.2 11C7.4 13.6 5.3 16.6 4.3 20.4c3.8-1 6.8-3.1 9.4-5.7"/></svg>';
 function refreshGuideBtn(){ const b = $('navGuide'); if(b) b.innerHTML = GUIDE_ICON; }
-const TL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h17"/><circle cx="7.5" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="12.3" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="17.1" cy="12" r="1.9" fill="currentColor" stroke="none"/></svg>';
+const TL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v14.6"/><circle cx="7" cy="5.6" r="1.7" fill="currentColor" stroke="none"/><circle cx="7" cy="10.4" r="1.7" fill="currentColor" stroke="none"/><circle cx="7" cy="15.2" r="1.7" fill="currentColor" stroke="none"/><path d="M4.4 17.4 7 20.4 9.6 17.4"/></svg>';
 function refreshTlBtn(){ const b = $('navTimeline'); if(b) b.innerHTML = TL_ICON; }
 let bizData = null, bizError = false, bizChapterId = null;
 function openBiz(){ showView('biz'); bizEnsure(); }
@@ -11711,14 +11882,27 @@ updateEraName();
    in view; it follows the scroll (rAF-throttled, list view only). */
 function updateEraName(){
 const el = $('eraName'); if(!el) return;
+/* v32.6 (item F — his 2026-11-16 08:54 video: the sticky bar
+   showed another section's name): the label is DERIVED from the
+   current surface's laid-out section heads on every call, and
+   the call sites now include every surface switch (see showView)
+   — never a leftover from the previous surface or position.
+   Guards: only on the list view, and only once the list is
+   actually laid out (a mid-switch call used to read all-zero
+   rects, conclude every head was "above the line", and pick the
+   LAST section of the previous dataset). Positions are compared
+   in document coordinates (rect + scrollY), not raw viewport
+   rects, so a call during the switch paint cannot poison it. */
+if(typeof view !== 'undefined' && view !== 'list') return;
 if(queryToks().length){ el.textContent = '検索結果'; return; }
 if(favFilter){ el.textContent = 'お気に入り'; return; }
-const tb = $('toolbar');
-const tbB = tb? tb.getBoundingClientRect().bottom: 0;
 const heads = document.querySelectorAll('#listbody .sechead');
 if(!heads.length){ el.textContent = '一覧'; return; }
+if(!heads[0].getBoundingClientRect().width) return; /* not laid out yet */
+const tb = $('toolbar');
+const line = (window.scrollY || 0) + (tb? tb.getBoundingClientRect().bottom: 0) + 4;
 let name = '';
-heads.forEach(h=>{ if(h.getBoundingClientRect().top <= tbB + 4){ const s = h.querySelector('span'); name = s? s.textContent: ''; } });
+heads.forEach(h=>{ if(h.getBoundingClientRect().top + (window.scrollY || 0) <= line){ const s = h.querySelector('span'); name = s? s.textContent: ''; } });
 if(!name){ const s = heads[0].querySelector('span'); name = s? s.textContent: '一覧'; }
 el.textContent = name;
 }
@@ -12425,7 +12609,7 @@ if(!tagrowDone) $('tagrow').innerHTML = tagHtml;
 /* v32.4 (item 9): the sticky era row mirrors the era/symbol chips
    (they re-render themselves everywhere via renderEraFilter /
    renderSymFilter) and names the section currently in view. */
-const _ec = $('eraChips'); if(_ec) _ec.innerHTML = eraBtnHTML() + symSecBtnHTML();
+const _ec = $('eraChips'); if(_ec) _ec.innerHTML = legendBtnHTML() + eraBtnHTML() + symSecBtnHTML();
 updateEraName();
 fitToolbarTop();
 renderListBody();
@@ -12518,6 +12702,25 @@ function symSecBtnHTML(){
 const lab = symLabelText();
 return '<button class="symsecbtn' + (lab? ' on': '') + '" onclick="openSymSheet()">' + (lab || 'すべて ▾') + '</button>';
 }
+/* v32.6 (item G — his placement call, 2026-11-16 08:59): the
+   field-symbol legend button sits LEFT of the era chip in every
+   list sticky bar (artists / designers share #eraChips, rebuilt
+   by renderList on every render; makers build theirs once in
+   buildMakersView — in both cases the button is part of the
+   bar's own markup, so it can never duplicate or go missing).
+   Icon-only, in the hub's manner: a cluster of the legend's own
+   marks (framed square / diamond / double circle). The popup
+   follows the hub sheet's pattern (backdrop tap closes). */
+function legendBtnHTML(){
+return '<button class="legendbtn" onclick="openSymLegend()" aria-label="分野マークの凡例"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.6" y="3.4" width="8.2" height="8.2" rx="1"/><rect x="5.4" y="6.2" width="2.6" height="2.6" fill="currentColor" stroke="none"/><path d="M17.2 3.2 20.8 8 17.2 12.8 13.6 8Z"/><circle cx="8" cy="17.6" r="3.6"/><circle cx="8" cy="17.6" r="1.5" fill="currentColor" stroke="none"/><path d="M14.5 20.6h6.4M17.7 14.8v5.8" stroke-linecap="round"/></svg></button>';
+}
+function openSymLegend(){
+  const body = $('legendbody');
+  if(body && !body.dataset.built){ body.innerHTML = FIELD_LEGEND.map(p => '<span class="legendent"><b>' + p[0] + '</b>' + p[1] + '</span>').join(''); body.dataset.built = '1'; }
+  const s = $('legendsheet'); if(s) s.classList.remove('hidden');
+  sheetLockSync();
+}
+function closeSymLegend(){ const s = $('legendsheet'); if(s) s.classList.add('hidden'); sheetLockSync(); }
 function renderSymFilter(){
 const present = new Set();
 DB.artists.forEach(a => fieldSymsList(a).forEach(g => present.add(g)));
@@ -12526,7 +12729,10 @@ let dropped = false;
 sel.forEach(g => { if(!present.has(g)){ sel.delete(g); dropped = true; } });
 if(dropped) persistSymFilter();
 const lab = symLabelText();
-document.querySelectorAll('.symsecbtn').forEach(el => {
+/* v32.6 (item E): scoped to the list view, same reason as
+   renderEraFilter — a document-wide sync must never rewrite
+   another surface's chips. */
+document.querySelectorAll('#viewList .symsecbtn').forEach(el => {
   el.textContent = lab || 'すべて ▾';
   el.classList.toggle('on', !!lab);
 });
@@ -12619,7 +12825,12 @@ function renderEraFilter(){
   DB.artists.forEach(a => { const e = eraOf(a); if(e) present.add(e); });
   if(eraFilter && !present.has(eraFilter)){ eraFilter = ''; try{ storeSet('zukan.eraFilter', ''); }catch(e){} }
   const cur = eraTabOf(eraFilter);
-  document.querySelectorAll('.erasecbtn').forEach(el => {
+  /* v32.6 (item E): scoped to the list view. The document-wide
+     selector used to rewrite the MAKERS section-jump chips (they
+     shared .erasecbtn) into rows of 「時代 ▾」 — his 2026-11-16
+     08:44 screenshot. Makers chips now use their own .mksecbtn
+     class as well, so the two can never collide again. */
+  document.querySelectorAll('#viewList .erasecbtn').forEach(el => {
     el.textContent = cur? ('◷ ' + cur[1]) : '時代 ▾';
     el.classList.toggle('on', !!cur);
   });
@@ -13009,7 +13220,7 @@ openSettingsPanel('reqnotif');
    2026-11-15 23:56 — a standalone item right after 特徴, not inside
    it, not at the page bottom, not mixed into 来歴) —
    作品 / ドローイング / 特徴 / 関係 / 来歴 / … */
-const DTABS = ['works','drawings','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
+const DTABS = ['works','drawings','proc','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
 function setTab(t){
 state.tab = t;
 const pg = $('dpager');
@@ -13020,7 +13231,7 @@ if(!pg){ renderDetail(); return; }
    .chperiod guard ends the recursion). */
 if(t==='bio' && view==='detail'){
   const ca = artistById(state.detailId);
-  if(ca && CHRONICLE_FILES[ca.name] && chronicleFor(ca) && !pg.querySelector('.chperiod')){ renderDetail(); return; }
+  if(ca && ((CHRONICLE_ERAS_FILES[ca.name] && chronicleErasFor(ca) && !pg.querySelector('.chera')) || (CHRONICLE_FILES[ca.name] && chronicleFor(ca) && !pg.querySelector('.chperiod')))){ renderDetail(); return; }
 }
 const idx = Math.max(0, DTABS.indexOf(t));
 /* v4.3: tab taps jump instantly to the panel's measured
@@ -13214,6 +13425,218 @@ function chronicleHTML(a, ch, ws){
   }
   return h;
 }
+/* v32.6.0: chronicle ERAS — the 年代記 rebuilt on the reference
+   pattern (~/workspace/art-labo/chronology-design/DESIGN.md, the
+   Gokita chronology page he chose as the model, 2026-11-16):
+   a fixed three-step entrance (English kicker -> Mincho title
+   -> lead), the whole map first (era cards), detail after, and
+   the quick table + through-lines at the end to re-grasp the
+   whole at coarse resolution. Every era is the SAME template:
+   ERA no. + years + title + one-paragraph summary, then the two
+   axes kept apart — 何を描いていたか (vermilion: the work
+   itself) / 何をしていたか (blue: activity and events) — a
+   dashed style-note card, and a small meta line (medium /
+   motifs / size / venues). Representative works are shown
+   large, as evidence, with a caption that guides the looking.
+   Data lives in a repo JSON beside the app (the v5.0 chronicle
+   channel: lazy fetch + kv cache). An artist with eras data
+   gets this rendering; an artist with only the v5.0 chronicle
+   keeps that; everyone else keeps the CV bio. Eras are never
+   fabricated, and a period with no registered work images says
+   so on its face, showing the period's book instead when the
+   record has one. */
+const CHRONICLE_ERAS_FILES = { '五木田智央': 'chronicle-eras-gokita.json' };
+const chronicleErasMem = {}; const chronicleErasBusy = {};
+function chronicleErasCacheLoad(file){
+  const key = 'zukan.chronicleeras.' + file;
+  try{
+    let raw = (key in KVMEM)? KVMEM[key]: null;
+    if(raw == null){
+      raw = storeGet(key);
+      if(raw != null){
+        KVMEM[key] = raw;
+        if(IDB_OK) idbRun(async ()=>{ if(await idbSetRaw(key, raw) && (await idbGetRaw(key)) === raw) storeDel(key); });
+      }
+    }
+    const j = JSON.parse(raw || 'null');
+    return (j && Array.isArray(j.eras) && j.eras.length)? j: null;
+  }catch(e){ return null; }
+}
+function chronicleErasFor(a){
+  const f = CHRONICLE_ERAS_FILES[a.name]; if(!f) return null;
+  if(chronicleErasMem[f]) return chronicleErasMem[f];
+  const c = chronicleErasCacheLoad(f); if(c){ chronicleErasMem[f] = c; return c; }
+  ensureChronicleEras(a);
+  return null;
+}
+async function ensureChronicleEras(a){
+  const f = CHRONICLE_ERAS_FILES[a.name]; if(!f || chronicleErasBusy[f]) return;
+  chronicleErasBusy[f] = true;
+  try{
+    const res = await fetch(f+'?cv=' + Date.now(), { cache: 'no-store' });
+    if(!res.ok) throw new Error('chronicle eras HTTP ' + res.status);
+    const j = await res.json();
+    if(j && Array.isArray(j.eras) && j.eras.length){ chronicleErasMem[f] = j; try{ kvSet('zukan.chronicleeras.'+f, JSON.stringify(j)); }catch(e){} }
+  }catch(e){ /* the v5.0 chronicle / CV bio stays as the fallback */ }
+  chronicleErasBusy[f] = false;
+  if(view==='detail' && state.tab==='bio'){ const cur = artistById(state.detailId); if(cur && cur.name===a.name) renderDetail(); }
+}
+/* a representative work resolves by its file key first (the
+   eras data names works by key), then by the caption's
+   title + year, the chWorkIdx convention. Unresolved works
+   render as text — nothing breaks. */
+function chEraWorkIdx(ws, rw){
+  if(rw && rw.file){ for(let i=0;i<ws.length;i++){ if(ws[i].file && String(ws[i].file)===String(rw.file)) return i; } }
+  if(rw && rw.caption){ const m = /《(.+?)》/.exec(rw.caption); if(m){ const y = /(19|20)\d\d/.exec(rw.caption); return chWorkIdx(ws, m[1], y? +y[0]: null); } }
+  return -1;
+}
+function chronicleErasHTML(a, ch, ws){
+  const eras = ch.eras || [];
+  let h = '<div class="che">';
+  h += '<div class="chekicker">'+esc(ch.kicker || 'CHRONOLOGY')+'</div>';
+  h += '<h3 class="chetitle">'+esc(ch.title || '年代記')+'</h3>';
+  (ch.lead || []).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
+  if(ch.facts && ch.facts.length) h += '<div class="chfacts">'+ch.facts.map(f=>'<div>'+esc(f)+'</div>').join('')+'</div>';
+  if(ch.howto) h += '<div class="chehowto"><div class="chehowto-h">このページの読み方</div><p>'+pTermEsc(ch.howto)+'</p></div>';
+  /* the whole map before the detail: one card per era */
+  h += '<div class="cheov">' + eras.map(e=>'<button class="cheovcard" onclick="chEraJump('+e.era+')"><span class="e1">ERA '+e.era+'｜'+esc(e.years || '')+'</span><span class="e2">'+esc(e.title || '')+'</span>'+(e.subtitle? '<span class="e3">'+esc(e.subtitle)+'</span>': '')+'</button>').join('') + '</div>';
+  eras.forEach(e=>{
+    h += '<section class="chera" id="chera-'+e.era+'" data-era="'+e.era+'">'
+      + '<div class="cherahead"><span class="cherano">ERA '+e.era+'</span><span class="cherayears">'+esc(e.years || '')+'</span></div>'
+      + '<div class="cheratitle">'+esc(e.title || '')+'</div>'
+      + (e.subtitle? '<div class="cherasub">'+esc(e.subtitle)+'</div>': '')
+      + (e.summary? '<p class="cherasum">'+pTermEsc(e.summary)+'</p>': '')
+      + (e.painted? '<div class="cheaxis painted"><div class="cheaxis-h">何を描いていたか</div><p>'+pTermEsc(e.painted)+'</p></div>': '')
+      + (e.did? '<div class="cheaxis did"><div class="cheaxis-h">何をしていたか</div><p>'+pTermEsc(e.did)+'</p></div>': '')
+      + (e.style_note? '<div class="chestyle"><span class="tag">作風メモ</span>'+esc(e.style_note)+'</div>': '');
+    if(e.meta){
+      const order = ['画材','モチーフ','サイズ','発表の場'];
+      const parts = order.filter(k=>e.meta[k]).map(k=>'<b>'+k+'：</b>'+esc(e.meta[k]));
+      Object.keys(e.meta).forEach(k=>{ if(order.indexOf(k)<0) parts.push('<b>'+esc(k)+'：</b>'+esc(e.meta[k])); });
+      if(parts.length) h += '<div class="chemeta">'+parts.join('｜')+'</div>';
+    }
+    const rws = e.representative_works || [];
+    if(rws.length){
+      h += '<div class="chefigs"><div class="chwlabel">この時期の代表作</div>';
+      rws.forEach(rw=>{
+        const idx = chEraWorkIdx(ws, rw);
+        if(idx >= 0){
+          const w = ws[idx];
+          h += '<figure class="work"><div class="ph" data-workidx="'+idx+'">'+imgHTML(w, IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div>'
+            + '<figcaption><div class="chefigcap">'+esc(rw.caption || w.caption || '')+'</div>'
+            + (rw.why? '<div class="chefigwhy"><span class="lb">見どころ</span>'+esc(rw.why)+'</div>': '') + '</figcaption></figure>';
+        } else {
+          h += '<div class="cheunres">'+esc(rw.caption || '')+'</div>';
+        }
+      });
+      h += '</div>';
+    } else if(e.representative_note){
+      h += '<div class="chenowork"><b>この時期の作品画像は未収録</b>'+esc(e.representative_note)+'</div>';
+    }
+    if(e.book_title){
+      const bi = (a.books || []).findIndex(b=> (b.title || '').indexOf(e.book_title) >= 0);
+      if(bi >= 0){
+        const b = a.books[bi];
+        h += '<div class="chwlabel" style="margin-top:12px;">この時期の成果 — 作品集</div>'
+          + '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img? imgHTML({ img: b.img, caption: b.title || '' }, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">表紙</span></span>')+'</div>'
+          + '<div class="bookmeta"><div class="bt">'+esc(b.title || '')+'</div>'
+          + '<div class="bm">'+[b.publisher, b.year].filter(Boolean).map(esc).join(' ・ ')+'</div>'
+          + '</div></div>';
+      }
+    }
+    h += '</section>';
+  });
+  if(ch.quick_table && ch.quick_table.length){
+    h += '<h3 class="subhead">早見表</h3>' + ch.quick_table.map(q=>'<div class="cheqrow"><div class="cheq1">'+esc(q.years || '')+'</div><div class="cheq2">'+esc(q.period || '')+'</div><div class="cheq3"><span class="lb">作風</span>'+esc(q.style || '')+'</div><div class="cheq3"><span class="lb">活動</span>'+esc(q.activity || '')+'</div></div>').join('');
+  }
+  if(ch.through_lines && ch.through_lines.length){
+    h += '<h3 class="subhead">貫くもの</h3>' + ch.through_lines.map((t, i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(t.title || '')+'</div><p class="chtext" style="margin:0;">'+pTermEsc(t.text || '')+'</p>'
+      + ((t.evidence && t.evidence.length)? '<div class="cheev">'+t.evidence.map(ev=>'<div>・'+esc(ev)+'</div>').join('')+'</div>': '')
+      + '</div></div>').join('');
+  }
+  const caut = [];
+  eras.forEach(e=> (e.cautions || []).forEach(c=> caut.push('第'+e.era+'期：'+c)));
+  (ch.global_cautions || []).forEach(c=> caut.push(c));
+  const srcLines = [];
+  eras.forEach(e=>{ if(e.sources && e.sources.length) srcLines.push('第'+e.era+'期：'+e.sources.join('／')); });
+  if((ch.sources_all && ch.sources_all.length) || caut.length || srcLines.length){
+    h += '<h3 class="subhead">出典と注意</h3>';
+    if(ch.sources_all && ch.sources_all.length) h += '<div class="chesrc">'+ch.sources_all.map(s=> s.url? esc(s.label)+' <a href="'+escA(s.url)+'" target="_blank" rel="noopener">'+esc(s.url)+'</a>': esc(s.label)).join('<br>')+'</div>';
+    if(srcLines.length) h += '<div class="chesrc" style="margin-top:6px;">'+srcLines.map(esc).join('<br>')+'</div>';
+    if(caut.length) h += caut.map(c=>'<p class="checaut">'+esc(c)+'</p>').join('');
+  }
+  h += '</div>';
+  return h;
+}
+/* the resident era-chip bar. The bio panel lives inside the
+   horizontal pager, whose overflow axes make position:sticky
+   inert there — so the bar is a FIXED layer (the v32.5.0 item-9
+   discipline: one layer, opaque, class toggles only; its DOM is
+   built once per rendered chronicle, never rebuilt inside a
+   scroll frame, so no two paints of it can stack). It shows
+   only while an eras chronicle is on screen; its top is the
+   measured header + detail-head height, so it docks directly
+   under the always-reachable back-button head. Chips are the
+   table of contents, the current-position readout and the
+   navigation, in one row. */
+let chEraBarKey = '';
+function chEraTopOffset(){
+  /* v32.6 fix: .detailhead WRAPS the whole pager (its offsetHeight
+     is the full page height — measuring it put the era bar ~17,000px
+     down, i.e. never visible). The bar instead docks to what is
+     actually on screen: right under the tab row while the head is
+     in view, and right under the pinned back button once the head
+     has scrolled away — max() of the two live rects gives both
+     states and the glide between them, so the bar never overlaps
+     the head and never floats over the text. */
+  const bb = document.querySelector('#viewDetail .detailhead .backbtn');
+  const tabs = document.querySelector('#viewDetail .dtabs');
+  let t = 0;
+  if(bb) t = Math.max(t, Math.round(bb.getBoundingClientRect().bottom));
+  if(tabs) t = Math.max(t, Math.round(tabs.getBoundingClientRect().bottom));
+  return t;
+}
+function chEraJump(n){
+  const el = document.getElementById('chera-' + n); if(!el) return;
+  const bar = $('cherabar');
+  const bh = (bar && !bar.classList.contains('hidden'))? bar.offsetHeight: 44;
+  const y = el.getBoundingClientRect().top + (window.scrollY || 0) - chEraTopOffset() - bh - 6;
+  window.scrollTo(0, Math.max(0, y));
+  chEraBarSync();
+  /* the bar's dock point moves as the head scrolls away; one
+     correction frame lands the heading exactly under the bar's
+     final position instead of under its pre-jump one */
+  requestAnimationFrame(()=>{
+    if(!bar || bar.classList.contains('hidden')) return;
+    const r = el.getBoundingClientRect(), bb2 = bar.getBoundingClientRect().bottom;
+    if(r.top < bb2 + 2) window.scrollBy(0, r.top - bb2 - 6);
+    chEraBarSync();
+  });
+}
+function chEraBarSync(){
+  const bar = $('cherabar'); if(!bar) return;
+  const inner = $('cherabarIn');
+  const show = view === 'detail' && state.tab === 'bio' && !!document.querySelector('#viewDetail .chera');
+  if(!show){ if(!bar.classList.contains('hidden')) bar.classList.add('hidden'); chEraBarKey = ''; return; }
+  const key = String(state.detailId);
+  if(chEraBarKey !== key && inner){
+    const eras = [...document.querySelectorAll('#viewDetail .chera')].map(s=> ({ n: s.dataset.era, years: (s.querySelector('.cherayears') || {}).textContent || '', title: (s.querySelector('.cheratitle') || {}).textContent || '' }));
+    inner.innerHTML = eras.map(e=> '<button class="cherachip" data-chera="'+e.n+'" onclick="chEraJump('+e.n+')"><span class="cy">'+esc(e.years)+'</span><span class="ct">'+esc(e.title)+'</span></button>').join('');
+    chEraBarKey = key;
+  }
+  bar.style.top = chEraTopOffset() + 'px';
+  if(bar.classList.contains('hidden')) bar.classList.remove('hidden');
+  const probe = chEraTopOffset() + bar.offsetHeight + 10;
+  let cur = null;
+  document.querySelectorAll('#viewDetail .chera').forEach(s=>{ if(s.getBoundingClientRect().top <= probe) cur = s.dataset.era; });
+  if(inner) [...inner.querySelectorAll('.cherachip')].forEach(c=> c.classList.toggle('on', c.dataset.chera === cur));
+}
+let chEraScrollQueued = false;
+window.addEventListener('scroll', ()=>{
+  if(chEraScrollQueued) return; chEraScrollQueued = true;
+  requestAnimationFrame(()=>{ chEraScrollQueued = false; chEraBarSync(); });
+}, { passive: true });
+window.addEventListener('resize', ()=> chEraBarSync());
 /* v27.14 readability (his ask, 2026-11-14 17:16): long prose
    breaks at sentence boundaries, one sentence per line.
    Splitting happens on the RAW text into sentence units;
@@ -13417,6 +13840,7 @@ const ws = displayWorks(a);
 /* v30.6: drawings （ドローイング) — shown as their own tab right
    after 作品， only for artists who have at least one. */
 const dws = drawingsOf(a);
+const pps = processPhotosOf(a);
 const sp = splitNotes(a.notes);
 /* v15.0: the prices tab exists (as a hidden button + an empty
    pager panel, so DTABS indices always line up) but is only
@@ -13463,6 +13887,7 @@ if(hit) inflGiven.push({ id: x.id, name: x.name, note: hit.note || '' });
 const relGroups = relationsFor(a);
 const relCount = relGroups.received.length + relGroups.given.length + relGroups.ties.length + relGroups.genealogy.length + relGroups.compared.length;
 if(state.tab==='drawings' && !dws.length) state.tab = 'works';
+if(state.tab==='proc' && !pps.length) state.tab = 'works';
 if(state.tab==='process' && !hasProcessContent) state.tab = 'works';
 if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
@@ -13481,6 +13906,7 @@ let html = '<div class="detailhead"><button class="backbtn" onclick="showView(\'
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
+'<button class="'+(state.tab==='proc'?'on':'')+'" onclick="setTab(\'proc\')"'+(pps.length? '': ' style="display:none"')+'>制作風景</button>'+
 '<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+(relCount? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
@@ -13497,7 +13923,7 @@ if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありませ
 else{
 worksHTML = '<div class="gallery wm-'+workMode+'">';
 ws.forEach((w,i)=>{
-worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 worksHTML += '</div>';
 }
@@ -13515,10 +13941,11 @@ worksHTML = '<div class="worksreq"><span class="small">作品 '+ws.length+'点</
 '<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">古い順</button>' +
 '<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">新しい順</button>' +
 '</span><span class="seg mini" role="group" aria-label="表示">' +
-'<button class="'+(workMode==='wide'?'on':'')+'" onclick="setWorkMode(\'wide\')" aria-label="'+modeLabel('wide')+'">'+modeIcon('wide')+'</button>' +
-'<button class="'+(workMode==='def'?'on':'')+'" onclick="setWorkMode(\'def\')" aria-label="'+modeLabel('def')+'">'+modeIcon('def')+'</button>' +
-'<button class="'+(workMode==='compact'?'on':'')+'" onclick="setWorkMode(\'compact\')" aria-label="'+modeLabel('compact')+'">'+modeIcon('compact')+'</button>' +
-'<button class="'+(workMode==='mini'?'on':'')+'" onclick="setWorkMode(\'mini\')" aria-label="'+modeLabel('mini')+'">'+modeIcon('mini')+'</button>' +
+/* v32.6.0 (item 2): the works mode seg is generated from the
+   SAME MODES array as the list side — five stops including
+   micro, grid glyphs included — so the two switchers can
+   never drift apart again. */
+MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
 '</span></div>' + worksHTML;
 /* v30.6: the drawings panel — the same gallery as works (same
    tile shape, same viewer, same page turn), its own list. The
@@ -13530,9 +13957,24 @@ else{
 drawingsHTML = '<div class="worksreq"><span class="small">ドローイング '+dws.length+'点</span></div>' +
 '<div class="gallery wm-'+workMode+'">';
 dws.forEach((w,i)=>{
-drawingsHTML += '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+drawingsHTML += '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
 });
 drawingsHTML += '</div>';
+}
+/* v32.6 (item J-A): the process-photos panel — the works
+   gallery's card + viewer manners over process_photos[]; a photo
+   that shows a registered work in progress links to that work. */
+let procHTML = '';
+if(!pps.length) procHTML = '<div class="empty">制作風景の写真はまだありません</div>';
+else{
+procHTML = '<div class="worksreq"><span class="small">制作風景 '+pps.length+'点</span></div>' +
+'<div class="gallery wm-'+workMode+'">';
+pps.forEach((p,i)=>{
+const wobj = keyWork(p.img, p.caption||'');
+const wi = p.work? ws.findIndex(w => (w.caption||'').includes('《'+p.work+'》')): -1;
+procHTML += '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>';
+});
+procHTML += '</div>';
 }
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
@@ -13677,13 +14119,19 @@ pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出�
 }
 /* v5.0: a person with a chronicle gets the chronicle as their
    biography — the CV setting and the works strip step aside. */
+const erasData = chronicleErasFor(a);
 const chData = chronicleFor(a);
-if(chData) bioHTML = chronicleHTML(a, chData, ws);
+if(erasData) bioHTML = chronicleErasHTML(a, erasData, ws);
+else if(chData) bioHTML = chronicleHTML(a, chData, ws);
 else{
 bioHTML = sp.bio? cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws) }): '<div class="bodytext">（来歴の記載はまだありません）</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+pTermEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
+/* v32.6 (item J-B — his layout, 2026-11-16 09:15): the bio tab
+   opens with portrait (left) + structured details (right) when
+   the record carries them; the career prose follows below. */
+bioHTML = bioHeadHTML(a) + bioHTML;
 if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3>'+proseHTML(sp.tech);
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3>'+proseHTML(sp.rest);
@@ -13816,6 +14264,7 @@ if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較され
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
++'<div class="dpage" data-dtab="proc">'+procHTML+'</div>'
 +'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'<div class="dpage" data-dtab="relations">'+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
@@ -13872,6 +14321,29 @@ if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50
 else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 }
 });
+/* v32.6 (item J): the process-photo tiles — same wiring shape,
+   the click opens the viewer over the PROCESS list (kind
+   'proc'), and a caption's work link jumps to that work in the
+   works viewer instead. The bio portrait hydrates like a plate. */
+v.querySelectorAll('[data-procidx]').forEach(ph=>{
+const p = pps[+ph.dataset.procidx]; if(!p) return;
+const wobj = keyWork(p.img, p.caption||''); ph._work = wobj;
+const fig = ph.closest('figure');
+if(fig) fig.addEventListener('click', ()=>openViewerProc(a, +ph.dataset.procidx));
+const span = ph.querySelector('.imgholder'); if(span){ span._work = wobj;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, wobj);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj);
+}
+});
+v.querySelectorAll('[data-procwork]').forEach(b=>{
+b.addEventListener('click', (e)=>{ e.stopPropagation(); setTab('works'); openViewer(ws, +b.dataset.procwork, a.id); });
+});
+const pph = v.querySelector('[data-portrait]');
+if(pph){
+const wobj = keyWork(a.portrait, a.name || '');
+const span = pph.querySelector('.imgholder'); if(span){ span._work = wobj; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj); }
+}
 /* v32.3: the relations rows' mini-card thumbnails (the other
    artist's works[0]) — same wiring shape as the works tiles. */
 v.querySelectorAll('[data-relid]').forEach(ph=>{
@@ -13929,6 +14401,7 @@ const w = bioStripWiring[k]; if(!w) return;
 span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 });
 syncFavBtn();
+chEraBarSync();
 }
 
 const prewarmedPlates = {}; /* v27.9: plate URLs already prewarmed this session (see renderDetail) */
@@ -13948,6 +14421,10 @@ let viewerKindNext = null;
 function openViewerDrawings(a, idx){
 viewerKindNext = 'drawings';
 openViewer(drawingsOf(a), idx, a.id);
+}
+function openViewerProc(a, idx){
+viewerKindNext = 'proc';
+openViewer(processPhotosOf(a).map(p => keyWork(p.img, p.caption || '')), idx, a.id);
 }
 function openViewer(ws, idx, artistId){
 viewerKind = viewerKindNext || 'works'; viewerKindNext = null;
@@ -14008,7 +14485,7 @@ return workKeysOf(w).some(k=> fk.indexOf(k)>=0);
 function updateVThumbBtn(){
 const b = $('vthumb'); if(!b) return;
 /* v30.6: no thumbnail button while paging drawings */
-if(viewerKind==='drawings'){ b.style.display = 'none'; return; }
+if(viewerKind==='drawings' || viewerKind==='proc'){ b.style.display = 'none'; return; }
 b.style.display = '';
 const isT = viewerIsThumb();
 b.textContent = isT? 'サムネ' : 'サムネにする';
@@ -14017,7 +14494,7 @@ b.classList.toggle('on', isT);
 function viewerSetThumb(){
 /* v30.6: the thumbnail pin applies to works only — a drawing must
    never be copied into the works list from the viewer. */
-if(viewerKind==='drawings') return;
+if(viewerKind==='drawings' || viewerKind==='proc') return;
 const a = artistById(viewerArtistId); if(!a) return;
 const w = viewerWorks[viewerIdx]; if(!w) return;
 if(viewerIsThumb()){ toast('この作品がサムネです'); return; }
@@ -15577,13 +16054,13 @@ let html = '<div class="tlhead"><h2>'+esc(name)+'</h2><span class="topsp"></span
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
 const shelfWide = (workMode==='wide');
-const shelfModeCls = shelfWide? ' wide': (workMode==='compact' || workMode==='mini')? ' '+workMode: '';
+const shelfModeCls = shelfWide? ' wide': (workMode==='compact' || workMode==='mini' || workMode==='micro')? ' '+workMode: '';
 html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.length+'点</span></h2>'
 /* v12.4: the shelf switch joins the artist home's .modebar
    language (one rounded bar, dividers, gold underline) on its
    own full-width row — as loose pills inside the heading it
    wrapped 3+1 and crushed the heading text. */
-+ '<div class="modebar mmodes" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')" aria-label="'+modeLabel('wide')+'">'+modeIcon('wide')+'</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')" aria-label="'+modeLabel('def')+'">'+modeIcon('def')+'</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')" aria-label="'+modeLabel('compact')+'">'+modeIcon('compact')+'</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')" aria-label="'+modeLabel('mini')+'">'+modeIcon('mini')+'</button></div><div class="mgrid'+shelfModeCls+'">'
++ '<div class="modebar mmodes" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')" aria-label="'+modeLabel('wide')+'">'+modeIcon('wide')+'</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')" aria-label="'+modeLabel('def')+'">'+modeIcon('def')+'</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')" aria-label="'+modeLabel('compact')+'">'+modeIcon('compact')+'</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')" aria-label="'+modeLabel('mini')+'">'+modeIcon('mini')+'</button><button class="'+(workMode==='micro'?'on':'')+'" onclick="setMuseumMode(\'micro\')" aria-label="'+modeLabel('micro')+'">'+modeIcon('micro')+'</button></div><div class="mgrid'+shelfModeCls+'">'
 + held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
 + '</div>';
@@ -16061,7 +16538,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全599人中262人まで完了。残り337人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：92点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：530件・282人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い22人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像166点（作品152点・ドローイング14点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "制作ガイドの章に図版を入れる", "lines": ["解説の文章に、作品の画像・図解・表を差し込む仕組みができました（この版でアートビジネス全9章に適用済み）。", "同じ仕組みを、制作ガイドの28章にも順に広げていきます。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["美術史の年表に名前がある作家は、順に登録していきます（作品画像の権利が確認できた人から）。", "名前の表記ゆれなどで止まっている候補も、確認が取れ次第進めます。"]}, {"v": null, "label": "制作風景の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。", "どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "いまの状態：集め始めです。載せる場所は、作家ページの解剖（制作プロセス）の所を予定しています。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全599人中292人まで完了。残り307人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：93点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：551件・298人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像182点（作品166点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "制作ガイドの章に図版を入れる", "lines": ["解説の文章に、作品の画像・図解・表を差し込む仕組みができました（この版でアートビジネス全9章に適用済み）。", "同じ仕組みを、制作ガイドの28章にも順に広げていきます。", "計画はできています：28章に図83点（作品の画像・比較表・図解）を、3回に分けて入れていきます。まず受験の7章と「目に見えない部分」の2章から。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["美術史の年表に名前がある作家は、順に登録していきます（作品画像の権利が確認できた人から）。", "名前の表記ゆれなどで止まっている候補も、確認が取れ次第進めます。"]}, {"v": null, "label": "制作風景の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所はこの版でできました：作家ページに「制作風景」タブ（写真がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：出典つきで記録済みの候補が7件。まずクランストンの分から入れます。作家の収集のたびに、制作風景と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -16171,12 +16648,20 @@ function reqMarkOneRead(r){
 }
 function refreshReqNotifBtn(){
   /* v32.4: the unread badge rides the hub button now (the four
-     header buttons became one hub). */
+     header buttons became one hub). v32.6 (item I — his
+     2026-11-16 09:11 note via Study Labo: the red "2" on the hub
+     did not say WHAT it counted or where it opens): the SAME
+     count also rides the bell cell inside the hub popup, so
+     opening the hub shows at once that the notifications hold
+     the unread items, and one more tap lands on them. Counting
+     and clearing are unchanged. */
   const b = $('hubBadge'); if(!b) return;
   let n = 0;
   try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
   b.textContent = n? String(n): '';
   b.style.display = n? '': 'none';
+  const bb = $('hubBellBadge');
+  if(bb){ bb.textContent = n? String(n): ''; bb.style.display = n? '': 'none'; }
 }
 /* v7.0: new-registration notifications (his ask, 2026-11-13).
    Until now only request-driven registrations produced a
@@ -20093,7 +20578,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.5.0';
+const APP_VERSION = '32.6.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -20408,7 +20893,10 @@ function renderSettingsMain(){
       srow(SICON.cloud, '画像診断（不具合調査用）', '', "openSettingsPanel('diag')")+
       srow(SICON.db, 'ストレージ診断（不具合調査用）', '', "openSettingsPanel('storage')")+
     '</div>'+
-    '<div class="groupcard"><div class="symlegend"><div style="font-weight:700;color:var(--ink);margin-bottom:2px;">分野マークの凡例</div>' + FIELD_LEGEND.map(p => '<span style="display:inline-block;margin-right:14px;white-space:nowrap;"><b>' + p[0] + '</b>' + p[1] + '</span>').join('') + '</div></div>';
+    '';
+  /* v32.6 (item G): the field-symbol legend moved OUT of settings —
+     it now lives behind the legend icon button in the list sticky
+     bars (see legendBtnHTML / openSymLegend). */
 }
 /* v2.34: on-device image diagnostics. The user's iPhone showed every
    list tile as a black box while every off-device check passed, so the
@@ -21048,7 +21536,8 @@ function buildMakersView(d){
     + MODES.map(mo => '<button data-m="' + mo + '" onclick="setMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('')
     + '</div></div>'
     + '<div class="erarow" id="mkerarow"><span class="eraname" id="mkEraName">一覧</span><span class="erachips" id="mkEraChips">'
-    + (d.sections || []).map(sec => '<button class="erasecbtn" onclick="jumpMakerSection(\'' + escA(sec) + '\')">' + esc(sec) + '</button>').join('')
+    + legendBtnHTML()
+    + (d.sections || []).map(sec => '<button class="mksecbtn" onclick="jumpMakerSection(\'' + escA(sec) + '\')">' + esc(sec) + '</button>').join('')
     + '</span></div>'
     + '</div>'
     + '<div id="mklistbody"></div>';
@@ -21086,11 +21575,19 @@ function jumpMakerSection(sec){
 }
 function updateMakerEraName(){
   const nameEl = $('mkEraName'); if(!nameEl) return;
+  /* v32.6 (item F): same derivation discipline as updateEraName —
+     the threshold is the makers toolbar's REAL bottom (the old
+     hardcoded 190px line drifted from the actual bar and could
+     name a section that was not in view), compared in document
+     coordinates, only on the makers view, only when laid out. */
+  if(typeof view !== 'undefined' && view !== 'makers') return;
   const blocks = document.querySelectorAll('#mklistbody .secblock');
   if(!blocks.length){ nameEl.textContent = '一覧'; return; }
-  const line = 190;
+  if(!blocks[0].getBoundingClientRect().width) return; /* not laid out yet */
+  const tb = document.querySelector('#viewMakers .toolbar');
+  const line = (window.scrollY || 0) + (tb? tb.getBoundingClientRect().bottom: 0) + 4;
   let cur = blocks[0].dataset.msec;
-  blocks.forEach(b => { if(b.getBoundingClientRect().top <= line) cur = b.dataset.msec; });
+  blocks.forEach(b => { if(b.getBoundingClientRect().top + (window.scrollY || 0) <= line) cur = b.dataset.msec; });
   nameEl.textContent = cur;
 }
 function renderMakersBody(){
@@ -21287,8 +21784,14 @@ function xGenDetail(gid){
    the v32.4.0 rows'. */
 const HUB_ICONS = {
   biz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v15.5h16"/><polyline points="7.5,15 11,10.5 14,12.5 18.5,6.5"/><circle cx="18.5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/></svg>',
-  timeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4v16"/><circle cx="6.5" cy="7" r="1.7" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="6.5" cy="17" r="1.7" fill="currentColor" stroke="none"/><path d="M11 7h8M11 12h8M11 17h8"/></svg>',
-  genealogy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="5.5" r="2.1"/><circle cx="12" cy="5.5" r="2.1"/><circle cx="18.5" cy="5.5" r="2.1"/><path d="M5.5 7.6v1.9c0 1.1.9 2 2 2h9c1.1 0 2-.9 2-2V7.6"/><path d="M12 7.6v8.4"/><circle cx="12" cy="18.1" r="2.1"/></svg>'
+  timeline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v14.6"/><circle cx="7" cy="5.6" r="1.7" fill="currentColor" stroke="none"/><circle cx="7" cy="10.4" r="1.7" fill="currentColor" stroke="none"/><circle cx="7" cy="15.2" r="1.7" fill="currentColor" stroke="none"/><path d="M4.4 17.4 7 20.4 9.6 17.4"/></svg>',
+  /* v32.6.0 (his call 2026-11-16 08:34): the genealogy icon is
+     flipped vertically — a genealogy branches DOWNWARD from one
+     root, not upward. Same shapes, sizes and stroke; every y is
+     mirrored (y -> 24 - y). This is the icon's only definition:
+     the artist-page genealogy chips and the genealogy screens
+     are text-only, so they carry no second copy to flip. */
+  genealogy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.9" r="2.1"/><path d="M12 16.4v-8.4"/><path d="M5.5 16.4v-1.9c0-1.1.9-2 2-2h9c1.1 0 2 .9 2 2v1.9"/><circle cx="5.5" cy="18.5" r="2.1"/><circle cx="12" cy="18.5" r="2.1"/><circle cx="18.5" cy="18.5" r="2.1"/></svg>'
 };
 function openHub(){
   const list = $('hublist'); if(!list) return;
@@ -21300,7 +21803,8 @@ function openHub(){
     ['絵画の系譜', 'xOpenGenealogies()', HUB_ICONS.genealogy],
     ['作家の言葉', 'xOpenWords()', GUIDE_ICONS.dict]
   ];
-  list.innerHTML = cells.map(c => '<button class="hubrow" aria-label="' + c[0] + '" onclick="closeHub(); ' + c[1] + '">' + c[2] + '</button>').join('');
+  list.innerHTML = cells.map((c, i) => '<button class="hubrow" aria-label="' + c[0] + '" onclick="closeHub(); ' + c[1] + '">' + c[2] + (i === 0? '<span class="nbadge" id="hubBellBadge" style="display:none"></span>': '') + '</button>').join('');
+  refreshReqNotifBtn(); /* v32.6 (item I): the bell badge is drawn fresh at every open */
   $('hubsheet').classList.remove('hidden');
   sheetLockSync();
 }
