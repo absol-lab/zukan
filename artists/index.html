@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.12.0">
+<meta name="app-version" content="32.13.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -310,6 +310,12 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .gsub .mschip{font-size:9px; padding:0 5px; line-height:1.7; vertical-align:1px; margin-left:5px;}
 .favfilter{flex:none; width:48px; min-height:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:16px; position:relative; cursor:pointer; font-family:var(--sans); padding:0;}
 .favfilter.on{color:#e3a93c; border-color:#e3a93c;}
+/* v32.13.0: person-list order toggle — a pill in the moderow
+   showing the CURRENT direction （古い順 / 新しい順）; .on marks
+   the reversed state. The moderow's modebar flexes with
+   min-width:0, so the fixed pill never overflows the row. */
+.revbtn{flex:none; min-height:44px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:12.5px; cursor:pointer; font-family:var(--sans); padding:0 11px; white-space:nowrap;}
+.revbtn.on{color:var(--accent); border-color:var(--accent);}
 .favfilter .favcnt{position:absolute; top:3px; right:6px; font-size:9.5px; color:var(--muted);}
 #vfav{font-size:17px; color:#cfd2e0;}
 #vfav.on{color:#e3a93c;}
@@ -1186,6 +1192,25 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .bizcard figcaption{padding:8px 10px 10px}
 .bizcard .bizcname{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.35}
 .bizcard .bizcmeta{color:var(--muted); font-size:12px; margin-top:3px; line-height:1.5}
+/* v32.13.0: the guide chapter index (#gdgrid) is text-only
+   (see guideChapterCardHTML). The .grid mode classes set the
+   column count; these rules scale the card text and density
+   per mode so all five stops stay meaningful with no image
+   area. Titles are never clamped — they wrap in full. */
+#gdgrid figure.work{padding:10px 11px 8px;}
+#gdgrid figure.work figcaption{padding:0;}
+#gdgrid.wide figure.work{padding:14px 15px 11px;}
+#gdgrid.wide .bizcname{font-size:18px;}
+#gdgrid.wide .bizcmeta{font-size:13px;}
+#gdgrid.compact figure.work{padding:8px 9px 6px;}
+#gdgrid.compact .bizcname{font-size:13px;}
+#gdgrid.compact .bizcmeta{font-size:11px;}
+#gdgrid.mini figure.work{padding:6px 7px 5px;}
+#gdgrid.mini .bizcname{font-size:11.5px;}
+#gdgrid.mini .bizcmeta{font-size:10px;}
+#gdgrid.micro figure.work{padding:5px 6px 4px;}
+#gdgrid.micro .bizcname{font-size:10.5px;}
+#gdgrid.micro .bizcmeta{font-size:9.5px;}
 .biztypo{display:flex; align-items:center; justify-content:center; background:radial-gradient(130% 130% at 28% 18%, var(--card2), var(--bg2)); position:relative}
 .biztypo::before{content:''; position:absolute; inset:7px; border:1px solid var(--line); border-radius:6px; pointer-events:none}
 .biztypo-c{font-family:var(--headfont); font-size:44px; line-height:1; color:var(--accent); opacity:.92}
@@ -1916,6 +1941,8 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         <button id="slimFilter" onclick="expandToolbar('filter')" aria-label="タグ絞り込みを開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.1 7.1v5.4l-3.8 2v-7.4L4 5z"/></svg><span class="fcount hidden" id="slimFilterCount"></span></button>
       </div>
       <button id="favFilterBtn" class="favfilter" onclick="toggleFavFilter()" aria-label="お気に入りだけ表示">★</button>
+      <button id="revBtn" class="revbtn" onclick="toggleListRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button>
+      <button id="mergeBtn" class="revbtn" onclick="toggleListMerge()" aria-label="西洋と日本を一緒に表示する切り替え">西洋・日本いっしょ</button>
     </div>
     <div class="erarow" id="erarow">
       <span class="eraname" id="eraName">一覧</span>
@@ -9968,6 +9995,12 @@ portrait_src: String(a.portrait_src||''),
 process_photos: Array.isArray(a.process_photos)? a.process_photos.filter(p=>p && p.img).map(p=>{ const o = { img: String(p.img), caption: String(p.caption||'') }; if(p.work) o.work = String(p.work); return o; }): [],
 birthplace: String(a.birthplace||''),
 base: String(a.base||''),
+/* v32.13.0: full birth / death dates, when a record ever
+   carries them (none do today — verified across all three
+   datasets 2026-11-16), feed yearsDisplay's exact age at
+   death; the whitelist keeps them if the data gains them. */
+birth_date: String(a.birth_date||''),
+death_date: String(a.death_date||''),
 /* v32.6.1: sns links — http(s) only, kind coerced to the
    three glyph kinds (anything else becomes 'web'). */
 sns: Array.isArray(a.sns)? a.sns.filter(s=>s && s.url && /^https?:\/\//.test(String(s.url))).map(s=>({ kind: ['instagram','x','web'].indexOf(s.kind) >= 0? s.kind: 'web', url: String(s.url) })): [],
@@ -10131,6 +10164,8 @@ function bioHeadHTML(a){
   const yrs = String(a.years || '');
   const m = yrs.match(/(\d{3,4})\s*[–—\-〜~]\s*(\d{3,4})?/);
   if(m){ rows.push(['生年', m[1] + '年']); if(m[2]) rows.push(['没年', m[2] + '年']); }
+  const da = deathAge(a);
+  if(da != null) rows.push(['享年', da + '歳']);
   if(a.birthplace) rows.push(['出生地', a.birthplace]);
   if(a.base) rows.push(['拠点', a.base]);
   const from = (a.field || '').split('、')[0];
@@ -11029,7 +11064,7 @@ const GUIDE_TAX = [
   { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill']] },
-  { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience']] }
+  { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
 ];
 /* v30.9: one line icon per guide major (his call: swap the
    text pills for fitting icons). Hand-drawn in the app's own
@@ -11411,36 +11446,20 @@ function guideBackToIdx(){
   guideIdx = true;
   renderGuide();
 }
-/* v32.12.0: one chapter card for the major index — the artist-
-   list card component (figure.work), exactly as the Art
-   Business index rides it (v32.10.0). The plate is the first
-   work image of the chapter's first works-figure that resolves
-   against the loaded data; a chapter with no resolvable work
-   image gets the typographic plate with its tab initial —
-   never an empty slot. Plates ride the bizFigStore mechanism,
-   so renderGuide's wireBizFigs hydrates them like any figure. */
+/* v32.12.0: one chapter card for the major index, riding the
+   artist-list card component (figure.work) like the Art
+   Business index. v32.13.0 (his device verdict on v32.12.0,
+   2026-11-16: 「この場合はサムネいらないかもね」): on THIS
+   surface the plate is gone entirely — no work-image
+   thumbnail and no typographic initial tile. The card is
+   text only: chapter title + subtab meta + the 必見 chip
+   where present. The Art Business index keeps its plates;
+   the #gdgrid CSS below scales text/density per mode so
+   the 5-mode switch stays meaningful without an image. */
 function guideChapterCardHTML(s){
   const c = guideChapterById(s[1]);
   const title = c? (c.title || s[0]): s[0];
-  let plate = null;
-  if(c){
-    const figs = [].concat(c.leadFigs || []);
-    (c.sections || []).forEach(sec=> (sec.figs || []).forEach(f=> figs.push(f)));
-    for(const f of figs){
-      if(!f || f.type !== 'works') continue;
-      for(const it of (f.items || [])){
-        const r = bizFigResolve(it.artist, it.work, it.drawing);
-        if(r && r.w && r.w.img){
-          const ix = bizFigStore.length; bizFigStore.push(r.w);
-          plate = '<div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div>';
-          break;
-        }
-      }
-      if(plate) break;
-    }
-  }
-  if(!plate) plate = '<div class="ph biztypo"><span class="biztypo-c">' + esc(Array.from(s[0])[0] || '') + '</span></div>';
-  return '<figure class="work bizcard" onclick="guideOpenChapter(\'' + escA(s[1]) + '\')">' + plate
+  return '<figure class="work bizcard" onclick="guideOpenChapter(\'' + escA(s[1]) + '\')">'
     + '<figcaption><div class="bizcname">' + esc(title) + '</div><div class="bizcmeta">' + esc(s[0]) + ((c && c.mustSee)? ' <span class="mschip">必見</span>': '') + '</div></figcaption></figure>';
 }
 /* v28.4: chapter switches inside a major swap ONLY the
@@ -13041,6 +13060,8 @@ el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+w
 }
 function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on', b.dataset.m===state.mode); if(MODE_GRIDS[b.dataset.m]){ b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); } });
+syncRevBtn();
+syncMergeBtn();
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 updateSearchClear();
@@ -13574,6 +13595,35 @@ return Infinity;
    is unparseable as a single living lifespan and is shown
    exactly as recorded; an implausible age (outside 0–110)
    also falls back to the raw string. */
+/* v32.13.0 (his 2026-11-16 call): deceased people gain the
+   age at death, mirroring the living form — a plain
+   birth–death range ('1958–1990') displays
+   '1958–1990 ・享年32歳'. fullDateOf reads an ISO or
+   YYYY年M月D日 full date; deathAge uses full recorded dates
+   (birth_date / death_date) for the exact 満年齢 when both
+   are present and agree with the years range, and otherwise
+   falls back to deathYear − birthYear — the same year
+   arithmetic the living age uses. No plain range, no 享年:
+   circa strings, duos and unknown years show nothing extra,
+   and an implausible result (outside 0–110) is suppressed.
+   Never guessed. */
+function fullDateOf(v){
+  if(!v) return null;
+  const s = String(v);
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/) || s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if(!m) return null;
+  return { y: parseInt(m[1], 10), mo: parseInt(m[2], 10), d: parseInt(m[3], 10) };
+}
+function deathAge(a){
+  const y = String((a && a.years) || '');
+  const dm = y.match(/^(\d{3,4})\s*[–—-]\s*(\d{3,4})$/);
+  if(!dm) return null;
+  const b = parseInt(dm[1], 10), d = parseInt(dm[2], 10);
+  let age = d - b;
+  const bd = fullDateOf(a && a.birth_date), dd = fullDateOf(a && a.death_date);
+  if(bd && dd && bd.y === b && dd.y === d) age = dd.y - bd.y - ((dd.mo < bd.mo || (dd.mo === bd.mo && dd.d < bd.d))? 1: 0);
+  return (age >= 0 && age <= 110)? age: null;
+}
 function yearsDisplay(a){
 const y = String((a && a.years) || '');
 if(!y) return '';
@@ -13581,14 +13631,90 @@ const m = y.match(/^(\d{3,4})\s*[–—-]\s*$/) || y.match(/^(\d{3,4})$/);
 if(m){
   const age = new Date().getFullYear() - parseInt(m[1], 10);
   if(age >= 0 && age <= 110) return y + ' ・' + age + '歳';
+  return y;
 }
+const da = deathAge(a);
+if(da != null) return y + ' ・享年' + da + '歳';
 return y;
+}
+/* v32.13.0: display-order reverse for the person lists (his
+   2026-11-16 call). The default stays oldest-first; the
+   toggle flips the chronological order to newest-first and
+   back. The direction persists per book under
+   zukan.rev.<ds> (the zukan.smode.<key> pattern); makers
+   keep their own zukan.rev.makers. Unknown birth years stay
+   at the end of their section in BOTH directions — they are
+   not "newest", just unknown — mirroring how they already
+   sink in the default order. Search results keep their
+   name ranking (v27.2) and are not affected. */
+const listRev = {};
+function revOn(){
+  if(listRev[DS] == null){ try{ listRev[DS] = storeGet('zukan.rev.' + DS) === '1'; }catch(e){ listRev[DS] = false; } }
+  return !!listRev[DS];
+}
+function syncRevBtn(){
+  const b = $('revBtn'); if(!b) return;
+  const r = revOn();
+  b.textContent = r? '新しい順': '古い順';
+  b.classList.toggle('on', r);
+}
+function toggleListRev(){
+  const v = !revOn();
+  listRev[DS] = v;
+  try{ storeSet('zukan.rev.' + DS, v? '1': '0'); }catch(e){}
+  syncRevBtn();
+  renderListKeepScroll(()=>{ renderListBody(); });
+}
+/* v32.13.0: region-merge toggle (his 2026-11-16 call) — the
+   artist sections are 地域：時代 ('西洋：現代' / '日本：現代').
+   ON drops the region part, so both regions stand in ONE era
+   section, interleaved by the same birth-year sort (and by
+   the reverse toggle when that is on too). OFF is exactly
+   the current behaviour. Persists per book under
+   zukan.merge.<ds>. The designer book's sections are fields
+   （家具・グラフィック…) with no region part — nothing to
+   merge — so the button is hidden in that book. */
+const listMerge = {};
+function mergeOn(){
+  if(listMerge[DS] == null){ try{ listMerge[DS] = storeGet('zukan.merge.' + DS) === '1'; }catch(e){ listMerge[DS] = false; } }
+  return !!listMerge[DS];
+}
+function eraPartOf(s){
+  const str = String(s || '');
+  const i = str.indexOf('：');
+  return i >= 0? str.slice(i + 1): str;
+}
+function syncMergeBtn(){
+  const b = $('mergeBtn'); if(!b) return;
+  b.style.display = (DS === 'artists')? '': 'none';
+  b.classList.toggle('on', mergeOn());
+  b.setAttribute('aria-pressed', mergeOn()? 'true': 'false');
+}
+function toggleListMerge(){
+  const v = !mergeOn();
+  listMerge[DS] = v;
+  try{ storeSet('zukan.merge.' + DS, v? '1': '0'); }catch(e){}
+  syncMergeBtn();
+  renderListKeepScroll(()=>{ renderListBody(); });
+}
+let mkRev = false;
+try{ mkRev = storeGet('zukan.rev.makers') === '1'; }catch(e){}
+function syncMakerRevBtn(){
+  const b = $('mkRevBtn'); if(!b) return;
+  b.textContent = mkRev? '新しい順': '古い順';
+  b.classList.toggle('on', mkRev);
+}
+function toggleMakerRev(){
+  mkRev = !mkRev;
+  try{ storeSet('zukan.rev.makers', mkRev? '1': '0'); }catch(e){}
+  syncMakerRevBtn();
+  renderMakersBody();
 }
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶ 動画×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -13642,6 +13768,7 @@ listDirty = false; /* v27.7: the list DOM now matches data+state (see markListDi
 listRenderedQuery = state.query;
 syncFavFilterBtn();
 const arr = filteredArtists();
+const rev = revOn();
 const body = $('listbody');
 const searching = queryToks().length > 0;
 if(!arr.length){
@@ -13667,9 +13794,17 @@ html += '<div class="grid '+state.mode+'">';
 rankByName(arr).forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 } else {
+/* v32.13.0: with the region-merge toggle on, the grouping
+   key is the era part of the section name (eraPartOf) —
+   sections, section keys, group filters and headings all
+   read through secOf, so the merged list is the same
+   machinery with a coarser key. Off: secOf is the raw
+   section, exactly the pre-toggle behaviour. */
+const merged = mergeOn();
+const secOf = a => merged? eraPartOf(a.section || ''): (a.section || '');
 const order = [];
-DB.sections.forEach(s=>{ if(order.indexOf(s)<0) order.push(s);});
-arr.forEach(a=>{ if(a.section && order.indexOf(a.section)<0) order.push(a.section);});
+DB.sections.forEach(s=>{ const dsec = merged? eraPartOf(s): s; if(order.indexOf(dsec)<0) order.push(dsec);});
+arr.forEach(a=>{ const s = secOf(a); if(s && order.indexOf(s)<0) order.push(s);});
 order.push('');
 /* v32.4 (item 8): the SECTIONS run oldest-first too — a section's
    key is its oldest member's birth key, so the default list opens
@@ -13680,16 +13815,18 @@ order.push('');
 const secKey = {};
 order.forEach(sec=>{
 let m = Infinity;
-arr.forEach(a=>{ if((a.section||'')===sec){ const k = birthSortKey(a); if(k<m) m = k; } });
+arr.forEach(a=>{ if(secOf(a)===sec){ const k = birthSortKey(a); if(k<m) m = k; } });
 secKey[sec] = m;
 });
 order.sort((s1, s2)=>{
 if(s1==='') return 1; if(s2==='') return -1;
 const k1 = secKey[s1], k2 = secKey[s2];
-return k1 < k2? -1: k1 > k2? 1: 0;
+const i1 = !isFinite(k1), i2 = !isFinite(k2);
+if(i1 || i2) return i1 === i2? 0: (i1? 1: -1);
+return rev? (k1 > k2? -1: k1 < k2? 1: 0): (k1 < k2? -1: k1 > k2? 1: 0);
 });
 order.forEach(sec=>{
-const group = arr.filter(a=>(a.section||'')===sec);
+const group = arr.filter(a=> secOf(a)===sec);
 if(!group.length) return;
 /* v28.0: within a section the cards run oldest-first by birth
    year. sort_year is authoritative where the record carries
@@ -13701,7 +13838,9 @@ if(!group.length) return;
    (v27.2). */
 group.sort((x, y)=>{
 const kx = birthSortKey(x), ky = birthSortKey(y);
-return kx < ky? -1: kx > ky? 1: 0;
+const ix = !isFinite(kx), iy = !isFinite(ky);
+if(ix || iy) return ix === iy? 0: (ix? 1: -1);
+return rev? (kx > ky? -1: kx < ky? 1: 0): (kx < ky? -1: kx > ky? 1: 0);
 });
 html += '<h2 class="sechead"><span>'+esc(sec||'（分類なし）')+'</span><span class="secright">' + eraBtnHTML() + symSecBtnHTML() + '<span class="cnt">'+group.length+'名</span></span></h2>';
 html += '<div class="grid '+state.mode+'">';
@@ -21301,7 +21440,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.12.0';
+const APP_VERSION = '32.13.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -22281,7 +22420,7 @@ function buildMakersView(d){
     + '</div></div></div>'
     + '<div class="moderow"><div class="modebar" id="mkmodeseg">'
     + MODES.map(mo => '<button data-m="' + mo + '" onclick="setMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('')
-    + '</div></div>'
+    + '</div><button id="mkRevBtn" class="revbtn" onclick="toggleMakerRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button></div>'
     + '<div class="erarow" id="mkerarow"><span class="eraname" id="mkEraName">一覧</span><span class="erachips" id="mkEraChips">'
     + legendBtnHTML()
     + (d.sections || []).map(sec => '<button class="mksecbtn" onclick="jumpMakerSection(\'' + escA(sec) + '\')">' + esc(sec) + '</button>').join('')
@@ -22292,6 +22431,7 @@ function buildMakersView(d){
   xMakerBuilt = true;
   syncMakerFacets();
   syncMakerModeSeg();
+  syncMakerRevBtn();
 }
 function syncMakerModeSeg(){
   document.querySelectorAll('#mkmodeseg button').forEach(b => { b.classList.toggle('on', b.dataset.m === state.mode); b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); });
@@ -22341,15 +22481,23 @@ function renderMakersBody(){
   const body = $('mklistbody'); if(!body || !XMAKERS) return;
   const d = XMAKERS;
   let h = '', any = false;
-  (d.sections || []).forEach(sec => {
+  /* v32.13.0: the makers' sections are thematic and their
+     people stand in curated data order (not a chronological
+     sort), so the order toggle literally reverses the
+     rendered sequence — sections and people — and the
+     default view is exactly the order kept until now. */
+  const mkSecs = (d.sections || []).slice();
+  if(mkRev) mkSecs.reverse();
+  mkSecs.forEach(sec => {
     const people = (d.artists || []).filter(m => m.section === sec && xMakerPass(m));
+    if(mkRev) people.reverse();
     if(!people.length) return;
     any = true;
     h += '<div class="secblock" data-msec="' + escA(sec) + '"><h2 class="sechead"><span class="secname">' + esc(sec) + '</span><span class="seccount">' + people.length + '名</span></h2><div class="grid ' + state.mode + '">';
     people.forEach(m => {
       h += '<figure class="work" onclick="openMakerDetail(' + m.id + ')">' + xMakerPlateHTML(m)
         + '<figcaption><div class="nm">' + esc(m.name) + '</div>'
-        + (m.years? '<div class="yrs">' + esc(m.years) + '</div>': '')
+        + (m.years? '<div class="yrs">' + esc(yearsDisplay(m)) + '</div>': '')
         + ((m.roles || []).length? '<div class="sub">' + esc(m.roles.join('・')) + '</div>': '')
         + '</figcaption></figure>';
     });
@@ -22384,7 +22532,7 @@ function renderMakerDetail(){
     + '<div class="mkdname">' + esc(m.name) + '</div>'
     + ((m.name_kana || m.name_latin)? '<div class="small">' + esc([m.name_kana, m.name_latin].filter(Boolean).join(' / ')) + '</div>': '')
     + (snsLinksHTML(m)? '<div class="mksnsrow">' + snsLinksHTML(m) + '</div>': '')
-    + (m.years? '<div class="small">' + esc(m.years) + '</div>': '')
+    + (m.years? '<div class="small">' + esc(yearsDisplay(m)) + '</div>': '')
     + '<div style="margin-top:8px;">' + (m.roles || []).map(r => '<span class="xchip acc">' + esc(r) + '</span>').join('') + '</div>'
     + '</div></div>';
   if(m.key_moves || m.notes){
