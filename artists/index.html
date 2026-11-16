@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.7.1">
+<meta name="app-version" content="32.8.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -254,6 +254,182 @@
   --fab:#936d1a; --fabink:#e2dad0; --ink35:rgba(42,31,17,.65);
   --desktex:var(--tex-wood-take);
 }
+
+/* v32.8.0: theme-preview scopes — the palette blocks above are
+   :root-only, so the theme picker's miniature preview carries
+   its own copies (same declarations, scoped to .themeprev).
+   The wood photographs are NOT duplicated: --desktex points at
+   the shared --tex-wood-* custom properties, as in the chips. */
+.themeprev[data-theme="sumi"]{
+  --bg:#000000; --bg2:#101012; --card:#26262b; --card2:#33333a;
+  --text:#f4f4f6; --muted:#9c9ca4; --accent:#d9d9e0; --line:#33333a; --lineStrong:#7a7a84;
+  --danger:#ff5247; --nav:rgba(26,26,30,.92); --sheet:rgba(0,0,0,.55);
+  --fab:#a9a9b0; --fabink:#000000; --ink35:rgba(244,244,246,.65);
+}
+.themeprev[data-theme="wood"]{
+  --bg:#171009; --bg2:#20150b; --card:#2b1c0f; --card2:#3a2716;
+  --text:#f6efe2; --muted:#c3ac8a; --accent:#e8b45a; --line:#4a351d; --lineStrong:#ab8a5c;
+  --danger:#ff6a55; --nav:rgba(32,21,11,.94); --sheet:rgba(8,5,2,.55);
+  --fab:#e8b45a; --fabink:#171009; --ink35:rgba(246,239,226,.65);
+}
+.themeprev[data-theme="ocher"]{
+  --bg:#16110b; --bg2:#1d1610; --card:#251c12; --card2:#2f2416;
+  --text:#f4ecdc; --muted:#b3a58c; --accent:#d9a441; --line:#3a2d1c; --lineStrong:#97835e;
+  --danger:#ff5a47; --nav:rgba(33,25,16,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#d9a441; --fabink:#16110b; --ink35:rgba(244,236,220,.65);
+}
+.themeprev[data-theme="spandrel"]{
+  --bg:#0e100e; --bg2:#141713; --card:#191d18; --card2:#22271f;
+  --text:#eef0e4; --muted:#a3ab97; --accent:#c9cfae; --line:#2c332a; --lineStrong:#828a76;
+  --danger:#ff5a47; --nav:rgba(22,26,21,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#c9cfae; --fabink:#0e100e; --ink35:rgba(238,240,228,.65);
+}
+.themeprev[data-theme="kinari"]{
+  --bg:#f1ebda; --bg2:#eae2cd; --card:#faf6ea; --card2:#f3eddb;
+  --text:#211d14; --muted:#675d49; --accent:#57503e; --line:#ddd2b8; --lineStrong:#8a7a54;
+  --danger:#b93527; --nav:rgba(250,246,234,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#57503e; --fabink:#f1ebda; --ink35:rgba(33,29,20,.65);
+}
+.themeprev[data-theme="wood-kokutan"]{
+  --bg:#0e0c09; --bg2:#191510; --card:#1f1a14; --card2:#2d261d;
+  --text:#f3ede7; --muted:#c2a98e; --accent:#d3b269; --line:#3b3126; --lineStrong:#ad8b66;
+  --danger:#ff6a55; --nav:rgba(25,21,16,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#d3b269; --fabink:#0e0c09; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-kokutan);
+}
+.themeprev[data-theme="wood-wenge"]{
+  --bg:#100d0a; --bg2:#1b1611; --card:#211b15; --card2:#2f261e;
+  --text:#f3eee7; --muted:#c2ab8e; --accent:#ddb55f; --line:#3d3227; --lineStrong:#ad8d66;
+  --danger:#ff6a55; --nav:rgba(27,22,17,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#ddb55f; --fabink:#100d0a; --ink35:rgba(243,238,231,.65);
+  --desktex:var(--tex-wood-wenge);
+}
+.themeprev[data-theme="wood-walnut"]{
+  --bg:#130e0b; --bg2:#1e1612; --card:#241c15; --card2:#32271d;
+  --text:#f3ece7; --muted:#c2a58e; --accent:#e2b75a; --line:#413326; --lineStrong:#ad8566;
+  --danger:#ff6a55; --nav:rgba(30,22,18,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e2b75a; --fabink:#130e0b; --ink35:rgba(243,236,231,.65);
+  --desktex:var(--tex-wood-walnut);
+}
+.themeprev[data-theme="wood-walnut-smoke"]{
+  --bg:#110d09; --bg2:#1d160f; --card:#241b13; --card2:#33261b;
+  --text:#f3ede7; --muted:#c2a68e; --accent:#e0b65c; --line:#423223; --lineStrong:#ad8766;
+  --danger:#ff6a55; --nav:rgba(29,22,15,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e0b65c; --fabink:#110d09; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-walnut-smoke);
+}
+.themeprev[data-theme="wood-rosewood"]{
+  --bg:#150c07; --bg2:#22140b; --card:#2b180d; --card2:#3d2212;
+  --text:#f3ece7; --muted:#c2a18e; --accent:#e2ac5a; --line:#4e2c18; --lineStrong:#ad8066;
+  --danger:#ff6a55; --nav:rgba(34,20,11,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e2ac5a; --fabink:#150c07; --ink35:rgba(243,236,231,.65);
+  --desktex:var(--tex-wood-rosewood);
+}
+.themeprev[data-theme="wood-mahogany"]{
+  --bg:#160d08; --bg2:#23150d; --card:#2b190f; --card2:#3c2315;
+  --text:#f3ece7; --muted:#c2a18e; --accent:#e2ae5a; --line:#4d2d1b; --lineStrong:#ad8066;
+  --danger:#ff6a55; --nav:rgba(35,21,13,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e2ae5a; --fabink:#160d08; --ink35:rgba(243,236,231,.65);
+  --desktex:var(--tex-wood-mahogany);
+}
+.themeprev[data-theme="wood-teak"]{
+  --bg:#150f0a; --bg2:#211810; --card:#281d13; --card2:#38281a;
+  --text:#f3ede7; --muted:#c2a88e; --accent:#e2b75a; --line:#473422; --lineStrong:#ad8966;
+  --danger:#ff6a55; --nav:rgba(33,24,16,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e2b75a; --fabink:#150f0a; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-teak);
+}
+.themeprev[data-theme="wood-nara"]{
+  --bg:#140f0a; --bg2:#201810; --card:#271c14; --card2:#36271c;
+  --text:#f3ece7; --muted:#c2a58e; --accent:#e2b75a; --line:#453224; --lineStrong:#ad8566;
+  --danger:#ff6a55; --nav:rgba(32,24,16,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e2b75a; --fabink:#140f0a; --ink35:rgba(243,236,231,.65);
+  --desktex:var(--tex-wood-nara);
+}
+.themeprev[data-theme="wood-oak-mocha"]{
+  --bg:#120f0c; --bg2:#1d1813; --card:#231e16; --card2:#312a1f;
+  --text:#f3eee7; --muted:#c2ad8e; --accent:#cfb36e; --line:#3f3628; --lineStrong:#ad9066;
+  --danger:#ff6a55; --nav:rgba(29,24,19,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#cfb36e; --fabink:#120f0c; --ink35:rgba(243,238,231,.65);
+  --desktex:var(--tex-wood-oak-mocha);
+}
+.themeprev[data-theme="wood-oak-white"]{
+  --bg:#130f0c; --bg2:#1e1813; --card:#241d17; --card2:#322820;
+  --text:#f3ede7; --muted:#c2a88e; --accent:#ddb55f; --line:#403429; --lineStrong:#ad8966;
+  --danger:#ff6a55; --nav:rgba(30,24,19,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#ddb55f; --fabink:#130f0c; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-oak-white);
+}
+.themeprev[data-theme="wood-sugi"]{
+  --bg:#160f07; --bg2:#24180b; --card:#2c1e0e; --card2:#3d2a14;
+  --text:#f3eee7; --muted:#c2aa8e; --accent:#e4b358; --line:#4f3619; --lineStrong:#ad8c66;
+  --danger:#ff6a55; --nav:rgba(36,24,11,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e4b358; --fabink:#160f07; --ink35:rgba(243,238,231,.65);
+  --desktex:var(--tex-wood-sugi);
+}
+.themeprev[data-theme="wood-matsu"]{
+  --bg:#160f07; --bg2:#24180b; --card:#2c1d0e; --card2:#3d2814;
+  --text:#f3ede7; --muted:#c2a98e; --accent:#e4b558; --line:#4f3419; --lineStrong:#ad8b66;
+  --danger:#ff6a55; --nav:rgba(36,24,11,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e4b558; --fabink:#160f07; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-matsu);
+}
+.themeprev[data-theme="wood-hinoki"]{
+  --bg:#140f0b; --bg2:#201811; --card:#261e15; --card2:#352a1d;
+  --text:#f3ede7; --muted:#c2a98e; --accent:#e0b65c; --line:#443525; --lineStrong:#ad8b66;
+  --danger:#ff6a55; --nav:rgba(32,24,17,.94); --sheet:rgba(0,0,0,.55);
+  --fab:#e0b65c; --fabink:#140f0b; --ink35:rgba(243,237,231,.65);
+  --desktex:var(--tex-wood-hinoki);
+}
+.themeprev[data-theme="wood-cherry"]{
+  --bg:#e3d7cc; --bg2:#decfc2; --card:#dacabb; --card2:#d6c4b3;
+  --text:#2a1d11; --muted:#745b44; --accent:#956318; --line:#cab39d; --lineStrong:#644e3b;
+  --danger:#b93527; --nav:rgba(218,202,187,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#956318; --fabink:#e3d7cc; --ink35:rgba(42,29,17,.65);
+  --desktex:var(--tex-wood-cherry);
+}
+.themeprev[data-theme="wood-olive"]{
+  --bg:#ded5cb; --bg2:#d8cdc2; --card:#d5c8bc; --card2:#d0c2b4;
+  --text:#2a1d11; --muted:#745c44; --accent:#8b6718; --line:#c3b1a0; --lineStrong:#644f3b;
+  --danger:#b93527; --nav:rgba(213,200,188,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#8b6718; --fabink:#ded5cb; --ink35:rgba(42,29,17,.65);
+  --desktex:var(--tex-wood-olive);
+}
+.themeprev[data-theme="wood-oak-red"]{
+  --bg:#ddd8d2; --bg2:#d6d0c9; --card:#d2cbc3; --card2:#cdc5bc;
+  --text:#2a1e11; --muted:#745d44; --accent:#93691a; --line:#beb4a9; --lineStrong:#64503b;
+  --danger:#b93527; --nav:rgba(210,203,195,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#93691a; --fabink:#ddd8d2; --ink35:rgba(42,30,17,.65);
+  --desktex:var(--tex-wood-oak-red);
+}
+.themeprev[data-theme="wood-oak-grey"]{
+  --bg:#dcd6d0; --bg2:#d5cec7; --card:#d2c9c1; --card2:#cdc3ba;
+  --text:#2a1d11; --muted:#745a44; --accent:#7e6930; --line:#bfb2a6; --lineStrong:#644e3b;
+  --danger:#b93527; --nav:rgba(210,201,193,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#7e6930; --fabink:#dcd6d0; --ink35:rgba(42,29,17,.65);
+  --desktex:var(--tex-wood-oak-grey);
+}
+.themeprev[data-theme="wood-ash"]{
+  --bg:#dcd7d3; --bg2:#d5cfca; --card:#d1cbc4; --card2:#cbc5bd;
+  --text:#2a1d11; --muted:#745c44; --accent:#89661a; --line:#bdb4aa; --lineStrong:#644f3b;
+  --danger:#b93527; --nav:rgba(209,203,196,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#89661a; --fabink:#dcd7d3; --ink35:rgba(42,29,17,.65);
+  --desktex:var(--tex-wood-ash);
+}
+.themeprev[data-theme="wood-maple"]{
+  --bg:#e6e1d8; --bg2:#e0dacf; --card:#dcd5c9; --card2:#d7cfc1;
+  --text:#2a2111; --muted:#746344; --accent:#936d1a; --line:#cabfad; --lineStrong:#64553b;
+  --danger:#b93527; --nav:rgba(220,213,201,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#936d1a; --fabink:#e6e1d8; --ink35:rgba(42,33,17,.65);
+  --desktex:var(--tex-wood-maple);
+}
+.themeprev[data-theme="wood-take"]{
+  --bg:#e2dad0; --bg2:#dcd3c7; --card:#d8cdc0; --card2:#d3c7b8;
+  --text:#2a1f11; --muted:#745e44; --accent:#936d1a; --line:#c6b7a4; --lineStrong:#64513b;
+  --danger:#b93527; --nav:rgba(216,205,192,.95); --sheet:rgba(60,52,32,.35);
+  --fab:#936d1a; --fabink:#e2dad0; --ink35:rgba(42,31,17,.65);
+  --desktex:var(--tex-wood-take);
+}
 /* text size (diary --fs steps) */
 :root[data-fontsize="small"]{--fs:14px;}
 :root[data-fontsize="standard"]{--fs:16px;}
@@ -451,9 +627,9 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 /* v2.24: exhibition poster plate. Fixed-height box so loading/failure
    never shifts the card (the v2.18 geometry rule); the poster itself is
    shown whole (contain), never cropped. */
-.exposter{height:230px; border-radius:10px; overflow:hidden; background:var(--bg2); margin-bottom:10px;}
+.exposter{flex:0 0 104px; width:104px; height:138px; border-radius:10px; overflow:hidden; background:var(--bg2);}
 .exposter .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
-.exposter .imgholder img{width:100%; height:100%; object-fit:contain; display:block;}
+.exposter .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .exposter .imgholder .noimg{font-family:var(--serif); font-size:12px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center; line-height:1.7;}
 .syncline{font-size:13px; color:var(--muted); margin-top:8px;}
 .syncline.err{color:var(--danger);}
@@ -976,7 +1152,13 @@ h3.subhead:first-child{margin-top:8px;}
 #viewer .vbar button{background:none; border:1px solid var(--lineStrong); color:var(--text); padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
 #viewer .vcount{color:var(--muted); font-size:13px;}
 /* exhibitions */
-.exitem{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:12px;}
+.exitem{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:12px; display:flex; gap:12px;}
+.exitem .exbody{flex:1; min-width:0;}
+.exitem .ea{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.4; margin-top:1px;}
+.exrep{flex:0 0 104px; width:104px; height:138px; border-radius:10px; overflow:hidden; background:var(--bg2); border:none; padding:0; cursor:pointer;}
+.exrep .ph{width:100%; height:100%;}
+.exrep .ph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
+.exrep .ph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .exitem .et{font-family:var(--serif); font-size:16px; line-height:1.45;}
 .exitem .em{font-size:13.5px; color:var(--muted); margin-top:2px;}
 .exitem .edates{font-size:13.5px; margin-top:2px;}
@@ -989,7 +1171,10 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 /* v21.10 (his call): the venue index reads as a compact list, not a
    card wall — one line per venue, name left, counts right. The name
    and the counts stay; only the bulk goes. */
-.galgrid{display:block; margin-top:2px;}
+.galgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px;}
+.galcard{position:relative; margin:0;}
+.galcard .gsub{font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+.galcard .gext{position:absolute; top:8px; right:10px; color:var(--accent); font-size:12px; z-index:2; padding:8px; margin:-8px; text-decoration:none;}
 .galrow{position:relative; display:flex; align-items:baseline; gap:10px; padding:10px 30px 10px 2px; min-height:40px; box-sizing:border-box; border-bottom:1px solid var(--line); text-decoration:none; color:var(--text);}
 /* v2.62: gallery section collapses to one row by default */
 .galhead{display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; border-bottom:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:16.5px; font-weight:700; letter-spacing:.04em; padding:14px 2px 10px; margin-top:14px; min-height:52px; text-align:left; cursor:pointer;}
@@ -1740,9 +1925,37 @@ button.srow:active{opacity:.6;}
 .panelnav .back{min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; font-size:calc(var(--fs) * .95); color:var(--muted); font-family:var(--sans); border:1.5px solid var(--lineStrong); border-radius:999px; padding:6px 14px; background:var(--bg);}
 .panelnav .pttl{flex:1; text-align:center; font-weight:700; font-size:calc(var(--fs) * 1.05);}
 .panelnav .psp{width:44px; flex:none;}
-.swatches{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;}
-.swatch{border:2px solid transparent; border-radius:14px; padding:6px 4px 8px; text-align:center; font-size:calc(var(--fs) * .78); color:var(--text); font-family:var(--sans); min-height:48px;}
-.swatch .chip{height:40px; border-radius:9px; border:1px solid rgba(128,128,128,.35); margin-bottom:6px; position:relative; overflow:hidden;}
+.swatches{display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;}
+.swatch{border:2px solid transparent; border-radius:10px; padding:4px 2px 5px; text-align:center; color:var(--text); font-family:var(--sans); min-height:0;}
+.swatch .chip{height:24px; border-radius:6px; border:1px solid rgba(128,128,128,.35); margin-bottom:3px; position:relative; overflow:hidden;}
+.swatch .swname{display:block; font-size:10px; line-height:1.3; white-space:nowrap;}
+.swatch .swname.long{font-size:8.8px; letter-spacing:-.05em;}
+/* v32.8.0: the theme preview — a miniature of the artist list
+   screen (header, search bar, three artist cards, the pill nav)
+   painted in the selected theme's own palette and wood texture
+   via the .themeprev-scoped variable copies. Fixed small sizes:
+   it is a miniature, not a screen, so it ignores --fs. */
+.themeprev{border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:14px; background-color:var(--bg); background-image:var(--desktex); background-size:cover; background-position:center; color:var(--text); font-family:var(--sans);}
+.tp-head{display:flex; align-items:center; gap:8px; padding:10px 12px 4px;}
+.tp-title{font-family:var(--serif); font-size:15px; font-weight:700;}
+.tp-ver{font-size:9.5px; color:var(--bg); background:var(--accent); border-radius:999px; padding:1px 7px; font-weight:700;}
+.tp-bell{margin-left:auto; color:var(--muted); display:inline-flex;}
+.tp-bell svg{width:15px; height:15px;}
+.tp-search{margin:4px 12px 10px; background:var(--bg2); border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:11px; padding:6px 12px;}
+.tp-cards{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; padding:0 12px 10px;}
+.tp-card{background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+.tp-card .ph{aspect-ratio:4/3;}
+.tp-card .ph .imgholder{display:block; width:100%; height:100%;}
+.tp-card .ph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
+.tp-imgx{aspect-ratio:4/3; background:var(--card2);}
+.tp-nm{font-family:var(--serif); font-size:11.5px; font-weight:600; padding:5px 7px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tp-yr{font-size:9.5px; color:var(--muted); padding:0 7px;}
+.tp-tags{display:flex; gap:4px; padding:3px 7px 7px; flex-wrap:wrap;}
+.tp-tags span{font-size:9px; color:var(--accent); border:1px solid var(--line); border-radius:999px; padding:0 5px; line-height:1.7;}
+.tp-nav{display:flex; gap:4px; padding:0 12px 8px;}
+.tp-nav span{font-size:10px; color:var(--muted); border-radius:999px; padding:3px 9px;}
+.tp-nav span.on{background:var(--accent); color:var(--bg); font-weight:700;}
+.tp-cap{font-size:10px; color:var(--muted); padding:0 12px 10px;}
 .swatch.on{border-color:var(--accent);}
 .segrow{display:flex; gap:8px; flex-wrap:wrap;}
 button.zseg{padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg2); color:var(--text); font-size:calc(var(--fs) * .88); font-family:var(--sans); min-height:48px;}
@@ -11077,7 +11290,7 @@ const GUIDE_TAX = [
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique', label: '技法', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6']] },
   { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11']] },
-  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements']] },
+  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship']] },
   /* v30.1: the 目に見えない部分 major (his 2026-11-15 call) —
      the receiving shelf for introspection chapters: mind,
      one's immediate surroundings, problems of the self, a
@@ -11254,7 +11467,23 @@ function guideSecSelIdx(c){
 function guideSecGroupHTML(c, gi){
   const secs = (c && Array.isArray(c.sections))? c.sections: [];
   const g = guideSecGroups(c)[gi]; if(!g) return '';
-  return g.items.map(i=> (secs[i].h? '<h3 class="subhead" id="gsec' + i + '">' + esc(secs[i].h) + '</h3>': '') + guideParasHTML(secs[i].paras) + guideCasesHTML(secs[i].cases)).join('');
+  return g.items.map(i=> (secs[i].h? '<h3 class="subhead" id="gsec' + i + '">' + esc(secs[i].h) + '</h3>': '') + guideSectionBodyHTML(secs[i])).join('');
+}
+/* v32.8.0: a guide section renders its figures interleaved with
+   its text — a figure sits after the paragraph it explains
+   (fig.after = paragraph index), before the case it introduces
+   (fig.beforeCase = case index), or, by default, after all
+   paragraphs and before the cases (the Art Business rule).
+   Chapter-level leadFigs render right after the lead. */
+function guideSectionBodyHTML(sec){
+  const paras = sec.paras || [], cases = sec.cases || [], figs = sec.figs || [];
+  const byAfter = {}, byCase = {}, tail = [];
+  figs.forEach(f=>{ if(!f) return; if(f.beforeCase != null && cases[f.beforeCase]) (byCase[f.beforeCase] = byCase[f.beforeCase] || []).push(f); else if(f.after != null && paras[f.after] != null) (byAfter[f.after] = byAfter[f.after] || []).push(f); else tail.push(f); });
+  let h = '';
+  paras.forEach((p, i)=>{ h += guideParasHTML([p]); if(byAfter[i]) h += bizFigsHTML(byAfter[i]); });
+  cases.forEach((c, i)=>{ if(byCase[i]) h += bizFigsHTML(byCase[i]); h += guideCasesHTML([c]); });
+  h += bizFigsHTML(tail);
+  return h;
 }
 function guideSetSection(gi){
   const c = guideChapterById(guideChapterId); if(!c) return;
@@ -11262,7 +11491,7 @@ function guideSetSection(gi){
   const row = document.querySelector('#gpbody .gsecrow');
   if(row) row.querySelectorAll('.gsec').forEach(b=> b.classList.toggle('on', +b.dataset.gsec === gi));
   const host = $('gsecbody');
-  if(host) host.innerHTML = guideSecGroupHTML(c, gi);
+  if(host){ host.innerHTML = guideSecGroupHTML(c, gi); wireBizFigs(host); }
 }
 function guideJumpRoadmap(ref){
   const m = String(ref || '').match(/フェーズ\s*([0-9０-９]+)/);
@@ -11454,7 +11683,7 @@ function openGuideMajor(mid){
 function guideSwapChapter(){
   document.querySelectorAll('#gpbody .gsub').forEach(b=> b.classList.toggle('on', b.getAttribute('data-gchap') === guideChapterId));
   const host = $('gchap');
-  if(host) host.innerHTML = guideChapterHTML();
+  if(host){ host.innerHTML = guideChapterHTML(); wireBizFigs(host); }
 }
 function guideSub(ch){
   guideStack = [];
@@ -11480,8 +11709,10 @@ function guideDictInput(v){ guideDictQ = v; const el = $('gdictlist'); if(el) el
 function guideChapterHTML(){
   const c = guideChapterById(guideChapterId);
   if(!c) return '<div class="empty">章が見つかりません</div>';
+  bizFigStore = [];
   let h = '<h2 class="biztitle">' + esc(c.title || '') + (c.mustSee? mustSeeChipHTML(): '') + '</h2>';
   if(c.lead) h += '<p class="bodytext">' + guideLinkHTML(c.lead) + '</p>';
+  if(c.leadFigs) h += bizFigsHTML(c.leadFigs);
   const secs = Array.isArray(c.sections)? c.sections: [];
   /* v28.2: true section tabs — with 3+ headed groups only
      the selected group renders (inside #gsecbody) and the
@@ -11544,6 +11775,7 @@ function renderGuide(){
     }
   }
   body.innerHTML = h;
+  wireBizFigs(body);
   /* v28.0: a stacked return (guideGoBack) restores the exact
      scroll offset in THIS task; every other render starts at
      the top, exactly as before. */
@@ -11827,18 +12059,37 @@ function bizCasesHTML(cases){
    SVG text uses the app's fonts via CSS variables; every label is
    escaped. wireBizFigs (called by renderBizCh) hydrates the work
    images. */
-function bizFigWork(ds, artistName, workSub){
+function bizFigWork(ds, artistName, workSub, drawing){
   const db = CTX[ds] && CTX[ds].DB; if(!db) return null;
   const a = db.artists.find(x=>x.name === artistName); if(!a) return null;
+  if(drawing){
+    /* v32.8.0: a figure may point into the artist's drawings[]
+       (exam-ch4's Leonardo cartoon). A named drawing that does
+       not resolve skips the figure — never substitute a work. */
+    const dr = (a.drawings || []).filter(x=> x && x.img);
+    if(!dr.length) return null;
+    let dw = null;
+    if(workSub) dw = dr.find(x=>(x.caption || '').indexOf(workSub) >= 0) || null;
+    return dw? { a: a, w: dw, ds: ds }: null;
+  }
   const ws = worksOf(a); if(!ws.length) return null;
   let w = null;
   if(workSub) w = ws.find(x=>(x.caption || '').indexOf(workSub) >= 0) || null;
   return { a: a, w: w || ws[0], ds: ds };
 }
-function bizFigResolve(artistName, workSub){
-  return bizFigWork('artists', artistName, workSub) || bizFigWork('designers', artistName, workSub);
+function bizFigResolve(artistName, workSub, drawing){
+  return bizFigWork('artists', artistName, workSub, drawing) || bizFigWork('designers', artistName, workSub, drawing);
 }
 let bizFigStore = [];
+/* v32.8.0: a work tapped inside the guide panel must close the
+   panel first — the detail opens underneath it, so without the
+   close the tap would look like nothing happened. Biz views
+   never sit under the panel, so their behaviour is unchanged. */
+function figOpenDetail(ds, id){
+  const gp = $('guidepanel');
+  if(gp && !gp.classList.contains('hidden')) closeGuide();
+  openCrossDetail(ds, id);
+}
 function bizFigsHTML(figs){
   if(!Array.isArray(figs) || !figs.length) return '';
   return figs.map(f=>{
@@ -11846,9 +12097,9 @@ function bizFigsHTML(figs){
     if(f.type === 'works'){
       const cards = [];
       (f.items || []).forEach(it=>{
-        const r = bizFigResolve(it.artist, it.work); if(!r) return;
+        const r = bizFigResolve(it.artist, it.work, it.drawing); if(!r) return;
         const ix = bizFigStore.length; bizFigStore.push(r.w);
-        cards.push('<button class="figwork" onclick="openCrossDetail(\'' + r.ds + '\',\'' + escA(r.a.id) + '\')"><figure class="work"><div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div></figure><div class="fwcap">' + esc(it.label || (r.w.caption || '')) + '</div><div class="fwartist">' + esc(r.a.name) + '</div></button>');
+        cards.push('<button class="figwork" onclick="figOpenDetail(\'' + r.ds + '\',\'' + escA(r.a.id) + '\')"><figure class="work"><div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div></figure><div class="fwcap">' + esc(it.label || (r.w.caption || '')) + '</div><div class="fwartist">' + esc(r.a.name) + '</div></button>');
       });
       if(!cards.length) return '';
       return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figworks">' + cards.join('') + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
@@ -11856,7 +12107,7 @@ function bizFigsHTML(figs){
     if(f.type === 'table'){
       const head = (f.head || []).map(c=>'<th>' + esc(c) + '</th>').join('');
       const rows = (f.rows || []).map(r=>'<tr>' + r.map(c=>'<td>' + esc(c) + '</td>').join('') + '</tr>').join('');
-      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<table class="figtable">' + (head? '<tr>' + head + '</tr>': '') + rows + '</table></div>';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<table class="figtable">' + (head? '<tr>' + head + '</tr>': '') + rows + '</table>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     if(f.type === 'svg'){
       const inner = bizFigSVG(f); if(!inner) return '';
@@ -11881,6 +12132,9 @@ function bizFigSVG(f){
     return [s.slice(0, cut), s.slice(cut)]; };
   const S2 = (x, y, s, max)=>sSplit(s, max).map((ln, i)=>'<text x="' + x + '" y="' + (y + i * 13.5) + '" font-size="9.5" fill="var(--muted)" text-anchor="middle">' + esc(ln) + '</text>').join('');
   const box = (x, y, w, h, fill)=>'<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="9" fill="' + (fill || 'var(--card)') + '" stroke="var(--line)"/>';
+  /* v32.8.0: T2 = wrapped serif title (for the cycle nodes and
+     other boxes whose titles run past one line). */
+  const T2 = (x, y, s, max, size)=>sSplit(s, max || 11).map((ln, i)=>'<text x="' + x + '" y="' + (y + i * 15) + '" font-size="' + (size || 12) + '" font-weight="600" fill="var(--text)" text-anchor="middle" font-family="var(--serif)">' + esc(ln) + '</text>').join('');
   if(f.kind === 'trio'){
     const items = (f.items || []).slice(0, 3); if(items.length < 2) return '';
     const bw = 104, gap = 8, W = bw * items.length + gap * (items.length - 1) + 8, cx = W / 2;
@@ -11920,6 +12174,135 @@ function bizFigSVG(f){
     const W = 320, lh = 40, H = layers.length * lh + 8, cx = W / 2;
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
     layers.forEach((l, i)=>{ const w = 90 + i * ((W - 110) / Math.max(1, layers.length - 1)); const x = cx - w / 2, y = 4 + i * lh; s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + (lh - 7) + '" rx="8" fill="var(--card)" stroke="var(--accent)"/>' + T(cx, y + 20, l.t, 12, 'middle', 600) + S2(cx, y + 33, l.s, 18); });
+    return s + '</svg>';
+  }
+
+  /* ---- v32.8.0: the seven new guide figure kinds (+ compare /
+     hline for the mentorship chapter). All in the app's visual
+     language: card/line/accent vars, serif titles, 9.5px muted
+     sub-labels, wrapped via sSplit so nothing spills. ---- */
+  if(f.kind === 'scale'){
+    const W = 340, x0 = 6, bw = W - 12;
+    const zones = (f.zones && f.zones.length)? f.zones: null;
+    const steps = f.steps || 10;
+    const lerp = t=>{ const a = [246, 240, 228], b = [16, 12, 9]; return 'rgb(' + a.map((v, i)=> Math.round(v + (b[i] - v) * t)).join(',') + ')'; };
+    const y = 26;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + (f.band2? 118: 84) + '" role="img">';
+    if(zones){
+      zones.forEach(z=>{ const zx = x0 + z.from * bw, zw = (z.to - z.from) * bw; s += '<rect x="' + zx + '" y="' + y + '" width="' + zw + '" height="20" fill="' + lerp((z.from + z.to) / 2) + '" stroke="var(--line)"/>' + '<text x="' + (zx + zw / 2) + '" y="' + (y + 35) + '" font-size="10.5" fill="var(--muted)" text-anchor="middle">' + esc(z.label || '') + '</text>'; });
+    } else {
+      for(let i = 0; i < steps; i++){ s += '<rect x="' + (x0 + i * bw / steps) + '" y="' + y + '" width="' + (bw / steps + 0.5) + '" height="20" fill="' + lerp(steps === 1? 0: i / (steps - 1)) + '"/>'; }
+      s += '<rect x="' + x0 + '" y="' + y + '" width="' + bw + '" height="20" fill="none" stroke="var(--line)"/>';
+    }
+    (f.marks || []).forEach(mk=>{
+      if(mk.range){ const mx = x0 + mk.range[0] * bw, mw = (mk.range[1] - mk.range[0]) * bw; s += '<rect x="' + mx + '" y="' + (y - 3) + '" width="' + mw + '" height="26" fill="none" stroke="var(--accent)" stroke-width="2"/>' + '<text x="' + (mx + mw / 2) + '" y="' + (y - 8) + '" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">' + esc(mk.label || '') + '</text>'; }
+      else if(mk.at != null){ const mx = x0 + mk.at * bw; const anch = mk.at < 0.25? 'start': (mk.at > 0.75? 'end': 'middle'); if(mk.below){ s += '<path d="M' + mx + ' ' + (y + 20) + ' L' + mx + ' ' + (y + 27) + '" stroke="var(--accent)" stroke-width="1.6"/><text x="' + mx + '" y="' + (y + 41) + '" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">' + esc(mk.label || '') + '</text>'; } else { s += '<path d="M' + mx + ' ' + y + ' L' + mx + ' ' + (y - 6) + '" stroke="var(--accent)" stroke-width="1.6"/><text x="' + mx + '" y="' + (y - 9) + '" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="' + anch + '">' + esc(mk.label || '') + '</text>'; } }
+    });
+    if(f.left) s += sSplit(f.left, 13).map((ln, i)=>'<text x="' + x0 + '" y="' + (y + 37 + i * 12.5) + '" font-size="9.5" fill="var(--muted)" text-anchor="start">' + esc(ln) + '</text>').join('');
+    if(f.right) s += sSplit(f.right, 13).map((ln, i)=>'<text x="' + (x0 + bw) + '" y="' + (y + 37 + i * 12.5) + '" font-size="9.5" fill="var(--muted)" text-anchor="end">' + esc(ln) + '</text>').join('');
+    if(f.band2){ const b2y = y + 58; const bx = x0 + f.band2.range[0] * bw, bw2 = (f.band2.range[1] - f.band2.range[0]) * bw; s += '<rect x="' + bx + '" y="' + b2y + '" width="' + bw2 + '" height="14" fill="' + lerp((f.band2.range[0] + f.band2.range[1]) / 2) + '" stroke="var(--line)"/><text x="' + x0 + '" y="' + (b2y + 27) + '" font-size="9.5" fill="var(--muted)" text-anchor="start">' + esc(f.band2.label || '') + '</text>'; }
+    return s + '</svg>';
+  }
+  if(f.kind === 'stack'){
+    const layers = f.layers || []; if(layers.length < 2) return '';
+    const W = 340, lh = 36, H = layers.length * lh + 8;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    layers.forEach((l, i)=>{ const y = 4 + i * lh; s += '<rect x="6" y="' + y + '" width="' + (W - 12) + '" height="' + (lh - 5) + '" rx="6" fill="' + (l.fill || 'var(--card)') + '" stroke="var(--line)"/>' + '<text x="16" y="' + (y + 20) + '" font-size="11.5" font-weight="600" fill="var(--text)" font-family="var(--serif)">' + esc(l.t || '') + '</text>' + (l.s? '<text x="' + (W - 16) + '" y="' + (y + 20) + '" font-size="9.5" fill="var(--muted)" text-anchor="end">' + esc(l.s) + '</text>': ''); });
+    return s + '</svg>';
+  }
+  if(f.kind === 'cycle'){
+    const items = (f.items || []).slice(0, 4); if(items.length < 3) return '';
+    const W = 340, H = 184, bw = 148, bh = 58;
+    const pos = [[8, 8], [W - 8 - bw, 8], [W - 8 - bw, H - 8 - bh], [8, H - 8 - bh]];
+    const arrow = (x1, y1, x2, y2)=>{ const ang = Math.atan2(y2 - y1, x2 - x1); const hx = x2 - Math.cos(ang) * 2, hy = y2 - Math.sin(ang) * 2; return '<path d="M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2 + '" stroke="var(--accent)" stroke-width="1.6"/><path d="M' + (hx - Math.cos(ang - 0.45) * 8) + ' ' + (hy - Math.sin(ang - 0.45) * 8) + ' L' + hx + ' ' + hy + ' L' + (hx - Math.cos(ang + 0.45) * 8) + ' ' + (hy - Math.sin(ang + 0.45) * 8) + '" fill="none" stroke="var(--accent)" stroke-width="1.6"/>'; };
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    s += arrow(pos[0][0] + bw, 8 + bh / 2, pos[1][0], 8 + bh / 2);
+    s += arrow(W - 8 - bw / 2, 8 + bh, W - 8 - bw / 2, H - 8 - bh);
+    s += arrow(pos[2][0], H - 8 - bh / 2, pos[3][0] + bw, H - 8 - bh / 2);
+    s += arrow(8 + bw / 2, H - 8 - bh, 8 + bw / 2, 8 + bh);
+    items.forEach((it, i)=>{ const x = pos[i][0], y = pos[i][1]; s += box(x, y, bw, bh) + T2(x + bw / 2, y + 25, it.t, 11) + (it.s? S2(x + bw / 2, y + bh - 7, it.s, 12): ''); });
+    return s + '</svg>';
+  }
+  if(f.kind === 'spandrel'){
+    const W = 340, sq = 150, x0 = 10, y0 = 10;
+    const cxq = x0 + sq * 0.72, cyq = y0 + sq * 0.28;
+    let s = '<svg viewBox="0 0 ' + W + ' 176" role="img">';
+    s += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + sq) + ' ' + y0 + ' L' + (x0 + sq) + ' ' + (y0 + sq) + ' Q' + cxq + ' ' + cyq + ' ' + x0 + ' ' + y0 + ' Z" fill="var(--accent)" opacity="0.25"/>';
+    s += '<rect x="' + x0 + '" y="' + y0 + '" width="' + sq + '" height="' + sq + '" fill="none" stroke="var(--text)" stroke-width="1.4"/>';
+    s += '<path d="M' + (x0 + sq) + ' ' + (y0 + sq) + ' Q' + cxq + ' ' + cyq + ' ' + x0 + ' ' + y0 + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+    s += '<text x="' + (x0 + sq + 16) + '" y="' + (y0 + 32) + '" font-size="11.5" font-weight="600" fill="var(--text)" font-family="var(--serif)">' + esc(f.label1 || 'マス（正方形）を置く') + '</text>';
+    s += '<text x="' + (x0 + sq + 16) + '" y="' + (y0 + 64) + '" font-size="11.5" font-weight="600" fill="var(--text)" font-family="var(--serif)">' + esc(f.label2 || '角と角を対角の弧で結ぶ') + '</text>';
+    s += '<text x="' + (x0 + sq + 16) + '" y="' + (y0 + 96) + '" font-size="11.5" font-weight="600" fill="var(--accent)" font-family="var(--serif)">' + esc(f.label3 || '負の三角＝スパンドレル') + '</text>';
+    s += S(x0 + sq + 16, y0 + 118, f.sub || '図は負の形の残りから発生する', 'start');
+    return s + '</svg>';
+  }
+  if(f.kind === 'print4'){
+    const items = (f.items || []).slice(0, 4); if(items.length < 2) return '';
+    const W = 340, mw = 80, gap = 5, x00 = 4;
+    let s = '<svg viewBox="0 0 ' + W + ' 148" role="img">';
+    items.forEach((it, i)=>{
+      const x = x00 + i * (mw + gap), cx = x + mw / 2;
+      s += '<rect x="' + x + '" y="8" width="' + mw + '" height="52" fill="var(--bg2)" stroke="var(--line)"/>';
+      if(it.k === 'relief'){ s += '<rect x="' + (x + 8) + '" y="30" width="' + (mw - 16) + '" height="10" fill="var(--card)" stroke="var(--line)"/><rect x="' + (x + 8) + '" y="26" width="' + (mw - 16) + '" height="4" fill="var(--accent)"/><rect x="' + (x + 20) + '" y="40" width="' + (mw - 40) + '" height="12" fill="var(--card)" stroke="var(--line)"/>'; }
+      else if(it.k === 'intaglio'){ s += '<rect x="' + (x + 8) + '" y="26" width="' + (mw - 16) + '" height="14" fill="var(--card)" stroke="var(--line)"/><path d="M' + (x + 16) + ' 40 L' + (x + 24) + ' 30 L' + (x + 32) + ' 40 L' + (x + 40) + ' 30 L' + (x + 48) + ' 40 L' + (x + 56) + ' 30 L' + (x + 64) + ' 40" fill="none" stroke="var(--accent)" stroke-width="2"/>'; }
+      else if(it.k === 'plano'){ s += '<rect x="' + (x + 8) + '" y="30" width="' + (mw - 16) + '" height="8" fill="var(--card)" stroke="var(--line)"/><rect x="' + (x + 14) + '" y="30" width="18" height="8" fill="var(--accent)" opacity="0.75"/><rect x="' + (x + 44) + '" y="30" width="18" height="3" fill="#7fa6c9" opacity="0.8"/>'; }
+      else { s += '<rect x="' + (x + 8) + '" y="26" width="' + (mw - 16) + '" height="14" fill="none" stroke="var(--text)"/><path d="M' + (x + 14) + ' 26 L' + (x + 20) + ' 40 M' + (x + 26) + ' 26 L' + (x + 32) + ' 40 M' + (x + 38) + ' 26 L' + (x + 44) + ' 40 M' + (x + 50) + ' 26 L' + (x + 56) + ' 40 M' + (x + 62) + ' 26 L' + (x + 66) + ' 38" stroke="var(--line)" stroke-width="1.2"/><rect x="' + (x + 22) + '" y="29" width="10" height="7" fill="var(--accent)"/>'; }
+      s += '<rect x="' + (x + 6) + '" y="64" width="' + (mw - 12) + '" height="5" fill="#e8e0cd"/>';
+      s += T(cx, 88, it.t, 12, 'middle', 600) + S2(cx, 101, it.s, 8);
+    });
+    s += '<text x="' + x00 + '" y="140" font-size="9.5" fill="var(--muted)">' + esc(f.legend || '版（板）／インク（金色）／紙（白い帯）の位置は4図とも同じ') + '</text>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'contrast'){
+    const chip = f.chip || '#8a8a8a';
+    const W = 340, pw = 162, ph2 = 92;
+    let s = '<svg viewBox="0 0 ' + W + ' 128" role="img">';
+    [[6, f.left || {}], [W - 6 - pw, f.right || {}]].forEach(pair=>{
+      const x = pair[0], p = pair[1];
+      s += '<rect x="' + x + '" y="6" width="' + pw + '" height="' + ph2 + '" fill="' + (p.bg || 'var(--card)') + '" stroke="var(--line)"/>';
+      s += '<rect x="' + (x + pw / 2 - 23) + '" y="' + (6 + ph2 / 2 - 17) + '" width="46" height="34" fill="' + chip + '"/>';
+      s += S(x + pw / 2, 6 + ph2 + 16, p.label || '');
+    });
+    return s + '</svg>';
+  }
+  if(f.kind === 'lines'){
+    const W = 340, H = 168, x0 = 30, x1 = W - 10, y0 = 16, y1 = H - 26;
+    const eye = [[0, 0.52], [0.22, 0.52], [0.3, 0.72], [0.52, 0.72], [0.6, 0.88], [0.82, 0.88], [1, 0.97]];
+    const hand = [[0, 0.3], [0.3, 0.42], [0.55, 0.55], [0.8, 0.68], [1, 0.8]];
+    const px = p=> (x0 + p[0] * (x1 - x0)).toFixed(1), py = p=> (y1 - p[1] * (y1 - y0)).toFixed(1);
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    s += '<line x1="' + x0 + '" y1="' + y1 + '" x2="' + x1 + '" y2="' + y1 + '" stroke="var(--line)"/><line x1="' + x0 + '" y1="' + y0 + '" x2="' + x0 + '" y2="' + y1 + '" stroke="var(--line)"/>';
+    s += '<path d="M' + eye.map(p=> px(p) + ' ' + py(p)).join(' L') + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+    s += '<path d="M' + hand.map(p=> px(p) + ' ' + py(p)).join(' L') + '" fill="none" stroke="var(--muted)" stroke-width="2"/>';
+    const gx = x0 + 0.41 * (x1 - x0), gyT = y1 - 0.72 * (y1 - y0), gyB = y1 - 0.485 * (y1 - y0);
+    s += '<rect x="' + (gx - 26) + '" y="' + gyT + '" width="52" height="' + (gyB - gyT) + '" fill="var(--accent)" opacity="0.14"/>';
+    s += '<text x="' + gx + '" y="' + ((gyT + gyB) / 2 + 3.5) + '" font-size="10" fill="var(--accent)" text-anchor="middle">スランプ</text>';
+    s += '<text x="' + (x1 - 2) + '" y="' + (py(eye[eye.length - 1]) - 6) + '" font-size="10.5" font-weight="600" fill="var(--accent)" text-anchor="end">鑑賞眼</text>';
+    s += '<text x="' + (x1 - 2) + '" y="' + (py(hand[hand.length - 1]) + 14) + '" font-size="10.5" fill="var(--muted)" text-anchor="end">手の技術</text>';
+    s += '<text x="' + ((x0 + x1) / 2) + '" y="' + (H - 6) + '" font-size="9.5" fill="var(--muted)" text-anchor="middle">時間 →</text>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'compare'){
+    const L = f.left || {}, R = f.right || {};
+    const rows = Math.max((L.items || []).length, (R.items || []).length, 1);
+    const colY = 62, colH = 30 + rows * 25 + 6, W = 340, H = colY + colH + 6;
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    s += box(130, 6, 80, 30, 'var(--card2)') + T(170, 25, '師', 13, 'middle', 700);
+    s += '<path d="M150 36 L88 ' + (colY - 4) + '" stroke="var(--accent)" stroke-width="1.8"/><path d="M84 ' + (colY - 12) + ' L88 ' + (colY - 3) + ' L96 ' + (colY - 8) + '" fill="none" stroke="var(--accent)" stroke-width="1.8"/>';
+    s += '<path d="M190 36 L248 50" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="3 3"/>';
+    s += '<path d="M246 44 L256 54 M256 44 L246 54" stroke="var(--muted)" stroke-width="1.8"/>';
+    const col = (x, w, C)=>{ let o = box(x, colY, w, colH); o += T(x + w / 2, colY + 20, C.t, 12, 'middle', 700); o += '<line x1="' + (x + 10) + '" y1="' + (colY + 28) + '" x2="' + (x + w - 10) + '" y2="' + (colY + 28) + '" stroke="var(--line)"/>'; (C.items || []).forEach((it, i)=>{ const iy = colY + 46 + i * 25; o += '<text x="' + (x + 10) + '" y="' + iy + '" font-size="11.5" font-weight="600" fill="var(--text)" font-family="var(--serif)">' + esc(it.t || '') + '</text>' + '<text x="' + (x + 10) + '" y="' + (iy + 12.5) + '" font-size="9.5" fill="var(--muted)">' + esc(it.s || '') + '</text>'; }); return o; };
+    s += col(6, 164, L) + col(170, 164, R);
+    return s + '</svg>';
+  }
+  if(f.kind === 'hline'){
+    const pts = (f.points || []).slice(0, 3); if(pts.length < 2) return '';
+    const W = 340, H = 86, ay = 58;
+    const xs = pts.map((p, i)=> 56 + i * (W - 112) / Math.max(1, pts.length - 1));
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    if(f.link){ s += '<path d="M' + xs[0] + ' 22 L' + xs[xs.length - 1] + ' 22" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>'; xs.forEach(x=>{ s += '<path d="M' + x + ' 22 L' + x + ' 30" stroke="var(--line)" stroke-dasharray="2 3"/>'; }); s += S(W / 2, 12, f.link); }
+    s += '<line x1="10" y1="' + ay + '" x2="' + (W - 14) + '" y2="' + ay + '" stroke="var(--line)"/><path d="M' + (W - 22) + ' ' + (ay - 4) + ' L' + (W - 12) + ' ' + ay + ' L' + (W - 22) + ' ' + (ay + 4) + '" fill="none" stroke="var(--muted)" stroke-width="1.4"/>';
+    pts.forEach((p, i)=>{ s += '<circle cx="' + xs[i] + '" cy="' + ay + '" r="4" fill="var(--accent)"/>' + T(xs[i], ay - 14, p.t, 12, 'middle', 600) + S(xs[i], ay + 16, p.s); });
     return s + '</svg>';
   }
   return '';
@@ -15982,6 +16365,10 @@ function videoBadgeHTML(w){ return (w && w.video)? '<span class="videopill">▶ 
 function videoCountOf(a){ return worksOf(a).filter(w=> w && w.video).length; }
 function hiresDotHTML(w){ return (w && w.hires)? '<span class="hiresdot"></span>': ''; }
 function exPosterHTML(e, idx){
+/* v32.8.0: e.poster (a Drive fileId on the exhibition record)
+   rides the works image route via keyWork — the v32.7.1 Fix A
+   lesson: never build a second image route. */
+if(e && e.poster) return '<div class="exposter" data-exi="'+idx+'" data-poster="1">'+imgHTML(keyWork(e.poster, e.title||''), IMG_SIZE.plate)+'</div>';
 if(!(e && e.img && e.img.url)) return '';
 return '<div class="exposter" data-exi="'+idx+'">'+imgHTML({ caption: e.title||'', img: e.img }, IMG_SIZE.plate)+'</div>';
 }
@@ -15989,9 +16376,32 @@ function hydrateExPosters(v, exs){
 v.querySelectorAll('.exposter').forEach(el=>{
 const e = exs[+el.getAttribute('data-exi')]; if(!e) return;
 const span = el.querySelector('.imgholder'); if(!span) return;
-span._work = { caption: e.title||'', img: e.img };
+span._work = el.hasAttribute('data-poster')? keyWork(e.poster, e.title||''): { caption: e.title||'', img: e.img };
 if(imgObserver) imgObserver.observe(span); else hydrateImg(span, span._work);
 });
+}
+/* v32.8.0: the exhibition card's visual anchor. The point (his
+   words) is that the artist is identifiable at a glance, without
+   opening the card: a poster when the exhibition has one, else
+   the artist's representative work (works[0]) as a thumbnail
+   that doubles as the link to the artist's page. No visual at
+   all when neither exists — no empty plate. */
+function exArtistRef(e){
+  if(!e || e.artist_id == null) return null;
+  const a0 = artistById(e.artist_id); if(a0) return { kind: DS, a: a0 };
+  for(const kind of ['artists', 'designers']){
+    const c = CTX[kind]; if(!c || !c.DB) continue;
+    const a = c.DB.artists.find(x=> String(x.id) === String(e.artist_id));
+    if(a) return { kind: kind, a: a };
+  }
+  return null;
+}
+function exVisualHTML(e, idx){
+  if(e && (e.poster || (e.img && e.img.url))) return exPosterHTML(e, idx);
+  const ref = exArtistRef(e); if(!ref) return '';
+  const w = thumbOf(ref.a); if(!w) return '';
+  const click = (view === 'museum')? 'openCrossDetail(\'' + ref.kind + '\',\'' + escA(ref.a.id) + '\')': 'openDetail(\'' + escA(ref.a.id) + '\')';
+  return '<button class="exrep" onclick="' + click + '" aria-label="' + escA(ref.a.name || '') + 'のページ"><div class="ph" data-work="' + escA(ref.a.id) + '" data-ds="' + ref.kind + '">' + imgHTML(w, IMG_SIZE.thumb) + '</div></button>';
 }
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
 let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied | off */
@@ -16112,27 +16522,63 @@ const GAL_GROUPS = [
 let galOpen = false;
 try{ galOpen = storeGet('zukan.galOpen')==='1'; }catch(e){}
 function toggleGal(){ galOpen = !galOpen; try{ storeSet('zukan.galOpen', galOpen? '1': '0'); }catch(e){} renderEx(); }
+/* v32.8.0: the venue index is a card grid now — the artist-card
+   form (thumbnail + name + meta) that is the house standard for
+   lists (his 2026-11-16 call, extending the card rule to this
+   list; the v21.10 one-line rows are superseded). Thumbnail:
+   a held work for museums, an exhibition visual (poster first)
+   or the exhibiting artist's representative work for galleries,
+   and the initial tile (the makers' pattern) when nothing
+   resolves — never an empty plate. The official-site arrow
+   keeps its corner spot above the card's tap layer. */
+let galCardWiring = [];
 function galleryLinksHTML(exs){
   const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   const hIdx = buildHoldingsIndex();
-  const row = (g) => {
+  galCardWiring = [];
+  const card = (g, label) => {
     const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && (!e.end_date || e.end_date >= tstr)).length;
-    const held = holdingsFor(g.name, hIdx).length;
-    /* v10.0: the row's body opens the museum page in-app; only
-       the ↗ goes out to the official site (as before). */
-    return '<div class="galrow"><span class="gname">'+esc(g.name)+'</span>' +
-      '<span class="gmeta">図鑑の展示 '+n+'件'+(held? ' ・ 収蔵 '+held+'点': '')+'</span>' +
+    const held = holdingsFor(g.name, hIdx);
+    let work = null;
+    for(const e of held){ if(e.work && e.work.img){ work = e.work; break; } }
+    if(!work){
+      const exAt = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0);
+      for(const e of exAt){
+        if(e.poster){ work = keyWork(e.poster, e.title||''); break; }
+        if(e.img && e.img.url){ work = { caption: e.title||'', img: e.img }; break; }
+      }
+      if(!work){
+        for(const e of exAt){
+          if(e.artist_id != null){ const a = artistById(e.artist_id); const th = a? thumbOf(a): null; if(th){ work = th; break; } }
+        }
+      }
+    }
+    let ph;
+    if(work){ const gi = galCardWiring.length; galCardWiring.push(work); ph = '<div class="ph" data-gci="'+gi+'">' + imgHTML(work, IMG_SIZE.thumb) + '</div>'; }
+    else ph = '<div class="ph noplate"><span class="noimg"><span class="ini">'+esc(Array.from(g.name||'')[0]||'')+'</span></span></div>';
+    return '<figure class="work galcard">' + ph +
+      '<figcaption><div class="nm">'+esc(g.name)+'</div>' +
+      '<div class="gsub">'+esc(label)+' ・ 図鑑の展示 '+n+'件'+(held.length? ' ・ 収蔵 '+held.length+'点': '')+'</div></figcaption>' +
       '<button class="galhit" onclick="openMuseum(\''+escA(g.name)+'\')" aria-label="'+escA(g.name)+'のページ"></button>' +
-      '<a class="gext" href="'+g.url+'" target="_blank" rel="noopener" aria-label="公式サイト">↗</a></div>';
+      '<a class="gext" href="'+g.url+'" target="_blank" rel="noopener" aria-label="公式サイト">↗</a></figure>';
   };
   const total = GAL_GROUPS.reduce((n, gr) => n + gr.items.length, 0);
   let html = '<button class="galhead" onclick="toggleGal()"><span>ギャラリー・美術館</span><span class="galcnt">'+total+'件</span><span class="galchev">'+(galOpen? '▾': '▸')+'</span></button>';
   if(!galOpen) return html;
   html += '<div class="small" style="margin:2px 4px 6px">公式サイトの展示ページへ</div>';
   GAL_GROUPS.forEach(gr => {
-    html += '<div class="galsub">'+esc(gr.label)+'</div><div class="galgrid">' + gr.items.map(row).join('') + '</div>';
+    html += '<div class="galsub">'+esc(gr.label)+'</div><div class="galgrid">' + gr.items.map(g => card(g, gr.label)).join('') + '</div>';
   });
   return html;
+}
+function wireGalCards(v){
+  if(!v) return;
+  v.querySelectorAll('[data-gci]').forEach(el=>{
+    const w = galCardWiring[+el.getAttribute('data-gci')]; if(!w) return;
+    const span = el.querySelector('.imgholder'); if(!span) return;
+    span._work = w;
+    if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+  });
 }
 /* v2.72: the exhibitions view's two main doors as large cards —
    the small text buttons they replace were, in the user's words,
@@ -16198,7 +16644,7 @@ if(exSortMode==='near'){
   else if(!exUserPos) html += '<div class="note">現在地を取得しています…</div>';
 }
 html += galleryLinksHTML(exs);
-if(!exs.length){ v.innerHTML = html + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; return;}
+if(!exs.length){ v.innerHTML = html + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; wireGalCards(v); return;}
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr))).sort(cmp);
 const up = exs.filter(e=>!(cur.indexOf(e)>=0)).sort(cmp);
 const item = (e)=>{
@@ -16216,19 +16662,19 @@ if(dlabel){
   const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
-return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="em">'+esc(e.artist_name||'')+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
+return '<div class="exitem">'+exVisualHTML(e, exs.indexOf(e))+'<div class="exbody"><div class="et">'+esc(e.title||'')+badge+'</div>'+
+'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
 '<div class="edates">'+esc(dates)+(dk!=null?'　<span class="days">現在地から約'+(Math.round(dk*10)/10)+'km</span>':'')+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
 (e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
 (e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
-'</div></div>';
+'</div></div></div>';
 };
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html;
-hydrateExPosters(v, exs);
+hydrateExPosters(v, exs); wireGalCards(v); wireListImages(v);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
@@ -16237,7 +16683,7 @@ let exs = (DB.exhibitions||[]).slice();
 if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
 const head = '<div class="tlhead"><h2>展示</h2></div>' + exNavHTML() + exRegionSegHTML();
-if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; return;}
+if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; wireGalCards(v); return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
 const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
@@ -16255,20 +16701,20 @@ if(dlabel){
   const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
   badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
-return '<div class="exitem">'+exPosterHTML(e, exs.indexOf(e))+'<div class="et">'+esc(e.title||'')+badge+'</div>'+
-'<div class="em">'+esc(e.artist_name||'')+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
+return '<div class="exitem">'+exVisualHTML(e, exs.indexOf(e))+'<div class="exbody"><div class="et">'+esc(e.title||'')+badge+'</div>'+
+'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.venue?'　<button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):''):'')+'</div>'+
 '<div class="edates">'+esc(dates)+'</div>'+
 (e.note?'<div class="em">'+esc(e.note)+'</div>':'')+
 '<div style="margin-top:4px; display:flex; gap:16px;">'+
 (e.url?'<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>':'')+
 (e.artist_id!=null && artistById(e.artist_id)?'<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>':'')+
-'</div></div>';
+'</div></div></div>';
 };
 let html = head + galleryLinksHTML(exs);
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2>' + cur.map(item).join('');
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2>' + up.map(item).join('');
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
-hydrateExPosters(v, exs);
+hydrateExPosters(v, exs); wireGalCards(v); wireListImages(v);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -16350,14 +16796,14 @@ const c = CTX[kind];
 if(c && c.DB && c.DB.artists.some(a=>String(a.id)===String(e.artist_id))){ artistLink = '<button class="linkbtn" onclick="openCrossDetail(\''+kind+'\', \''+escA(e.artist_id)+'\')">図鑑で見る</button>'; break; }
 }
 }
-return '<div class="exitem">'+exPosterHTML(e, i)+'<div class="et">'+esc(e.title||'')+'</div>'
-+'<div class="em">'+esc(e.artist_name||'')+(e.city?'　'+esc(e.city):'')+'</div>'
+return '<div class="exitem">'+exVisualHTML(e, i)+'<div class="exbody"><div class="et">'+esc(e.title||'')+'</div>'
++'<div class="ea">'+esc(e.artist_name||'')+'</div><div class="em">'+(e.city?'　'+esc(e.city):'')+'</div>'
 +'<div class="edates">'+esc(dates)+'</div>'
 +(e.note? '<div class="em">'+esc(e.note)+'</div>': '')
 +'<div style="margin-top:4px; display:flex; gap:16px;">'
 +(e.url? '<a href="'+escA(e.url)+'" target="_blank" rel="noopener">公式ページ</a>': '')
 +artistLink
-+'</div></div>';
++'</div></div></div>';
 }
 function openMuseumWork(i){
 const e = museumWiring[i]; if(!e) return;
@@ -16403,7 +16849,7 @@ const e = museumWiring[i]; if(!e) return;
 span._work = e.work;
 if(imgObserver) imgObserver.observe(span); else hydrateImg(span, e.work);
 });
-hydrateExPosters(v, museumExList);
+hydrateExPosters(v, museumExList); wireListImages(v);
 }
 
 /* ---------- news （時事）: v2.62 ----------
@@ -16868,7 +17314,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全600人中302人まで完了。残り298人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：94点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：552件・299人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "制作ガイドの章に図版を入れる", "lines": ["解説の文章に、作品の画像・図解・表を差し込む仕組みができました（この版でアートビジネス全9章に適用済み）。", "同じ仕組みを、制作ガイドの28章にも順に広げていきます。", "計画はできています：28章に図83点（作品の画像・比較表・図解）を、3回に分けて入れていきます。まず受験の7章と「目に見えない部分」の2章から。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["美術史の年表に名前がある作家は、順に登録していきます（作品画像の権利が確認できた人から）。", "名前の表記ゆれなどで止まっている候補も、確認が取れ次第進めます。"]}, {"v": null, "label": "制作風景の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作風景」タブ（写真がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作風景はクランストンに6点、タトリンに1点が入りました。肖像写真は4人（ディクス／タトリン／モディリアーニ／クランストン）に入っています。作家の収集のたびに、制作風景と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全602人中304人まで完了。残り298人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：111点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：552件・299人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "制作ガイドの章に図版を入れる", "lines": ["解説の文章に、作品の画像・図解・表を差し込む仕組みができました（アートビジネス全9章に適用済み）。", "制作ガイドでは、受験の7章と「目に見えない部分」の2章、それに新章「師事とは何か」に、図40点を入れました。", "残りは、素材や技法の11章と「困りごと帖」の37点と、出願の5章の9点です。順に入れていきます。", "「作家の発言集」と「心が沈むとき」の2章は、言葉だけが並ぶ形が合っているため、図は入れない決まりです。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は3人・計8点（クランストン6点、タトリン1点、イゾロット1点）が入りました。肖像写真は4人（ディクス／タトリン／モディリアーニ／クランストン）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -20926,7 +21372,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.7.1';
+const APP_VERSION = '32.8.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -21216,6 +21662,25 @@ const SICON = {
 };
 let settingsPanel = null;
 function themeName(){ const t = THEMES.find(t=>t.id===ZSET.theme); return t ? t.name : ''; }
+/* v32.8.0: the theme picker's preview — the artist list screen
+   in miniature, in the selected theme. Tapping a swatch applies
+   as before (setTheme re-renders this panel), so the preview
+   follows the tap and themes can be compared before settling. */
+function themePreviewHTML(){
+  const t = THEMES.find(x=> x.id === ZSET.theme) || THEMES[0];
+  const db = (CTX[DS] && CTX[DS].DB && CTX[DS].DB.artists) || [];
+  const picks = [];
+  for(const a of db){ if(picks.length >= 3) break; if(a && thumbOf(a)) picks.push(a); }
+  const card = a => '<div class="tp-card"><div class="ph" data-work="' + escA(a.id) + '" data-ds="' + DS + '">' + imgHTML(thumbOf(a), IMG_SIZE.thumb) + '</div><div class="tp-nm">' + esc(a.name || '') + '</div>' + (a.years? '<div class="tp-yr">' + esc(yearsDisplay(a)) + '</div>': '') + ((a.tags && a.tags.length)? '<div class="tp-tags">' + a.tags.slice(0, 2).map(x=> '<span>' + esc(x) + '</span>').join('') + '</div>': '') + '</div>';
+  const mock = '<div class="tp-card"><div class="tp-imgx"></div><div class="tp-nm">作家名</div><div class="tp-yr">1900–1970</div><div class="tp-tags"><span>タグ</span></div></div>';
+  const cards = picks.length? picks.map(card).join(''): mock + mock + mock;
+  return '<div class="themeprev" data-theme="' + escA(t.id) + '">'
+    + '<div class="tp-head"><span class="tp-title">' + (DS === 'designers'? 'デザイナー図鑑': '作家図鑑') + '</span><span class="tp-ver">v' + APP_VERSION + '</span><span class="tp-bell">' + SICON.bell + '</span></div>'
+    + '<div class="tp-search">名前・読み・タグで検索</div>'
+    + '<div class="tp-cards">' + cards + '</div>'
+    + '<div class="tp-nav"><span class="on">作家</span><span>展示</span><span>年表</span><span>ガイド</span><span>その他</span></div>'
+    + '<div class="tp-cap">プレビュー：' + esc(t.name) + '</div></div>';
+}
 function sizeName(){ return ({small:'小', standard:'標準', large:'大', xlarge:'特大'})[ZSET.fontSize] || '標準'; }
 function famName(){ return fontFamById(ZSET.fontFamily).name; }
 function lhName(){ return lineHeightById(ZSET.lineHeight).name; }
@@ -21401,10 +21866,11 @@ function renderSettingsPanel(){
   /* v2.93: the pill hides while a notification screen is open */
   document.body.classList.toggle('notifopen', settingsPanel==='reqnotif');
   if(settingsPanel==='theme'){
-    p.innerHTML = panelShell('テーマカラー', '<div class="setbox"><div class="swatches" id="themeswatches"></div><div class="catlabel">木のバリエーション</div><div class="swatches" id="woodswatches"></div></div>');
-    const swHTML = t=>'<button class="swatch'+(ZSET.theme===t.id?' on':'')+'" onclick="setTheme(\''+t.id+'\')"><div class="chip" style="background:'+t.chip+'"></div>'+t.name+'</button>';
+    p.innerHTML = panelShell('テーマカラー', '<div class="setbox">' + themePreviewHTML() + '<div class="swatches" id="themeswatches"></div><div class="catlabel">木のバリエーション</div><div class="swatches" id="woodswatches"></div></div>');
+    const swHTML = t=>'<button class="swatch'+(ZSET.theme===t.id?' on':'')+'" onclick="setTheme(\''+t.id+'\')"><div class="chip" style="background:'+t.chip+'"></div><span class="swname'+(t.name.length>8?' long':'')+'">'+t.name+'</span></button>';
     $('themeswatches').innerHTML = THEMES.filter(t=>!t.group).map(swHTML).join('');
     $('woodswatches').innerHTML = THEMES.filter(t=>t.group==='wood').map(swHTML).join('');
+    wireListImages(p);
   }
   else if(settingsPanel==='text'){
     p.innerHTML = panelShell('文字設定', '<div class="setbox"><div class="setlabel">大きさ</div><div class="segrow" id="fontsizeseg"></div></div>');
@@ -22426,6 +22892,7 @@ let XDETAIL_ID = null;
     window.renderMuseum = function(){
       const r = origMuseum.apply(this, arguments);
       try{ xMuseumGallery(); }catch(e){}
+      try{ xMuseumSns(); }catch(e){}
       return r;
     };
   }
@@ -22528,6 +22995,36 @@ function xMuseumGallery(){
       + (hit.source? '<div class="small" style="margin-top:4px;">' + esc(hit.source) + '</div>': '');
     const head = v.querySelector('.tlhead');
     if(head && head.nextSibling) v.insertBefore(div, head.nextSibling); else v.appendChild(div);
+  });
+}
+
+/* v32.8.0: the venue page's SNS slot — the artist pages' own
+   component (snsLinksHTML) on the Latin-name row, fed by an
+   `sns` array on the galleries.json / museum-locations.json
+   entry when the data side collects one. No data, no row. */
+function xMuseumSns(){
+  const v = $('viewMuseum'); if(!v || !museumName || $('xmusns')) return;
+  Promise.all([xLoadGal(), xLoadLoc()]).then(([gals, locs])=>{
+    if($('xmusns') || !museumName) return;
+    const nm = museumName;
+    let sns = [], latin = '';
+    const g = (gals || []).find(x => x.name === nm || (x.aliases || []).some(al => al === nm))
+      || (gals || []).find(x => nm.indexOf(x.name) >= 0 || (x.aliases || []).some(al => nm.indexOf(al) >= 0));
+    if(g && Array.isArray(g.sns) && g.sns.length){ sns = g.sns.slice(); latin = g.kana || g.name || ''; }
+    const loc = (locs || []).find(l => l.key === nm || nm.indexOf(l.key) >= 0 || l.key.indexOf(nm) >= 0 || (l.aliases || []).some(al => nm.indexOf(al) >= 0 || al.indexOf(nm) >= 0));
+    if(loc && Array.isArray(loc.sns) && loc.sns.length){
+      loc.sns.forEach(s2 => { if(!sns.some(s1 => s1.kind === s2.kind && s1.url === s2.url)) sns.push(s2); });
+      if(!latin) latin = loc.name || '';
+    }
+    if(!sns.length) return;
+    const div = document.createElement('div');
+    div.id = 'xmusns'; div.className = 'dlatinrow';
+    div.innerHTML = '<span class="dlatin">' + esc(latin) + '</span>' + snsLinksHTML({ sns: sns });
+    const head = v.querySelector('.tlhead');
+    const gal = $('xgalblock');
+    if(gal) v.insertBefore(div, gal);
+    else if(head && head.nextSibling) v.insertBefore(div, head.nextSibling);
+    else v.appendChild(div);
   });
 }
 /* K2: exhibition-end alert */
