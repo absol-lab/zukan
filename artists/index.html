@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.17.3">
+<meta name="app-version" content="5.41.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -889,6 +889,15 @@ button.inflrow{cursor:pointer;}
 .mgrid.micro .mcap{font-size:10.5px; line-height:1.3;}
 h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
 h3.subhead:first-child{margin-top:8px;}
+/* v5.41.0: works tab for artists with many works — 代表作 shelf
+   + decade groups. A group header carries a scroll margin so a
+   jump-chip landing clears the app header and the sticky .dhbar;
+   the chips ride a horizontal rail in the .dtabs manner. */
+.wgrphead{scroll-margin-top:calc(var(--hdrh, 56px) + 56px);}
+.wgrpcnt{color:var(--muted); font-size:11.5px; letter-spacing:.05em; margin-left:6px;}
+.wgrpchips{display:flex; flex-wrap:nowrap; gap:6px; margin:10px 0 2px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px;}
+.wgrpchips::-webkit-scrollbar{display:none;}
+.wgrpchips button{flex:none; white-space:nowrap; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:12.5px; letter-spacing:.06em; padding:5px 12px; min-height:32px;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 .tagline span{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:3px 11px; font-size:12.5px;}
 /* viewer */
@@ -10305,6 +10314,76 @@ function displayWorks(a){
       return (p.y - q.y) * dir || (p.i - q.i);
     }).map(x => x.w);
 }
+/* v5.41.0: artists with many works (30+) get a 代表作 shelf plus
+   a decade-grouped archive on the works tab — 189 cards in one
+   undifferentiated flow had become hard to browse (his
+   2026-11-17 report, on Cranston). Representatives are derived
+   from the DATA only, never an invented curation: works[0] (the
+   most famous work, by the standing works[0] rule), any work
+   carrying the data-side pinned flag, and works whose caption
+   title is named in the record's key_works text (《…》 or 『…』,
+   exact title match). */
+const WORKS_GROUP_MIN = 30;
+function representativeWorks(a){
+const ws = worksOf(a);
+if(!ws.length) return [];
+const reps = [];
+const add = w=>{ if(w && reps.indexOf(w) < 0) reps.push(w); };
+add(ws[0]);
+ws.forEach(w=>{ if(w && w.pinned) add(w); });
+const named = String((a && a.key_works) || '').match(/[《『][^》』]+[》』]/g) || [];
+if(named.length){
+const byTitle = {};
+ws.forEach(w=>{
+const m = /[《『]([^》』]+)[》』]/.exec((w && w.caption) || '');
+if(m && !(m[1] in byTitle)) byTitle[m[1]] = w;
+});
+named.forEach(t=>{ const inner = t.slice(1, -1); if(byTitle[inner]) add(byTitle[inner]); });
+}
+return reps;
+}
+function jumpWorkGroup(key){
+const v = $('viewDetail'); if(!v) return;
+const h = v.querySelector('[data-wgrp="' + key + '"]');
+if(h) h.scrollIntoView({ block: 'start' });
+}
+/* The grouped works tab: the 代表作 shelf first, then ALL works
+   again in decade groups (representatives appear twice by
+   design — a catalogue's plates section plus its full list).
+   The year rule is workYearOf (the caption's first 4-digit
+   number — the same rule the works sort uses); a work with no
+   determinable year lands in the final 制作年不詳 group. Within
+   a group the display order (ws) is kept. Every card carries
+   its ws index in data-workidx, so the existing detail wiring
+   (viewer open + image hydration) serves shelf and groups
+   unchanged, duplicates included. */
+function groupedWorksHTML(a, ws, mkCard){
+const idxOf = new Map();
+ws.forEach((w, i)=>{ if(!idxOf.has(w)) idxOf.set(w, i); });
+const reps = representativeWorks(a).filter(w=> idxOf.has(w));
+let h = '<h3 class="subhead">代表作</h3>';
+h += packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode);
+const groups = new Map();
+ws.forEach((w, i)=>{
+const y = workYearOf(w);
+const key = (y == null)? 'unknown': String(Math.floor(y / 10) * 10);
+if(!groups.has(key)) groups.set(key, []);
+groups.get(key).push(i);
+});
+const keys = Array.from(groups.keys()).sort((p, q)=>{
+if(p === 'unknown') return 1;
+if(q === 'unknown') return -1;
+return (+p) - (+q);
+});
+const label = k=> (k === 'unknown')? '制作年不詳': (k + '年代');
+h += '<h3 class="subhead">全作品</h3>';
+h += '<div class="wgrpchips">' + keys.map(k=> '<button onclick="jumpWorkGroup(\'' + k + '\')">' + esc(label(k)) + '（' + groups.get(k).length + '）</button>').join('') + '</div>';
+keys.forEach(k=>{
+h += '<h3 class="subhead wgrphead" data-wgrp="' + k + '">' + esc(label(k)) + '<span class="wgrpcnt">' + groups.get(k).length + '点</span></h3>';
+h += packGalleryHTML(groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
+});
+return h;
+}
 /* v30.6: the artist's drawings （ドローイング) — a list SEPARATE
    from works, in registration order (no sort controls; the order
    is the curated one, like works' 登録順）. */
@@ -15291,11 +15370,17 @@ let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
+const mkCard = (w, i)=> ({ h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>', e: packEst(w.caption, workMode) });
+/* v5.41.0: 30+ works → 代表作 shelf + decade-grouped archive
+   (groupedWorksHTML); below the threshold the tab renders
+   exactly as before — one packed gallery, no shelf, no
+   headers. */
+if(ws.length >= WORKS_GROUP_MIN) worksHTML = groupedWorksHTML(a, ws, mkCard);
+else{
 const wCards = [];
-ws.forEach((w,i)=>{
-wCards.push({ h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>', e: packEst(w.caption, workMode) });
-});
+ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
 worksHTML = packGalleryHTML(wCards, workMode);
+}
 }
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
@@ -18130,7 +18215,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計36点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、ベーコン2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは296件。残り488件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは360件。残り424件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22215,7 +22300,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.17.3';
+const APP_VERSION = '5.41.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
