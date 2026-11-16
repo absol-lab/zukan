@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.16.0">
+<meta name="app-version" content="32.17.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -702,6 +702,41 @@ button.inflrow{cursor:pointer;}
 #viewDetail .gallery.wm-mini{grid-template-columns:repeat(4, 1fr); gap:8px 6px;}
 #viewDetail .gallery.wm-mini figcaption .sub{font-size:10.5px; line-height:1.35;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
+/* v32.17.0 (fix 3): masonry packing for the aspect-fit galleries
+   (his 2026-11-16 23:16 report: the v32.16.0 aspect-fit frames
+   work, but the CSS grid still aligns each ROW to its tallest
+   card, so a short card — a wide work with a short caption —
+   leaves a tall black void under it before the next row).
+   packCols() distributes the cards into flex columns by
+   estimated height at render time (shortest-column assignment,
+   so the visual order stays close to the data order); inside a
+   column the cards stack with the gallery's own gap and nothing
+   else, so no void larger than the standard gap can exist.
+   Heights are estimated (frame at the pre-fit 1/1 + caption
+   lines); when phFit later fits a frame to its image, only that
+   column's stack shifts — columns are independent, cards never
+   move between columns, nothing overlaps, nothing re-flows
+   twice. The mode switch re-renders the detail (setWorkMode),
+   so the packing always matches the current mode. */
+.pcols{display:flex; gap:12px 9px; margin-top:14px; align-items:flex-start;}
+.pcols .pcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:12px;}
+.pcols.wm-compact{gap:10px 7px;} .pcols.wm-compact .pcol{gap:10px;}
+.pcols.wm-mini{gap:8px 6px;} .pcols.wm-mini .pcol{gap:8px;}
+.pcols.wm-micro{gap:7px 5px;} .pcols.wm-micro .pcol{gap:7px;}
+.pcols figure.work .ph{aspect-ratio:1/1;}
+.pcols figure.work .ph.noplate{aspect-ratio:auto; height:88px;}
+#viewDetail .pcols.wm-mini figcaption .sub{font-size:10.5px; line-height:1.35;}
+#viewDetail .pcols.wm-micro figcaption .sub{font-size:10px; line-height:1.3;}
+.pcols.wm-compact figure.work .ph .imgload{font-size:min(11px, 2.3vw); letter-spacing:.03em; padding:2px 3px;}
+.pcols.wm-mini figure.work .ph .imgload{font-size:min(11px, 1.6vw); letter-spacing:.02em; padding:2px;}
+.pcols.wm-micro figure.work .ph .imgload{font-size:min(10px, 1.25vw); letter-spacing:.02em; padding:2px;}
+/* the museum shelf packs the same way (renderMuseum re-renders
+   on its mode switch too) */
+.mgrid.packed{display:flex; gap:12px 10px; align-items:flex-start;}
+.mgrid.packed .pcol{flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:12px;}
+.mgrid.packed.compact{gap:10px 7px;} .mgrid.packed.compact .pcol{gap:10px;}
+.mgrid.packed.mini{gap:8px 6px;} .mgrid.packed.mini .pcol{gap:8px;}
+.mgrid.packed.micro{gap:7px 5px;} .mgrid.packed.micro .pcol{gap:7px;}
 /* v32.6.1 (fix 7): long prose sits on a card-coloured panel,
    never directly on the wood grain (his reading-surface
    rule, 2026-11-16). The panel follows the theme's card
@@ -1881,6 +1916,19 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .eraname{font-family:var(--serif); font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0;}
 .erachips{display:flex; gap:6px; align-items:center; flex:none;}
 .erachips .erasecbtn, .erachips .symsecbtn, .erachips .mksecbtn{margin:0;}
+/* v32.17.0 (fix 4): the makers era row carries one jump button
+   per section — 11 long-named buttons in the shared .erachips
+   rail (flex:none, no overflow handling) measured 1,556px wide
+   at a 390px viewport (document scrollWidth 1,580px), and iOS
+   shrank the whole makers view to ~25% to fit it (his
+   2026-11-16 23:24 device report). The artist row never
+   overflows because its chips are a single 時代 dropdown. The
+   makers chips now ride a scrollable rail like every other
+   chip rail in the app (.dtabs / .bizpills pattern): the
+   section name keeps its width, the chips scroll sideways.
+   Scoped to #mkEraChips — #toolbar / #eraChips untouched. */
+#mkEraChips{flex:1 1 0; min-width:0; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+#mkEraChips::-webkit-scrollbar{display:none;}
 /* v32.4.1: the small duplicate mode seg inside the era row is gone
    (his call, 2026-11-16: 「これいらないよ」) — the display switcher
    lives only in the header modebar. With the seg removed the era
@@ -1914,6 +1962,59 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .bpprice2 .bpjpy{color:var(--accent); font-size:13px; font-weight:600; margin-left:6px;}
 .bpgrid .bparticle{font-size:12.5px; color:var(--muted); margin-top:2px; text-decoration:underline;}
 .bpgrid .bpmeta2{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
+/* v32.17.0 (fix 3, class-swap surfaces): the price grid and the
+   exhibition grids also carried aspect-fit images in row-aligned
+   grid rows — the same under-card voids as the works tab. Their
+   mode switchers swap the mode CLASS in place (no re-render, no
+   scroll loss — v32.10.0's design), so these surfaces pack with
+   CSS columns instead of the render-time packCols: the mode
+   class sets the column count, cards avoid breaking across
+   columns, and the vertical rhythm is the mode's own gap as a
+   bottom margin. Visual order on these surfaces is column-wise
+   (down one column, then the next) — acceptable for a price
+   ranking and for date-ordered exhibition lists, and stated in
+   the v32.17.0 WORKLOG. */
+.grid.bpgrid, .grid.exgrid, .grid.exdgrid{display:block; column-gap:12px;}
+.grid.bpgrid.wide, .grid.exgrid.wide, .grid.exdgrid.wide{column-count:1;}
+.grid.bpgrid.def, .grid.exgrid.def, .grid.exdgrid.def{column-count:2;}
+.grid.bpgrid.compact, .grid.exgrid.compact, .grid.exdgrid.compact{column-count:3; column-gap:10px;}
+.grid.bpgrid.mini, .grid.exgrid.mini, .grid.exdgrid.mini{column-count:4; column-gap:8px;}
+.grid.bpgrid.micro, .grid.exgrid.micro, .grid.exdgrid.micro{column-count:5; column-gap:6px;}
+.grid.bpgrid figure.work, .grid.exgrid figure.work, .grid.exdgrid figure.work{break-inside:avoid; width:100%; margin:0 0 12px;}
+.grid.bpgrid.compact figure.work, .grid.exgrid.compact figure.work, .grid.exdgrid.compact figure.work{margin-bottom:10px;}
+.grid.bpgrid.mini figure.work, .grid.exgrid.mini figure.work, .grid.exdgrid.mini figure.work{margin-bottom:8px;}
+.grid.bpgrid.micro figure.work, .grid.exgrid.micro figure.work, .grid.exdgrid.micro figure.work{margin-bottom:6px;}
+/* v32.17.0 (fix 2): the price table read shabby in the dense
+   modes on his iPhone (2026-11-16 23:13) — prices cut off
+   mid-number ("$450,31…": figure.work clips overflow and the
+   16.5px price is one unbreakable token, wider than a ~62px
+   micro column), artist names breaking mid-word with the
+   underline snapping, long titles stretching cards into thin
+   strips. Rules now: a price NEVER clips — its font scales
+   with the mode and the yen approximation wraps to its own
+   line in the dense modes; in the two densest modes the card
+   face is compact (image + rank + price only — a 早見表 is
+   for scanning prices; title/artist/house stay on the larger
+   modes and on the artist page); in the larger modes names
+   and titles wrap at word boundaries first. */
+.bpgrid .bpprice2{overflow-wrap:anywhere;}
+.bpgrid .nm{overflow-wrap:anywhere;}
+.bpgrid .bparticle{overflow-wrap:anywhere;}
+/* v32.17.0 (fix 2 tail): the exhibition cards share the milder
+   form of the same defect — long unbroken venue names
+   (Palazzo Pallavicini, Deutscher Bundestag…) clipped by
+   2–5px at def/micro (measured in validation). Same cure:
+   allow breaks inside over-long words rather than clipping. */
+.exgrid .nm, .exgrid .exartist, .exgrid .exvenue, .exgrid .exdmeta,
+.exdgrid .nm, .exdgrid .exartist, .exdgrid .exvenue, .exdgrid .exdmeta{overflow-wrap:anywhere;}
+.bpgrid.compact .bpprice2{font-size:14px;}
+.bpgrid.compact .bpprice2 .bpjpy{font-size:11.5px;}
+.bpgrid.mini .bpprice2{font-size:12px;}
+.bpgrid.mini .bpprice2 .bpjpy{font-size:10.5px; display:block; margin-left:0;}
+.bpgrid.micro .bpprice2{font-size:10px; letter-spacing:-.03em;}
+.bpgrid.micro .bpprice2 .bpjpy{font-size:9.5px; display:block; margin-left:0; letter-spacing:0;}
+.bpgrid.mini .nm, .bpgrid.mini .bparticle, .bpgrid.mini .bpmeta2,
+.bpgrid.micro .nm, .bpgrid.micro .bparticle, .bpgrid.micro .bpmeta2{display:none;}
 /* word / jiji artist cards (item 13) */
 .xwcard{display:flex; gap:11px; align-items:center; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
 .xwcard .xwfig{flex:none; width:64px;}
@@ -10464,6 +10565,47 @@ const im = span.querySelector('img'); if(!im) return;
 if(im.complete && im.naturalWidth) phFit(im);
 else im.addEventListener('load', ()=> phFit(im));
 }
+/* v32.17.0 (fix 3): render-time masonry packing for the
+   aspect-fit galleries (detail works / drawings / process
+   panels and the museum shelf). Cards are distributed into N
+   columns by ESTIMATED height — shortest column first — so
+   the visual order stays close to the data order (each new
+   card lands in the currently shortest column, i.e. roughly
+   the next row slot). The estimate is the pre-fit frame (1/1
+   at the column width) plus caption lines; it only steers the
+   assignment. After images land and phFit fits the frames,
+   columns drift from perfect balance but cards never move
+   between columns and never overlap — there is no second
+   layout pass, hence no re-flow storm. Inside a column the
+   only vertical space between cards is the gallery gap, so
+   the row-alignment void his 2026-11-16 23:16 screenshot
+   showed cannot occur. Surfaces whose mode switcher only
+   swaps a class (price grid, exhibition grids) pack with CSS
+   columns instead — see the .bpgrid/.exgrid rules. */
+const PCOLS_N = { wide:1, def:2, compact:3, mini:4, micro:5 };
+function packEst(cap, mode, extra){
+const n = PCOLS_N[mode] || 2;
+const gap = (mode === 'compact')? 7: (mode === 'mini')? 6: (mode === 'micro')? 5: 9;
+const colW = Math.max(36, (358 - (n - 1) * gap) / n);
+const per = Math.max(5, Math.floor(colW / 11.5));
+const lines = Math.min(9, Math.ceil(String(cap || '').length / per));
+return colW + lines * 16.5 + (extra || 10);
+}
+function packCols(cards, n){
+const cols = [];
+for(let i = 0; i < n; i++) cols.push({ h: 0, items: [] });
+cards.forEach(c=>{
+let best = 0;
+for(let i = 1; i < n; i++) if(cols[i].h < cols[best].h) best = i;
+cols[best].items.push(c.h); cols[best].h += c.e + 12;
+});
+return cols.map(c=> c.items);
+}
+function packGalleryHTML(cards, mode){
+const n = PCOLS_N[mode] || 2;
+if(n <= 1 || cards.length <= n) return '<div class="gallery wm-' + mode + '">' + cards.map(c=> c.h).join('') + '</div>';
+return '<div class="pcols wm-' + mode + '">' + packCols(cards, n).map(items=> '<div class="pcol">' + items.join('') + '</div>').join('') + '</div>';
+}
 function hydrateImg(span, work){
 if(!span ||!work) return;
 if(span.dataset && span.dataset.mkinitial != null){ const ph0 = span.closest('.ph'); if(ph0) ph0.classList.remove('mkini'); }
@@ -10677,6 +10819,21 @@ let detailStack = [];
    own 戻る still follows reqNotifReturn, so the chain stays
    detail → panel → the screen the panel was opened from. */
 let pendingPanelOrigin = null;
+/* v32.17.0 (route-aware detail return): the detail's back
+   button used to be hard-wired to the person list, so arriving
+   from another surface （価格早見表 / 展示 / 年表 / 系譜 …) left
+   the reader with no way back to where they were — his
+   2026-11-16 23:13 report from the price table. The entry
+   route is now recorded: pendingDetailOrigin is armed by
+   openCrossDetail BEFORE any dataset switch (the switch itself
+   lands on a list and would erase the origin), and openDetail
+   captures the current view for direct entries. detailOrigin
+   is the surface the current detail chain was entered from;
+   detailHome() returns there. The notification-panel origin
+   (pendingPanelOrigin) still owns its own return and clears
+   detailOrigin — the panel frame sits at the stack's bottom. */
+let pendingDetailOrigin = null;
+let detailOrigin = null;
 function showView(v){
 if(v === 'list') detailStack = [];
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
@@ -12357,11 +12514,15 @@ function syncBizBar(v){
    v32.14.0: ch.9 (art schools of the world, inserted after
    ch.8) is Richter — the chapter's archetype of the non-elite
    route (Dresden → Düsseldorf), resolved as artist id 75.
+   v32.17.0: ch.10 (artist produce, inserted after ch.9) is
+   Murakami — the chapter's central case of an artist who
+   built the audience machinery himself (Kaikai Kiki /
+   GEISAI), resolved as artist id 89.
    The original assignment is recorded in the v32.10.0
    WORKLOG. If the artist or the work image cannot be resolved
    in the loaded data, the card falls back to the typographic
    plate — never an empty slot. */
-const BIZ_CH_ARTIST = { 'what-is-art-business': 55, 'how-the-market-works': 69, 'how-prices-move': 77, 'money-and-life': 77, 'the-explosion': 'jean-michel-basquiat', 'what-makes-a-master': 8, 'how-to-do-it-well': 63, 'art-schools-of-the-world': 75 };
+const BIZ_CH_ARTIST = { 'what-is-art-business': 55, 'how-the-market-works': 69, 'how-prices-move': 77, 'money-and-life': 77, 'the-explosion': 'jean-michel-basquiat', 'what-makes-a-master': 8, 'how-to-do-it-well': 63, 'art-schools-of-the-world': 75, 'artist-produce': 89 };
 function bizIndexCardHTML(o){
   let plate = null;
   if(o.artist != null){
@@ -12455,6 +12616,14 @@ function updateHeader(){
 syncTimelineBtn();
 if(view==='settings'){ $('appname').textContent = 'その他'; $('topcount').textContent = ''; return; }
 if(view==='biz' || view==='bizch' || view==='bizp'){ $('appname').textContent = 'アートビジネス'; $('topcount').textContent = ''; return; }
+/* v32.17.0 (fix 4): the makers views own their header too.
+   showView has carried this branch since v32.4.0, but
+   updateHeader — called by the swipe-commit path and the
+   dataset chrome refresh — did not, so landing back on the
+   makers list via a swipe reverted the header to the current
+   dataset's book (his 2026-11-16 23:24 screenshot: makers
+   sections under a デザイナー図鑑・全240名 header). */
+if(view==='makers' || view==='makerdetail'){ $('appname').textContent = '立役者図鑑'; $('topcount').textContent = (typeof xMakerCountText==='function')? xMakerCountText(): ''; return; }
 $('appname').textContent = CONFIG.appName;
 /* v2.30: the header count is shared chrome too. It used to be written
    only by renderList, so a dataset switch landing directly on a
@@ -12951,10 +13120,17 @@ if(!oc || !oc.DB || !Array.isArray(oc.DB.artists)) return [];
 return oc.DB.artists.filter(a=>artistMatches(a, toks));
 }
 function openCrossDetail(kind, id){
+/* v32.17.0: arm the route origin BEFORE the dataset switch —
+   the switch lands on the target book's list/lastView, after
+   which the surface the reader actually came from (e.g. the
+   price table) is no longer visible in `view`. A hop from
+   inside a detail (view==='detail') is the stack's business,
+   not an origin. */
+if(view !== 'detail') pendingDetailOrigin = { view: view, ds: DS };
 switchDataset(kind);
 const a = artistById(id);
 if(a) openDetail(a.id);
-else toast('この端末にはまだ届いていません');
+else { pendingDetailOrigin = null; toast('この端末にはまだ届いていません'); }
 }
 /* v8.0: the near-miss rescue. When the strict AND search finds
    nothing anywhere, surface the closest people instead of a
@@ -14134,12 +14310,24 @@ const a = artistById(id); if(!a) return;
    an empty stack. */
 if(view === 'detail' && state.detailId != null && String(state.detailId) !== String(a.id)){
 detailStack.push({ id: state.detailId, ds: DS, tab: state.tab });
+pendingDetailOrigin = null; /* a hop never consumes an armed origin */
 } else if(view !== 'detail'){
 /* v27.4: a fresh entry normally starts an empty stack; a
    panel jump that armed an origin frame starts with that
    frame at the bottom instead. */
 detailStack = pendingPanelOrigin? [pendingPanelOrigin] : [];
+/* v32.17.0: record where this detail chain was entered from,
+   so the back button can return there (detailHome). A panel
+   origin owns the return itself (its frame is the stack's
+   bottom), so it clears detailOrigin; a cross-surface entry
+   armed by openCrossDetail wins over the raw current view
+   (the dataset switch may already have landed on a list);
+   anything else records the view the reader is leaving. */
+if(pendingPanelOrigin) detailOrigin = null;
+else if(pendingDetailOrigin) detailOrigin = pendingDetailOrigin;
+else detailOrigin = { view: view, ds: DS };
 pendingPanelOrigin = null;
+pendingDetailOrigin = null;
 }
 state.detailId = a.id; state.tab = 'works';
 guideEnsure(); /* v29.0: person-page term links need the glossary; its landing re-renders the detail with links */
@@ -14161,6 +14349,23 @@ state.detailId = a.id;
 state.tab = DTABS.indexOf(prev.tab) >= 0? prev.tab: 'works';
 renderDetail(); showView('detail');
 prefetchViewerImage(a);
+}
+/* v32.17.0: the detail's primary back button — leave the whole
+   chain and return to the surface the chain was entered from
+   (detailOrigin), restoring its dataset first when the chain
+   crossed books. With no recorded origin (or an origin that
+   IS the list) this is the old behaviour: the person list.
+   showView re-renders every target surface on entry, so the
+   origin comes back exactly as its own renderer builds it. */
+function detailHome(){
+const o = detailOrigin; detailOrigin = null; detailStack = [];
+if(o && o.view && o.view !== 'detail' && o.view !== 'list'){
+if(o.ds && o.ds !== DS){ switchDataset(o.ds); if(view !== o.view) showView(o.view); }
+else showView(o.view);
+return;
+}
+if(o && o.ds && o.ds !== DS){ switchDataset(o.ds); if(view !== 'list') showView('list'); return; }
+showView('list');
 }
 /* v27.4: the bottom of the chain — reopen the notification
    panel exactly as it was left (its tab, its expanded rows,
@@ -14893,7 +15098,7 @@ if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 if(state.tab==='relations' && !relCount) state.tab = 'works';
-let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>'+
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail')? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(a.name)+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
@@ -14921,11 +15126,11 @@ let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
-worksHTML = '<div class="gallery wm-'+workMode+'">';
+const wCards = [];
 ws.forEach((w,i)=>{
-worksHTML += '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+wCards.push({ h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>', e: packEst(w.caption, workMode) });
 });
-worksHTML += '</div>';
+worksHTML = packGalleryHTML(wCards, workMode);
 }
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
@@ -14960,12 +15165,12 @@ MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(
 let drawingsHTML = '';
 if(!dws.length) drawingsHTML = '<div class="empty">ドローイングはまだありません</div>';
 else{
-drawingsHTML = '<div class="worksreq"><span class="small">ドローイング '+dws.length+'点</span></div>' +
-'<div class="gallery wm-'+workMode+'">';
+drawingsHTML = '<div class="worksreq"><span class="small">ドローイング '+dws.length+'点</span></div>';
+const dCards = [];
 dws.forEach((w,i)=>{
-drawingsHTML += '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>';
+dCards.push({ h: '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(w.caption||'')+'</div></figcaption></figure>', e: packEst(w.caption, workMode) });
 });
-drawingsHTML += '</div>';
+drawingsHTML += packGalleryHTML(dCards, workMode);
 }
 /* v32.15.0: the exhibitions panel — this artist's exhibitions
    as poster cards, latest information first (the builder lives
@@ -14982,13 +15187,13 @@ const exhibitionsHTML = artistExhibitionsHTML(a, exsOfA);
    the tab. */
 let procGalleryHTML = '';
 if(pps.length){
-procGalleryHTML = '<div class="gallery wm-'+workMode+'">';
+const pCards = [];
 pps.forEach((p,i)=>{
 const wobj = keyWork(p.img, p.caption||'');
 const wi = p.work? ws.findIndex(w => (w.caption||'').includes('《'+p.work+'》')): -1;
-procGalleryHTML += '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>';
+pCards.push({ h: '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>', e: packEst(p.caption, workMode, p.work? 26: 10) });
 });
-procGalleryHTML += '</div>';
+procGalleryHTML = packGalleryHTML(pCards, workMode);
 }
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
@@ -17154,7 +17359,32 @@ let museumName = null;
 let museumTab = 'main';
 let museumWiring = [];
 let museumExList = [];
-function openMuseum(name){ museumName = String(name||''); museumTab = 'main'; showView('museum'); }
+/* v32.17.0: the venue page's return is route-aware too — it is
+   opened from the exhibitions view AND from an artist detail's
+   展示 tab (poster card tap), and its back button used to land
+   on the exhibitions view either way, stranding the reader who
+   came from an artist page. museumOrigin remembers the entry:
+   for a detail entry, the person, their dataset, their tab and
+   the detail's own origin (so the chain unwinds one surface
+   at a time instead of looping detail<->museum). */
+let museumOrigin = null;
+function openMuseum(name){
+museumOrigin = { view: view, ds: DS, detailId: (view === 'detail'? state.detailId: null), tab: (view === 'detail'? state.tab: null), detailOrigin: (view === 'detail'? detailOrigin: null) };
+museumName = String(name||''); museumTab = 'main'; showView('museum');
+}
+function museumBack(){
+const o = museumOrigin; museumOrigin = null;
+if(o && o.view === 'detail' && o.detailId != null){
+if(o.ds && o.ds !== DS) switchDataset(o.ds);
+openDetail(o.detailId);
+detailOrigin = o.detailOrigin; /* restore the chain's own origin */
+if(view === 'detail') renderDetail(); /* dhbar label follows the restored origin */
+if(o.tab && o.tab !== 'works') setTab(o.tab);
+return;
+}
+if(o && o.view && o.view !== 'museum' && o.view !== 'detail') showView(o.view);
+else showView('ex');
+}
 function galEntryFor(name){
 for(const gr of GAL_GROUPS){ const g = gr.items.find(x=>x.name===name); if(g) return { g: g, label: gr.label }; }
 return null;
@@ -17226,6 +17456,18 @@ if(ix >= 0) openViewer(ws, ix, a.id);
 if(e.kind !== DS) switchDataset(e.kind);
 go();
 }
+/* v32.17.0 (fix 3): the museum shelf packs like the detail
+   galleries — shortest-column assignment at render (the shelf
+   re-renders on its mode switch), estimates from the caption
+   plus the artist-link row under each tile. Wide stays the
+   plain single-column shelf. */
+function museumShelfHTML(held, shelfWide, shelfModeCls){
+const cards = held.map((e, i)=> ({ h: '<div class="mcell"><button class="mtile" onclick="openMuseumWork(' + i + ')">' + imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb) + hiresBadgeHTML(e.work) + '<span class="mcap">' + esc(e.work.caption || '') + '</span></button>'
++ '<button class="linkbtn mart" onclick="openCrossDetail(\'' + e.kind + '\', \'' + escA(e.artist.id) + '\')">' + esc(e.artist.name) + '</button></div>', e: packEst(e.work.caption, workMode, 30) }));
+const n = PCOLS_N[workMode] || 2;
+if(n <= 1 || cards.length <= n) return '<div class="mgrid' + shelfModeCls + '">' + cards.map(c=> c.h).join('') + '</div>';
+return '<div class="mgrid packed' + shelfModeCls + '">' + packCols(cards, n).map(items=> '<div class="pcol">' + items.join('') + '</div>').join('') + '</div>';
+}
 function renderMuseum(){
 const v = $('viewMuseum'); if(!v) return;
 const name = museumName || '';
@@ -17234,7 +17476,7 @@ const held = holdingsFor(name);
 museumWiring = held;
 museumExList = museumExhibitions(name);
 const city = (museumExList.find(e=>e.city)||{}).city || (galE? galE.label: '');
-let html = '<button class="backbtn" onclick="showView(\'ex\')">‹ 展示へ戻る</button><div class="tlhead"><h2>'+esc(name)+'</h2></div>';
+let html = '<button class="backbtn" onclick="museumBack()">'+((museumOrigin && museumOrigin.view === 'detail')? '‹ 作家へ戻る': '‹ 展示へ戻る')+'</button><div class="tlhead"><h2>'+esc(name)+'</h2></div>';
 html += '<div class="small" style="margin:2px 4px 0">'+esc(city)+(galE? (city?'　': '')+'<a href="'+galE.g.url+'" target="_blank" rel="noopener">公式サイト ↗</a>': '')+'</div>';
 if(held.length){
 const shelfWide = (workMode==='wide');
@@ -17244,10 +17486,7 @@ html += '<h2 class="sechead"><span>収蔵作品</span><span class="cnt">'+held.l
    language (one rounded bar, dividers, gold underline) on its
    own full-width row — as loose pills inside the heading it
    wrapped 3+1 and crushed the heading text. */
-+ '<div class="modebar mmodes" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')" aria-label="'+modeLabel('wide')+'">'+modeIcon('wide')+'</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')" aria-label="'+modeLabel('def')+'">'+modeIcon('def')+'</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')" aria-label="'+modeLabel('compact')+'">'+modeIcon('compact')+'</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')" aria-label="'+modeLabel('mini')+'">'+modeIcon('mini')+'</button><button class="'+(workMode==='micro'?'on':'')+'" onclick="setMuseumMode(\'micro\')" aria-label="'+modeLabel('micro')+'">'+modeIcon('micro')+'</button></div><div class="mgrid'+shelfModeCls+'">'
-+ held.map((e, i)=> '<div class="mcell"><button class="mtile" onclick="openMuseumWork('+i+')">'+imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb)+hiresBadgeHTML(e.work)+'<span class="mcap">'+esc(e.work.caption||'')+'</span></button>'
-+ '<button class="linkbtn mart" onclick="openCrossDetail(\''+e.kind+'\', \''+escA(e.artist.id)+'\')">'+esc(e.artist.name)+'</button></div>').join('')
-+ '</div>';
++ '<div class="modebar mmodes" role="group" aria-label="表示"><button class="'+(shelfWide?'on':'')+'" onclick="setMuseumMode(\'wide\')" aria-label="'+modeLabel('wide')+'">'+modeIcon('wide')+'</button><button class="'+(workMode==='def'?'on':'')+'" onclick="setMuseumMode(\'def\')" aria-label="'+modeLabel('def')+'">'+modeIcon('def')+'</button><button class="'+(workMode==='compact'?'on':'')+'" onclick="setMuseumMode(\'compact\')" aria-label="'+modeLabel('compact')+'">'+modeIcon('compact')+'</button><button class="'+(workMode==='mini'?'on':'')+'" onclick="setMuseumMode(\'mini\')" aria-label="'+modeLabel('mini')+'">'+modeIcon('mini')+'</button><button class="'+(workMode==='micro'?'on':'')+'" onclick="setMuseumMode(\'micro\')" aria-label="'+modeLabel('micro')+'">'+modeIcon('micro')+'</button></div>'+ museumShelfHTML(held, shelfWide, shelfModeCls);
 }
 html += '<h2 class="sechead"><span>展示情報</span><span class="cnt">'+museumExList.length+'件</span></h2>';
 if(museumExList.length) html += '<div class="smodewrap">' + surfModebarHTML('ex', 'setExMode') + '</div>';
@@ -17724,7 +17963,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全605人中346人まで完了。残り259人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は21人・計34点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は18人（カプーア／安藤忠雄／クランストン／ウォーホル／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は484件入っています。展示の画像（ポスターやキービジュアル）があるのは125件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全614人中346人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は21人・計34点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は18人（カプーア／安藤忠雄／クランストン／ウォーホル／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は494件入っています。展示の画像（ポスターやキービジュアル）があるのは135件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -21582,6 +21821,14 @@ function backTarget(forSwipe){
   if(view==='news' || view==='cal') return 'ex';
   if(view==='bizch') return 'biz';
   if(view==='bizp') return 'biz';
+  /* v32.17.0: gesture/button back from a detail returns to the
+     surface the chain was entered from when one is recorded
+     (the price table, the timeline, a chapter …), agreeing
+     with the detail's own back button (detailHome); the museum
+     page likewise returns to the detail it was opened from. */
+  if(view==='detail' && detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') return detailOrigin.view;
+  if(view==='museum' && museumOrigin && museumOrigin.view === 'detail') return 'detail';
+  if(view==='museum') return 'ex';
   if(view==='detail' || view==='timeline' || view==='ex' || view==='settings' || view==='biz' || view==='makers') return 'list';
   if(forSwipe && view==='list' && prevPill && (prevPill.view!=='list' || prevPill.ds!==DS)) return prevPill.view;
   return null;
@@ -21790,7 +22037,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.16.0';
+const APP_VERSION = '32.17.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
