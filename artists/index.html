@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.13.0">
+<meta name="app-version" content="32.13.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -312,14 +312,37 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .favfilter.on{color:#e3a93c; border-color:#e3a93c;}
 /* v32.13.0: person-list order toggle — a pill in the moderow
    showing the CURRENT direction （古い順 / 新しい順）; .on marks
-   the reversed state. The moderow's modebar flexes with
-   min-width:0, so the fixed pill never overflows the row. */
+   the reversed state. */
 .revbtn{flex:none; min-height:44px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:12.5px; cursor:pointer; font-family:var(--sans); padding:0 11px; white-space:nowrap;}
 .revbtn.on{color:var(--accent); border-color:var(--accent);}
 .favfilter .favcnt{position:absolute; top:3px; right:6px; font-size:9.5px; color:var(--muted);}
 #vfav{font-size:17px; color:#cfd2e0;}
 #vfav.on{color:#e3a93c;}
-.moderow .modebar{flex:1; min-width:0;}
+/* v32.13.1 (his 2026-11-16 device report): the modebar NEVER
+   compresses. v32.13.0 let it flex (min-width:0), so the order
+   pill and the region pill crushed its 5 segments to ~20px
+   each on his phone. The segments now hold a fixed 40px basis
+   in the moderow (flex-shrink:0) — identical at 375px and
+   390px — and the region control moved out of this row
+   entirely (see .regionrow). In the slim bar the modebar, the
+   order pill and the region row step aside (the slim row keeps
+   search / filter / favourites): the slim row already
+   overflowed to 404px with the modebar crushed to 2px, so
+   this also repairs the slim row. Scoped to #toolbar — the
+   makers toolbar (id mktoolbar) keeps its own geometry. */
+.moderow .modebar{flex:none; flex-shrink:0;}
+.moderow .modebar button{flex:0 0 40px; width:40px;}
+#toolbar.slim .moderow .modebar, #toolbar.slim .revbtn, #toolbar.slim .regionrow{display:none;}
+/* v32.13.1: region segmented control — its own row under the
+   moderow (artists book only; state synced by syncRegionSeg).
+   The globe segment is an icon, the other two are short
+   labels; .on follows the modebar's active treatment. */
+.regionrow{margin-top:6px;}
+.regseg{display:inline-flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.regseg button{background:none; border:none; border-left:1px solid var(--line); padding:0 13px; min-height:38px; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
+.regseg button:first-child{border-left:none; padding:0 11px;}
+.regseg button svg{width:19px; height:19px; display:block;}
+.regseg button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
 .slimtools{display:none; gap:8px;}
 .toolbar.slim .slimtools{display:flex;}
 .slimtools button{width:48px; min-height:48px; border-radius:12px; background:var(--card); border:1px solid var(--line); color:var(--text); display:inline-flex; align-items:center; justify-content:center; position:relative; padding:0; font-family:var(--sans);}
@@ -639,7 +662,7 @@ button.inflrow{cursor:pointer;}
    vertical page scrolls through, but the browser must not claim a
    horizontal drag as a scroll and cancel the pointer stream (the v2.18
    touch handler died exactly there on device). */
-.seg, .modebar, .segrow, .swatches, .bizpills{touch-action:pan-y;}
+.seg, .modebar, .segrow, .swatches, .bizpills, .regseg{touch-action:pan-y;}
 /* v2.23: the detail tabs are a real scroll-snap pager (the diary v1.42
    pattern that works on device): the three panels sit side by side in one
    horizontal scroller and each panel is a full-width snap page, while
@@ -1942,7 +1965,13 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
       </div>
       <button id="favFilterBtn" class="favfilter" onclick="toggleFavFilter()" aria-label="お気に入りだけ表示">★</button>
       <button id="revBtn" class="revbtn" onclick="toggleListRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button>
-      <button id="mergeBtn" class="revbtn" onclick="toggleListMerge()" aria-label="西洋と日本を一緒に表示する切り替え">西洋・日本いっしょ</button>
+    </div>
+    <div class="regionrow" id="regionRow">
+      <div class="regseg" id="regSeg" role="group" aria-label="表示する地域">
+        <button data-r="all" onclick="setListRegion('all')" aria-label="全部（西洋と日本を一緒に表示）" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.8" ry="8.5"/><path d="M3.5 12h17M5 7.2h14M5 16.8h14"/></svg></button>
+        <button data-r="jp" onclick="setListRegion('jp')" aria-pressed="false">日本</button>
+        <button data-r="west" onclick="setListRegion('west')" aria-pressed="false">西洋</button>
+      </div>
     </div>
     <div class="erarow" id="erarow">
       <span class="eraname" id="eraName">一覧</span>
@@ -13061,7 +13090,7 @@ el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+w
 function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on', b.dataset.m===state.mode); if(MODE_GRIDS[b.dataset.m]){ b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); } });
 syncRevBtn();
-syncMergeBtn();
+syncRegionSeg();
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 updateSearchClear();
@@ -13663,39 +13692,78 @@ function toggleListRev(){
   listRev[DS] = v;
   try{ storeSet('zukan.rev.' + DS, v? '1': '0'); }catch(e){}
   syncRevBtn();
-  renderListKeepScroll(()=>{ renderListBody(); });
+  renderListToTop();
 }
-/* v32.13.0: region-merge toggle (his 2026-11-16 call) — the
-   artist sections are 地域：時代 ('西洋：現代' / '日本：現代').
-   ON drops the region part, so both regions stand in ONE era
-   section, interleaved by the same birth-year sort (and by
-   the reverse toggle when that is on too). OFF is exactly
-   the current behaviour. Persists per book under
-   zukan.merge.<ds>. The designer book's sections are fields
-   （家具・グラフィック…) with no region part — nothing to
-   merge — so the button is hidden in that book. */
-const listMerge = {};
-function mergeOn(){
-  if(listMerge[DS] == null){ try{ listMerge[DS] = storeGet('zukan.merge.' + DS) === '1'; }catch(e){ listMerge[DS] = false; } }
-  return !!listMerge[DS];
+/* v32.13.1: order and region switches re-order the WHOLE
+   list, so keeping the scroll anchor (renderListKeepScroll)
+   would strand the reader mid-list inside a different order
+   (his 2026-11-16 call). These switches render and jump to
+   the very top — a same-task scroll, per v27.9's rule. Only
+   these taps override retention; tag filters, mode switches
+   and detail round-trips keep the v32.4 behaviour. */
+function renderListToTop(){
+  const tb = $('toolbar');
+  if(tb) tb.classList.add('tbnoanim');
+  renderListBody();
+  window.scrollTo(0, 0);
+  requestAnimationFrame(()=>{ if(tb) tb.classList.remove('tbnoanim'); });
+  updateEraName();
+}
+/* v32.13.1: region control (his 2026-11-16 decisions,
+   superseding the v32.13.0 on/off merge toggle) — 西洋 and
+   日本 together is the DEFAULT. The segmented control reads
+   [globe = all] [日本] [西洋]: a region segment filters the
+   artist list to that region only (era sections as before);
+   the globe returns to the merged view, where each era
+   section holds both regions interleaved by the current
+   sort. The state persists per book under zukan.region.<ds>
+   with 'all' as the default; the retired zukan.merge.<ds>
+   key is removed on first read, so anyone who had set the
+   old toggle lands on the new default (merged). Artists
+   whose section carries another region part （アジア・その他,
+   付録） appear in the 'all' view only. The designer book's
+   sections are fields with no region part, so the control
+   is hidden there. The search path (one name-ranked list,
+   v27.2) is untouched, exactly as the merge toggle left it. */
+const listRegion = {};
+function regionOn(){
+  if(listRegion[DS] == null){
+    let v = null;
+    try{ v = storeGet('zukan.region.' + DS); localStorage.removeItem('zukan.merge.' + DS); }catch(e){}
+    listRegion[DS] = (v === 'jp' || v === 'west')? v: 'all';
+  }
+  return listRegion[DS];
+}
+function regionOfSection(s){
+  const str = String(s || '');
+  const i = str.indexOf('：');
+  return i >= 0? str.slice(0, i): '';
 }
 function eraPartOf(s){
   const str = String(s || '');
   const i = str.indexOf('：');
   return i >= 0? str.slice(i + 1): str;
 }
-function syncMergeBtn(){
-  const b = $('mergeBtn'); if(!b) return;
-  b.style.display = (DS === 'artists')? '': 'none';
-  b.classList.toggle('on', mergeOn());
-  b.setAttribute('aria-pressed', mergeOn()? 'true': 'false');
+function syncRegionSeg(){
+  const seg = $('regSeg'); if(!seg) return;
+  const show = DS === 'artists';
+  const row = $('regionRow'); if(row) row.style.display = show? '': 'none';
+  seg.style.display = show? '': 'none';
+  const r = regionOn();
+  seg.querySelectorAll('button').forEach(b=>{
+    const on = b.dataset.r === r;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on? 'true': 'false');
+  });
 }
-function toggleListMerge(){
-  const v = !mergeOn();
-  listMerge[DS] = v;
-  try{ storeSet('zukan.merge.' + DS, v? '1': '0'); }catch(e){}
-  syncMergeBtn();
-  renderListKeepScroll(()=>{ renderListBody(); });
+function setListRegion(r){
+  if(DS !== 'artists') return;
+  if(r !== 'jp' && r !== 'west') r = 'all';
+  if(regionOn() === r) return;
+  listRegion[DS] = r;
+  try{ storeSet('zukan.region.' + DS, r); }catch(e){}
+  syncRegionSeg();
+  renderListToTop();
 }
 let mkRev = false;
 try{ mkRev = storeGet('zukan.rev.makers') === '1'; }catch(e){}
@@ -13709,6 +13777,7 @@ function toggleMakerRev(){
   try{ storeSet('zukan.rev.makers', mkRev? '1': '0'); }catch(e){}
   syncMakerRevBtn();
   renderMakersBody();
+  window.scrollTo(0, 0); /* v32.13.1: the same top-jump as the book lists */
 }
 function personCardHTML(a, kind){
 const th = thumbOf(a);
@@ -13794,17 +13863,21 @@ html += '<div class="grid '+state.mode+'">';
 rankByName(arr).forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 } else {
-/* v32.13.0: with the region-merge toggle on, the grouping
-   key is the era part of the section name (eraPartOf) —
-   sections, section keys, group filters and headings all
-   read through secOf, so the merged list is the same
-   machinery with a coarser key. Off: secOf is the raw
-   section, exactly the pre-toggle behaviour. */
-const merged = mergeOn();
+/* v32.13.1: the region control decides both the grouping
+   and the cast. 'all' (the default) groups by the era part
+   of the section name (eraPartOf) — sections, section keys,
+   group filters and headings all read through secOf, so the
+   merged list is the same machinery with a coarser key.
+   'jp' / 'west' first narrow the cast to that region, then
+   group by the full section name: the pre-toggle behaviour
+   restricted to one region. */
+const region = DS === 'artists'? regionOn(): 'all';
+const merged = region === 'all';
 const secOf = a => merged? eraPartOf(a.section || ''): (a.section || '');
+const secArr = merged? arr: arr.filter(a=> regionOfSection(a.section || '') === (region === 'jp'? '日本': '西洋'));
 const order = [];
 DB.sections.forEach(s=>{ const dsec = merged? eraPartOf(s): s; if(order.indexOf(dsec)<0) order.push(dsec);});
-arr.forEach(a=>{ const s = secOf(a); if(s && order.indexOf(s)<0) order.push(s);});
+secArr.forEach(a=>{ const s = secOf(a); if(s && order.indexOf(s)<0) order.push(s);});
 order.push('');
 /* v32.4 (item 8): the SECTIONS run oldest-first too — a section's
    key is its oldest member's birth key, so the default list opens
@@ -13815,7 +13888,7 @@ order.push('');
 const secKey = {};
 order.forEach(sec=>{
 let m = Infinity;
-arr.forEach(a=>{ if(secOf(a)===sec){ const k = birthSortKey(a); if(k<m) m = k; } });
+secArr.forEach(a=>{ if(secOf(a)===sec){ const k = birthSortKey(a); if(k<m) m = k; } });
 secKey[sec] = m;
 });
 order.sort((s1, s2)=>{
@@ -13826,7 +13899,7 @@ if(i1 || i2) return i1 === i2? 0: (i1? 1: -1);
 return rev? (k1 > k2? -1: k1 < k2? 1: 0): (k1 < k2? -1: k1 > k2? 1: 0);
 });
 order.forEach(sec=>{
-const group = arr.filter(a=> secOf(a)===sec);
+const group = secArr.filter(a=> secOf(a)===sec);
 if(!group.length) return;
 /* v28.0: within a section the cards run oldest-first by birth
    year. sort_year is authoritative where the record carries
@@ -13847,6 +13920,9 @@ html += '<div class="grid '+state.mode+'">';
 group.forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
 });
+/* v32.13.1: a region segment combined with other filters can
+   leave the cast empty — say so instead of a blank list. */
+if(!secArr.length) html += '<div class="empty">該当する項目がありません</div>';
 }
 if(searching){
 const shownIds = new Set(arr.map(a=>String(a.id)));
@@ -21440,7 +21516,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.13.0';
+const APP_VERSION = '32.13.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
