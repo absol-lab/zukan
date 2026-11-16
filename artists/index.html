@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.17.0">
+<meta name="app-version" content="32.17.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -570,6 +570,17 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    buttons elsewhere keep pinning themselves (the rule above);
    the band wraps only the detail head's first row. */
 .dhbar{position:sticky; top:var(--hdrh, 56px); z-index:26; background:var(--bg); display:flow-root; padding:0 0 6px;}
+/* v32.17.1: biz chapter pages carry their back pill inside a
+   sticky BAR (the .dhbar pattern). As a lone sticky pill
+   (through v32.17.0) the button stuck under the header while
+   the chapter title scrolled up beneath it, so the title's
+   glyphs peeked out around the pill — half-covered (his
+   2026-11-16 23:52 and 2026-11-17 01:40 screenshots). The bar
+   is opaque and full-width: in flow the title starts below
+   it, and scrolled, the title passes cleanly under the bar
+   instead of sliding under a floating pill. */
+.bizbackbar{position:sticky; top:var(--hdrh, 56px); z-index:26; background:var(--bg); display:flow-root; margin:-6px -2px 0; padding:6px 2px 8px;}
+.bizbackbar button.backbtn{position:static;}
 #gpbody button.backbtn{top:0;}
 .dname{font-family:var(--serif); font-size:26px; line-height:1.3; margin:6px 0 0; letter-spacing:.05em;}
 .dlatin{font-size:14px; color:var(--muted); margin-top:2px;}
@@ -1956,34 +1967,39 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    card form now (image on top; title, artist, price, house/year
    below), its 5-mode switch swapping the .bpgrid mode class.
    The v32.4.0 horizontal .bpcard rows are retired. */
-.bpgrid figure.work{position:relative;}
+.bpstrip figure.work{position:relative;}
 .bprankchip{position:absolute; top:6px; left:6px; z-index:3; background:var(--accent); color:var(--bg); font-size:11.5px; font-weight:700; border-radius:999px; padding:2px 9px;}
 .bpprice2{font-size:16.5px; font-weight:700; margin-top:4px;}
 .bpprice2 .bpjpy{color:var(--accent); font-size:13px; font-weight:600; margin-left:6px;}
-.bpgrid .bparticle{font-size:12.5px; color:var(--muted); margin-top:2px; text-decoration:underline;}
-.bpgrid .bpmeta2{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
-/* v32.17.0 (fix 3, class-swap surfaces): the price grid and the
-   exhibition grids also carried aspect-fit images in row-aligned
-   grid rows — the same under-card voids as the works tab. Their
-   mode switchers swap the mode CLASS in place (no re-render, no
-   scroll loss — v32.10.0's design), so these surfaces pack with
-   CSS columns instead of the render-time packCols: the mode
-   class sets the column count, cards avoid breaking across
-   columns, and the vertical rhythm is the mode's own gap as a
-   bottom margin. Visual order on these surfaces is column-wise
-   (down one column, then the next) — acceptable for a price
-   ranking and for date-ordered exhibition lists, and stated in
-   the v32.17.0 WORKLOG. */
-.grid.bpgrid, .grid.exgrid, .grid.exdgrid{display:block; column-gap:12px;}
-.grid.bpgrid.wide, .grid.exgrid.wide, .grid.exdgrid.wide{column-count:1;}
-.grid.bpgrid.def, .grid.exgrid.def, .grid.exdgrid.def{column-count:2;}
-.grid.bpgrid.compact, .grid.exgrid.compact, .grid.exdgrid.compact{column-count:3; column-gap:10px;}
-.grid.bpgrid.mini, .grid.exgrid.mini, .grid.exdgrid.mini{column-count:4; column-gap:8px;}
-.grid.bpgrid.micro, .grid.exgrid.micro, .grid.exdgrid.micro{column-count:5; column-gap:6px;}
-.grid.bpgrid figure.work, .grid.exgrid figure.work, .grid.exdgrid figure.work{break-inside:avoid; width:100%; margin:0 0 12px;}
-.grid.bpgrid.compact figure.work, .grid.exgrid.compact figure.work, .grid.exdgrid.compact figure.work{margin-bottom:10px;}
-.grid.bpgrid.mini figure.work, .grid.exgrid.mini figure.work, .grid.exdgrid.mini figure.work{margin-bottom:8px;}
-.grid.bpgrid.micro figure.work, .grid.exgrid.micro figure.work, .grid.exdgrid.micro figure.work{margin-bottom:6px;}
+.bpstrip .bparticle{font-size:12.5px; color:var(--muted); margin-top:2px; text-decoration:underline;}
+.bpstrip .bpmeta2{font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
+/* v32.17.1: the price table is a HORIZONTAL SLIDE STRIP (his
+   2026-11-17 01:40 call — the v32.17.0 CSS-columns packing ran
+   the ranks DOWN the columns: 1位/141位/296位/… across the top
+   row). Cards now line up from the left in strict rank order
+   and the strip scrolls horizontally inside itself; the page
+   itself never scrolls sideways. Card width rides the 5-mode
+   switch (zukan.smode.bp, setBpMode swaps the mode class on
+   the strip); at phone widths the next card peeks at the right
+   edge, which is the slide affordance. */
+.bpstrip{display:flex; flex-direction:row; align-items:flex-start; overflow-x:auto; overflow-y:hidden; gap:12px; padding:2px 2px 10px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+.bpstrip::-webkit-scrollbar{display:none;}
+.bpstrip figure.work{flex:0 0 auto; width:156px; margin:0;}
+.bpstrip.wide figure.work{width:252px;}
+.bpstrip.compact{gap:10px;}
+.bpstrip.compact figure.work{width:122px;}
+.bpstrip.mini{gap:8px;}
+.bpstrip.mini figure.work{width:96px;}
+.bpstrip.micro{gap:6px;}
+.bpstrip.micro figure.work{width:70px;}
+/* v32.17.1: the exhibition grids pack at render via packGridEl
+   (shortest-column assignment in strict data order — the works
+   gallery's packCols), so dates read left-to-right, top-to-
+   bottom. The v32.17.0 CSS-columns packing filled column-wise
+   and is retired for these surfaces too. The mode class on the
+   container only records the mode now; setExMode / setExdMode
+   re-pack in place on a switch. */
+.grid.exgrid, .grid.exdgrid{display:block;}
 /* v32.17.0 (fix 2): the price table read shabby in the dense
    modes on his iPhone (2026-11-16 23:13) — prices cut off
    mid-number ("$450,31…": figure.work clips overflow and the
@@ -1997,9 +2013,9 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    for scanning prices; title/artist/house stay on the larger
    modes and on the artist page); in the larger modes names
    and titles wrap at word boundaries first. */
-.bpgrid .bpprice2{overflow-wrap:anywhere;}
-.bpgrid .nm{overflow-wrap:anywhere;}
-.bpgrid .bparticle{overflow-wrap:anywhere;}
+.bpstrip .bpprice2{overflow-wrap:anywhere;}
+.bpstrip .nm{overflow-wrap:anywhere;}
+.bpstrip .bparticle{overflow-wrap:anywhere;}
 /* v32.17.0 (fix 2 tail): the exhibition cards share the milder
    form of the same defect — long unbroken venue names
    (Palazzo Pallavicini, Deutscher Bundestag…) clipped by
@@ -2007,14 +2023,14 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    allow breaks inside over-long words rather than clipping. */
 .exgrid .nm, .exgrid .exartist, .exgrid .exvenue, .exgrid .exdmeta,
 .exdgrid .nm, .exdgrid .exartist, .exdgrid .exvenue, .exdgrid .exdmeta{overflow-wrap:anywhere;}
-.bpgrid.compact .bpprice2{font-size:14px;}
-.bpgrid.compact .bpprice2 .bpjpy{font-size:11.5px;}
-.bpgrid.mini .bpprice2{font-size:12px;}
-.bpgrid.mini .bpprice2 .bpjpy{font-size:10.5px; display:block; margin-left:0;}
-.bpgrid.micro .bpprice2{font-size:10px; letter-spacing:-.03em;}
-.bpgrid.micro .bpprice2 .bpjpy{font-size:9.5px; display:block; margin-left:0; letter-spacing:0;}
-.bpgrid.mini .nm, .bpgrid.mini .bparticle, .bpgrid.mini .bpmeta2,
-.bpgrid.micro .nm, .bpgrid.micro .bparticle, .bpgrid.micro .bpmeta2{display:none;}
+.bpstrip.compact .bpprice2{font-size:14px;}
+.bpstrip.compact .bpprice2 .bpjpy{font-size:11.5px;}
+.bpstrip.mini .bpprice2{font-size:12px;}
+.bpstrip.mini .bpprice2 .bpjpy{font-size:10.5px; display:block; margin-left:0;}
+.bpstrip.micro .bpprice2{font-size:10px; letter-spacing:-.03em;}
+.bpstrip.micro .bpprice2 .bpjpy{font-size:9.5px; display:block; margin-left:0; letter-spacing:0;}
+.bpstrip.mini .nm, .bpstrip.mini .bparticle, .bpstrip.mini .bpmeta2,
+.bpstrip.micro .nm, .bpstrip.micro .bparticle, .bpstrip.micro .bpmeta2{display:none;}
 /* word / jiji artist cards (item 13) */
 .xwcard{display:flex; gap:11px; align-items:center; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px; margin:0 0 10px; color:var(--text); cursor:pointer; box-sizing:border-box;}
 .xwcard .xwfig{flex:none; width:64px;}
@@ -10606,6 +10622,37 @@ const n = PCOLS_N[mode] || 2;
 if(n <= 1 || cards.length <= n) return '<div class="gallery wm-' + mode + '">' + cards.map(c=> c.h).join('') + '</div>';
 return '<div class="pcols wm-' + mode + '">' + packCols(cards, n).map(items=> '<div class="pcol">' + items.join('') + '</div>').join('') + '</div>';
 }
+/* v32.17.1: the exhibition grids (exhibitions view, museum
+   page list, artist page 展示 tab) pack their already-built
+   card ELEMENTS with the same shortest-column assignment, in
+   strict data order, so dates read left-to-right, top-to-
+   bottom. (The v32.17.0 CSS-columns packing filled column-
+   wise — the same defect class as the price grid's ranks.)
+   The card elements are stashed on the grid at first pack
+   (grid._cards, in data order) and MOVED into fresh columns
+   on every pack — never cloned — so image hydration state
+   and listeners survive; a mode switch re-packs in place
+   (setExMode / setExdMode), no view re-render, no scroll
+   loss. Estimates steer the assignment only (text length at
+   the column width, packEst), exactly as in packGalleryHTML. */
+function packGridEl(grid, mode){
+if(!grid) return;
+if(!grid._cards) grid._cards = Array.prototype.filter.call(grid.children, el=> el.tagName === 'FIGURE');
+const cards = grid._cards;
+const n = PCOLS_N[mode] || 2;
+grid.innerHTML = '';
+if(n <= 1 || cards.length <= n){ cards.forEach(c=> grid.appendChild(c)); return; }
+const items = cards.map(el=> ({ h: el, e: packEst(el.textContent, mode, 30) }));
+const wrap = document.createElement('div');
+wrap.className = 'pcols wm-' + mode;
+packCols(items, n).forEach(colItems=>{
+const col = document.createElement('div'); col.className = 'pcol';
+colItems.forEach(el=> col.appendChild(el));
+wrap.appendChild(col);
+});
+grid.appendChild(wrap);
+}
+function packGridsIn(root, cls, mode){ if(root) root.querySelectorAll('.' + cls).forEach(g=> packGridEl(g, mode)); }
 function hydrateImg(span, work){
 if(!span ||!work) return;
 if(span.dataset && span.dataset.mkinitial != null){ const ph0 = span.closest('.ph'); if(ph0) ph0.classList.remove('mkini'); }
@@ -11909,6 +11956,49 @@ function renderGuide(){
    work's repeat-sale path reads inside the whole market. */
 const BPCUR = { USD: '$', GBP: '£', EUR: '€', JPY: '¥', HKD: 'HK$', CHF: 'CHF ', CNY: 'CN¥' };
 function bpFmtPrice(p){ return (BPCUR[p.currency] || (p.currency ? p.currency + ' ' : '')) + p.price.toLocaleString('en-US'); }
+/* v32.17.1 (fix 5): a price card may only show the priced
+   work's OWN photo. Resolution order: (1) the price record's
+   own img; (2) a registered work of the same artist whose
+   caption title matches the price record's title (the Japanese
+   title, or the original title in the caption's parentheses);
+   (3) nothing — the card then carries the no-plate tile. Until
+   now the fallback was the artist's representative work
+   (works[0]), which paired the wrong painting with the price:
+   the Mona Lisa on the Salvator Mundi record, rank 1 (his
+   2026-11-17 01:41 report). Measured on the live data at build
+   time: of 784 price records, 53 carry their own img, 58 more
+   resolve by title match, 673 have no own image anywhere and
+   now show the no-plate tile; the data-side registration list
+   is recorded in the v32.17.1 WORKLOG. */
+function bpTitleVars(work){
+  let w = String(work || '').trim();
+  w = w.replace(/[（(]\s*\d{4}\s*[）)]\s*$/, '').trim();
+  const out = [w];
+  const m = w.match(/[（(]([^（）()]+)[）)]\s*$/);
+  if(m){ out.push(m[1].trim()); out.push(w.replace(/[（(][^（）()]*[）)]\s*$/, '').trim()); }
+  return out.filter((x, i)=> x && out.indexOf(x) === i);
+}
+function bpCapTitles(cap){
+  const m = String(cap || '').match(/《([^》]+)》/);
+  if(!m) return [];
+  const t = m[1].trim(); const out = [t];
+  const pm = t.match(/[（(]([^（）()]+)[）)]\s*$/);
+  if(pm){ out.push(pm[1].trim()); out.push(t.replace(/[（(][^（）()]*[）)]\s*$/, '').trim()); }
+  return out;
+}
+function bpOwnWork(a, p){
+  if(p && p.img && (p.img.url || p.img.fileId)) return { img: p.img, caption: p.work || '' };
+  if(!a) return null;
+  const vs = bpTitleVars(p && p.work);
+  if(!vs.length) return null;
+  const ws = worksOf(a);
+  for(const w of ws){
+    if(!w || !w.img || !(w.img.url || w.img.fileId)) continue;
+    const ts = bpCapTitles(w.caption);
+    if(ts.some(t=> vs.indexOf(t) >= 0)) return w;
+  }
+  return null;
+}
 function openBizPrice(){ showView('bizp'); }
 function bizPriceCollect(){
   const pts = [];
@@ -12029,7 +12119,7 @@ function renderBizPrice(){
   const el = $('viewBizPrice'); if(!el) return;
   const pts = bizPriceCollect();
   const people = new Set(pts.map(p => p.ds + ':' + p.pid)).size;
-  let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>'
+  let h = '<div class="bizwrap"><div class="bizbackbar"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button></div>'
     + '<h2 class="biztitle">作品価格早見表</h2>'
     + '<p class="bodytext">価格がわかる全作品 ' + pts.length + ' 件（' + people + ' 名）を、円換算の高い順に並べています。円換算は価格タブと同じ ' + FX_ASOF + ' 時点の概算です。カードをタップすると作家のページへ。</p>';
   if(!pts.length){ el.innerHTML = h + '<p class="small">まだ価格データが届いていません。</p></div>'; return; }
@@ -12038,24 +12128,27 @@ function renderBizPrice(){
   /* v32.16.0 (fix 2): the price table is the pinned GRID card
      form — large image on top, then title, artist, the price
      large, house ・ year; the rank rides as a chip on the
-     image. The 5-mode switch (zukan.smode.bp) swaps the grid's
-     mode class in place (setBpMode). The image is the priced
-     work's own photo when the record carries one; otherwise
-     the artist's representative work; otherwise the designed
-     initial tile. (v32.4.0's horizontal row "cards" were what
-     his 2026-11-16 22:09 screenshot flagged as not cards.) */
+     image. The 5-mode switch (zukan.smode.bp) swaps the mode
+     class in place (setBpMode).
+     v32.17.1: the grid is now a horizontal slide strip (cards
+     in strict rank order, left to right — see the .bpstrip
+     rules), and the image is the priced work's OWN photo only
+     (bpOwnWork): the v32.16.0 fallback to the artist's
+     representative work paired the Mona Lisa with the
+     Salvator Mundi price and is retired. A priced work with
+     no registered photo of its own gets the designed initial
+     tile, never another work's photo. */
   const bpFigStore = [];
-  h += '<div class="grid bpgrid ' + SURF.bp + '" id="bpgrid">' + rows.map((pt, i) => {
+  h += '<div class="bpstrip ' + SURF.bp + '" id="bpgrid">' + rows.map((pt, i) => {
     const p = pt.raw;
+    const a = (CTX[pt.ds] && CTX[pt.ds].DB)? CTX[pt.ds].DB.artists.find(x=>String(x.id) === String(pt.pid)): null;
+    const own = bpOwnWork(a, p);
     let fig;
-    if(p.img && p.img.url){
-      const ix = bpFigStore.length; bpFigStore.push({ img: p.img, caption: p.work });
-      fig = '<div class="ph" data-bpfig="' + ix + '">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>';
+    if(own){
+      const ix = bpFigStore.length; bpFigStore.push(own);
+      fig = '<div class="ph" data-bpfig="' + ix + '">' + imgHTML(own, IMG_SIZE.thumb) + '</div>';
     } else {
-      const a = (CTX[pt.ds] && CTX[pt.ds].DB)? CTX[pt.ds].DB.artists.find(x=>String(x.id) === String(pt.pid)): null;
-      const th = a? thumbOf(a): null;
-      fig = th? '<div class="ph" data-work="' + escA(pt.pid) + '" data-ds="' + pt.ds + '">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
-        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(pt.artist || '')[0] || '')) + '</span>図版なし</span></div>';
+      fig = '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(pt.artist || '')[0] || '')) + '</span>図版なし</span></div>';
     }
     return '<figure class="work" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
       + fig
@@ -12071,6 +12164,20 @@ function renderBizPrice(){
     const w = bpFigStore[+ph.dataset.bpfig]; if(!w) return;
     const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
   });
+  const stripEl = el.querySelector('#bpgrid');
+  if(stripEl){
+    stripEl.addEventListener('scroll', () => { bpScrollPos = stripEl.scrollLeft; }, { passive: true });
+    stripEl.addEventListener('click', () => { bpScrollPos = stripEl.scrollLeft; }, true);
+    if(bpScrollPos){
+      /* restore AFTER the view is visible and laid out: at
+         render time the incoming view may still be hidden, and
+         a scrollLeft set on a display:none subtree clamps to 0
+         and is lost (measured: pos kept 300, strip read 0). */
+      const restoreBp = () => { if(stripEl.isConnected) stripEl.scrollLeft = bpScrollPos; };
+      requestAnimationFrame(restoreBp);
+      setTimeout(restoreBp, 120);
+    }
+  }
   renderBizPillBar();
 }
 
@@ -12537,7 +12644,7 @@ function bizIndexCardHTML(o){
 }
 function renderBiz(){
   const el = $('viewBiz'); if(!el) return;
-  let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button>';
+  let h = '<div class="bizwrap"><div class="bizbackbar"><button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button></div>';
   h += '<h2 class="biztitle">' + esc((bizData && bizData.title) || 'アートビジネス') + '</h2>';
   if(bizData && bizData.intro) h += '<p class="bodytext">' + esc(bizData.intro) + '</p>';
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
@@ -12563,7 +12670,7 @@ function renderBiz(){
 }
 function renderBizCh(){
   const el = $('viewBizCh'); if(!el) return;
-  let h = '<div class="bizwrap"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button>';
+  let h = '<div class="bizwrap"><div class="bizbackbar"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button></div>';
   if(!bizData){ h += '<div class="empty">読み込み中…</div></div>'; el.innerHTML = h; bizEnsure(); return; }
   if(bizChapterId === 'glossary'){
     h += '<h2 class="biztitle">用語辞典</h2>';
@@ -12738,6 +12845,11 @@ function modeIcon(m){
    grid classes in place like all the others, and the <html>
    data attributes are retired. */
 const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def', exd:'def' };
+/* v32.17.1: the price strip's scroll position, kept across
+   re-renders so the detail round-trip returns to the same
+   place in the ranking (renderBizPrice rebuilds the strip on
+   every arrival). */
+let bpScrollPos = 0;
 Object.keys(SURF).forEach(k=>{ const v = storeGet('zukan.smode.'+k); if(MODES.indexOf(v) >= 0) SURF[k] = v; });
 function surfModebarHTML(key, fn){
   return '<div class="modebar" data-smodebar="' + key + '" role="group" aria-label="表示の大きさ">'
@@ -12753,9 +12865,9 @@ function setGalMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gal = m; storeSet(
 function setGenMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gen = m; storeSet('zukan.smode.gen', m);
   const g = $('gengrid'); if(g) g.className = 'grid ' + m; syncSurfBar('gen'); }
 function setExMode(m){ if(MODES.indexOf(m) < 0) return; SURF.ex = m; storeSet('zukan.smode.ex', m);
-  document.querySelectorAll('.exgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); }); syncSurfBar('ex'); }
+  document.querySelectorAll('.exgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); packGridEl(g, m); }); syncSurfBar('ex'); }
 function setBpMode(m){ if(MODES.indexOf(m) < 0) return; SURF.bp = m; storeSet('zukan.smode.bp', m);
-  const g = $('bpgrid'); if(g) g.className = 'grid bpgrid ' + m; syncSurfBar('bp'); }
+  const g = $('bpgrid'); if(g) g.className = 'bpstrip ' + m; syncSurfBar('bp'); }
 /* v32.10.0: the Art Business index grid swaps its mode class
    in place, exactly like the genealogy grid (setGenMode) —
    no re-render, no scroll loss. Own stored key, as always. */
@@ -12770,7 +12882,7 @@ function setGdMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gd = m; storeSet('z
    exactly like the gd/biz grids. Own stored key (zukan.smode.exd);
    'ex' stays the global exhibitions view's key, untouched. */
 function setExdMode(m){ if(MODES.indexOf(m) < 0) return; SURF.exd = m; storeSet('zukan.smode.exd', m);
-  document.querySelectorAll('.exdgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); }); syncSurfBar('exd'); }
+  document.querySelectorAll('.exdgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); packGridEl(g, m); }); syncSurfBar('exd'); }
 function setMode(m){ const dir = segDir(MODES, state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderListKeepScroll(); driftIn($('listbody'), dir); syncMakerModeSeg(); if(view === 'makers') renderMakersBody(); }
 function onSearch(q){
 const nq = q.trim();
@@ -15559,6 +15671,8 @@ if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50
 else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 }
 });
+/* v32.17.1: the 展示 tab's grids pack row-major (packGridEl). */
+packGridsIn(v, 'exdgrid', SURF.exd);
 /* v32.6 (item J): the process-photo tiles — same wiring shape,
    the click opens the viewer over the PROCESS list (kind
    'proc'), and a caption's work link jumps to that work in the
@@ -15884,7 +15998,7 @@ box.innerHTML = '<div class="vvidmeta">' + (v.excerpt? '動画（抜粋）': '�
    once inside the app's own context; the guidance line is his
    wording. YouTube only — Vimeo carries no ads to begin with. */
 if(v.platform === 'youtube'){
-box.innerHTML += '<div class="vvidlogin"><a class="ytloginlink" href="https://www.youtube.com/">YouTubeにログイン</a><div class="ytloginhint">ログインすると、プレミアムのアカウントでは広告なしで再生される。</div></div>';
+box.innerHTML += '<div class="vvidlogin"><a class="ytloginlink" href="https://www.youtube.com/">YouTubeにログイン</a><div class="ytloginhint">プレミアムの方は、先に上のリンクからアプリ内でログインすると、広告なしで再生できる場合があります。</div></div>';
 }
 box.hidden = false;
 }
@@ -15898,7 +16012,7 @@ const st = viewerStage(); if(!st || st.querySelector('iframe')) return;
 let embed = w.video.embed;
 if(w.video.platform === 'youtube') embed = embed.replace('://www.youtube-nocookie.com/', '://www.youtube.com/');
 const sep = embed.indexOf('?') >= 0? '&': '?';
-st.innerHTML = '<iframe class="vvidframe" src="' + escA(embed + sep + 'autoplay=1&rel=0') + '" title="作品動画" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+st.innerHTML = '<iframe class="vvidframe" src="' + escA(embed + sep + 'autoplay=1&rel=0') + '" title="作品動画" allow="autoplay; encrypted-media; picture-in-picture; storage-access" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
 }
 function clearViewerVideo(){
 const box = $('vvideo'); if(!box) return;
@@ -17295,6 +17409,7 @@ if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="c
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
 v.innerHTML = html;
 wireExGrid(v); wireGalCards(v); wireListImages(v);
+packGridsIn(v, 'exgrid', SURF.ex);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
@@ -17331,6 +17446,7 @@ if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="c
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
 wireExGrid(v); wireGalCards(v); wireListImages(v);
+packGridsIn(v, 'exgrid', SURF.ex);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -17499,6 +17615,7 @@ span._work = e.work;
 if(imgObserver) imgObserver.observe(span); else hydrateImg(span, e.work);
 });
 wireExGrid(v); wireListImages(v);
+packGridsIn(v, 'exgrid', SURF.ex);
 }
 
 /* ---------- news （時事）: v2.62 ----------
@@ -17963,7 +18080,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全614人中346人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は21人・計34点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は18人（カプーア／安藤忠雄／クランストン／ウォーホル／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は494件入っています。展示の画像（ポスターやキービジュアル）があるのは135件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：127点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は21人・計34点（クランストン6点、小畑多丘4点、毛利悠子3点、カプーア2点、菅木志雄2点、ウォーホル2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は20人（カプーア／安藤忠雄／クランストン／ウォーホル／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は511件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは133件。残り651件は写真がまだ無く、早見表では「図版なし」で表示されます（1位のレオナルド《サルバトール・ムンディ》も写真が未登録です）。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22037,7 +22154,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.17.0';
+const APP_VERSION = '32.17.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
