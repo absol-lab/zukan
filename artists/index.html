@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="32.11.1">
+<meta name="app-version" content="32.12.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -838,6 +838,9 @@ h3.subhead:first-child{margin-top:8px;}
 #viewer .vvideo{flex:none; padding:0 16px 10px;}
 #viewer .vstage iframe.vvidframe{width:100%; height:100%; border:0; background:#000;}
 #viewer .vvidmeta{max-width:560px; margin:6px auto 0; color:var(--muted); font-size:12px; line-height:1.5; font-family:var(--sans); text-align:center;}
+#viewer .vvidlogin{max-width:560px; margin:8px auto 0; text-align:center; font-family:var(--sans);}
+#viewer .ytloginlink{color:var(--accent); font-size:13px; font-weight:600; text-decoration:underline; text-underline-offset:3px;}
+#viewer .ytloginhint{color:var(--muted); font-size:11.5px; line-height:1.5; margin-top:3px;}
 /* v2.82: the zoom stage — pinch/pan transforms apply here, inside
    the frame, so the viewer chrome never moves. */
 #viewer .vstage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; will-change:transform;}
@@ -11001,29 +11004,32 @@ let guideData = null, guideError = false, guideView = 'howto', guideMajorId = nu
    path that could land differently. */
 let guideStack = [], guideScrollRestore = null;
 let guideSecSel = {};   /* v28.2: chapterId -> selected section-group index (true section tabs) */
+/* v32.12.0: a major opens on its chapter INDEX (a grid of
+   chapter cards, the card format of his 2026-11-16 call);
+   guideIdx = true while the index is showing, false while a
+   chapter is being read. Term snapshots carry the flag so a
+   return lands on the same side of the door. */
+let guideIdx = true;
 let guideCalMonth = null, guideCalSel = null;
 /* v25.0 (his restructuring): five majors over the same 10 chapters.
    Chapters are cross-listed by reference — ch1 is both プロセスの下地づくり
    and 素材の支持体; ch2 is both プロセスの油彩の工程 and 技法の油彩. */
+/* v32.12.0 (his 2026-11-16 calls): the major row is restructured.
+   受験 moves to the LEFTMOST pill — the exam season comes first.
+   思考 + 目に見えない部分 merge into one major 「内省」
+   (introspection), taking the seat 思考 held; its chapters keep
+   their former relative order （思考 chapters first, then
+   目に見えない部分 chapters — 困りごと帖 and 心が沈むとき
+   included), and 視覚の仕組み / 普通の人の見え方 append at the
+   end. 技法 + 素材 merge into 「技法・材料」 (technique-material),
+   taking the seat 技法 held, chapters likewise in order, with
+   絵のうまさとは何か appended. Chapter ids are unchanged, so
+   chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
+  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
-  { id: 'technique', label: '技法', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6']] },
-  { id: 'material', label: '素材', subs: [['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11']] },
-  { id: 'mind', label: '思考', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature']] },
-  /* v30.1: the 目に見えない部分 major (his 2026-11-15 call) —
-     the receiving shelf for introspection chapters: mind,
-     one's immediate surroundings, problems of the self, a
-     painter's inner precepts. 人間としての地 is its first
-     chapter; further chapters append to this subs list. */
-  { id: 'inner', label: '目に見えない部分', subs: [['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor']] },
-  /* v28.0: the 受験 major (his 2026-11-14 call) — chapters +
-     calendar staged in art-labo/exam-guide/, shipped in
-     production.json as exam-ch1..7 + examCalendar.
-     v28.3: exam-ch8..12 （出願 chapters; their content was
-     pushed into production.json 2026-11-14, commit a37a5f31)
-     are listed here so the tabs actually appear — the subs
-     list is the only source of chapter tabs. */
-  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] }
+  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill']] },
+  { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience']] }
 ];
 /* v30.9: one line icon per guide major (his call: swap the
    text pills for fitting icons). Hand-drawn in the app's own
@@ -11033,13 +11039,14 @@ const GUIDE_TAX = [
    技法 = pen nib, 素材 = stacked layers (support / ground /
    pigment), 思考 = eye (seeing and judging), 目に見えない
    部分 = heart (the inner life), 受験 = target, 辞典 =
-   open book. */
+   open book.
+   v32.12.0: the merged majors inherit one parent icon each —
+   内省 takes 思考's eye (flagged for his verdict), 技法・材料
+   takes 技法's pen nib (likewise flagged). */
 const GUIDE_ICONS = {
   process: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18.6 2.9l2.5 2.5-8.3 8.3-2.5-2.5z"/><path d="M10.3 13.7C8.5 14.6 7 16.4 6.4 18.9l-.5 2 2-.5c2.5-.6 4.3-2.1 5.2-3.9l-2.8-2.8z"/></svg>',
-  technique: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5.5 8.5L12 21l-5.5-9.5L12 3z"/><circle cx="12" cy="11.5" r="1.5"/><path d="M12 13v8"/></svg>',
-  material: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L21 8.5l-9 5-9-5 9-5z"/><path d="M3.8 12.8L12 17.3l8.2-4.5"/><path d="M3.8 16.8L12 21.3l8.2-4.5"/></svg>',
-  mind: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>',
-  inner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3C6.8 16.4 3.8 13.2 3.8 9.7 3.8 7.2 5.7 5.2 8.1 5.2c1.6 0 3.1.9 3.9 2.2.8-1.3 2.3-2.2 3.9-2.2 2.4 0 4.3 2 4.3 4.5 0 3.5-3 6.7-8.2 10.6z"/></svg>',
+  'technique-material': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5.5 8.5L12 21l-5.5-9.5L12 3z"/><circle cx="12" cy="11.5" r="1.5"/><path d="M12 13v8"/></svg>',
+  introspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>',
   exam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.9"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
   dict: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.8C10.1 5.1 7.3 4.5 4.2 4.8v13.4c3.1-.3 5.9.3 7.8 2 1.9-1.7 4.7-2.3 7.8-2V4.8c-3.1-.3-5.9.3-7.8 2z"/><path d="M12 6.8v13.4"/></svg>'
 };
@@ -11105,7 +11112,7 @@ function guideCasesHTML(cases){
 }
 function guideSnapshot(){
   const b = $('gpbody');
-  return { view: guideView, majorId: guideMajorId, chapterId: guideChapterId, termName: guideTermName, dictQ: guideDictQ, scroll: b? b.scrollTop: 0, secIdx: (guideChapterId != null && guideSecSel[guideChapterId] != null)? guideSecSel[guideChapterId]: null };
+  return { view: guideView, majorId: guideMajorId, chapterId: guideChapterId, termName: guideTermName, dictQ: guideDictQ, scroll: b? b.scrollTop: 0, secIdx: (guideChapterId != null && guideSecSel[guideChapterId] != null)? guideSecSel[guideChapterId]: null, idx: guideIdx };
 }
 function guideJumpTerm(term){
   guideStack.push(guideSnapshot());
@@ -11151,6 +11158,7 @@ function guideGoBack(){
   if(!s){ if(guideView === 'term'){ guideView = 'dict'; renderGuide(); } return; }
   guideView = s.view; guideMajorId = s.majorId; guideChapterId = s.chapterId;
   guideTermName = s.termName; guideDictQ = s.dictQ || '';
+  guideIdx = (s.idx != null)? s.idx: (s.view === 'major'? false: guideIdx);
   if(s.secIdx != null && guideChapterId != null) guideSecSel[guideChapterId] = s.secIdx;
   guideScrollRestore = s.scroll || 0;
   renderGuide();
@@ -11216,6 +11224,7 @@ function guideJumpRoadmap(ref){
   const m = String(ref || '').match(/フェーズ\s*([0-9０-９]+)/);
   if(!m) return;
   const token = 'フェーズ' + m[1];
+  guideIdx = false;   /* v32.12.0: the jump lands inside the chapter, never on the index */
   guideChapterId = 'exam-ch2';
   const c = guideChapterById('exam-ch2');
   const secs = (c && Array.isArray(c.sections))? c.sections: [];
@@ -11375,7 +11384,7 @@ function guideEnsure(){
     .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
 function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
-function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
+function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; guideIdx = true; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
 function closeGuide(){ guideStack = []; $('guidepanel').classList.add('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.remove('on'); }
 function guideChapters(){ return (guideData && Array.isArray(guideData.chapters))? guideData.chapters: []; }
 function guideGlossary(){ return (guideData && Array.isArray(guideData.glossary))? guideData.glossary: []; }
@@ -11384,9 +11393,55 @@ function openGuideIndex(){ guideStack = []; guideView = 'howto'; renderGuide(); 
 function openGuideMajor(mid){
   const m = GUIDE_TAX.find(x=> x.id === mid); if(!m) return;
   guideStack = [];
-  guideView = 'major'; guideMajorId = mid;
+  guideView = 'major'; guideMajorId = mid; guideIdx = true;
   if(!m.subs.some(s=> s[1] === guideChapterId)) guideChapterId = m.subs[0][1];
   renderGuide();
+}
+/* v32.12.0: the chapter index door. A card tap enters the
+   chapter; the chapter's own back button returns here. The
+   in-chapter chapter chips (guideSub / guideSwapChapter) are
+   untouched — they only exist on the reading side. */
+function guideOpenChapter(ch){
+  guideStack = [];
+  guideChapterId = ch; guideIdx = false;
+  renderGuide();
+}
+function guideBackToIdx(){
+  guideStack = [];
+  guideIdx = true;
+  renderGuide();
+}
+/* v32.12.0: one chapter card for the major index — the artist-
+   list card component (figure.work), exactly as the Art
+   Business index rides it (v32.10.0). The plate is the first
+   work image of the chapter's first works-figure that resolves
+   against the loaded data; a chapter with no resolvable work
+   image gets the typographic plate with its tab initial —
+   never an empty slot. Plates ride the bizFigStore mechanism,
+   so renderGuide's wireBizFigs hydrates them like any figure. */
+function guideChapterCardHTML(s){
+  const c = guideChapterById(s[1]);
+  const title = c? (c.title || s[0]): s[0];
+  let plate = null;
+  if(c){
+    const figs = [].concat(c.leadFigs || []);
+    (c.sections || []).forEach(sec=> (sec.figs || []).forEach(f=> figs.push(f)));
+    for(const f of figs){
+      if(!f || f.type !== 'works') continue;
+      for(const it of (f.items || [])){
+        const r = bizFigResolve(it.artist, it.work, it.drawing);
+        if(r && r.w && r.w.img){
+          const ix = bizFigStore.length; bizFigStore.push(r.w);
+          plate = '<div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div>';
+          break;
+        }
+      }
+      if(plate) break;
+    }
+  }
+  if(!plate) plate = '<div class="ph biztypo"><span class="biztypo-c">' + esc(Array.from(s[0])[0] || '') + '</span></div>';
+  return '<figure class="work bizcard" onclick="guideOpenChapter(\'' + escA(s[1]) + '\')">' + plate
+    + '<figcaption><div class="bizcname">' + esc(title) + '</div><div class="bizcmeta">' + esc(s[0]) + ((c && c.mustSee)? ' <span class="mschip">必見</span>': '') + '</div></figcaption></figure>';
 }
 /* v28.4: chapter switches inside a major swap ONLY the
    chapter region (#gchap) in place — the section-tab
@@ -11469,13 +11524,25 @@ function renderGuide(){
   else if(guideView === 'howto'){
     h += '<h2 class="biztitle">使い方</h2>';
     if(guideData.intro) h += String(guideData.intro).split(/\n\n+/).map(t=> '<p class="bodytext">' + esc(t) + '</p>').join('');
-    h += '<p class="bodytext small">下のピルで大分類（制作プロセス／技法／素材／思考／目に見えない部分／受験）を選ぶと、中のタブで各テーマを開けます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
+    h += '<p class="bodytext small">下のピルで大分類（受験／制作プロセス／技法・材料／内省）を選ぶと、その大分類の章の一覧（カード）が出ます。カードをタップすると章が開きます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
   }
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
     if(m.id === 'exam') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
-    h += '<div class="gsubpills">' + m.subs.map(s=> { const sc = guideChapterById(s[1]); return '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" data-gchap="' + s[1] + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + ((sc && sc.mustSee)? '<span class="mschip">必見</span>': '') + '</button>'; }).join('') + '</div>';
-    h += '<div id="gchap">' + guideChapterHTML() + '</div>';
+    if(guideIdx){
+      /* v32.12.0: the major's landing is its chapter index — a
+         grid of chapter cards on the artist-list component,
+         with this surface's own 5-mode switch (zukan.smode.gd).
+         The exam calendar stays above the grid, as it always
+         sat above the chapter area. */
+      bizFigStore = [];
+      h += '<div class="smodewrap">' + surfModebarHTML('gd', 'setGdMode') + '</div>';
+      h += '<div class="grid ' + SURF.gd + '" id="gdgrid">' + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
+    } else {
+      h += '<button class="backbtn" onclick="guideBackToIdx()">‹ 章の一覧へ戻る</button>';
+      h += '<div class="gsubpills">' + m.subs.map(s=> { const sc = guideChapterById(s[1]); return '<button class="gsub' + (guideChapterId === s[1]? ' on': '') + '" data-gchap="' + s[1] + '" onclick="guideSub(\'' + s[1] + '\')">' + s[0] + ((sc && sc.mustSee)? '<span class="mschip">必見</span>': '') + '</button>'; }).join('') + '</div>';
+      h += '<div id="gchap">' + guideChapterHTML() + '</div>';
+    }
   }
   else if(guideView === 'dict'){
     h += '<h2 class="biztitle">辞典</h2>';
@@ -11801,6 +11868,7 @@ function bizFigResolve(artistName, workSub, drawing){
   return bizFigWork('artists', artistName, workSub, drawing) || bizFigWork('designers', artistName, workSub, drawing);
 }
 let bizFigStore = [];
+let figUid = 0;   /* v32.12.0: unique gradient ids for the edges figure */
 /* v32.8.0: a work tapped inside the guide panel must close the
    panel first — the detail opens underneath it, so without the
    close the tap would look like nothing happened. Biz views
@@ -12023,6 +12091,34 @@ function bizFigSVG(f){
     if(f.link){ s += '<path d="M' + xs[0] + ' 22 L' + xs[xs.length - 1] + ' 22" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>'; xs.forEach(x=>{ s += '<path d="M' + x + ' 22 L' + x + ' 30" stroke="var(--line)" stroke-dasharray="2 3"/>'; }); s += S(W / 2, 12, f.link); }
     s += '<line x1="10" y1="' + ay + '" x2="' + (W - 14) + '" y2="' + ay + '" stroke="var(--line)"/><path d="M' + (W - 22) + ' ' + (ay - 4) + ' L' + (W - 12) + ' ' + ay + ' L' + (W - 22) + ' ' + (ay + 4) + '" fill="none" stroke="var(--muted)" stroke-width="1.4"/>';
     pts.forEach((p, i)=>{ s += '<circle cx="' + xs[i] + '" cy="' + ay + '" r="4" fill="var(--accent)"/>' + T(xs[i], ay - 14, p.t, 12, 'middle', 600) + S(xs[i], ay + 16, p.s); });
+    return s + '</svg>';
+  }
+  if(f.kind === 'edges'){
+    /* v32.12.0: the three edge treatments of one dark disc on a
+       light ground — hard (crisp), soft (feathered), lost (the
+       boundary dissolves into the ground on one side). Gradient
+       ids are suffixed per render (figUid) so several figures
+       can share a page. Panel colours are literal, like the
+       contrast figure's: the panel carries its own ground. */
+    const uid = 'eg' + (++figUid);
+    const W = 340, pw = 106, ph = 100, gap = 7, y0 = 6;
+    const ground = '#e9e2cf', ink = '#39404d';
+    let s = '<svg viewBox="0 0 ' + W + ' 152" role="img">';
+    s += '<defs>'
+      + '<radialGradient id="' + uid + 's"><stop offset="52%" stop-color="' + ink + '"/><stop offset="76%" stop-color="' + ink + '" stop-opacity="0.55"/><stop offset="100%" stop-color="' + ink + '" stop-opacity="0"/></radialGradient>'
+      + '<linearGradient id="' + uid + 'l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="' + ink + '"/><stop offset="52%" stop-color="' + ink + '"/><stop offset="100%" stop-color="' + ink + '" stop-opacity="0"/></linearGradient>'
+      + '</defs>';
+    const panels = [
+      { t: 'ハード', s: '締める——図が立つ', draw: cx=> '<circle cx="' + cx + '" cy="' + (y0 + ph / 2) + '" r="30" fill="' + ink + '"/>' },
+      { t: 'ソフト', s: 'つなぐ——空気が通る', draw: cx=> '<circle cx="' + cx + '" cy="' + (y0 + ph / 2) + '" r="34" fill="url(#' + uid + 's)"/>' },
+      { t: 'ロスト', s: '溶かす——地に消える', draw: cx=> '<circle cx="' + cx + '" cy="' + (y0 + ph / 2) + '" r="30" fill="url(#' + uid + 'l)"/>' }
+    ];
+    panels.forEach((p, i)=>{
+      const x = 4 + i * (pw + gap), cx = x + pw / 2;
+      s += '<rect x="' + x + '" y="' + y0 + '" width="' + pw + '" height="' + ph + '" fill="' + ground + '" stroke="var(--line)"/>';
+      s += p.draw(cx);
+      s += T(cx, y0 + ph + 20, p.t, 12.5, 'middle', 600) + S(cx, y0 + ph + 35, p.s);
+    });
     return s + '</svg>';
   }
   return '';
@@ -12280,7 +12376,7 @@ function modeIcon(m){
    (zukan.smode.<key>) so surfaces never fight over the list's
    state.mode. gal/gen swap grid classes in place; ex/bp ride a
    data attribute on <html> that the CSS reads. */
-const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def' };
+const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def' };
 Object.keys(SURF).forEach(k=>{ const v = storeGet('zukan.smode.'+k); if(MODES.indexOf(v) >= 0) SURF[k] = v; });
 document.documentElement.dataset.exmode = SURF.ex;
 document.documentElement.dataset.bpmode = SURF.bp;
@@ -12306,6 +12402,10 @@ function setBpMode(m){ if(MODES.indexOf(m) < 0) return; SURF.bp = m; storeSet('z
    no re-render, no scroll loss. Own stored key, as always. */
 function setBizMode(m){ if(MODES.indexOf(m) < 0) return; SURF.biz = m; storeSet('zukan.smode.biz', m);
   const g = $('bizgrid'); if(g) g.className = 'grid ' + m; syncSurfBar('biz'); }
+/* v32.12.0: the guide chapter index grid swaps its mode class
+   in place, same as the biz/gen grids. Own stored key. */
+function setGdMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gd = m; storeSet('zukan.smode.gd', m);
+  const g = $('gdgrid'); if(g) g.className = 'grid ' + m; syncSurfBar('gd'); }
 function setMode(m){ const dir = segDir(MODES, state.mode, m); state.mode = m; Object.keys(CTX).forEach(k=>{ CTX[k].state.mode = m; }); storeSet(LS_MODE, m); renderListKeepScroll(); driftIn($('listbody'), dir); syncMakerModeSeg(); if(view === 'makers') renderMakersBody(); }
 function onSearch(q){
 const nq = q.trim();
@@ -15150,13 +15250,28 @@ const box = $('vvideo'); if(!box) return;
 const v = (w && w.video && w.video.embed)? w.video: null;
 if(!v){ box.hidden = true; box.innerHTML = ''; return; }
 box.innerHTML = '<div class="vvidmeta">' + (v.excerpt? '動画（抜粋）': '動画') + (v.channel? '：' + esc(v.channel): '') + (v.runtime? ' ・ ' + esc(v.runtime): '') + '（公式チャンネルの埋め込み）</div>';
+/* v32.12.0 (his 2026-11-16 call): he has YouTube Premium, but the
+   in-app player is not signed in, so ads still play. The login
+   helper sits with the video: a plain same-webview link to
+   youtube.com (no target, no external handoff) so he can sign in
+   once inside the app's own context; the guidance line is his
+   wording. YouTube only — Vimeo carries no ads to begin with. */
+if(v.platform === 'youtube'){
+box.innerHTML += '<div class="vvidlogin"><a class="ytloginlink" href="https://www.youtube.com/">YouTubeにログイン</a><div class="ytloginhint">ログインすると、プレミアムのアカウントでは広告なしで再生される。</div></div>';
+}
 box.hidden = false;
 }
 function playViewerVideo(){
 const w = viewerWorks[viewerIdx]; if(!w || !w.video || !w.video.embed) return;
 const st = viewerStage(); if(!st || st.querySelector('iframe')) return;
-const sep = w.video.embed.indexOf('?') >= 0? '&': '?';
-st.innerHTML = '<iframe class="vvidframe" src="' + escA(w.video.embed + sep + 'autoplay=1&rel=0') + '" title="作品動画" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+/* v32.12.0: YouTube plays on the STANDARD embed domain, cookies
+   allowed — the nocookie host can never carry his sign-in, so
+   stored nocookie embeds are rewritten here at play time (the
+   data itself is untouched; ids unchanged). */
+let embed = w.video.embed;
+if(w.video.platform === 'youtube') embed = embed.replace('://www.youtube-nocookie.com/', '://www.youtube.com/');
+const sep = embed.indexOf('?') >= 0? '&': '?';
+st.innerHTML = '<iframe class="vvidframe" src="' + escA(embed + sep + 'autoplay=1&rel=0') + '" title="作品動画" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
 }
 function clearViewerVideo(){
 const box = $('vvideo'); if(!box) return;
@@ -17119,7 +17234,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全605人中326人まで完了。残り279人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：121点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：553件・301人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "「目の仕組みと見えること」のページ", "lines": ["網膜・中心視と周辺視・盲点・サッケード（目の素早い動き）・残像・同時対比など、「見える」ことの仕組みを、絵を見ること・描くことに繋げて読むページです。", "草案はできています。置き場所（制作ガイドの章にするか、独立したページにするか）は検討中です。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は8人・計16点（クランストン6点、小畑多丘4点、タトリン1点、イゾロット1点、フカミエリ1点、安藤忠雄1点、アダム・エリオット1点、水江未来1点）が入りました。肖像写真は9人（ディクス／タトリン／モディリアーニ／クランストン／フカミエリ／小畑多丘／安藤忠雄／春日佳歩／湯浅政明）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全605人中326人まで完了。残り279人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：121点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：553件・301人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は9人・計18点（クランストン6点、小畑多丘4点、カプーア2点、タトリン1点、イゾロット1点、フカミエリ1点、安藤忠雄1点、アダム・エリオット1点、水江未来1点）が入りました。肖像写真は10人（ディクス／タトリン／モディリアーニ／クランストン／フカミエリ／小畑多丘／安藤忠雄／春日佳歩／湯浅政明／カプーア）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -21186,7 +21301,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '32.11.1';
+const APP_VERSION = '32.12.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -21232,7 +21347,7 @@ function loadDesignersSeed(){
    アプリ同梱の datapack.json（移行済み最終データ）を、初回起動時に一度だけ
    既存の端末データへマージする。適用済み版数は 'zukanDataPack.applied' に記録。
    失敗しても適用済みにせず（次回起動で再試行）、起動自体は必ず続行する。 */
-const DATA_PACK = 24;
+const DATA_PACK = 25;
 const LS_PACK_APPLIED = 'zukanDataPack.applied';
 /* パック側より新しいローカル編集がある作家は、パックで上書きしない */
 function packGuardNewerLocal(local, packData){
