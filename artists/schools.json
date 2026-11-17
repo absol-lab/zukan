@@ -412,7 +412,7 @@
      ],
      "field": "絵画と映像（ドローイング・アニメーション）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 263
     },
     {
      "name": "菊地武彦",
@@ -424,7 +424,7 @@
      ],
      "field": "絵画（線の形象、土の記憶など、風景と記憶を主題とする絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 264
     },
     {
      "name": "栗原一成",
@@ -436,7 +436,7 @@
      ],
      "field": "絵画・現代美術（因果風景、盲視などを主題とする絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 265
     },
     {
      "name": "小泉俊己",
@@ -448,7 +448,7 @@
      ],
      "field": "彫刻・立体表現（彫刻科出身、中原悌二郎賞受賞の彫刻家）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 266
     },
     {
      "name": "髙柳恵里",
@@ -460,7 +460,7 @@
      ],
      "field": "立体・空間表現（彫刻的なオブジェとインスタレーション）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 267
     },
     {
      "name": "村瀬恭子",
@@ -484,7 +484,7 @@
      ],
      "field": "絵画（抽象絵画とドローイング）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 268
     },
     {
      "name": "日野之彦",
@@ -496,7 +496,7 @@
      ],
      "field": "絵画（人物と人影を描く具象絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 269
     },
     {
      "name": "雨宮庸介",
@@ -508,7 +508,7 @@
      ],
      "field": "現代美術（彫刻、映像、パフォーマンス、VRなど多手法の表現）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 270
     },
     {
      "name": "金田実生",
@@ -520,7 +520,7 @@
      ],
      "field": "絵画（日常と自然の情景を描く絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 271
     },
     {
      "name": "千葉正也",
@@ -544,7 +544,7 @@
      ],
      "field": "絵画（インテリアや静物を主題とする絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 272
     },
     {
      "name": "O JUN",
@@ -575,7 +575,7 @@
      ],
      "field": "絵画（綿布にアクリルによる絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 273
     },
     {
      "name": "友政麻理子",
@@ -585,7 +585,7 @@
      ],
      "field": "絵画・映像・インスタレーション",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 274
     },
     {
      "name": "出津京子",
@@ -595,7 +595,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 275
     },
     {
      "name": "工藤麻紀子",
@@ -615,7 +615,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 276
     },
     {
      "name": "足立智美",
@@ -625,7 +625,7 @@
      ],
      "field": "サウンド・パフォーマンス（音楽家、詩人、美術家）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 277
     },
     {
      "name": "地主麻衣子",
@@ -635,7 +635,7 @@
      ],
      "field": "映像を中心とする現代美術",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 278
     },
     {
      "name": "山田淳吉",
@@ -645,7 +645,7 @@
      ],
      "field": "絵画・壁画（東京藝術大学大学院壁画専攻修了）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 279
     },
     {
      "name": "渡辺泰子",
@@ -655,7 +655,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 280
     },
     {
      "name": "小林晴夫",
@@ -665,7 +665,7 @@
      ],
      "field": "アートプロジェクト・パフォーマンス、美術の学習の企画（Bゼミ、blanClass創設）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 281
     },
     {
      "name": "高橋大輔",
@@ -675,7 +675,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 282
     },
     {
      "name": "黒嵜想",
@@ -696,7 +696,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 283
     },
     {
      "name": "布施琳太郎",
@@ -706,7 +706,7 @@
      ],
      "field": "現代美術と文筆",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 284
     },
     {
      "name": "坂本龍幸",
@@ -716,7 +716,7 @@
      ],
      "field": "絵画と下地研究",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 285
     },
     {
      "name": "原裕子",
@@ -726,7 +726,7 @@
      ],
      "field": "陶芸",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 286
     },
     {
      "name": "川添彩",
@@ -736,7 +736,7 @@
      ],
      "field": "映像（映画監督）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 287
     },
     {
      "name": "奥秋由美",
@@ -746,7 +746,7 @@
      ],
      "field": "テンペラと絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 288
     },
     {
      "name": "原陽子",
@@ -756,7 +756,7 @@
      ],
      "field": "銅版画・版画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 289
     },
     {
      "name": "楊いくみ",
@@ -766,7 +766,7 @@
      ],
      "field": "パフォーマンス",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 290
     },
     {
      "name": "白帆ひろみ",
@@ -776,7 +776,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 291
     },
     {
      "name": "園田将久",
@@ -786,7 +786,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 292
     },
     {
      "name": "豊田涼介",
@@ -796,7 +796,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 293
     },
     {
      "name": "元城宏保",
@@ -806,7 +806,7 @@
      ],
      "field": "絵画（Oil on canvasによる大作絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 294
     },
     {
      "name": "矢野憩啓",
@@ -816,7 +816,7 @@
      ],
      "field": "絵画（Oil on canvas）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 295
     },
     {
      "name": "並木咲",
@@ -826,7 +826,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 296
     },
     {
      "name": "中津川莉音",
@@ -836,7 +836,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 297
     },
     {
      "name": "東本伊代",
@@ -846,7 +846,7 @@
      ],
      "field": "絵画（油画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 298
     }
    ],
    "exam": {
