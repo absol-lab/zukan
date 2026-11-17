@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.56.0">
+<meta name="app-version" content="5.57.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -944,6 +944,37 @@ h3.subhead:first-child{margin-top:8px;}
 .wgrpchips{display:flex; flex-wrap:nowrap; gap:6px; margin:10px 0 2px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px;}
 .wgrpchips::-webkit-scrollbar{display:none;}
 .wgrpchips button{flex:none; white-space:nowrap; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:12.5px; letter-spacing:.06em; padding:5px 12px; min-height:32px;}
+/* v5.57.0: the works tab's series chips — the .wgrpchips rail
+   with the .dtabs active state. */
+.wserieschips{display:flex; flex-wrap:nowrap; gap:6px; margin:2px 0 8px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px;}
+.wserieschips::-webkit-scrollbar{display:none;}
+.wserieschips button{flex:none; white-space:nowrap; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:12.5px; letter-spacing:.06em; padding:5px 12px; min-height:32px;}
+.wserieschips button.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
+.wseriescnt{margin:2px 4px 8px;}
+/* v5.57.0: インタビュー tab — title cards in the .stmtcard
+   single-column card family (panel surface, radius, padding),
+   as full-width buttons; the kind chip and meta ride one line
+   under the title, the 全文あり marker is an accent pill. */
+.intvcard{display:flex; gap:10px; align-items:flex-start; width:100%; text-align:left; margin:8px 0; padding:12px; background:var(--bg2); border:1px solid var(--line); border-radius:10px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px; box-sizing:border-box;}
+.intvcard .intvtitle{font-family:var(--serif); font-size:15.5px; font-weight:600; line-height:1.5;}
+.intvcard .intvmeta{display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:5px; font-size:12.5px; color:var(--muted);}
+.intvcard .intvkind{margin-top:0;}
+.intvfull{font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--accent); border:1px solid var(--accent); border-radius:999px; padding:1px 8px;}
+/* v5.57.0: the interview reader overlay — the #figzoom shell
+   (fixed head, pill back button that never scrolls away, its
+   own scrolling body). */
+#intvreader{position:fixed; inset:0; z-index:700; background:var(--bg); display:flex; flex-direction:column;}
+#intvreader.hidden{display:none;}
+#intvreader .irhead{flex:none; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center;}
+#intvreader .irbody{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 16px calc(22px + env(safe-area-inset-bottom));}
+.irtitle{font-family:var(--serif); font-size:19px; font-weight:600; line-height:1.55; margin:6px 0 8px;}
+.irmeta{display:flex; align-items:center; flex-wrap:wrap; gap:7px; font-size:12.5px; color:var(--muted); margin-bottom:12px;}
+.irtoggle{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; margin:0 0 12px;}
+.irtoggle button{background:var(--bg2); color:var(--text); border:none; font-family:var(--sans); font-size:13px; padding:6px 18px; min-height:36px; cursor:pointer;}
+.irtoggle button.on{background:var(--accent); color:var(--bg); font-weight:600;}
+.irnote{white-space:pre-wrap; line-height:1.7; margin:10px 0;}
+.irsrc{font-size:13px; margin:10px 0 4px;}
+.irsrc a{text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 .tagline span{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:3px 11px; font-size:12.5px;}
 /* viewer */
@@ -2295,6 +2326,11 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="figzoom" class="hidden" role="dialog" aria-label="図の拡大表示">
   <div class="fzhead"><button class="backbtn" onclick="closeFigZoom()">‹ 戻る</button></div>
   <div class="fzstage" id="fzstage"></div>
+</div>
+
+<div id="intvreader" class="hidden" role="dialog" aria-label="インタビュー本文">
+  <div class="irhead"><button class="backbtn" onclick="closeIntvReader()">‹ 戻る</button></div>
+  <div class="irbody" id="irbody"></div>
 </div>
 
 <div id="viewer">
@@ -10134,7 +10170,10 @@ return (Array.isArray(list)? list: []).map(iv=>{
 iv = iv || {};
 const o = {
 title: String(iv.title||''),
-type: iv.type === 'video'? 'video': 'article',
+/* v5.57.0: the essay / interview kinds survive as themselves
+   (until now everything non-video flattened to 'article', so
+   the tab could not label an essay as one). */
+type: iv.type === 'video'? 'video': (iv.type === 'essay'? 'essay': (iv.type === 'interview'? 'interview': 'article')),
 source: String(iv.source||''),
 date: String(iv.date||''),
 url: String(iv.url||''),
@@ -10144,7 +10183,15 @@ note: String(iv.note||''),
    both curated on the data side, both optional: an entry
    without them renders exactly as before. */
 thumb: String(iv.thumb||''),
-summary_ja: String(iv.summary_ja||'')
+summary_ja: String(iv.summary_ja||''),
+/* v5.57.0: the FULL TEXT of the piece, when the data side
+   registered it — text is the original, text_ja its natural
+   Japanese rendering （意訳）. The interview reader shows
+   text_ja first and offers the original one tap away. Both
+   optional: an entry without them reads by summary + link,
+   exactly as before. */
+text: String(iv.text||''),
+text_ja: String(iv.text_ja||'')
 };
 return (o.title && o.url)? o: null;
 }).filter(Boolean);
@@ -10204,6 +10251,12 @@ if(w && w.held_by) o.held_by = String(w.held_by);
 if(w && 'hires' in w) o.hires = !!w.hires;
 /* v27.8: the work's official video embed (see normalizeVideo) */
 if(w && w.video){ const nv = normalizeVideo(w.video); if(nv) o.video = nv; }
+/* v5.57.0: the work's series / group key — data-side curated
+   (the record's work_groups carries the labels). Display-only
+   here, but it must survive normalization or the works tab's
+   series filter never sees it and a device write-back would
+   erase it from the canonical — the name_kana lesson. */
+if(w && w.series) o.series = String(w.series);
 return o;
 }).filter(w=>w.file || w.caption || w.img);
 const works = mapWorkItems(a.works);
@@ -10302,6 +10355,11 @@ process: normalizeProcess(a.process),
 terms: normalizeTerms(a.terms),
 interviews: normalizeInterviews(a.interviews),
 influences: normalizeInfluences(a.influences),
+/* v5.57.0: work_groups — the record's series / group labels
+   ([{key, label}]); works point at a group with their series
+   key. Data-side curated; carried here, in mergeDataInto and
+   in saveEditor from the start (the name_kana lesson). */
+work_groups: (Array.isArray(a.work_groups)? a.work_groups: []).map(g=>({ key: String((g && g.key) || ''), label: String((g && g.label) || '') })).filter(g=> g.key && g.label),
 /* v32.6.1: portrait / portrait_src / process_photos /
    birthplace / base — the same name_kana lesson. v32.6.0's
    bio head and 制作風景 tab read these, but the whitelist
@@ -10643,6 +10701,11 @@ function profileBandHTML(a){
   return h + '</div>';
 }
 function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
+/* v5.57.0: the works tab's series filter selection, kept per
+   artist for the detail session (renderDetail resets it when
+   the person changes). null = すべて. */
+let workSeries = { forId: null, key: null };
+function setWorkSeries(key){ workSeries = { forId: String(state.detailId), key: key || null }; renderDetail(); }
 /* v4.3: display modes for the detail works grid (his ask: the
    works list gets the same ワイド/標準/小/ミニ stops as the
    artist list). Device-local, shared across datasets. */
@@ -15828,6 +15891,20 @@ profileBandHTML(a)+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
+/* v5.57.0: series / group filter — an artist carrying
+   work_groups gets a chip row at the top of the works tab
+   （すべて + one chip per group; the row is prepended after
+   the shelf assembly below). The selection is kept per artist
+   for the detail session and resets when the detail moves to
+   another person. While a group is selected the tab shows a
+   FLAT grid of the matching works: the 代表作 shelf and the
+   decade groups are suspended (they describe the whole
+   catalogue, not a slice of it). Cards keep their index into
+   the displayed works list, so the viewer still opens at the
+   tapped work in the full sequence. */
+const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
+if(workSeries.forId !== String(a.id)) workSeries = { forId: String(a.id), key: null };
+const seriesKey = wgArr.some(g=> g.key === workSeries.key)? workSeries.key: null;
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
 const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(ct)+'</div></figcaption></figure>', e: packEst(ct, workMode) }; };
@@ -15835,7 +15912,13 @@ const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figur
    (groupedWorksHTML); below the threshold the tab renders
    exactly as before — one packed gallery, no shelf, no
    headers. */
-if(ws.length >= WORKS_GROUP_MIN) worksHTML = groupedWorksHTML(a, ws, mkCard);
+if(seriesKey){
+const fCards = [];
+ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
+const wgHit = wgArr.find(g=> g.key === seriesKey);
+worksHTML = '<div class="small wseriescnt">'+esc(wgHit.label)+'：'+fCards.length+'点</div>' + packGalleryHTML(fCards, workMode);
+}
+else if(ws.length >= WORKS_GROUP_MIN) worksHTML = groupedWorksHTML(a, ws, mkCard);
 else{
 const wCards = [];
 ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
@@ -15868,6 +15951,14 @@ worksHTML = '<div class="worksreq shelf"><div class="wrrow"><span class="small">
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
 '</span><button class="reqiconbtn" onclick="requestWorks()" aria-label="'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4.6 19.2c.6-3.1 2.7-4.7 5.4-4.7 1.1 0 2.2.3 3 .8"/><path d="M17.9 14.8v5.6M15.1 17.6h5.6"/></svg></button></div></div>' + worksHTML;
+/* v5.57.0: the series chip row rides at the very top of the
+   works tab, above the count / sort / display shelf. */
+if(wgArr.length){
+worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで絞る">'
++ '<button class="'+(seriesKey? '': 'on')+'" onclick="setWorkSeries(null)">すべて</button>'
++ wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
++ '</div>' + worksHTML;
+}
 /* v30.6: the drawings panel — the same gallery as works (same
    tile shape, same viewer, same page turn), its own list. The
    tiles carry data-drawidx, NOT data-workidx: the works wiring
@@ -16142,25 +16233,31 @@ quotesHTML += '<div class="stmtcard"><span class="stmtterm">'+esc(t.term)+'</spa
 });
 }
 /* v27.0: インタビュー tab — articles and videos in the curated
-   order, each row opening its source in a new tab; videos carry
-   a ▶ 動画 chip, articles a 記事 chip. */
+   order.
+   v5.57.0 (his spec, 2026-11-17): the rows become title CARDS
+   — the .stmtcard single-column card family — and every card
+   opens the in-app reader (openIntvReader) instead of leaving
+   for the source. An entry registered with a full text reads
+   in place （意訳 first, 原文 one tap away); an entry without
+   one shows its summary_ja + note + the source link inside
+   the reader. The card itself stays lean by design: the title,
+   one meta line (kind chip + source ・ date), a 全文あり
+   marker when a full text exists, and the video thumbnail
+   for videos (the v27.3 plate, kept). The summary and the
+   note moved into the reader, with the text they introduce. */
 let interviewsHTML = '';
 if(intvArr.length){
-interviewsHTML = intvArr.map(iv=>{
-/* v27.3: video rows lead with a small 16:9 thumbnail (▶
-   overlaid); a summary_ja rides under the meta line in full —
-   the reading he does in-app before deciding to open the
-   (often English) source. Rows without either render as in
-   v27.0. */
+interviewsHTML = intvArr.map((iv, ii)=>{
 const th = intvThumbURL(iv);
-return '<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
+const kind = iv.type==='video'? '▶ 動画': (iv.type==='essay'? 'エッセイ': (iv.type==='interview'? 'インタビュー': '記事'));
+const hasFull = !!((iv.text||'').trim() || (iv.text_ja||'').trim());
+return '<button class="intvcard" onclick="openIntvReader('+ii+')">'
 +(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="this.classList.add(\'imgok\');var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()"><span class="intvplay">▶</span></span>': '')
-+'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
 +'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
-+([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
-+(iv.note? '<span class="intvnote">'+esc(iv.note)+'</span>': '')
-+(iv.summary_ja? '<span class="intvsum">'+esc(iv.summary_ja)+'</span>': '')
-+'</span></a>';
++'<span class="intvmeta"><span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+kind+'</span>'
++([iv.source, iv.date].filter(Boolean).length? '<span>'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
++(hasFull? '<span class="intvfull">全文あり</span>': '')
++'</span></span></button>';
 }).join('');
 }
 /* v27.0: 影響 tab — the artists who shaped this one (data-side
@@ -16369,6 +16466,61 @@ let viewerGen = 0;
    a drawing can never leak into the works list via the viewer. */
 let viewerKind = 'works';
 let viewerKindNext = null;
+/* v5.57.0: the interview reader — a full-screen overlay in the
+   #figzoom manner (fixed head with the pill back button, its
+   own scrolling body), opened from the インタビュー tab's
+   cards. The entry is addressed by its index in the CURRENT
+   artist's interviews array; the language state is per
+   opening and defaults to the 意訳 (text_ja) whenever one
+   exists. The body rides .bodytext — the app's reading panel
+   (dark card surface; its pre-wrap keeps the stored paragraph
+   breaks). An entry with no full text shows its summary_ja on
+   the same panel, then the note and the source link — the
+   link is underlined, per the house rule for tappable text. */
+let intvReader = { idx: -1, lang: 'ja' };
+function intvEntry(){
+const a = artistById(state.detailId); if(!a) return null;
+const arr = Array.isArray(a.interviews)? a.interviews: [];
+return arr[intvReader.idx] || null;
+}
+function openIntvReader(idx){
+const a = artistById(state.detailId); if(!a) return;
+const arr = Array.isArray(a.interviews)? a.interviews: [];
+if(!arr[idx]) return;
+intvReader = { idx: idx, lang: ((arr[idx].text_ja||'').trim()? 'ja': 'orig') };
+renderIntvReader();
+const bd = $('irbody'); if(bd) bd.scrollTop = 0;
+const ov = $('intvreader'); if(ov) ov.classList.remove('hidden');
+}
+function closeIntvReader(){
+const ov = $('intvreader'); if(ov) ov.classList.add('hidden');
+}
+function intvSetLang(lang){
+intvReader.lang = lang;
+renderIntvReader();
+const bd = $('irbody'); if(bd) bd.scrollTop = 0;
+}
+function renderIntvReader(){
+const iv = intvEntry(); const body = $('irbody'); if(!iv || !body) return;
+const kind = iv.type==='video'? '▶ 動画': (iv.type==='essay'? 'エッセイ': (iv.type==='interview'? 'インタビュー': '記事'));
+const hasJa = !!((iv.text_ja||'').trim()), hasOrig = !!((iv.text||'').trim());
+let h = '<div class="irtitle">'+esc(iv.title)+'</div>';
+h += '<div class="irmeta"><span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+kind+'</span>'
++([iv.source, iv.date].filter(Boolean).length? '<span>'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')+'</div>';
+if(hasJa && hasOrig){
+h += '<div class="irtoggle" role="group" aria-label="本文の言語"><button class="'+(intvReader.lang==='ja'? 'on': '')+'" onclick="intvSetLang(\'ja\')">意訳</button><button class="'+(intvReader.lang==='orig'? 'on': '')+'" onclick="intvSetLang(\'orig\')">原文</button></div>';
+}
+if(hasJa || hasOrig){
+let txt = (intvReader.lang==='ja' && hasJa)? iv.text_ja: iv.text;
+if(!String(txt || '').trim()) txt = hasJa? iv.text_ja: iv.text;
+h += '<div class="bodytext">'+esc(txt)+'</div>';
+} else if(iv.summary_ja){
+h += '<div class="bodytext">'+esc(iv.summary_ja)+'</div>';
+}
+if(iv.note) h += '<div class="small irnote">'+esc(iv.note)+'</div>';
+if(iv.url) h += '<div class="irsrc">出典：<a href="'+escA(iv.url)+'" target="_blank" rel="noopener">'+esc(iv.source || iv.url)+'</a></div>';
+body.innerHTML = h;
+}
 function openViewerDrawings(a, idx){
 viewerKindNext = 'drawings';
 openViewer(drawingsOf(a), idx, a.id);
@@ -18746,7 +18898,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全699人中430人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは212点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は47人・計95点。","肖像写真は59人。"]},{"v":null,"label":"展示情報","lines":["展示は1,387件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全706人中437人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは221点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は54人・計119点。","肖像写真は65人。"]},{"v":null,"label":"展示情報","lines":["展示は1,507件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -21419,6 +21571,8 @@ if(old && old.base) rec.base = old.base;
 if(old && old.sns && old.sns.length) rec.sns = old.sns;
 if(old && old.interviews && old.interviews.length) rec.interviews = old.interviews;
 if(old && old.influences && old.influences.length) rec.influences = old.influences;
+/* v5.57.0: nor the work_groups (no form field either) */
+if(old && old.work_groups && old.work_groups.length) rec.work_groups = old.work_groups;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 /* v10.3: nor a work's hires flag — same per-work carry.
@@ -21426,6 +21580,8 @@ if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec
 if(old && old.works) old.works.forEach(ow=>{ if(ow && 'hires' in ow){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !('hires' in t)) t.hires = !!ow.hires; } });
 /* v27.8: nor a work's official video — same per-work carry */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.video){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.video) t.video = ow.video; } });
+/* v5.57.0: nor a work's series key — same per-work carry */
+if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.series){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.series) t.series = ow.series; } });
 if(old && old.thumb_pinned_at){
 rec.thumb_pinned_at = old.thumb_pinned_at;
 const pw = (old.works||[]).find(x=>x && x.pinned);
@@ -21509,6 +21665,8 @@ function mergeDataInto(local, incoming){
     if(ia.sns && ia.sns.length) merged.sns = ia.sns;
     if(ia.interviews && ia.interviews.length) merged.interviews = ia.interviews;
     if(ia.influences && ia.influences.length) merged.influences = ia.influences;
+    /* v5.57.0: work_groups, same wholesale treatment. */
+    if(ia.work_groups && ia.work_groups.length) merged.work_groups = ia.work_groups;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* works merged by file key / fileId / url / caption — a work is registered
@@ -21533,7 +21691,7 @@ function mergeDataInto(local, incoming){
     otherWorks.forEach(w=>{
       let ex = null;
       wkeys(w).some(k=>{ if(wm.has(k)){ ex = wm.get(k); return true; } return false; });
-      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.video && !ex.video) ex.video = w.video; if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v12.1 (supersedes the v10.3 stickiness): hires follows the
+      if(ex){ if(w.caption && !useRemoteBase) ex.caption = w.caption; if(w.pinned) ex.pinned = true; if(w.video && !ex.video) ex.video = w.video; if(w.series && !ex.series) ex.series = w.series; /* v5.57.0: a work's series key fills from the other side, like its video */ if(w.held_by && (!ex.held_by || !useRemoteBase)) ex.held_by = w.held_by; /* v12.1 (supersedes the v10.3 stickiness): hires follows the
    newer side when either side states it explicitly — the
    base record's value stands; the other side fills only a
    base that never carried the key. An explicit false from
@@ -22789,6 +22947,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#pillnav')) return;
     if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
+    if(e.target && e.target.closest && e.target.closest('#intvreader')) return; /* v5.57.0: the interview reader is a modal overlay — the guide panel's treatment */
     if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
@@ -22870,7 +23029,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.56.0';
+const APP_VERSION = '5.57.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
