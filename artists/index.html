@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.46.0">
+<meta name="app-version" content="5.47.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2101,6 +2101,18 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .nthumb{flex:none; width:44px; height:44px; border-radius:9px; overflow:hidden; margin-right:10px;}
 .nthumb figure.work{margin:0; height:100%;}
 .nthumb .ph{height:100%;}
+/* v5.47.0: the compact-row geometry above never actually applied
+   — no rule made .uprow a flex container, so the <span> thumb
+   stayed inline, its 44px size was ignored, and every row
+   rendered as a full-width image card (measured in the sandbox:
+   thumb 260x199, row 296px tall; on device ~110 such cards made
+   a ~30,000px page of live image holders). Thumb-carrying
+   notification rows now opt into the flex row the design always
+   assumed (the history tab's .uprow rows and the no-thumb
+   summary row do not carry .nflex and are unchanged). */
+.uprow.nflex{display:flex; align-items:flex-start;}
+.nthumb{display:block;}
+.nhead{flex:1; min-width:0;}
 /* figure blocks in articles (item 14) */
 .bizfig{margin:16px 0 6px;}
 .bizfig .figcap{font-size:12.5px; color:var(--muted); margin:0 2px 8px; line-height:1.5;}
@@ -11664,7 +11676,7 @@ let guideCalOpen = false;
    chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
-  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
+  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
@@ -12074,6 +12086,20 @@ function guideChapterCardHTML(s){
   return '<figure class="work bizcard" onclick="guideOpenChapter(\'' + escA(s[1]) + '\')">'
     + '<figcaption><div class="bizcname">' + esc(title) + '</div><div class="bizcmeta">' + esc(s[0]) + ((c && c.mustSee)? ' <span class="mschip">必見</span>': '') + '</div></figcaption></figure>';
 }
+/* v5.47.0 (his call, 2026-11-17): the universities view
+   (美大——大学と教授, built v5.44.0 for その他) also opens
+   from the TOP of the 美大 major's index (the renamed 受験
+   major; its id stays 'exam'). The card mirrors the chapter
+   cards' text-only form and calls the SAME xOpenSchools —
+   same view, same schools.json data, never a copy. Back is
+   origin-aware by construction: the xscreen floats above
+   whichever surface opened it and closing it reveals that
+   surface untouched — from here, this major index; from
+   その他, the settings view, as before. */
+function guideSchoolsCardHTML(){
+  return '<figure class="work bizcard" onclick="xOpenSchools()">'
+    + '<figcaption><div class="bizcname">大学と教授</div><div class="bizcmeta">東京藝術大学・多摩美術大学・武蔵野美術大学</div></figcaption></figure>';
+}
 /* v28.4: chapter switches inside a major swapped ONLY the
    chapter region (#gchap) in place, driven by the chapter
    chips. v5.46.0 (his call, 2026-11-17: 「ページを開いた後の
@@ -12144,7 +12170,7 @@ function renderGuide(){
   else if(guideView === 'howto'){
     h += '<h2 class="biztitle">使い方</h2>';
     if(guideData.intro) h += String(guideData.intro).split(/\n\n+/).map(t=> '<p class="bodytext">' + esc(t) + '</p>').join('');
-    h += '<p class="bodytext small">下のピルで大分類（受験／カレンダー／制作プロセス／技法・材料／内省）を選ぶと、その大分類の章の一覧（カード）が出ます。カードをタップすると章が開きます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
+    h += '<p class="bodytext small">下のピルで大分類（美大／カレンダー／制作プロセス／技法・材料／内省）を選ぶと、その大分類の章の一覧（カード）が出ます。カードをタップすると章が開きます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
   }
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
@@ -12165,7 +12191,7 @@ function renderGuide(){
          button, hidden until opened). */
       bizFigStore = [];
       h += '<div class="smodewrap">' + surfModebarHTML('gd', 'setGdMode') + '</div>';
-      h += '<div class="grid ' + SURF.gd + '" id="gdgrid">' + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
+      h += '<div class="grid ' + SURF.gd + '" id="gdgrid">' + (m.id === 'exam'? guideSchoolsCardHTML(): '') + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
     } else {
       h += '<div class="gbackbar"><button class="backbtn" onclick="guideBackToIdx()">‹ 章の一覧へ戻る</button></div>';
       h += '<div id="gchap">' + guideChapterHTML() + '</div>';
@@ -18487,7 +18513,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド14章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["制作ガイドの「受験」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド14章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["制作ガイドの「美大」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -18798,6 +18824,26 @@ function setBellTab(t){
   if(settingsPanel === 'reqnotif' && bellTab === t){ bellMarkAllRead(); return; }
   bellTab = t; renderSettingsPanel();
 }
+/* v5.47.0: the notifications panel's background refresh — once
+   per opening, in-flight guarded. When the one flush settles,
+   the list re-renders ONCE if the panel is still open on the
+   通知 tab. This replaces the pre-v5.47.0 tail inside
+   renderRequestNotifs, whose flush→render→flush cycle rebuilt
+   the panel on every network round-trip until the web content
+   process died (see the note there). Flushes are started ONLY
+   from here, so completions are bounded by openings and no
+   render can ever cause another render. */
+let notifFlushInFlight = false;
+function notifRefreshOnce(){
+  if(notifFlushInFlight) return;
+  if(!getValidToken() && !relayReady()) return;
+  notifFlushInFlight = true;
+  flushArtistRequests().then(()=>{
+    notifFlushInFlight = false;
+    refreshReqNotifBtn();
+    if(view === 'settings' && settingsPanel === 'reqnotif' && bellTab === 'notifs') renderRequestNotifs('reqnotiflist');
+  }).catch(()=>{ notifFlushInFlight = false; });
+}
 function openRequestNotifs(){
   /* v27.10: a second bell press with the panel already open
      marks the current tab all read (his rule). */
@@ -18808,6 +18854,7 @@ function openRequestNotifs(){
   reqNotifReturn = (view!=='settings')? view : null;
   showView('settings');
   openSettingsPanel('reqnotif');
+  notifRefreshOnce();
 }
 /* v4.9: tapping a completed notification opens the person's page
    (his ask, 2026-11-13). Works items know their dataset + artist_id;
@@ -18879,9 +18926,9 @@ function renderRequestNotifs(targetId){
       + '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>'
       + (isNew? '<span class="newtag">NEW</span>': '');
     if(navigable){
-      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="reqNotifJump(\''+escA(r.id)+'\')">' + thumb + head + '<span class="upgo">›</span></div></div>' };
+      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap nflex'+(isNew?' hasnew':'')+'" onclick="reqNotifJump(\''+escA(r.id)+'\')">' + thumb + head + '<span class="upgo">›</span></div></div>' };
     }
-    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')">' + thumb + head + '<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
+    return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap nflex'+(isNew?' hasnew':'')+'" onclick="toggleNotifDetail(\''+key+'\')">' + thumb + head + '<span class="nexp'+(open?' open':'')+'">›</span></div>' + detail + '</div>' };
   });
   /* v7.0: registration detections (see detectNewPeople) ride
      the same panel. v13.1: only the current book's notes are
@@ -18914,7 +18961,7 @@ function renderRequestNotifs(targetId){
     const ra = artistById(n.personId);
     const rth = ra? thumbOf(ra): null;
     const rthumb = '<span class="nthumb">' + (rth? '<figure class="work"><div class="ph" data-work="'+escA(ra.id)+'">'+imgHTML(rth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(n.name||'')[0]||''))+'</span></span>') + '</span>';
-    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')">' + rthumb + '<div class="nhead"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div></div>' };
+    return { ds: n.dataset, t: Date.parse(n.at||'')||0, html: '<div class="uprow tap nflex'+(isNew?' hasnew':'')+'" onclick="regNotifJump(\''+escA(n.id)+'\')">' + rthumb + '<div class="nhead"><div class="nrow"><span class="nname">'+esc(n.name)+'</span><span class="nkind reg">登録</span></div><div class="upat" style="margin-top:2px;">'+esc(notifWhen(n.at))+'</div>'+(isNew? '<span class="newtag">NEW</span>': '')+'<span class="upgo">›</span></div></div>' };
   });
   /* v13.1: one chronological stream again, but only THIS
      book's rows reach it (the v13.0 sections mixed both books
@@ -18931,10 +18978,19 @@ function renderRequestNotifs(targetId){
      only in reqNotifJump / regNotifJump / the expansion of a
      non-navigable row — one item at a time. */
   refreshReqNotifBtn();
-  /* refresh the requests file in the background; re-render on arrival */
-  if(getValidToken() || relayReady()){
-    flushArtistRequests().then(()=>{ refreshReqNotifBtn(); if(settingsPanel==='reqnotif') renderRequestNotifs('reqnotiflist'); }).catch(()=>{});
-  }
+  /* v5.47.0: NO refresh is triggered from here. The old tail
+     flushed the requests file and re-rendered on completion —
+     and since every render re-armed it, the panel rebuilt itself
+     on every network round-trip for as long as it stayed open:
+     ~110-row innerHTML rebuilds, ~110 fresh <img> elements (loads
+     restarting — the stuck 読み込んでいます…), observer re-wiring
+     and a full requests-cache write per cycle, until the web
+     content process was killed (his 2026-11-17 recording: panel
+     → black → reload → WKWebView 「問題が繰り返し起きました」).
+     The background refresh now happens exactly ONCE per panel
+     opening, from openRequestNotifs via notifRefreshOnce, and
+     renders are event-driven only — no render can cause another
+     render. */
 }
 function newsAgeDays(iso){
   const t = Date.parse(iso||'');
@@ -22572,7 +22628,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.46.0';
+const APP_VERSION = '5.47.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
