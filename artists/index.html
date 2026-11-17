@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.43.0">
+<meta name="app-version" content="5.44.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11649,7 +11649,8 @@ let guideCalMonth = null, guideCalSel = null;
    絵のうまさとは何か appended. Chapter ids are unchanged, so
    chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
-  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['逆算', 'exam-ch2'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
+  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
+  { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
@@ -11667,9 +11668,10 @@ const GUIDE_TAX = [
    内省 takes 思考's eye (flagged for his verdict), 技法・材料
    takes 技法's pen nib (likewise flagged). */
 const GUIDE_ICONS = {
-  process: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18.6 2.9l2.5 2.5-8.3 8.3-2.5-2.5z"/><path d="M10.3 13.7C8.5 14.6 7 16.4 6.4 18.9l-.5 2 2-.5c2.5-.6 4.3-2.1 5.2-3.9l-2.8-2.8z"/></svg>',
+  process: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.9 9.8V4.1a1.1 1.1 0 012.2 0v5.7"/><path d="M10.2 12.6V9.8h3.6v2.8"/><path d="M10.2 12.6c.2 3.4.8 6 1.8 8.2c.9-2.2 1.5-4.8 1.8-8.2"/><path d="M18.3 14.4c.9 1.4 1.7 2.6 1.7 3.7a1.7 1.7 0 11-3.4 0c0-1.1.8-2.3 1.7-3.7z"/></svg>',
   'technique-material': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5.5 8.5L12 21l-5.5-9.5L12 3z"/><circle cx="12" cy="11.5" r="1.5"/><path d="M12 13v8"/></svg>',
   introspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5" width="16.8" height="15.4" rx="2"/><path d="M3.6 9.9h16.8"/><path d="M7.9 2.9v4M16.1 2.9v4"/></svg>',
   exam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.9"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>',
   dict: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.8C10.1 5.1 7.3 4.5 4.2 4.8v13.4c3.1-.3 5.9.3 7.8 2 1.9-1.7 4.7-2.3 7.8-2V4.8c-3.1-.3-5.9.3-7.8 2z"/><path d="M12 6.8v13.4"/></svg>'
 };
@@ -11871,7 +11873,7 @@ function guideJumpRoadmap(ref){
      overlap family. Here the calendar node is never
      destroyed, so there is no stale calendar frame to
      composite, and the scroll moves exactly once). */
-  if(guideView === 'major' && guideMajorId === 'exam' && $('gchap')){
+  if(guideView === 'major' && guideMajorId === 'calendar' && $('gchap')){
     guideSwapChapter();
     const b = $('gpbody'), host = $('gchap');
     if(b && host){
@@ -11900,7 +11902,7 @@ function guideCalMonths(){
    screen or flash a doubled calendar over the chapter text. */
 function guideCalRefresh(){
   const w = $('gcalwrap');
-  if(w && guideView === 'major' && guideMajorId === 'exam'){ w.innerHTML = guideCalHTML(); return; }
+  if(w && guideView === 'major' && guideMajorId === 'calendar'){ w.innerHTML = guideCalHTML(); return; }
   renderGuide();
 }
 function guideCalSetMonth(ym){ guideCalMonth = ym; guideCalRefresh(); }
@@ -12131,17 +12133,18 @@ function renderGuide(){
   else if(guideView === 'howto'){
     h += '<h2 class="biztitle">使い方</h2>';
     if(guideData.intro) h += String(guideData.intro).split(/\n\n+/).map(t=> '<p class="bodytext">' + esc(t) + '</p>').join('');
-    h += '<p class="bodytext small">下のピルで大分類（受験／制作プロセス／技法・材料／内省）を選ぶと、その大分類の章の一覧（カード）が出ます。カードをタップすると章が開きます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
+    h += '<p class="bodytext small">下のピルで大分類（受験／カレンダー／制作プロセス／技法・材料／内省）を選ぶと、その大分類の章の一覧（カード）が出ます。カードをタップすると章が開きます。用語は「辞典」のピルから引けます。本文中の太字の語はタップすると辞典へ飛び、戻ると読んでいた場所へ帰ります。</p>';
   }
   else if(guideView === 'major'){
     const m = GUIDE_TAX.find(x=> x.id === guideMajorId) || GUIDE_TAX[0];
-    if(m.id === 'exam') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
+    if(m.id === 'calendar') h += '<div id="gcalwrap">' + guideCalHTML() + '</div>';
     if(guideIdx){
       /* v32.12.0: the major's landing is its chapter index — a
          grid of chapter cards on the artist-list component,
          with this surface's own 5-mode switch (zukan.smode.gd).
-         The exam calendar stays above the grid, as it always
-         sat above the chapter area. */
+         The calendar (its own カレンダー major since v5.44.0)
+         stays above the grid, as it always sat above the
+         chapter area. */
       bizFigStore = [];
       h += '<div class="smodewrap">' + surfModebarHTML('gd', 'setGdMode') + '</div>';
       h += '<div class="grid ' + SURF.gd + '" id="gdgrid">' + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
@@ -18434,7 +18437,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：577件・320人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}, {"v": null, "label": "美大カリキュラムの深掘り", "lines": ["制作ガイドの「受験」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。", "いまの状態：さらに細かい第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、YouTubeの映像、学生や卒業生の声、本）を集めているところです。", "進め方：集まった分から、章の中身を厚くしていきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：577件・320人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}, {"v": null, "label": "美大カリキュラムの深掘り", "lines": ["制作ガイドの「受験」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。", "いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。", "進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]}, {"v": null, "label": "美大の教授を図鑑に登録", "lines": ["「美大」のページ（v5.44.0）に載せた教授94名のうち、図鑑にまだ登録されていない作家が78名います（東京藝術大学14名・多摩美術大学36名・武蔵野美術大学28名）。", "進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22519,7 +22522,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.43.0';
+const APP_VERSION = '5.44.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -22836,6 +22839,7 @@ function renderSettingsMain(){
     '<div class="setttl">その他</div>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'drive\')"><span class="ic">'+SICON.cloud+'</span><span class="lb">Google Drive 同期</span><span id="driveval">'+esc(driveVal())+'</span><span class="chev">›</span></button>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'request\')"><span class="ic">'+SICON.personPlus+'</span><span class="lb">作家・デザイナーの登録依頼</span><span>'+esc(reqSummaryLabel())+'</span><span class="chev">›</span></button>'+
+    '<button class="pillrow" onclick="xOpenSchools()"><span class="ic">'+SICON.palette+'</span><span class="lb">美大——大学と教授</span><span>3大学・教授94名</span><span class="chev">›</span></button>'+
     '<div class="groupcard">'+
       srow(SICON.palette, 'テーマカラー', themeName(), "openSettingsPanel('theme')")+
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
@@ -23353,6 +23357,21 @@ button.xchip{cursor:pointer;}
 .xmapwrap canvas{width:100%; display:block;}
 .xpin{position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; border:2px solid #ffb75c; background:rgba(255,183,92,.35); padding:0;}
 .xpin.on{background:#ffb75c;}
+/* v5.44.0: 美大 (art schools) — professor directory rows, and
+   the pill back button for this section's overlay session
+   (.schmode): the standing rule is pill-shaped back buttons,
+   fixed while scrolling — the overlay head never scrolls, and
+   in this section it wears the pill form. */
+#xscreen.schmode #xbackbtn{background:var(--bg); border:1.5px solid var(--lineStrong); border-radius:999px; color:var(--muted); font-size:14.5px; padding:8px 16px; letter-spacing:.04em; display:inline-flex; align-items:center; min-height:44px;}
+.profrow{border-bottom:1px solid var(--line); padding:10px 0;}
+.profrow:last-child{border-bottom:none;}
+.profhead{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.profname{font-family:var(--headfont); font-size:16.5px; font-weight:600;}
+button.proflink{background:none; border:none; padding:0; font-family:var(--headfont); font-size:16.5px; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; text-align:left;}
+.profpos{font-size:12.5px; color:var(--accent); font-weight:600;}
+.profreg{font-size:11px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:1px 7px;}
+.proffield{font-size:13.5px; line-height:1.6; margin-top:3px;}
+.profcls{font-size:12.5px; color:var(--muted); line-height:1.65; margin-top:2px;}
 </style>
 <div id="xscreen" role="dialog" aria-modal="true">
   <div class="xhead"><button class="txtbtn" id="xbackbtn" onclick="xBack()">← 戻る</button><div class="xttl" id="xtitle">立役者</div><button class="txtbtn" onclick="xClose()">閉じる</button></div>
@@ -23361,9 +23380,9 @@ button.xchip{cursor:pointer;}
 <script>
 /* ===== v32.0 xtra module ===== */
 const XSTACK = [];
-let XMAKERS = null, XGAL = null, XGEN = null, XLOC = null, XJIJI = null;
+let XMAKERS = null, XGAL = null, XGEN = null, XLOC = null, XJIJI = null, XSCHOOLS = null;
 function xShow(){ $('xscreen').classList.add('open'); }
-function xClose(){ XSTACK.length = 0; $('xscreen').classList.remove('open'); }
+function xClose(){ XSTACK.length = 0; $('xscreen').classList.remove('open'); $('xscreen').classList.remove('schmode'); }
 function xGo(title, render){
   XSTACK.push({ title: title, render: render });
   xRenderTop();
@@ -24131,6 +24150,77 @@ async function xLoadGal(){
   if(XGAL) return XGAL;
   try{ const d = await xFetchJSON('galleries.json'); XGAL = d.galleries || []; }catch(e){}
   return XGAL;
+}
+/* v5.44.0: 美大 — the art-schools section. Per-university pages
+   listing the oil-painting faculty in roster (position) order —
+   a roster, not a dictionary, so no 五十音 sort here. Data:
+   schools.json (built from the official faculty rosters).
+   A professor whose zukan_id is set is a registered artist:
+   the name is underlined (the app's tappable convention) and
+   jumps via xJumpArtist into the normal artist page.
+   Professors without an id — unregistered artists and the
+   non-artist faculty (critics, curators, the anatomist) —
+   display plainly, with no link. Entry: the 美大 pillrow in
+   その他. The section's search follows the makers pattern:
+   a professor's name finds their university's professors. */
+async function xLoadSchools(){
+  if(XSCHOOLS) return XSCHOOLS;
+  try{ const d = await xFetchJSON('schools.json'); XSCHOOLS = (d && d.universities) || []; }catch(e){}
+  return XSCHOOLS;
+}
+let xSchoolQuery = '';
+function xOpenSchools(){
+  XSTACK.length = 0;
+  $('xscreen').classList.add('schmode');
+  xGo('美大', b => {
+    b.innerHTML = '<p class="bodytext">読み込んでいます…</p>';
+    xLoadSchools().then(us => {
+      if(!us || !us.length){ b.innerHTML = '<p class="bodytext">大学データを読み込めませんでした。</p>'; return; }
+      let h = '<p class="bodytext">大学ごとに、油画系の教授陣（専任・客員・非常勤）をまとめたページ。図鑑に登録されている作家の教授は名前が押せるようになっていて、押すとその作家のページへ飛ぶ。</p>';
+      h += '<input class="xsearch" id="schq" type="text" placeholder="教授の名前で探す" autocomplete="off" value="' + escA(xSchoolQuery) + '" oninput="xSchoolInput(this.value)">';
+      h += '<div id="schlist">' + xSchoolsListHTML() + '</div>';
+      b.innerHTML = h;
+    });
+  });
+}
+function xSchoolsListHTML(){
+  const us = XSCHOOLS || [];
+  const nq = normSearch(xSchoolQuery || '');
+  if(!nq){
+    return us.map(u => {
+      const linked = (u.professors || []).filter(p => p.zukan_id != null).length;
+      return '<button class="xcard" onclick="xSchoolDetail(\'' + escA(u.id) + '\')"><span class="xn">' + esc(u.name) + '</span><div class="xm">' + esc(u.departments || '') + '<br>教授 ' + (u.professors || []).length + '名（図鑑に登録されている作家 ' + linked + '名）</div></button>';
+    }).join('');
+  }
+  let h = '';
+  us.forEach(u => {
+    const hits = (u.professors || []).filter(p => normSearch((p.name || '') + ' ' + (p.field || '')).includes(nq));
+    if(!hits.length) return;
+    h += '<div class="xsec">' + esc(u.name) + '</div>' + hits.map(p => xProfRowHTML(p)).join('');
+  });
+  return h || '<div class="empty">該当する教授はいません</div>';
+}
+function xSchoolInput(v){ xSchoolQuery = v; const el = $('schlist'); if(el) el.innerHTML = xSchoolsListHTML(); }
+function xSchoolDetail(uid){
+  const u = (XSCHOOLS || []).find(x => x.id === uid); if(!u) return;
+  xGo(u.name, b => {
+    let h = '';
+    if(u.intro) h += xParas(u.intro);
+    h += '<div class="small" style="margin:2px 0 6px;">' + esc(u.departments || '') + '／教授 ' + (u.professors || []).length + '名</div>';
+    h += (u.professors || []).map(p => xProfRowHTML(p)).join('');
+    b.innerHTML = h;
+  });
+}
+function xProfRowHTML(p){
+  const nm = (p.zukan_id != null)
+    ? '<button class="proflink" onclick="xJumpArtist(\'' + escA(String(p.zukan_id)) + '\')">' + esc(p.name) + '</button>'
+    : '<span class="profname">' + esc(p.name) + '</span>';
+  let h = '<div class="profrow"><div class="profhead">' + nm
+    + (p.position? '<span class="profpos">' + esc(p.position) + '</span>': '')
+    + (p.zukan_id != null? '<span class="profreg">図鑑登録</span>': '') + '</div>';
+  if(p.field) h += '<div class="proffield">' + esc(p.field) + '</div>';
+  if((p.classes || []).length) h += '<div class="profcls">担当：' + p.classes.map(c => esc(c)).join('／') + '</div>';
+  return h + '</div>';
 }
 function xMuseumGallery(){
   const v = $('viewMuseum'); if(!v || !museumName || $('xgalblock')) return;
