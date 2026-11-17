@@ -1,56 +1,31 @@
-/* Zukan image cache (v4.1, stage 1 of the image-speed program).
-   Repeat views of Drive thumbnails are served from the device
-   instead of the network: first display is unchanged (network),
-   every later display of the same image is instant.
-   Cache-first for Drive thumbnail / googleusercontent GETs only.
-   Retry attempts carry a cache-buster (&retry=N) and always go
-   to the network, so the app's failure recovery is untouched.
-   The cache is pruned oldest-first past MAX_ENTRIES. Any failure
-   in here degrades to plain network behavior — this worker can
-   only ever help, never break the app. */
-const CACHE = 'zukan-img-v1';
-const MAX_ENTRIES = 900;
-const PRUNE_TO = 800;
-
+/* v5.41.2: SELF-DESTRUCT worker — the zukan image cache is gone.
+   This file used to be the v4.1 image cache (cache-first for
+   Drive thumbnails / googleusercontent). It was removed because
+   it is the prime suspect in the device image failure: it sat in
+   front of every image request and stored any response that was
+   ok-or-opaque — an error or interstitial page delivered through
+   the thumbnail redirect counts as opaque, its status is
+   unreadable, and once stored it was served cache-first forever.
+   (Inference, not proof — the full chain is in the v5.41.2
+   WORKLOG. What is proven: the same thumbnail URL opens fine
+   directly in Safari on the user's device, so the failure lives
+   inside the app context, not at the endpoint or the network.)
+   On activate this worker deletes EVERY cache, unregisters
+   itself, and reloads controlled pages so devices return to the
+   plain network path at once. It has no fetch handler and
+   intercepts nothing. */
 self.addEventListener('install', () => { self.skipWaiting(); });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
-    await self.clients.claim();
-  })());
-});
-
-function cacheable(u) {
-  return (u.hostname === 'drive.google.com' && u.pathname.indexOf('/thumbnail') >= 0)
-    || u.hostname.endsWith('.googleusercontent.com');
-}
-
-async function prune(cache) {
-  try {
-    const keys = await cache.keys();
-    if (keys.length > MAX_ENTRIES) {
-      await Promise.all(keys.slice(0, keys.length - PRUNE_TO).map((k) => cache.delete(k)));
-    }
-  } catch (e) { /* pruning is best-effort */ }
-}
-
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  let u;
-  try { u = new URL(req.url); } catch (err) { return; }
-  if (!cacheable(u)) return;
-  if (u.search.indexOf('retry=') >= 0) return; /* cache-busted retry: network */
-  e.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    const hit = await cache.match(req);
-    if (hit) return hit;
-    const res = await fetch(req);
-    if (res && (res.ok || res.type === 'opaque')) {
-      try { await cache.put(req, res.clone()); await prune(cache); } catch (err) { /* full/blocked cache: serve anyway */ }
-    }
-    return res;
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch (err) { /* best effort */ }
+    try { await self.registration.unregister(); } catch (err) { /* best effort */ }
+    try {
+      const clients = await self.clients.matchAll({ type: 'window' });
+      clients.forEach((c) => { try { c.navigate(c.url); } catch (err) { /* best effort */ } });
+    } catch (err) { /* best effort */ }
   })());
 });

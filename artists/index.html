@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.41.1">
+<meta name="app-version" content="5.41.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -452,6 +452,20 @@ figure.work .ph:not(.platefail):has(> .imgholder > .noimg) .noimg{color:var(--te
    replaces the holder's content wholesale (label included), so
    the failure plate is untouched. A cached image never shows it. */
 .imgholder{position:relative;}
+/* v5.41.2: an <img> that has not loaded successfully paints
+   NOTHING. Safari draws a broken-image glyph for an errored
+   img (and a frame while it is in flight); on his device that
+   glyph sat inside every card next to the loading label (the
+   v5.41.1 recording). The holder's label / plate underneath
+   carries the state instead. hydrateImg adds .imgok only on a
+   verified load (naturalWidth > 0), so a photo appears exactly
+   when it is really there. The two raw-img surfaces with the
+   same label-sibling pattern (.tlphoto / .intvthumb) follow
+   the same rule via their inline onload. */
+.imgholder img{opacity:0;}
+.imgholder img.imgok{opacity:1;}
+.tlphoto img,.intvthumb img{opacity:0;}
+.tlphoto img.imgok,.intvthumb img.imgok{opacity:1;}
 .imgload{font-family:var(--sans); font-size:11px; color:var(--muted); letter-spacing:.05em; line-height:1.5; padding:4px; text-align:center; white-space:nowrap;}
 .imgload.ov{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:1; pointer-events:none;}
 /* v29.8 (his device report, 2026-11-14 23:44): on narrow tiles the
@@ -10601,6 +10615,16 @@ function imgLoadDone(span){
 if(!span) return;
 span.querySelectorAll('.imgload').forEach(s=>s.remove());
 }
+/* v5.41.2: reveal-on-load safety net for the .imgok rule above.
+   A capture-phase load listener (load does not bubble) marks
+   ANY holder img that genuinely loaded — even one hydrateImg
+   has not wired yet — so no surface can sit on an invisible
+   photo. Purely presentational: the state machine's own
+   imgdone guard still decides the logic. */
+document.addEventListener('load', (e)=>{
+const t = e.target;
+if(t && t.tagName === 'IMG' && t.closest && t.closest('.imgholder') && t.naturalWidth > 0) t.classList.add('imgok');
+}, true);
 /* v2.31: self-healing images. A terminal failure is no longer the end
    state for a render: when a work HAS a Drive image (url or fileId), a
    failed span is re-armed (budget: 3 re-arms per element) and retried
@@ -10763,6 +10787,13 @@ function packGridsIn(root, cls, mode){ if(root) root.querySelectorAll('.' + cls)
 function hydrateImg(span, work){
 if(!span ||!work) return;
 if(span.dataset && span.dataset.mkinitial != null){ const ph0 = span.closest('.ph'); if(ph0) ph0.classList.remove('mkini'); }
+/* v5.41.2: one-label invariant, enforced at the single choke
+   point every holder passes through. imgHTML emits exactly
+   one label and imgLoadLabel refuses a second, but a holder
+   that was re-armed / re-wired across renders must never be
+   able to accumulate one either — keep the first, drop rest. */
+const dupLoads = span.querySelectorAll('.imgload');
+if(dupLoads.length > 1) dupLoads.forEach((s, ix)=>{ if(ix > 0) s.remove(); });
 const cap = work.caption||'';
 /* v2.18: failure adds .platefail (same box), NOT .noplate (shorter box) —
    see the CSS note. The tile keeps its exact geometry and shows the
@@ -10809,11 +10840,26 @@ const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.datas
    never on how many other cards exist. The v2.31 re-arm
    behind fail() is unchanged, and the viewer's own loader is
    untouched (the viewer calls hydrateImg only for its
-   no-source stage span, which takes the empty-ladder path). */
+   no-source stage span, which takes the empty-ladder path).
+   v5.41.2 addendum: v5.41.1's device recording showed the
+   native <img> requests ERRORING FAST in the app context —
+   broken glyphs in every card, photos that had loaded under
+   v5.40.x gone — while the same thumbnail URL opened directly
+   in Safari displays fine. The mechanism layers above the
+   network had changed twice with the same outcome, so this
+   ship removes the one layer that sat in front of every image
+   request and was never exercised in sandbox validation: the
+   v4.1 image-cache service worker (see the boot cleanup and
+   the self-destruct sw.js). And so failure can never LOOK
+   broken again, an un-loaded img now paints nothing at all
+   (.imgok gate in the CSS + the reveal-on-load listener):
+   the holder shows its label, then either a real photo or
+   the honest plate. The ladder, the watchdog and the re-arm
+   are unchanged; no scheduler returns. */
 const IMG_ATTEMPT_TIMEOUT_MS = 12000;
 const IMG_LOCAL_TIMEOUT_MS = 6000;
 const hasFid = !!(work.img && work.img.fileId);
-if(hasFid && driveImgCache[work.img.fileId]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[work.img.fileId]+'" alt="">'; phFitSpan(span); return; }
+if(hasFid && driveImgCache[work.img.fileId]){ const curl = driveImgCache[work.img.fileId]; span.innerHTML = '<img loading="eager" src="'+curl+'" alt="">'; const bim = span.querySelector('img'); if(bim) bim.addEventListener('error', ()=>{ /* v5.41.2: a cached blob URL that no longer decodes must not strand the holder on an invisible img — drop the entry and fall through to the ladder below. */ if(driveImgCache[work.img.fileId] === curl) delete driveImgCache[work.img.fileId]; span.innerHTML = ''; hydrateImg(span, work); }); phFitSpan(span); return; }
 let img = span.querySelector('img');
 if(img && img.dataset && img.dataset.imgdone === '1') return; /* settled with a photo — re-wiring changes nothing */
 if(span._imgJob) return; /* a state machine is already running on this span */
@@ -10844,6 +10890,7 @@ clearTimer();
 img.onload = img.onerror = null;
 span._imgJob = false;
 img.dataset.imgdone = '1';
+img.classList.add('imgok'); /* v5.41.2: only a verified load may paint */
 imgLoadDone(span);
 phFit(img);
 };
@@ -10864,6 +10911,7 @@ arm();
 const arm = ()=>{
 const c = attempts[ai];
 const my = ++armSeq;
+img.classList.remove('imgok'); /* v5.41.2: a fresh attempt hides the img again until IT verifies */
 if(span.dataset && span.dataset.rearm) delete span.dataset.rearm;
 img.onload = ()=>{ if(my === armSeq) succeed(); };
 img.onerror = ()=>{ if(my === armSeq) advance(); };
@@ -15701,7 +15749,7 @@ interviewsHTML = intvArr.map(iv=>{
    v27.0. */
 const th = intvThumbURL(iv);
 return '<a class="intvrow" href="'+escA(iv.url)+'" target="_blank" rel="noopener">'
-+(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()"><span class="intvplay">▶</span></span>': '')
++(th? '<span class="intvthumb"><span class="imgload ov">読み込んでいます…</span><img src="'+escA(th)+'" alt="" loading="lazy" onload="this.classList.add(\'imgok\');var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()"><span class="intvplay">▶</span></span>': '')
 +'<span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+(iv.type==='video'? '▶ 動画': '記事')+'</span>'
 +'<span class="intvmain"><span class="intvtitle">'+esc(iv.title)+'</span>'
 +([iv.source, iv.date].filter(Boolean).length? '<span class="intvmeta">'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
@@ -18222,7 +18270,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは360件。残り424件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは513件。残り271件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -19049,7 +19097,7 @@ function tlPhotoHTML(e){
   const ph = e && e.photo;
   if(!ph || !ph.url) return '';
   const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
-  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
+  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="this.classList.add(\'imgok\');var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
 }
 /* v32.3: one resolver for every timeline artist chip (cards,
    era pages, map sheet) and for eraWorks. Through v32.2 a
@@ -22307,7 +22355,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.41.1';
+const APP_VERSION = '5.41.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -23032,11 +23080,27 @@ function maybeFirstRender(){
      device has rather than holding the veil forever. The
      provenance stays on record in the storage diagnostics. */
   setTimeout(()=>{ bootGateForced = true; maybeFirstRender(); }, 12000);
-  /* v4.1 (image-speed stage 1b): register the image-cache service
-     worker — repeat views of Drive thumbnails are served from the
-     device. Purely additive: unsupported or failed registration
-     leaves today's behavior exactly as it is. */
-  if('serviceWorker' in navigator){ try { navigator.serviceWorker.register('sw.js').catch(()=>{}); } catch(e){} }
+  /* v5.41.2: the image-cache service worker (v4.1) is REMOVED —
+     the app no longer registers it, and this cleanup unregisters
+     every registration for this origin and deletes every cache
+     it (or anything else) stored. The worker sat in front of
+     EVERY image request, served cache-first, and stored any
+     response that was ok-or-opaque — an error or interstitial
+     page delivered through the thumbnail redirect counts as
+     opaque (status unreadable) and, once stored, was served
+     forever. His direct-Safari test proved the thumbnail
+     endpoint itself is healthy, so the failure lives inside
+     the app context and that layer was the prime suspect (the
+     full inference chain is in the v5.41.2 WORKLOG). sw.js is
+     now a self-destruct worker as well, so a device that still
+     runs the old worker cleans itself on its next update check.
+     After this, image requests go straight from <img> to the
+     network with only the normal HTTP cache between. The
+     cleanup is fire-and-forget and can never error the app. */
+  if('serviceWorker' in navigator){ try {
+    if(navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(rs=>{ rs.forEach(r=>{ try{ r.unregister(); }catch(e){} }); }).catch(()=>{});
+    if(window.caches && caches.keys) caches.keys().then(ks=>{ ks.forEach(k=>{ try{ caches.delete(k); }catch(e){} }); }).catch(()=>{});
+  } catch(e){} }
   /* 起動時自動同期：有効な（期限内の）トークンがある時だけ、ポップアップなしで
      静かにアプリ全体を同期する。トークンが無ければ何もしない。 */
   if(getValidToken()){
