@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.59.0">
+<meta name="app-version" content="5.59.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1324,6 +1324,10 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    the dead space right of the sort/display rows takes an icon. */
 #viewDetail .worksreq .reqiconbtn{flex:none; display:inline-flex; align-items:center; justify-content:center; min-height:32px; padding:5px 13px; border-radius:999px; background:var(--bg2); border:1px solid var(--line); color:var(--text); cursor:pointer;}
 #viewDetail .worksreq .reqiconbtn svg{width:17px; height:17px; display:block;}
+/* v5.59.1: the works count rides at the right end of the
+   display row, under the request icon (its own row is gone);
+   it never shrinks against the scrolling display seg. */
+#viewDetail .worksreq .wcount{flex:none; white-space:nowrap;}
 /* v2.65: books tab rows */
 .bookrow{display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px;}
 .bookcover{flex:none; width:72px;}
@@ -16136,8 +16140,7 @@ const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figur
 if(seriesKey){
 const fCards = [];
 ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
-const wgHit = wgArr.find(g=> g.key === seriesKey);
-worksHTML = '<div class="small wseriescnt">'+esc(wgHit.label)+'：'+fCards.length+'点</div>' + packGalleryHTML(fCards, workMode);
+worksHTML = packGalleryHTML(fCards, workMode);
 }
 else if((state.workSort || 'reg') === 'decades'){
 worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws));
@@ -16160,29 +16163,40 @@ worksHTML = packGalleryHTML(wCards, workMode);
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
-worksHTML = '<div class="worksreq shelf"><div class="wrrow"><span class="small">作品 '+ws.length+'点</span></div>' +
+const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
+worksHTML = '<div class="worksreq shelf">' +
 /* v32.7.1: sort and display each get their OWN row again.
    v4.5 merged them into one row and v32.6.1 kept that inside
    the shelf; on his phone the shared row overflowed — the
    sort chip 「新しい順」 was cut to 「新」 and the display
    buttons ran off the right edge (his 2026-11-16 device
-   verdict: 「さっきの2列に戻して」). Three even rows in the
-   shelf: count / sort / display.
+   verdict: 「さっきの2列に戻して」). The shelf was three
+   rows then: count / sort / display.
    v32.9.0: the request control leaves the count row (the big
-   text pill goes) and becomes a pill-outlined icon button at
-   the right end of the display row — same requestWorks flow,
-   person+plus glyph (his 2026-11-16 call). */
+   text pill goes) and becomes a pill-outlined icon button —
+   same requestWorks flow, person+plus glyph (his
+   2026-11-16 call).
+   v5.59.1 (his call, 2026-11-18, on the 荒井良二 page): the
+   count loses its own row too — TWO rows now. Row 1: the
+   sort seg + the request icon at its right end. Row 2: the
+   display seg + the count at its right end, directly under
+   the request icon — one shared right edge, no dead space
+   beside the count, one row shorter overall. With a series
+   filter active the count slot carries the filtered count
+   line (「label：N点」) — the same text that used to ride
+   above the filtered grid as .wseriescnt. */
 '<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
 '<button class="'+(state.workSort==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
 '<button class="clkbtn'+((state.workSort==='old' || state.workSort==='new')?' on':'')+'" onclick="toggleWorkClock()" aria-label="古い順／新しい順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(((state.workSort==='old' || state.workSort==='new')? state.workSort: workClockDir)==='new'? '▼': '▲')+'</span></button>' +
-'</span></div><div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
+'</span><button class="reqiconbtn" onclick="requestWorks()" aria-label="'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4.6 19.2c.6-3.1 2.7-4.7 5.4-4.7 1.1 0 2.2.3 3 .8"/><path d="M17.9 14.8v5.6M15.1 17.6h5.6"/></svg></button></div>' +
+'<div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
 /* v32.6.0 (item 2): the works mode seg is generated from the
    SAME MODES array as the list side — five stops including
    micro, grid glyphs included — so the two switchers can
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span><button class="reqiconbtn" onclick="requestWorks()" aria-label="'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4.6 19.2c.6-3.1 2.7-4.7 5.4-4.7 1.1 0 2.2.3 3 .8"/><path d="M17.9 14.8v5.6M15.1 17.6h5.6"/></svg></button></div></div>' + worksHTML;
+'</span><span class="small wcount">'+shelfCount+'</span></div></div>' + worksHTML;
 /* v5.57.0: the series chip row rides at the very top of the
    works tab, above the count / sort / display shelf. */
 if(wgArr.length){
@@ -19206,7 +19220,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中510人まで完了。残り216人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは252点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は70人・計161点。","肖像写真は77人。"]},{"v":null,"label":"展示情報","lines":["展示は1,691件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中537人まで完了。残り189人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは289点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は98人・計235点。","肖像写真は109人。"]},{"v":null,"label":"展示情報","lines":["展示は1,957件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23362,7 +23376,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.59.0';
+const APP_VERSION = '5.59.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
