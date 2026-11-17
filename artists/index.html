@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.57.0">
+<meta name="app-version" content="5.57.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -911,9 +911,14 @@ button.inflrow{cursor:pointer;}
 .pfthumb img{width:100%; height:100%; object-fit:cover; display:block;}
 .pfthumb .biozoom{width:17px; height:17px; right:4px; bottom:4px;}
 .pfthumb .biozoom svg{width:10px; height:10px;}
-.pfrows{flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; column-gap:12px; font-size:12px; line-height:1.5;}
-.pfrow{display:inline-flex; gap:5px; max-width:100%;}
-.pfk{color:var(--muted); font-size:11px; letter-spacing:.05em; flex:none; padding-top:1px;}
+/* v5.57.1 (his call, 2026-11-18): the band's items form a
+   definition-list grid — a fixed label column (40px: the
+   longest label in use is 3 full-width chars at 11px ≈ 35px
+   with letter-spacing, so labels never wrap) and one value
+   column. Every label shares one left edge and every value
+   shares one left edge （頭揃え）, on every artist/designer. */
+.pfrows{flex:1; min-width:0; display:grid; grid-template-columns:40px minmax(0,1fr); column-gap:8px; row-gap:1px; align-content:center; font-size:12px; line-height:1.45;}
+.pfk{color:var(--muted); font-size:11px; letter-spacing:.05em; white-space:nowrap;}
 .pfv{min-width:0; overflow-wrap:anywhere;}
 .procworklink{background:none; border:none; padding:2px 0 0; color:var(--accent); text-decoration:underline; font-size:12.5px; cursor:pointer; text-align:left; font-family:var(--sans);}
 .cherabar-in{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
@@ -10696,7 +10701,10 @@ function profileBandHTML(a){
     h += '<div class="pfthumb"><button class="bioportraitbtn" onclick="openViewerPortrait(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.thumb) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button></div>';
   }
   if(rows.length){
-    h += '<div class="pfrows">' + rows.map(r => '<span class="pfrow"><span class="pfk">' + r[0] + '</span><span class="pfv">' + esc(r[1]) + '</span></span>').join('') + '</div>';
+    /* v5.57.1: label/value pairs are direct grid items of
+       .pfrows (see the CSS note) so the labels align in one
+       column; the row computation above is unchanged. */
+    h += '<div class="pfrows">' + rows.map(r => '<span class="pfk">' + r[0] + '</span><span class="pfv">' + esc(r[1]) + '</span>').join('') + '</div>';
   }
   return h + '</div>';
 }
@@ -18898,7 +18906,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全706人中437人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは221点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は54人・計119点。","肖像写真は65人。"]},{"v":null,"label":"展示情報","lines":["展示は1,507件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全713人中444人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは232点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は60人・計131点。","肖像写真は69人。"]},{"v":null,"label":"展示情報","lines":["展示は1,610件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22281,6 +22289,25 @@ async function syncDatasetRelay(kind, data){
         merged = mergeDataInto(data, delta);
         if(delta.timeline && JSON.stringify(delta.timeline) !== JSON.stringify(merged.timeline || null)) merged.timeline = delta.timeline;
         if((merged.artists||[]).length < before) throw new Error('delta shrank the dataset');
+        /* v5.57.1: an EMPTY delta here is not proof that
+           nothing is new. This branch runs only when the
+           file's stamp moved, yet the delta is cut by our
+           watermark — and the app stamps updated_at with
+           device time (thumbnail pin / editor save), so the
+           watermark can run ahead of every record in the
+           file. Then getSince returns nothing on every sync
+           and the dataset silently freezes while each sync
+           reports success (his device, 2026-11-18: header
+           stuck at 全699名 while the file already held 713
+           people; the healthy path and this freeze are both
+           reproduced in the sandbox — art-labo/v5-57-1/
+           WORKLOG.md). Distrust the empty delta and take
+           the full download below: the merge re-bases the
+           watermark on the merged data, healing the state
+           in one sync. The v14.0 note above covers the same
+           watermark gap on the put side; this closes it on
+           the read side. */
+        if(!(delta.artists||[]).length && !(delta.exhibitions||[]).length) merged = null;
       }
     }catch(e){ merged = null; }
   }
@@ -23029,7 +23056,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.57.0';
+const APP_VERSION = '5.57.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
