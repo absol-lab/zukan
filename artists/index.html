@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.50.0">
+<meta name="app-version" content="5.51.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12113,8 +12113,16 @@ function guideBackToIdx(){
 function guideChapterCardHTML(s){
   const c = guideChapterById(s[1]);
   const title = c? (c.title || s[0]): s[0];
+  /* v5.51.0 (his call — titles made concise): when the meta
+     label would only repeat the title, the card shows the
+     title alone, no duplicated line. A differing label
+     （油彩の工程 / 油彩） keeps both lines as before, and the
+     必見 chip keeps its place in the meta row. */
+  const meta = (s[0] === title)? '': esc(s[0]);
+  const chip = (c && c.mustSee)? ' <span class="mschip">必見</span>': '';
+  const metaRow = (meta || chip)? '<div class="bizcmeta">' + meta + chip + '</div>': '';
   return '<figure class="work bizcard" onclick="guideOpenChapter(\'' + escA(s[1]) + '\')">'
-    + '<figcaption><div class="bizcname">' + esc(title) + '</div><div class="bizcmeta">' + esc(s[0]) + ((c && c.mustSee)? ' <span class="mschip">必見</span>': '') + '</div></figcaption></figure>';
+    + '<figcaption><div class="bizcname">' + esc(title) + '</div>' + metaRow + '</figcaption></figure>';
 }
 /* v5.47.0 (his call, 2026-11-17): the universities view
    (美大——大学と教授, built v5.44.0 for その他) also opens
@@ -12128,7 +12136,7 @@ function guideChapterCardHTML(s){
    その他, the settings view, as before. */
 function guideSchoolsCardHTML(){
   return '<figure class="work bizcard gwcard" onclick="xOpenSchools()">'
-    + '<figcaption><div class="bizcname">藝大・美大</div><div class="bizcmeta">東京藝術大学・多摩美術大学・武蔵野美術大学／大学ごとの教授・出願・学びと、大学情報のまとめ</div></figcaption></figure>';
+    + '<figcaption><div class="bizcname">藝大・美大</div><div class="bizcmeta">東京藝術大学・多摩美術大学・武蔵野美術大学</div></figcaption></figure>';
 }
 /* v28.4: chapter switches inside a major swapped ONLY the
    chapter region (#gchap) in place, driven by the chapter
@@ -12214,14 +12222,18 @@ function renderGuide(){
     }
     if(guideIdx){
       /* v32.12.0: the major's landing is its chapter index — a
-         grid of chapter cards on the artist-list component,
-         with this surface's own 5-mode switch (zukan.smode.gd).
+         grid of chapter cards on the artist-list component.
          The calendar (its own カレンダー major since v5.44.0)
          sits above the grid (v5.46.0: behind its toggle
-         button, hidden until opened). */
+         button, hidden until opened).
+         v5.51.0 (his call, 2026-11-17): the guide's own 5-mode
+         size switch is REMOVED — he settled on the 3rd stop
+         (compact: 3 columns) as the right size for the guide,
+         so the index grid is fixed at 'compact' and any stored
+         zukan.smode.gd value is ignored. Every other surface
+         keeps its own switch, untouched. */
       bizFigStore = [];
-      h += '<div class="smodewrap">' + surfModebarHTML('gd', 'setGdMode') + '</div>';
-      h += '<div class="grid ' + SURF.gd + (m.id === 'exam'? ' examgrid': '') + '" id="gdgrid">' + (m.id === 'exam'? guideSchoolsCardHTML(): '') + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
+      h += '<div class="grid compact' + (m.id === 'exam'? ' examgrid': '') + '" id="gdgrid">' + (m.id === 'exam'? guideSchoolsCardHTML(): '') + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
     } else {
       h += '<div class="gbackbar"><button class="backbtn" onclick="guideBackToIdx()">‹ 章の一覧へ戻る</button></div>';
       h += '<div id="gchap">' + guideChapterHTML() + '</div>';
@@ -13276,7 +13288,7 @@ function modeIcon(m){
    v32.16.0: ex/bp are grid cards now too — their switches swap
    grid classes in place like all the others, and the <html>
    data attributes are retired. */
-const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def', exd:'def', sch:'def', univ:'def' };
+const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', exd:'def', sch:'def', univ:'def' };
 /* v32.17.1: the price strip's scroll position, kept across
    re-renders so the detail round-trip returns to the same
    place in the ranking (renderBizPrice rebuilds the strip on
@@ -13311,10 +13323,12 @@ function setBpMode(m){ if(MODES.indexOf(m) < 0) return; SURF.bp = m; storeSet('z
    no re-render, no scroll loss. Own stored key, as always. */
 function setBizMode(m){ if(MODES.indexOf(m) < 0) return; SURF.biz = m; storeSet('zukan.smode.biz', m);
   const g = $('bizgrid'); if(g) g.className = 'grid ' + m; syncSurfBar('biz'); }
-/* v32.12.0: the guide chapter index grid swaps its mode class
-   in place, same as the biz/gen grids. Own stored key. */
-function setGdMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gd = m; storeSet('zukan.smode.gd', m);
-  const g = $('gdgrid'); if(g) g.className = 'grid ' + m + (g.classList.contains('examgrid')? ' examgrid': ''); syncSurfBar('gd'); }
+/* v5.51.0: setGdMode is REMOVED together with the guide's
+   size switch (his call, 2026-11-17 — the guide index is
+   fixed at the compact stop; see renderGuide). The stored
+   zukan.smode.gd value is no longer read by anything, and
+   the shared surfModebarHTML component is untouched: every
+   other surface keeps its own switch. */
 /* v32.15.0: the artist page's 展示 tab grids (two of them —
    開催中・これから / 過去） swap their mode class in place,
    exactly like the gd/biz grids. Own stored key (zukan.smode.exd);
@@ -22705,7 +22719,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.50.0';
+const APP_VERSION = '5.51.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -24604,7 +24618,22 @@ function xWireSchPlates(scope){
     const mid = ph.getAttribute('data-schmaker');
     let m = ((XMAKERS && XMAKERS.artists) || []).find(x => String(x.id) === String(mid));
     if(!m){
-      if(!xSchMakerLoadP){
+      /* v5.51.0 (freeze fix): ONE load attempt per plate. The
+         old code re-wired after every load and, when the maker
+         was STILL missing afterwards (the makers data could
+         not be fetched, or the record is not in it — e.g. a
+         stale cache from before the maker was registered),
+         the re-wire started another load, whose re-wire
+         started another — an endless load/re-wire chain that
+         starved the main thread and froze the whole app on
+         this page (reproduced in the sandbox: the page's main
+         thread went solid while a second page stayed alive).
+         Now a plate that triggered a load is marked; a maker
+         still missing after it simply keeps the no-photo
+         mark. Loads per render are bounded by the number of
+         maker plates, and the chain always ends. */
+      if(!xSchMakerLoadP && !ph.dataset.schmtried){
+        ph.dataset.schmtried = '1';
         xSchMakerLoadP = xLoadMakers().then(() => {
           xSchMakerLoadP = null;
           if($('xscreen').classList.contains('open')) xWireSchPlates($('xbody'));
