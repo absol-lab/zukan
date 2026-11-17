@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.44.0">
+<meta name="app-version" content="5.45.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11649,10 +11649,10 @@ let guideCalMonth = null, guideCalSel = null;
    絵のうまさとは何か appended. Chapter ids are unchanged, so
    chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
-  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
+  { id: 'exam', label: '受験', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
-  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill']] },
+  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
 ];
 /* v30.9: one line icon per guide major (his call: swap the
@@ -11668,7 +11668,7 @@ const GUIDE_TAX = [
    内省 takes 思考's eye (flagged for his verdict), 技法・材料
    takes 技法's pen nib (likewise flagged). */
 const GUIDE_ICONS = {
-  process: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.9 9.8V4.1a1.1 1.1 0 012.2 0v5.7"/><path d="M10.2 12.6V9.8h3.6v2.8"/><path d="M10.2 12.6c.2 3.4.8 6 1.8 8.2c.9-2.2 1.5-4.8 1.8-8.2"/><path d="M18.3 14.4c.9 1.4 1.7 2.6 1.7 3.7a1.7 1.7 0 11-3.4 0c0-1.1.8-2.3 1.7-3.7z"/></svg>',
+  process: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20Q5.4 16.6 7.8 13.2L9.8 11.6L17.9 3.9Q20.6 3.4 20.1 6.1L12.4 14.2L10.8 16.2Q7.9 18.6 4 20Z"/><path d="M7.8 13.2l3 3M9.8 11.6l2.6 2.6"/></svg>',
   'technique-material': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l5.5 8.5L12 21l-5.5-9.5L12 3z"/><circle cx="12" cy="11.5" r="1.5"/><path d="M12 13v8"/></svg>',
   introspection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 12S6.2 5.8 12 5.8 21.2 12 21.2 12 17.8 18.2 12 18.2 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="3.1"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5" width="16.8" height="15.4" rx="2"/><path d="M3.6 9.9h16.8"/><path d="M7.9 2.9v4M16.1 2.9v4"/></svg>',
@@ -12865,7 +12865,40 @@ function bizFigSVG(f){
     s += '<text x="12" y="' + ((y0 + y1) / 2) + '" font-size="10.5" fill="var(--muted)" text-anchor="middle" transform="rotate(-90 12 ' + ((y0 + y1) / 2) + ')">' + esc(f.y || '学校名の効き目') + ' →</text>';
     return s + '</svg>';
   }
-  return '';
+  if(f.kind==='obscura'){const W=340,H=168;
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<rect x="150" y="24" width="172" height="124" rx="4" fill="rgba(0,0,0,.25)" stroke="var(--line)"/>'
+  +'<line x1="150" y1="24" x2="150" y2="76" stroke="var(--line)"/><line x1="150" y1="96" x2="150" y2="148" stroke="var(--line)"/>'
+  +'<ellipse cx="150" cy="86" rx="3" ry="10" fill="none" stroke="var(--accent)" stroke-width="1.5"/>'
+  +'<line x1="44" y1="52" x2="306" y2="136" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".85"/>'
+  +'<line x1="44" y1="120" x2="306" y2="36" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".85"/>'
+  +'<line x1="44" y1="52" x2="44" y2="120" stroke="#e8e0d0" stroke-width="2.5"/><polygon points="44,43 38.5,56 49.5,56" fill="#e8e0d0"/><line x1="36" y1="120" x2="52" y2="120" stroke="#e8e0d0" stroke-width="2"/>'
+  +'<line x1="306" y1="36" x2="306" y2="136" stroke="#e8c890" stroke-width="2.5"/><polygon points="306,145 300.5,132 311.5,132" fill="#e8c890"/>'
+  +T(44,30,f.obj||'',10.5,'middle','700')+T(296,16,f.screen||'',10.5,'middle','700')
+  +S(150,164,f.lens||'','middle')+S(240,164,f.body||'','middle')
+  +'</svg>';}
+ if(f.kind==='slash'){const W=340,H=146;let ticks='';for(let x=40;x<316;x+=16)ticks+='<line x1="'+x+'" y1="100" x2="'+x+'" y2="116" stroke="rgba(232,200,144,.22)"/>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<rect x="24" y="30" width="124" height="22" fill="var(--accent)" opacity=".85"/><rect x="192" y="30" width="124" height="22" fill="var(--accent)" opacity=".85"/>'
+  +'<rect x="24" y="56" width="124" height="14" fill="#d8cdbb"/><rect x="192" y="56" width="124" height="14" fill="#d8cdbb"/>'
+  +'<rect x="158" y="30" width="24" height="40" fill="#120b06"/>'
+  +'<line x1="148" y1="30" x2="158" y2="70" stroke="#2a1c10" stroke-width="1.5" opacity=".55"/><line x1="192" y1="30" x2="182" y2="70" stroke="#2a1c10" stroke-width="1.5" opacity=".55"/>'
+  +'<line x1="170" y1="70" x2="170" y2="100" stroke="var(--line)" stroke-dasharray="3 3"/>'
+  +'<rect x="24" y="100" width="292" height="16" fill="#241a12" stroke="var(--line)"/>'+ticks
+  +S(24,22,f.paint||'','start')+S(24,88,f.canvas||'','start')+S(316,88,f.cut||'','end')+S(24,134,f.gauze||'','start')
+  +'</svg>';}
+ if(f.kind==='squeegee'){const W=340,H=148;
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<rect x="20" y="52" width="118" height="14" fill="#96503c"/><rect x="20" y="68" width="118" height="14" fill="#c99a4a"/><rect x="20" y="84" width="118" height="14" fill="#6d7f5c"/>'
+  +'<rect x="134" y="84" width="18" height="14" fill="#c99a4a"/>'
+  +'<rect x="152" y="88" width="158" height="10" fill="#a8763f"/>'
+  +'<line x1="166" y1="80" x2="306" y2="80" stroke="#96503c" stroke-width="3" opacity=".45"/><line x1="176" y1="72" x2="300" y2="72" stroke="#6d7f5c" stroke-width="2" opacity=".4"/>'
+  +'<line x1="198" y1="28" x2="152" y2="96" stroke="#d8cdbb" stroke-width="5"/><line x1="198" y1="28" x2="234" y2="12" stroke="#a9805a" stroke-width="6" stroke-linecap="round"/>'
+  +'<line x1="238" y1="50" x2="294" y2="50" stroke="var(--accent)" stroke-width="2"/><polygon points="294,50 284,45 284,55" fill="var(--accent)"/>'
+  +'<line x1="20" y1="100" x2="320" y2="100" stroke="var(--line)"/>'
+  +S(79,44,f.layers||'','middle')+S(266,40,f.dir||'','middle')+S(248,120,f.under||'','middle')+S(170,140,f.blade||'','middle')
+  +'</svg>';}
+ return '';
 }
 function wireBizFigs(el){
   el.querySelectorAll('[data-bfig]').forEach(ph=>{
@@ -18437,7 +18470,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：577件・320人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}, {"v": null, "label": "美大カリキュラムの深掘り", "lines": ["制作ガイドの「受験」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。", "いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。", "進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]}, {"v": null, "label": "美大の教授を図鑑に登録", "lines": ["「美大」のページ（v5.44.0）に載せた教授94名のうち、図鑑にまだ登録されていない作家が78名います（東京藝術大学14名・多摩美術大学36名・武蔵野美術大学28名）。", "進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全631人中378人まで完了。残り253人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：137点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド14章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は26人・計54点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は26人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は620件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["制作ガイドの「受験」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22522,7 +22555,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.44.0';
+const APP_VERSION = '5.45.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
