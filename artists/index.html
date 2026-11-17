@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.41.0">
+<meta name="app-version" content="5.41.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -570,6 +570,13 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    buttons elsewhere keep pinning themselves (the rule above);
    the band wraps only the detail head's first row. */
 .dhbar{position:sticky; top:var(--hdrh, 56px); z-index:26; background:var(--bg); display:flow-root; padding:0 0 6px;}
+/* v5.41.1: content scrolling under the sticky bar used to be
+   guillotined at the bar's hard bottom edge — a heading passing
+   underneath showed as a stray clipped text fragment under the
+   pill (his v5.41.0 recording, the sliver under 「一覧へ戻る」).
+   The fade curtain lets text dissolve under the bar instead of
+   being cut mid-glyph. */
+.dhbar::after{content:''; position:absolute; left:0; right:0; top:100%; height:16px; background:linear-gradient(to bottom, var(--bg), transparent); pointer-events:none;}
 /* v32.17.1: biz chapter pages carry their back pill inside a
    sticky BAR (the .dhbar pattern). As a lone sticky pill
    (through v32.17.0) the button stuck under the header while
@@ -887,7 +894,7 @@ button.inflrow{cursor:pointer;}
 #viewDetail .worksreq .seg button svg{width:17px; height:17px; display:block;}
 .mgrid.micro{grid-template-columns:repeat(5, 1fr); gap:7px 5px;}
 .mgrid.micro .mcap{font-size:10.5px; line-height:1.3;}
-h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0;}
+h3.subhead{font-family:var(--sans); font-size:13px; font-weight:600; letter-spacing:.14em; color:var(--muted); margin:22px 4px 0; scroll-margin-top:calc(var(--hdrh, 56px) + 56px);}
 h3.subhead:first-child{margin-top:8px;}
 /* v5.41.0: works tab for artists with many works — 代表作 shelf
    + decade groups. A group header carries a scroll margin so a
@@ -10526,19 +10533,56 @@ if(!w || !/^https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
 if(/([?&])sz=[^&]*/.test(s)) return s.replace(/([?&])sz=[^&]*/, '$1sz=w'+w);
 return s+'&sz=w'+w;
 }
+/* v5.41.1: the candidate ladder, shared by imgHTML (which bakes
+   candidate 0 into the holder as a real <img src>) and hydrateImg
+   (which walks the rest on error). The ORDER is the v32.17.3
+   ladder, unchanged: the stored direct URL sized for the
+   placement; the stored URL at its stored size (a different
+   cache entry, in case the sized variant is the broken one);
+   for {fileId} works the derived direct thumbnail URL, then the
+   OAuth route; the primary direct URL once more with a
+   cache-buster (exactly once — no retry multiplication); the
+   local files. sz is the placement tier (0 = the stored URL
+   as-is), read back from the span's data-size by hydrateImg. */
+function imgCandidates(work, sz){
+const attempts = [];
+let primaryUrl = '';
+if(work && work.img && work.img.url){
+primaryUrl = sizedThumbUrl(String(work.img.url), sz);
+attempts.push({ t:'url', u: primaryUrl });
+const storedUrl = sizedThumbUrl(String(work.img.url), 1200);
+if(storedUrl !== primaryUrl) attempts.push({ t:'url', u: storedUrl });
+}
+if(work && work.img && work.img.fileId){
+const du = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(work.img.fileId) + '&sz=w' + (sz || 1200);
+if(!attempts.some(a=> a.u === du)) attempts.push({ t:'url', u: du });
+attempts.push({ t:'drive', fid: work.img.fileId });
+if(!primaryUrl) primaryUrl = du;
+}
+if(primaryUrl) attempts.push({ t:'url', u: primaryUrl + '&retry=1' });
+if(work && work.file) localCandidates(work.file).forEach(u=> attempts.push({ t:'url', u: u, local: true }));
+return attempts;
+}
 function imgHTML(work, size){
-/* returns placeholder span; actual src set by hydrateImg (lazy).
-   size rides on the span as data-size; hydrateImg reads it back.
-   v2.18: the holder starts with a 図版 wordmark inside, so a plate whose
-   image has not arrived yet is never a featureless blank; hydrateImg
-   replaces the holder's content when the image (or the failure plate)
-   lands.
-   v29.1: the wordmark seat now carries the loading label itself
-   （読み込んでいます…) — the holder is a loading state from its
-   first paint until the image (or the failure plate) lands. */
+/* v5.41.1 (design change — see hydrateImg): the holder is born
+   with a REAL <img> whose src is candidate 0 of the ladder, so
+   the browser's own loader starts the fetch at first paint —
+   no JS scheduler gates it, and native lazy loading gives the
+   viewport priority for free. alt is EMPTY on purpose: the
+   caption already renders as the card's own caption text, and
+   a broken <img> painting its alt text inside the frame is
+   what doubled captions on his device (the v5.41.0 recording:
+   the caption rendered inside the photo frame AND below it).
+   The loading label rides along as before (v29.1: the holder
+   is a loading state from its first paint) and comes off when
+   the image lands. A work with no image source at all gets the
+   label-only holder, exactly as before — hydrateImg settles it
+   to the plate at wiring time. */
 const id = 'im'+(++imgSeq);
 const cap = work? (work.caption||''): '';
-return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'"><span class="imgload">読み込んでいます…</span></span>';
+const cands = imgCandidates(work, size || 0);
+const img = cands.length? '<img src="'+escA(cands[0].u)+'" alt="" loading="lazy" decoding="async">': '';
+return '<span class="imgholder" id="'+id+'" data-cap="'+escA(cap)+'"'+(size? ' data-size="'+size+'"': '')+'">'+img+'<span class="imgload">読み込んでいます…</span></span>';
 }
 /* v29.1: the loading label, shared by every image surface.
    imgLoadLabel(span, true) overlays the label on the in-flight
@@ -10580,72 +10624,30 @@ window.addEventListener('scroll', ()=>{
 if(imgSweepT) clearTimeout(imgSweepT);
 imgSweepT = setTimeout(()=>{
 const vh = window.innerHeight;
-/* v2.55: prune queued (not yet started) loads that have scrolled far
-   away — they would burn connections the visible tiles need. The span
-   is re-armed instead, so the settle sweep below re-hydrates it when
-   it comes back into range. */
-for(let i = imgWaitQ.length - 1; i >= 0; i--){
-const q = imgWaitQ[i];
-if(!q.span.isConnected){ imgWaitQ.splice(i, 1); continue; }
-const r = q.span.getBoundingClientRect();
-if(r.bottom < -1600 || r.top > vh + 1600){ imgWaitQ.splice(i, 1); q.span._imgJob = false; q.span.dataset.rearm = '1'; }
-}
+/* v5.41.1: the v2.55 queue-prune is gone with the scheduler
+   itself — there is no queue left to prune. The re-arm sweep
+   below is unchanged. */
 document.querySelectorAll('.imgholder[data-rearm="1"]').forEach(span=>{
 const r = span.getBoundingClientRect();
 if(r.bottom > -800 && r.top < vh + 800){ delete span.dataset.rearm; if(span._work) hydrateImg(span, span._work); }
 });
 }, 350);
 }, { passive:true });
-/* v2.55: image load scheduler. Until v2.54 every tile within the
-   observer's ±800px fired its load immediately and loads were never
-   held back: a fast scroll (or opening a detail on top of a scrolled
-   list) put 50-100+ requests in flight at once, and on a marginal
-   link that burst is what collapses — mass fast-errors, cache-busted
-   retries multiplying the burst, and the visible tiles starved
-   behind offscreen ones. Now at most IMG_MAX_CONCURRENT Drive-image
-   loads run at once; the rest queue in view order. The viewer
-   (upgradeViewerImg / the fileId path) deliberately bypasses the
-   queue: it is one or two images and the user is looking at them. */
-/* v2.60: the cap rises 6 -> 8 and the queue is viewport-priority:
-   on-device the cap fixed the burst collapse but visible tiles could
-   wait behind offscreen prefetch armed by the +-800px observer.
-   Dequeue now picks the queued span nearest the viewport (0 when
-   intersecting), so what the user is looking at always loads first;
-   the cap itself — the actual burst guard — stays. */
-const IMG_MAX_CONCURRENT = 8;
-let imgActive = 0;
-const imgWaitQ = [];
-const imgSchedStats = { max: 0 };
-function imgSlotAcquire(span, run){
-if(imgActive < IMG_MAX_CONCURRENT){ imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive); run(); }
-else imgWaitQ.push({ span:span, run:run });
-}
-function imgPickNext(){
-for(let i=imgWaitQ.length-1;i>=0;i--){ if(!imgWaitQ[i].span.isConnected) imgWaitQ.splice(i,1); }
-let bi = -1, bs = Infinity;
-const vh = window.innerHeight || 800;
-for(let i=0;i<imgWaitQ.length;i++){
-const s = imgWaitQ[i].span;
-let sc = 0;
-try{
-const r = s.getBoundingClientRect();
-if(r.bottom < 0) sc = -r.bottom;
-else if(r.top > vh) sc = r.top - vh;
-}catch(e){}
-if(sc < bs){ bs = sc; bi = i; if(sc === 0) break; }
-}
-if(bi < 0) return null;
-return imgWaitQ.splice(bi, 1)[0];
-}
-function imgSlotRelease(){
-imgActive = Math.max(0, imgActive - 1);
-while(imgActive < IMG_MAX_CONCURRENT && imgWaitQ.length){
-const q = imgPickNext();
-if(!q) break;
-imgActive++; imgSchedStats.max = Math.max(imgSchedStats.max, imgActive);
-q.run();
-}
-}
+/* v5.41.1: the v2.55/v2.60 image load scheduler (8 slots,
+   viewport-priority queue) is REMOVED. It was built to stop a
+   burst collapse, but on his device it became the starvation
+   mechanism itself: every candidate attempt of every holder
+   competed for the same 8 slots, an attempt that hung burned
+   its slot for the full 12s timeout, and a visible card's next
+   attempt re-queued behind every other holder's attempts —
+   with ~34 holders on a works tab that is minutes before the
+   last visible card's ladder even finishes (the math is in
+   the v5.41.1 WORKLOG). Grid/shelf images are now real <img>
+   elements born with their src (see imgHTML); the browser's
+   own loader — per-host connection limits, HTTP cache, native
+   lazy prioritisation — does the scheduling, and no app-level
+   queue can starve a visible card again. The viewer keeps its
+   own loader, as before. */
 /* v32.16.0 (fix 3): once a work image lands, fit its .ph frame
    to the image's own aspect ratio (clamped 0.55..2.0) so wide
    or tall works leave no void in the frame and are not cropped
@@ -10767,125 +10769,130 @@ const cap = work.caption||'';
    typographic plate instead. v2.31: the failure plate now also arms
    the self-heal above (maybeRearmImg) when the work has a Drive image. */
 const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
-/* v32.17.3: ONE bounded candidate walk replaces the three separate
-   branches (fileId-only / URL-with-retries / local). Diagnosis from
-   his 2026-11-17 device reports (Tillmans works tab: only the first
-   card — the one already in the HTTP cache from the artist list —
-   showed a photo; the rest sat at the loading label forever or
-   settled into the 図版 plate, on 4G and on good Wi-Fi alike; the
-   parent verified all 20 stored thumbnail URLs answer 200):
-   (a) LIVELock — the v2.34 watchdog capped each URL attempt at 7s
-   and every retry restarted the download from byte 0 under a
-   cache-buster URL, so on a phone route where a plate (w800,
-   ~160KB, behind a 302 hop, 8 loads sharing the connection) needs
-   longer than the cap, NO attempt could ever finish: four
-   attempts x 7s of restarted downloads, then the plate.
-   (b) HANG — the local-candidate chain was error-driven only,
-   with no timeout at all: a candidate that neither loaded nor
-   errored (a stalled connection) blocked the chain indefinitely
-   and the card sat at 読み込んでいます… forever.
-   (c) DEAD ROUTE — a {fileId} work had exactly one candidate, the
-   OAuth-token fetch (loadDriveImage); in relay mode (his phone
-   syncs via the relay, no OAuth token) it returns null at once,
-   so those cards could NEVER show their photo even though the
-   same file is servable anonymously via the thumbnail endpoint.
-   The walk below tries, in order: the stored direct URL sized for
-   the placement; the stored URL at its stored size (a different
-   cache entry, in case the sized variant is the broken one); for
-   {fileId} works the derived direct thumbnail URL, then the OAuth
-   route (bounded as before); the primary direct URL once more
-   with a cache-buster (the v2.20 transient-failure retry, exactly
-   once — no retry multiplication); the local files. EVERY attempt
-   is bounded by a hard timeout and advances on error OR timeout;
-   the failure plate runs only after the last candidate has
-   definitively failed — while candidates remain, the card stays
-   in the loading state (a load failure must not masquerade as
-   "no photo"). The scheduler still bounds concurrency per
-   attempt, and the v2.31 re-arm behind fail() is unchanged. */
+/* v5.41.1: DESIGN CHANGE — the browser is the loader.
+   v32.17.3 (the previous ship) had already fixed the candidate
+   ORDER and bounded every attempt (its diagnosis stands: the
+   7s-watchdog livelock, the timeout-less local chain, the
+   {fileId} dead route in relay mode — the ladder in
+   imgCandidates above is that fix, kept verbatim). But his
+   v5.41.0 screen recording shows the photos STILL not arriving
+   on good Wi-Fi, so the remaining defect is the mechanism the
+   walk ran on, not the ladder:
+   (a) STARVATION — every attempt of every holder needed one of
+   8 scheduler slots, held until load/error/the 12s timeout.
+   On his device attempts neither complete nor error promptly,
+   so each grant burns the full 12s. A works tab with 34
+   holders x up to 3 URL attempts = ~102 grants / 8 slots =
+   ~13 rounds x 12s: the LAST holder's ladder finishes after
+   ~2.5 minutes, and a VISIBLE holder's second attempt waits
+   ~50s behind the others. The artist list is worse (the
+   ±800px observer band arms 40-60 holders of ~292 cards).
+   The few photos that did appear are the ones already in the
+   HTTP/SW cache. Scroll-pruning made it worse: it evicted
+   queued holders (marked re-arm), resetting their place.
+   (b) DOUBLED CAPTIONS — the walk's <img> carried alt = the
+   full caption; Safari paints a broken img's alt text inside
+   the frame, so the caption rendered inside the photo frame
+   AND as the card's caption below it. The blue broken-image
+   glyph also sat on top of the loading label mid-walk.
+   The new shape: imgHTML bakes candidate 0 into the holder as
+   a real <img src> (loading="lazy", alt=""), so the browser
+   starts fetching at first paint and its own loader gives the
+   viewport priority — no app queue exists to starve anyone.
+   hydrateImg is now a light state machine on that ONE img:
+   it attaches load/error handlers, advances src through the
+   same ladder on error, bounds each attempt with one generous
+   watchdog (12s network / 6s local — the value only matters
+   when the network neither answers nor errors), and settles
+   to the plate only when the ladder is exhausted. A visible
+   card's settle time now depends only on its own ladder,
+   never on how many other cards exist. The v2.31 re-arm
+   behind fail() is unchanged, and the viewer's own loader is
+   untouched (the viewer calls hydrateImg only for its
+   no-source stage span, which takes the empty-ladder path). */
 const IMG_ATTEMPT_TIMEOUT_MS = 12000;
 const IMG_LOCAL_TIMEOUT_MS = 6000;
-const hasUrl = !!(work.img && work.img.url);
 const hasFid = !!(work.img && work.img.fileId);
-if(hasFid && driveImgCache[work.img.fileId]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[work.img.fileId]+'" alt="'+escA(cap)+'">'; phFitSpan(span); return; }
-if(span._imgJob) return; /* a candidate walk is already queued/running for this span */
+if(hasFid && driveImgCache[work.img.fileId]){ span.innerHTML = '<img loading="eager" src="'+driveImgCache[work.img.fileId]+'" alt="">'; phFitSpan(span); return; }
+let img = span.querySelector('img');
+if(img && img.dataset && img.dataset.imgdone === '1') return; /* settled with a photo — re-wiring changes nothing */
+if(span._imgJob) return; /* a state machine is already running on this span */
 const wantSz = parseInt(span.getAttribute('data-size'), 10);
 const sz = isNaN(wantSz)? 0: wantSz;
-const attempts = [];
-let primaryUrl = '';
-if(hasUrl){
-primaryUrl = sizedThumbUrl(String(work.img.url), sz);
-attempts.push({ t:'url', u: primaryUrl });
-const storedUrl = sizedThumbUrl(String(work.img.url), 1200);
-if(storedUrl !== primaryUrl) attempts.push({ t:'url', u: storedUrl });
-}
-if(hasFid){
-const du = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(work.img.fileId) + '&sz=w' + (sz || 1200);
-if(!attempts.some(a=> a.u === du)) attempts.push({ t:'url', u: du });
-attempts.push({ t:'drive', fid: work.img.fileId });
-if(!primaryUrl) primaryUrl = du;
-}
-if(primaryUrl) attempts.push({ t:'url', u: primaryUrl + '&retry=1' });
-if(work.file) localCandidates(work.file).forEach(u=> attempts.push({ t:'url', u: u, local: true }));
+const attempts = imgCandidates(work, sz);
 if(!attempts.length){ fail(); return; }
+if(!img){
+/* No <img>: the holder was born source-less, carries a settled
+   plate (a re-arm retry), or is the viewer's stage span. Start
+   from a clean single state — one img, one label — never a
+   plate layer next to a live img. */
+span.innerHTML = '';
+img = document.createElement('img');
+img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+span.appendChild(img);
+imgLoadLabel(span, false);
+}
 span._imgJob = true;
-if(!span.querySelector('img')) span.innerHTML = '<span class="imgload">読み込んでいます…</span>';
 let ai = 0;
-const succeed = (im, url)=>{
+const bornSrc = img.getAttribute('src');
+if(bornSrc){ const ix = attempts.findIndex(c=> c.u === bornSrc); if(ix >= 0) ai = ix; }
+let timer = null;
+let armSeq = 0;
+const clearTimer = ()=>{ if(timer){ clearTimeout(timer); timer = null; } };
+const succeed = ()=>{
+clearTimer();
+img.onload = img.onerror = null;
 span._imgJob = false;
-if(url != null){ span.innerHTML = '<img loading="eager" src="'+url+'" alt="'+escA(cap)+'">'; phFitSpan(span); }
-else { imgLoadDone(span); if(im) phFit(im); }
+img.dataset.imgdone = '1';
+imgLoadDone(span);
+phFit(img);
+};
+const failFinal = ()=>{
+clearTimer();
+img.onload = img.onerror = null;
+span._imgJob = false;
+fail();
 };
 const advance = ()=>{
+clearTimer();
+img.onload = img.onerror = null;
 ai++;
-if(ai >= attempts.length){ span._imgJob = false; fail(); return; }
-runAttempt();
-};
-const runAttempt = ()=>{
-const at = attempts[ai];
-if(at.t === 'drive'){
-/* the OAuth route, bounded by the same 10s race as before; a
-   null (no token in relay mode, a Drive error) simply advances
-   the walk instead of ending it. */
-Promise.race([loadDriveImage(at.fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
+if(ai >= attempts.length){ failFinal(); return; }
 if(!span.isConnected){ span._imgJob = false; return; }
-if(url) succeed(null, url); else advance();
-}).catch(()=>{ if(span.isConnected) advance(); else span._imgJob = false; });
+arm();
+};
+const arm = ()=>{
+const c = attempts[ai];
+const my = ++armSeq;
+if(span.dataset && span.dataset.rearm) delete span.dataset.rearm;
+img.onload = ()=>{ if(my === armSeq) succeed(); };
+img.onerror = ()=>{ if(my === armSeq) advance(); };
+if(c.t === 'drive'){
+/* the OAuth route: resolve a blob URL (bounded by the same
+   10s race as before), then let the img's own load/error
+   settle the attempt. In relay mode this returns null at
+   once and simply advances — it gates nothing. */
+let done = false;
+timer = setTimeout(()=>{ if(!done){ done = true; advance(); } }, 10000);
+Promise.race([loadDriveImage(c.fid), new Promise(res=>setTimeout(()=>res(null), 10000))]).then(url=>{
+if(done) return; done = true; clearTimer();
+if(!span.isConnected){ span._imgJob = false; return; }
+if(url){ timer = setTimeout(()=>{ if(my === armSeq) advance(); }, IMG_ATTEMPT_TIMEOUT_MS); img.src = url; }
+else advance();
+}).catch(()=>{ if(!done){ done = true; clearTimer(); if(span.isConnected) advance(); else span._imgJob = false; } });
 return;
 }
-imgSlotAcquire(span, ()=>{
-if(!span.isConnected){ imgSlotRelease(); span._imgJob = false; return; }
-const im = document.createElement('img');
-im.loading = 'eager'; im.alt = cap;
-let settled = false;
-const settle = (isOk)=>{
-if(settled) return; settled = true;
-imgSlotRelease();
-if(isOk) succeed(im, null); else advance();
+timer = setTimeout(()=>{ if(my === armSeq) advance(); }, c.local? IMG_LOCAL_TIMEOUT_MS: IMG_ATTEMPT_TIMEOUT_MS);
+if(img.getAttribute('src') !== c.u) img.src = c.u;
+/* a born <img> may have settled before these handlers were
+   attached (a fast cache hit, or an instant error): read its
+   state instead of waiting for events that already fired. */
+if(img.complete){
+if(img.naturalWidth > 0) succeed();
+else advance();
+}
 };
-im.onload = ()=> settle(true);
-im.onerror = ()=> settle(false);
-span.innerHTML = ''; span.appendChild(im);
-/* NOTE: the <img> must be inserted into the document BEFORE setting src.
-   A detached Image() with loading="eager" never starts loading in Chrome/
-   WebKit (lazy defers until the element is in the document near the
-   viewport), so preload-then-append-on-load deadlocks: no request, no
-   onload, no onerror — the plate stays empty forever. */
-im.src = at.u;
-/* the fetch is the loading the user actually waits on — label it
-   (an instantly-cached answer is already complete and gets no
-   label; the label comes off in onload, and a terminal failure
-   replaces the holder content wholesale). */
-if(!im.complete) imgLoadLabel(span, true);
-/* hard timeout: an attempt that has neither loaded nor errored
-   within the cap counts as failed and the walk moves on. The cap
-   is 12s, not the old 7s: the old cap aborted slow-but-healthy
-   mobile loads mid-flight, and with restarts from byte 0 that
-   livelocked the chain (diagnosis (a) above). Local candidates
-   are same-origin and get a shorter cap. */
-setTimeout(()=>{ if(!settled && !im.complete) settle(false); }, at.local? IMG_LOCAL_TIMEOUT_MS: IMG_ATTEMPT_TIMEOUT_MS);
-});
-};
-runAttempt();
+arm();
 }
 const imgObserver = ('IntersectionObserver' in window)? new IntersectionObserver(entries=>{
 entries.forEach(en=>{
@@ -22300,7 +22307,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.41.0';
+const APP_VERSION = '5.41.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
