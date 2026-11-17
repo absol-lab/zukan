@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.53.0">
+<meta name="app-version" content="5.54.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -25,10 +25,13 @@
   --fs:16px; --lh:1.7;
   --bodyfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
   --serif:var(--bodyfont);
-  /* v31.0: display type (names + headings) is pinned to this Mincho
-     stack regardless of the content-font setting — the catalogue
-     face of the app. Body / UI text keeps --sans. */
-  --headfont:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  /* v31.0 pinned display type (names + headings) to a fixed Mincho
+     stack regardless of the content-font setting. RETIRED in
+     v5.54.0 (his decision, 2026-11-17): display type now rides the
+     same --bodyfont as reading text, so the font setting governs
+     names, headings and dictionary terms too. With the default
+     Mincho setting the resolved face is the same stack as before. */
+  --headfont:var(--bodyfont);
   --sans:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
   /* legacy aliases (older class names / inline styles) */
   --paper:var(--bg); --paper2:var(--bg2); --ink:var(--text);
@@ -632,7 +635,8 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
 .snsbtn{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1.5px solid var(--lineStrong); border-radius:999px; color:var(--text); background:var(--card); text-decoration:none;}
 .snsbtn svg{width:16px; height:16px; display:block;}
 .mksnsrow{display:flex; justify-content:flex-end; margin-top:6px;}
-.dmeta{font-size:13.5px; color:var(--muted); margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:7px 14px; display:flex; flex-wrap:wrap; gap:4px 14px;}
+/* .dmeta (the detail-header meta strip) retired in v5.54.0 — its
+   contents moved into the 来歴 profile block (bioHeadHTML). */
 /* v27.1 (his word, 2026-11-14): the tab pills were too big and
    the v27.0 two-row wrap read as clutter — the bar is now ONE
    compact, natively scrolling row (the #bizpillbar pattern:
@@ -898,6 +902,9 @@ button.inflrow{cursor:pointer;}
 .biohead{display:flex; gap:14px; align-items:stretch; margin:2px 0 14px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px;}
 .bioportrait{flex:0 0 31%; max-width:148px; min-width:0;}
 .bioportrait .ph{display:block; aspect-ratio:4/5; border-radius:10px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
+.bioportraitbtn{display:block; position:relative; width:100%; text-align:left;}
+.biozoom{position:absolute; right:6px; bottom:6px; width:22px; height:22px; border-radius:50%; background:rgba(20,14,8,.48); color:#fff; display:flex; align-items:center; justify-content:center; pointer-events:none;}
+.biozoom svg{width:13px; height:13px; display:block;}
 .bioportrait .imgholder{display:block; width:100%; height:100%;}
 .bioportrait img{width:100%; height:100%; object-fit:cover; display:block;}
 .bioportrait .ph.portraitfail{aspect-ratio:auto; height:72px;}
@@ -1928,11 +1935,12 @@ button.zseg.on{background:var(--accent); color:var(--bg); border-color:var(--acc
 /* ===== v31.0: the design refresh (his call, 2026-11-15) =====
    A dark wood ground, the map's amber as the one accent, and
    Mincho display type. CSS only — no DOM, no behaviour changes.
-   (1) Display type: names and headings ride --headfont (the fixed
-   Mincho stack above), in every theme; body and UI controls keep
-   --sans, and reading text keeps following the font setting via
-   --serif, exactly as before. Weights soften where Mincho carries
-   the size on its own (800-weight Mincho turns blobby). */
+   (1) Display type: names and headings ride --headfont, in every
+   theme; body and UI controls keep --sans. --headfont was a fixed
+   Mincho stack under v31.0; since v5.54.0 it aliases --bodyfont,
+   so display type follows the font setting like reading text.
+   Weights soften where Mincho carries the size on its own
+   (800-weight Mincho turns blobby). */
 h1.appname{font-family:var(--headfont); font-weight:700; letter-spacing:.07em;}
 .dname{font-family:var(--headfont);}
 figure.work .nm{font-family:var(--headfont);}
@@ -2042,15 +2050,23 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .genini{display:flex; align-items:center; justify-content:center; background:radial-gradient(130% 130% at 28% 18%, var(--card2), var(--bg2)); position:relative;}
 .genini::before{content:''; position:absolute; inset:7px; border:1px solid var(--line); border-radius:6px; pointer-events:none;}
 .genini-c{font-family:var(--serif); font-size:44px; line-height:1; color:var(--accent); opacity:.92;}
-/* closing-soon exhibition rows (item 4) */
-.xalrow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 8px; color:var(--text); cursor:pointer;}
+/* closing-soon exhibition rows (item 4)
+   v5.54.0 compaction (his screenshot verdict, 2026-11-17: the
+   cards are too tall, too much whitespace): padding and leading
+   cut so a row lands at roughly half its former height, the
+   days badge becomes a slim one-line pill (days-left + end date
+   both kept), and the venue line is always ONE line — the venue
+   name ellipsises, the city rides a no-shrink span so it can
+   never wrap off alone. The title clamps at two lines so long
+   titles stay whole. */
+.xalrow{display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:6px 9px; margin:0 0 6px; color:var(--text); cursor:pointer;}
 .xalmain{flex:1; min-width:0;}
-.xalartist{font-family:var(--serif); font-size:14.5px; font-weight:600;}
-.xaltitle{font-size:13px; margin-top:2px; line-height:1.45;}
-.xalvenue{color:var(--muted); font-size:12px; margin-top:2px;}
-.xaldays{flex:none; text-align:center; background:var(--accent); color:var(--bg); border-radius:10px; padding:7px 9px; min-width:58px; box-sizing:border-box;}
-.xaldays b{display:block; font-size:15px; line-height:1.15;}
-.xaldays span{font-size:11px;}
+.xalartist{font-family:var(--serif); font-size:14px; font-weight:600; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.xaltitle{font-size:12.5px; margin-top:1px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.xalvenue{display:flex; align-items:baseline; color:var(--muted); font-size:11.5px; margin-top:1px; line-height:1.35; white-space:nowrap; overflow:hidden;}
+.xalvenue .linkbtn{min-width:0; min-height:0; padding:0; font-size:inherit; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.xalcity{flex:none;}
+.xaldays{flex:none; background:var(--accent); color:var(--bg); border-radius:999px; padding:4px 9px; font-size:11.5px; font-weight:700; line-height:1.3; white-space:nowrap;}
 /* price cards — v32.16.0: the price table is the pinned grid
    card form now (image on top; title, artist, price, house/year
    below), its 5-mode switch swapping the .bpgrid mode class.
@@ -10534,19 +10550,48 @@ function snsLinksHTML(a){
 function bioHeadHTML(a){
   const rows = [];
   const yrs = String(a.years || '');
-  const m = yrs.match(/(\d{3,4})\s*[–—\-〜~]\s*(\d{3,4})?/);
+  /* v5.54.0 (his call, 2026-11-17): the meta strip that used to
+     sit under the name on the detail page (years+age / field /
+     section) MOVES into this profile block, for every artist and
+     designer. Nothing the strip could show is dropped: the years
+     land as 生年・没年・享年 rows as before, plus a 年齢 row for
+     the living (the same arithmetic yearsDisplay uses), the
+     field's non-place part as 分野, the section as 分類, and —
+     for the strings no parser can split (生年不詳, circa prose,
+     duos) — one 生没年 row carrying yearsDisplay's exact text.
+     Duo strings keep their full recorded form: the split below
+     is skipped when the string names more than one person. */
+  const multi = /[／/]/.test(yrs);
+  const m = !multi && yrs.match(/(\d{3,4})\s*[–—\-〜~]\s*(\d{3,4})?/);
+  const bare = !multi && !m && yrs.match(/^(\d{3,4})$/);
   if(m){ rows.push(['生年', m[1] + '年']); if(m[2]) rows.push(['没年', m[2] + '年']); }
+  else if(bare){ rows.push(['生年', bare[1] + '年']); }
   const da = deathAge(a);
   if(da != null) rows.push(['享年', da + '歳']);
+  else if((m && !m[2]) || bare){
+    const age = new Date().getFullYear() - parseInt((m || bare)[1], 10);
+    if(age >= 0 && age <= 110) rows.push(['年齢', age + '歳']);
+  }
+  if(!m && !bare){ const yd = yearsDisplay(a); if(yd) rows.push(['生没年', yd]); }
   if(a.birthplace) rows.push(['出生地', a.birthplace]);
   if(a.base) rows.push(['拠点', a.base]);
   const from = (a.field || '').split('、')[0];
   if(from && from !== a.birthplace && !/絵画|彫刻|写真|工芸|デザイン|建築|版画|音楽|文学/.test(from)) rows.push(['出身', from]);
+  if(a.field){
+    const parts = String(a.field).split('、');
+    const val = (parts.length > 1 && !/絵画|彫刻|写真|工芸|デザイン|建築|版画|音楽|文学/.test(parts[0]))? parts.slice(1).join('、'): a.field;
+    if(val) rows.push(['分野', val]);
+  }
+  if(a.section) rows.push(['分類', a.section]);
   const hasPortrait = !!a.portrait;
   if(!hasPortrait && !rows.length) return '';
   let h = '<div class="biohead">';
   if(hasPortrait){
-    h += '<div class="bioportrait"><div class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.plate) + '</div>'
+    /* v5.54.0 (his call, 2026-11-17): the portrait itself is
+       tappable — it opens in the works viewer with the source
+       credit (portrait_src) as the caption. The small zoom chip
+       in the corner is the affordance; no text label. */
+    h += '<div class="bioportrait"><button class="bioportraitbtn" onclick="openViewerPortrait(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.plate) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button>'
       + (a.portrait_src? '<div class="portraitsrc">' + esc(a.portrait_src) + '</div>': '') + '</div>';
   }
   if(rows.length){
@@ -15717,11 +15762,9 @@ let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" o
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(a.name)+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
 ((a.name_latin||a.name_native||snsLinksHTML(a))? '<div class="dlatinrow"><span class="dlatin">'+esc(a.name_latin||'')+(a.name_native?'　'+esc(a.name_native):'')+'</span>'+snsLinksHTML(a)+'</div>': '')+
-'<div class="dmeta">'+
-(a.years?'<span>'+esc(yearsDisplay(a))+'</span>':'')+
-(a.field?'<span>'+esc(a.field)+'</span>':'')+
-(a.section?'<span>'+esc(a.section)+'</span>':'')+
-'</div>'+
+/* v5.54.0: the .dmeta strip that sat here (years / field /
+   section) is gone from the header — its information moved
+   into the 来歴 profile block (bioHeadHTML) for everyone. */
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
@@ -16285,6 +16328,14 @@ openViewer(drawingsOf(a), idx, a.id);
 function openViewerProc(a, idx){
 viewerKindNext = 'proc';
 openViewer(processPhotosOf(a).map(p => keyWork(p.img, p.caption || '')), idx, a.id);
+}
+/* v5.54.0: the bio profile portrait opens in the same viewer;
+   the caption is the portrait's source credit. It rides the
+   'proc' viewer kind — no thumbnail-setting for a portrait. */
+function openViewerPortrait(a){
+if(!a || !a.portrait) return;
+viewerKindNext = 'proc';
+openViewer([keyWork(a.portrait, a.portrait_src || a.name || '')], 0, a.id);
 }
 function openViewer(ws, idx, artistId){
 viewerKind = viewerKindNext || 'works'; viewerKindNext = null;
@@ -18645,7 +18696,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全668人中402人まで完了。残り266人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは171点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は34人・計67点。","肖像写真は45人。"]},{"v":null,"label":"展示情報","lines":["展示は970件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は、残り武蔵野美術大学の28名。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全696人中427人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは203点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は44人・計85点。","肖像写真は56人。"]},{"v":null,"label":"展示情報","lines":["展示は1,354件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22769,7 +22820,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.53.0';
+const APP_VERSION = '5.54.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -23597,8 +23648,8 @@ button.xchip{cursor:pointer;}
 .xform input[type=text], .xform textarea{width:100%; box-sizing:border-box; padding:9px 11px; border-radius:9px; border:1px solid var(--inbd); background:var(--card); color:var(--ink); font-size:15px;}
 .xform textarea{min-height:110px; line-height:1.6;}
 .xcritimg{width:100%; border-radius:10px; border:1px solid var(--line); display:block;}
-.xalert{border:1px solid var(--danger); border-radius:12px; padding:10px 12px; margin:0 0 12px; background:var(--card);}
-.xalert .xat{color:var(--danger); font-weight:700; font-size:13px; margin-bottom:6px;}
+.xalert{border:1px solid var(--danger); border-radius:12px; padding:8px 9px; margin:0 0 12px; background:var(--card);}
+.xalert .xat{color:var(--danger); font-weight:700; font-size:13px; margin-bottom:5px;}
 .xgal{border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:10px 12px; margin:12px 0; background:var(--card);}
 .xmapwrap{position:relative; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--line);}
 .xmapwrap canvas{width:100%; display:block;}
@@ -24909,8 +24960,8 @@ function xExAlert(){
     return '<div class="xalrow"><div class="xalmain">'
       + (anm? '<div class="xalartist">' + esc(anm) + '</div>': '')
       + '<div class="xaltitle">' + esc(e.title || '') + '</div>'
-      + (e.venue? '<div class="xalvenue"><button class="linkbtn" onclick="openMuseum(\'' + escA(e.venue) + '\')">' + esc(e.venue) + '</button>' + (e.city? '／' + esc(e.city): '') + '</div>': '')
-      + '</div><div class="xaldays"><b>' + (x.days === 0? '本日終了': 'あと' + x.days + '日') + '</b><span>' + md + 'まで</span></div></div>';
+      + (e.venue? '<div class="xalvenue"><button class="linkbtn" onclick="openMuseum(\'' + escA(e.venue) + '\')">' + esc(e.venue) + '</button>' + (e.city? '<span class="xalcity">／' + esc(e.city) + '</span>': '') + '</div>': '')
+      + '</div><div class="xaldays"><b>' + (x.days === 0? '本日終了': 'あと' + x.days + '日') + '</b>・<span>' + md + 'まで</span></div></div>';
   }).join('');
   const head = v.querySelector('.tlhead');
   if(head && head.nextSibling) v.insertBefore(div, head.nextSibling); else v.appendChild(div);

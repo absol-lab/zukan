@@ -1028,7 +1028,7 @@
      ],
      "field": "絵画（古典的絵画技術を用いた具象絵画、ドキュメンタリー的手法）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 299
     },
     {
      "name": "樺山祐和",
@@ -1042,7 +1042,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 300
     },
     {
      "name": "小林孝亘",
@@ -1056,7 +1056,7 @@
      ],
      "field": "絵画（具体的なモチーフによる絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 301
     },
     {
      "name": "水上泰財",
@@ -1070,7 +1070,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 302
     },
     {
      "name": "吉川民仁",
@@ -1084,7 +1084,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 303
     },
     {
      "name": "小林耕平",
@@ -1098,7 +1098,7 @@
      ],
      "field": "現代美術（映像・オブジェクトによるインスタレーション）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 304
     },
     {
      "name": "関根直子",
@@ -1112,7 +1112,7 @@
      ],
      "field": "絵画（イメージと構造、鉛筆・ガッシュ等によるドローイング的絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 305
     },
     {
      "name": "袴田京太朗",
@@ -1126,7 +1126,7 @@
      ],
      "field": "彫刻（彫刻の可能性と不可能性、レディメイドを用いた立体）※油絵専攻Bコース担当",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 306
     },
     {
      "name": "町田久美",
@@ -1168,7 +1168,7 @@
      ],
      "field": "絵画・西洋絵画の技法研究（15–17世紀ヨーロッパ古典技法、模写による技法研究）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 307
     },
     {
      "name": "今井俊介",
@@ -1184,7 +1184,7 @@
      "classes": [],
      "field": "油絵学科油絵専攻 助教（2025年度 海外研修：北欧における造形物と自然の関係）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 308
     },
     {
      "name": "長島有里枝",
@@ -1196,7 +1196,7 @@
      ],
      "field": "写真・インスタレーション・執筆（ジェンダー／フェミニズム研究）※本人は「専門は絵画ではない」と明記",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 309
     },
     {
      "name": "津上みゆき",
@@ -1208,7 +1208,7 @@
      ],
      "field": "絵画（「View」を主題とする風景絵画）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 310
     },
     {
      "name": "土方明司",
@@ -1233,7 +1233,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 311
     },
     {
      "name": "榎倉冴香",
@@ -1245,7 +1245,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 312
     },
     {
      "name": "大川心平",
@@ -1257,7 +1257,7 @@
      ],
      "field": "絵画・美術",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 313
     },
     {
      "name": "大谷たらふ",
@@ -1269,7 +1269,7 @@
      ],
      "field": "絵画・表現",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 314
     },
     {
      "name": "神村恵",
@@ -1281,7 +1281,7 @@
      ],
      "field": "身体表現・ダンス（振付家）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 315
     },
     {
      "name": "衣川明子",
@@ -1293,7 +1293,7 @@
      ],
      "field": "絵画・表現",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 316
     },
     {
      "name": "高石晃",
@@ -1305,7 +1305,7 @@
      ],
      "field": "絵画 ※武蔵野美術大学美術館の公式イベント頁でも「造形学部油絵学科油絵専攻非常勤講師」と明記",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 317
     },
     {
      "name": "竹内一",
@@ -1317,7 +1317,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 318
     },
     {
      "name": "徳永陶子",
@@ -1329,7 +1329,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 319
     },
     {
      "name": "松井えり菜",
@@ -1341,7 +1341,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 320
     },
     {
      "name": "松尾勘太",
@@ -1353,7 +1353,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 321
     },
     {
      "name": "槙原泰介",
@@ -1365,7 +1365,7 @@
      ],
      "field": "絵画・表現",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 322
     },
     {
      "name": "森千裕",
@@ -1377,7 +1377,7 @@
      ],
      "field": "絵画・現代美術",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 323
     },
     {
      "name": "山田優アントニ",
@@ -1389,7 +1389,7 @@
      ],
      "field": "絵画",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 324
     },
     {
      "name": "野間祥子",
@@ -1402,7 +1402,7 @@
      ],
      "field": "絵画材料・素材（絵画組成室）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 325
     },
     {
      "name": "町田結香",
@@ -1415,7 +1415,7 @@
      ],
      "field": "絵画材料・素材（絵画組成室）",
      "is_artist": true,
-     "zukan_id": null
+     "zukan_id": 326
     }
    ],
    "exam": {
