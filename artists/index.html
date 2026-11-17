@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.54.1">
+<meta name="app-version" content="5.55.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -636,7 +636,8 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
 .snsbtn svg{width:16px; height:16px; display:block;}
 .mksnsrow{display:flex; justify-content:flex-end; margin-top:6px;}
 /* .dmeta (the detail-header meta strip) retired in v5.54.0 — its
-   contents moved into the 来歴 profile block (bioHeadHTML). */
+   contents moved into the profile block; v5.55.0 carries that
+   block as the compact band under the name (profileBandHTML). */
 /* v27.1 (his word, 2026-11-14): the tab pills were too big and
    the v27.0 two-row wrap read as clutter — the bar is now ONE
    compact, natively scrolling row (the #bizpillbar pattern:
@@ -891,27 +892,29 @@ button.inflrow{cursor:pointer;}
    class toggles only. Its top is set in JS to the measured
    header + detail-head height. */
 .cherabar{position:fixed; left:0; right:0; z-index:29; background:var(--bg); border-bottom:1px solid var(--line); padding:7px 10px;}
-/* v32.6 (item J): bio head (portrait + details) and the
-   process-photo work link */
-/* v32.7.1 (fix B): the bio head is ONE panel — a modest photo
-   column (31%, capped 148px) and the details centred against
-   it, no card inside a card; the source rides as a small note
-   under the photo. A portrait that cannot load settles as a
-   small plain placeholder (.portraitfail), never the big
-   name-text plate (see hydrateImg's fail). */
-.biohead{display:flex; gap:14px; align-items:stretch; margin:2px 0 14px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px;}
-.bioportrait{flex:0 0 31%; max-width:148px; min-width:0;}
-.bioportrait .ph{display:block; aspect-ratio:4/5; border-radius:10px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
+/* v32.6 (item J): profile details and the process-photo work
+   link. v5.55.0 (the profile compact trial — his confirmed
+   design, 2026-11-17): the profile is a SLIM BAND pinned in
+   the detail head under the name (portrait thumb left, the
+   fact rows flowing dense beside it), visible on every tab;
+   the big .biohead panel that opened the 来歴 tab is retired.
+   A portrait that cannot load settles as a small plain
+   placeholder (.portraitfail), never the big name-text plate
+   (see hydrateImg's fail). */
 .bioportraitbtn{display:block; position:relative; width:100%; text-align:left;}
 .biozoom{position:absolute; right:6px; bottom:6px; width:22px; height:22px; border-radius:50%; background:rgba(20,14,8,.48); color:#fff; display:flex; align-items:center; justify-content:center; pointer-events:none;}
 .biozoom svg{width:13px; height:13px; display:block;}
-.bioportrait .imgholder{display:block; width:100%; height:100%;}
-.bioportrait img{width:100%; height:100%; object-fit:cover; display:block;}
-.bioportrait .ph.portraitfail{aspect-ratio:auto; height:72px;}
-.portraitsrc{font-size:10.5px; color:var(--muted); margin-top:5px; line-height:1.5;}
-.biodetails{flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; padding:2px 0;}
-.biodetails .bdrow{display:flex; gap:10px; padding:3px 0; font-size:13.5px; line-height:1.5;}
-.biodetails .bdk{flex:0 0 3.4em; color:var(--muted); font-size:12px; letter-spacing:.06em; padding-top:1px;}
+.profband{display:flex; gap:10px; align-items:center; margin:9px 0 0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px 10px;}
+.pfthumb{flex:0 0 40px; min-width:0;}
+.pfthumb .ph{display:block; width:40px; height:50px; border-radius:7px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
+.pfthumb .imgholder{display:block; width:100%; height:100%;}
+.pfthumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.pfthumb .biozoom{width:17px; height:17px; right:4px; bottom:4px;}
+.pfthumb .biozoom svg{width:10px; height:10px;}
+.pfrows{flex:1; min-width:0; display:flex; flex-wrap:wrap; align-items:center; column-gap:12px; font-size:12px; line-height:1.5;}
+.pfrow{display:inline-flex; gap:5px; max-width:100%;}
+.pfk{color:var(--muted); font-size:11px; letter-spacing:.05em; flex:none; padding-top:1px;}
+.pfv{min-width:0; overflow-wrap:anywhere;}
 .procworklink{background:none; border:none; padding:2px 0 0; color:var(--accent); text-decoration:underline; font-size:12.5px; cursor:pointer; text-align:left; font-family:var(--sans);}
 .cherabar-in{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 .cherabar-in::-webkit-scrollbar{display:none;}
@@ -10540,14 +10543,20 @@ function snsLinksHTML(a){
   if(!list.length) return '';
   return '<span class="snsrow">' + list.map(s => '<a class="snsbtn" href="' + escA(s.url) + '" target="_blank" rel="noopener" aria-label="' + (SNS_LABELS[s.kind] || 'リンク') + '">' + SNS_ICONS[s.kind] + '</a>').join('') + '</span>';
 }
-/* v32.6 (item J-B): the bio tab's head — portrait left, structured
-   details right, prose below (the prose is appended by the
-   caller). Details are built mechanically from what the record
-   already carries (years split into birth/death, birthplace /
-   base fields when present, the field's place token); a missing
-   item is simply not shown, and with no portrait there is NO
-   photo frame at all (his 画像なしはなし rule). */
-function bioHeadHTML(a){
+/* v32.6 (item J-B): the profile — portrait + structured details,
+   built mechanically from what the record already carries
+   (years split into birth/death, birthplace / base fields when
+   present, the field's place token); a missing item is simply
+   not shown, and with no portrait there is NO photo frame at
+   all (his 画像なしはなし rule).
+   v5.55.0 (profile compact trial — his confirmed design,
+   2026-11-17): the block no longer opens the 来歴 tab; it is a
+   slim band in the detail HEAD, under the name, present on
+   every tab. Same rows, compressed: the portrait is a small
+   thumb (still tappable into the viewer, credit as caption)
+   and the rows flow inline beside it. No portrait and no rows
+   -> no band at all. */
+function profileBandHTML(a){
   const rows = [];
   const yrs = String(a.years || '');
   /* v5.54.0 (his call, 2026-11-17): the meta strip that used to
@@ -10585,17 +10594,19 @@ function bioHeadHTML(a){
   if(a.section) rows.push(['分類', a.section]);
   const hasPortrait = !!a.portrait;
   if(!hasPortrait && !rows.length) return '';
-  let h = '<div class="biohead">';
+  let h = '<div class="profband">';
   if(hasPortrait){
     /* v5.54.0 (his call, 2026-11-17): the portrait itself is
        tappable — it opens in the works viewer with the source
        credit (portrait_src) as the caption. The small zoom chip
-       in the corner is the affordance; no text label. */
-    h += '<div class="bioportrait"><button class="bioportraitbtn" onclick="openViewerPortrait(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.plate) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button>'
-      + (a.portrait_src? '<div class="portraitsrc">' + esc(a.portrait_src) + '</div>': '') + '</div>';
+       in the corner is the affordance; no text label. v5.55.0:
+       the thumb shrinks to band height and the credit line
+       under the photo goes with the big block — the credit
+       still reaches him as the viewer's caption. */
+    h += '<div class="pfthumb"><button class="bioportraitbtn" onclick="openViewerPortrait(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.thumb) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button></div>';
   }
   if(rows.length){
-    h += '<div class="biodetails">' + rows.map(r => '<div class="bdrow"><span class="bdk">' + r[0] + '</span><span class="bdv">' + esc(r[1]) + '</span></div>').join('') + '</div>';
+    h += '<div class="pfrows">' + rows.map(r => '<span class="pfrow"><span class="pfk">' + r[0] + '</span><span class="pfv">' + esc(r[1]) + '</span></span>').join('') + '</div>';
   }
   return h + '</div>';
 }
@@ -15764,7 +15775,11 @@ let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" o
 ((a.name_latin||a.name_native||snsLinksHTML(a))? '<div class="dlatinrow"><span class="dlatin">'+esc(a.name_latin||'')+(a.name_native?'　'+esc(a.name_native):'')+'</span>'+snsLinksHTML(a)+'</div>': '')+
 /* v5.54.0: the .dmeta strip that sat here (years / field /
    section) is gone from the header — its information moved
-   into the 来歴 profile block (bioHeadHTML) for everyone. */
+   into the profile block for everyone.
+   v5.55.0 (profile compact trial): that block rides HERE, as
+   the compact band under the name — inside the head, so it
+   shows on every tab; the 来歴 tab no longer repeats it. */
+profileBandHTML(a)+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
@@ -16010,13 +16025,12 @@ bioHTML = sp.bio? cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws) }): '<di
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+pTermEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
-/* v32.6 (item J-B — his layout, 2026-11-16 09:15): the bio tab
-   opens with portrait (left) + structured details (right) when
-   the record carries them; the career prose follows below. */
-/* v32.6.1 (fix 1 — his form): the bio tab opens with the
-   artist profile (photo + details); the career goes below. */
-const bioHead = bioHeadHTML(a);
-bioHTML = (bioHead? '<h3 class="subhead">プロフィール</h3>' + bioHead: '') + bioHTML;
+/* v32.6 (item J-B) / v32.6.1: the bio tab used to open with
+   the artist profile (photo + details) and the career below.
+   v5.55.0 (profile compact trial): the profile moved into the
+   detail head as the compact band (profileBandHTML, rendered
+   with the header above) — the bio tab is the career only,
+   nothing duplicated. */
 if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
 if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3>'+proseHTML(sp.tech);
 if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3>'+proseHTML(sp.rest);
@@ -16227,7 +16241,8 @@ packGridsIn(v, 'exdgrid', SURF.exd);
 /* v32.6 (item J): the process-photo tiles — same wiring shape,
    the click opens the viewer over the PROCESS list (kind
    'proc'), and a caption's work link jumps to that work in the
-   works viewer instead. The bio portrait hydrates like a plate. */
+   works viewer instead. The profile band's portrait (in the
+   detail head since v5.55.0) hydrates like a plate. */
 v.querySelectorAll('[data-procidx]').forEach(ph=>{
 const p = pps[+ph.dataset.procidx]; if(!p) return;
 const wobj = keyWork(p.img, p.caption||''); ph._work = wobj;
@@ -16329,9 +16344,11 @@ function openViewerProc(a, idx){
 viewerKindNext = 'proc';
 openViewer(processPhotosOf(a).map(p => keyWork(p.img, p.caption || '')), idx, a.id);
 }
-/* v5.54.0: the bio profile portrait opens in the same viewer;
+/* v5.54.0: the profile portrait opens in the same viewer;
    the caption is the portrait's source credit. It rides the
-   'proc' viewer kind — no thumbnail-setting for a portrait. */
+   'proc' viewer kind — no thumbnail-setting for a portrait.
+   (v5.55.0: the portrait lives in the header's compact band;
+   this opener is unchanged.) */
 function openViewerPortrait(a){
 if(!a || !a.portrait) return;
 viewerKindNext = 'proc';
@@ -22820,7 +22837,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.54.1';
+const APP_VERSION = '5.55.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
