@@ -1,7 +1,7 @@
 {
  "kind": "artist-relations",
  "version": 1,
- "generated_at": "2026-11-16",
+ "generated_at": "2026-11-17",
  "about": "作家ページ「関係のある作家・似た作家」表示用の関係データ。from→to の一方向で記録し、表示側で逆向きも辿れる。影響は本人の発言・出典つきの既存記録からのみ作り、捏造はしていない。",
  "relations": [
   {
@@ -3951,6 +3951,97 @@
    "kind": "影響",
    "note": "本人の言及あり。「クラインのような真に偉大な作家については、その青が彼のイメージや手の一部として神話化されたと理解できるまで40〜50年かかった」という趣旨を語り、色が作家の神話となる先行例として敬意を示している（ArtAsiaPacific誌インタビュー、2017年）。",
    "source": "図鑑 artists.json の influences 記録（本人の発言・インタビューなど、出典つきで裏取り済みの既存記録）"
+  },
+  {
+   "from": 86,
+   "to": "caspar-david-friedrich",
+   "kind": "影響",
+   "note": "リューデンの海景を描いたフリードリヒに強い印象を受け、同じ場所を探して撮影したと本人が語る。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://www.timesensitive.fm/episode/hiroshi-sugimoto-on-photography-as-a-form-of-timekeeping）"
+  },
+  {
+   "from": 92,
+   "to": "jean-michel-basquiat",
+   "kind": "師弟・つながり",
+   "note": "親しい友人。本人いわく、バスキアは私的な場面で「黒人のトークン・アーティスト」として使われる圧力を打ち明けていた（Juxtapoz対談での本人の回想）。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://www.juxtapoz.com/news/magazine/features/winter-2024-quarterly-cover-story-george-condo-is-the-artificial-realist/）"
+  },
+  {
+   "from": 92,
+   "to": 63,
+   "kind": "比較される",
+   "note": "批評では頻繁に比較されるが、本人は「ピカソや影響の話には疲れた」と公言し、自著で誤解を解く姿勢を示している。本人の影響源としては扱わない。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://www.juxtapoz.com/news/magazine/features/winter-2024-quarterly-cover-story-george-condo-is-the-artificial-realist/）"
+  },
+  {
+   "from": 134,
+   "to": 50,
+   "kind": "影響",
+   "note": "オブリストの「ガストン的だ」という指摘に「ガストンが大好きだ」「その通りだ」と本人が応じた。ジャン＝クリストフ・アンマンの大展覧会を見た経験も語る。",
+   "source": "図鑑 artists.json の influences 記録（本人の発言・インタビューなど、出典つきで裏取り済みの既存記録）"
+  },
+  {
+   "from": 134,
+   "to": 192,
+   "kind": "影響",
+   "note": "「ムンクが本当に好きだ。ピカソと同じくらい重要だと思う。彼の仕事の仕方が好きなのだ」と本人が語る。",
+   "source": "図鑑 artists.json の influences 記録（本人の発言・インタビューなど、出典つきで裏取り済みの既存記録）"
+  },
+  {
+   "from": 155,
+   "to": 66,
+   "kind": "同じ系譜",
+   "note": "本人がSpikeのインタビューで、正方形の出発点としてマレーヴィチに言及しつつ、その意味を理想主義から監禁へ変換したと語る。影響は本人の言明として influences に記録済みのため、ここでは系譜関係として補記する。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://spikeartmagazine.com/articles/interview-playing-a-forty-year-game-of-chess-peter-halley）"
+  },
+  {
+   "from": 155,
+   "to": "jeff-koons",
+   "kind": "師弟・つながり",
+   "note": "International With Monument共同運営（1984–87）の同僚。80年代の商業素材使用の文脈で同時代人として本人が言及。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://berggruen.com/news/27-interview-with-peter-halley-berggruen-gallery/）"
+  },
+  {
+   "from": 159,
+   "to": "mike-kelley",
+   "kind": "師弟・つながり",
+   "note": "CalArts在学中の1977年にジョン・ミラーとバンドPoeticsを結成した同僚。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://tonyoursler.com/introjection-in-ourslers-world-no-one-escapes-its-unbidden-influences）"
+  },
+  {
+   "from": 162,
+   "to": 72,
+   "kind": "師弟・つながり",
+   "note": "デュッセルドルフ美術アカデミーの師。ドクメンタ5でのボクシングマッチは美術観の相違ゆえとBlickachsenが伝える。師弟であると同時に公然たる対立関係。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://www.blickachsen.de/en/about-blickachsen/artists/abraham-david-christian）"
+  },
+  {
+   "from": 168,
+   "to": 72,
+   "kind": "師弟・つながり",
+   "note": "1969年ベルン「When Attitude Becomes Form」展で、招待されなかったビュランにボイスが自らの展示室の一角を申し出た（ビュラン本人の回想）。ビュランは申し出を断り街頭で制作した。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：http://lodownmagazine.com/features/daniel-buren）"
+  },
+  {
+   "from": 170,
+   "to": 82,
+   "kind": "同じ系譜",
+   "note": "もの派の主要メンバーとして菅と並び称される（Tokyo Art Beatインタビュー冒頭の編集部解説による）。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://www.tokyoartbeat.com/articles/-/Kishio_Suga_Interview）"
+  },
+  {
+   "from": 183,
+   "to": 90,
+   "kind": "師弟・つながり",
+   "note": "2019年DIC川村記念美術館「描く、そして現れる」展で「画家だから、木枠を踏み出す、踏みこえる」と題した対談を行った。",
+   "source": "解剖第8波（2026-11-16）の収集記録 relations_found（出典：https://ac.nact.jp/english/artcommons/user/detail/62327）"
+  },
+  {
+   "from": 76,
+   "to": 51,
+   "kind": "師弟・つながり",
+   "note": "同時代のパリ／ロンドンでの交友と相互の尊敬が資料で確認できる。",
+   "source": "ベーコン全再収集（2026-11-17）の記録（出典つきで裏取り済み）"
   }
  ]
 }
