@@ -89,7 +89,8 @@
      ],
      "field": "キュレーション／アートプロジェクト（アーツ前橋チーフキュレーター、前橋国際芸術祭2026プログラムディレクター）",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 126
     },
     {
      "name": "ミヒャエル・シュナイダー",
@@ -199,7 +200,8 @@
      ],
      "field": "美術評論（現代美術批評、「マイクロポップ」概念の提唱）",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 1
     },
     {
      "name": "スクリプカリウ落合安奈",
@@ -229,7 +231,8 @@
      ],
      "field": "美術解剖学",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 127
     }
    ],
    "exam": {
@@ -561,7 +564,8 @@
      ],
      "field": "美術史・キュレーション（東京国立近代美術館企画課長、展覧会キュレーター）",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 128
     },
     {
      "name": "松浦寿夫",
@@ -681,7 +685,8 @@
      ],
      "field": "批評・編集（研究テーマ：音声（声明、声優、VTuber、合成音声、活動弁士）と南極）",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 129
     },
     {
      "name": "水上愛美",
@@ -1215,7 +1220,8 @@
      ],
      "field": "美術批評・キュレーション（画家ではない）",
      "is_artist": false,
-     "zukan_id": null
+     "zukan_id": null,
+     "maker_id": 130
     },
     {
      "name": "上田暁子",

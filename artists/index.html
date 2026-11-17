@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.48.0">
+<meta name="app-version" content="5.49.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -427,6 +427,14 @@ figure.work .ph.arx img{object-fit:contain;}
 .pcols figure.work .ph img, .gallery figure.work .ph img{object-fit:contain;}
 .grid figure.work:has(>.ph.arnat), .gallery figure.work:has(>.ph.arnat){align-self:start;}
 figure.work .ph .noimg{font-family:var(--serif); font-size:11px; color:var(--ink35); letter-spacing:.2em; padding:6px; text-align:center;}
+/* v5.49.0: the shared no-photo mark — every image-less card
+   (artists / designers / makers / professors / universities /
+   venues / genealogies / price cards …) shows this one small
+   pictogram centred on the plain plate instead of the retired
+   big initial letter. One component (noPhotoHTML) so all
+   surfaces match. */
+.nophoto{display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:var(--ink35);}
+.nophoto svg{display:block; width:30px; height:30px; opacity:.8;}
 /* v27.9 (§6.4-3 of the return-jump diagnosis): a plate whose image
    has not arrived yet must read as "loading", never as a black void
    — on the 2026-11-14 device video a cold detail page sat on
@@ -10659,6 +10667,14 @@ if(primary) push(primary + (primary.indexOf('?') >= 0? '&': '?') + 'retry=1');
 if(work && work.file) localCandidates(work.file).forEach(u=> attempts.push({ t:'url', u: u, local: true }));
 return attempts;
 }
+/* v5.49.0: the one shared no-photo mark (his decision,
+   2026-11-17: 「写真なしマークってないの？」). A simple
+   photo/landscape glyph with a diagonal slash, muted and
+   small — it replaces the big initial letter on every
+   image-less card. The image area carries NOTHING else. */
+function noPhotoHTML(){
+return '<span class="nophoto" role="img" aria-label="写真なし"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.7" cy="9.7" r="1.4"/><path d="M4.2 17.8 L9 13.4 L12.2 16 L14.8 13.8 L19.8 17.8"/><path d="M5.2 3.8 L18.8 20.2"/></svg></span>';
+}
 function imgHTML(work, size){
 /* v5.41.1 (design change — see hydrateImg): the holder is born
    with a REAL <img> whose src is candidate 0 of the ladder, so
@@ -10898,7 +10914,7 @@ const cap = work.caption||'';
    see the CSS note. The tile keeps its exact geometry and shows the
    typographic plate instead. v2.31: the failure plate now also arms
    the self-heal above (maybeRearmImg) when the work has a Drive image. */
-const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate — a portrait that cannot load settles as the maker's initial tile instead. The re-arm retries still run; a healed load replaces the tile. */ if(ph) ph.classList.add('mkini'); span.innerHTML = '<span class="mkini-c">'+esc(span.dataset.mkinitial)+'</span>'; maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
+const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.dataset.mkinitial != null){ /* v32.5.0 (item 5): a maker plate never lands on the generic 図版 plate. v5.49.0: the settle is the shared no-photo mark — the big initial tile is retired on every surface (his decision, 2026-11-17). The re-arm retries still run; a healed load replaces the tile. */ span.innerHTML = noPhotoHTML(); maybeRearmImg(span, work); return; } const pph = span.closest('[data-portrait]'); if(pph){ /* v32.7.1 (fix B): a portrait that cannot load settles as a small PLAIN placeholder — never the big name-text plate. */ pph.classList.add('portraitfail'); span.innerHTML = ''; maybeRearmImg(span, work); return; } if(ph) ph.classList.add('platefail'); span.innerHTML = '<span class="noimg">図版<br>'+esc(cap.slice(0,40))+'</span>'; maybeRearmImg(span, work);};
 /* v5.41.1: DESIGN CHANGE — the browser is the loader.
    v32.17.3 (the previous ship) had already fixed the candidate
    ORDER and bounded every attempt (its diagnosis stands: the
@@ -11185,6 +11201,12 @@ let pendingPanelOrigin = null;
    biz index. Declared here (main script) because showView and
    openBizChapter consult it. */
 let xBizReturn = null;
+/* v5.49.0: the 藝大・美大 screen's maker-professor cards arm
+   this with a snapshot of the schools session; the maker
+   page's back button then returns there instead of to the
+   makers list. Same pattern as xBizReturn above; declared
+   here because showView and goBack consult it. */
+let xMakerReturn = null;
 /* v32.17.0 (route-aware detail return): the detail's back
    button used to be hard-wired to the person list, so arriving
    from another surface （価格早見表 / 展示 / 年表 / 系譜 …) left
@@ -11205,6 +11227,7 @@ if(v === 'list') detailStack = [];
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
 if(prev === 'bizch' && v !== 'bizch') xBizReturn = null; /* v5.48.0: leaving the chapter by any other route drops the 藝大・美大 return */
+if(prev === 'makerdetail' && v !== 'makerdetail') xMakerReturn = null; /* v5.49.0: same for the schools-entered maker page (xMakerBack reads the frame BEFORE restoring, so the restore path itself is safe) */
 if(v!=='settings') document.body.classList.remove('notifopen');
 syncTimelineBtn(v);
 /* v2.70: record the pill-trail — entering the list from a hub view
@@ -12492,7 +12515,7 @@ function renderBizPrice(){
       const ix = bpFigStore.length; bpFigStore.push(own);
       fig = '<div class="ph" data-bpfig="' + ix + '">' + imgHTML(own, IMG_SIZE.thumb) + '</div>';
     } else {
-      fig = '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(pt.artist || '')[0] || '')) + '</span>図版なし</span></div>';
+      fig = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
     }
     return '<figure class="work" onclick="openCrossDetail(\'' + pt.ds + '\',\'' + escA(pt.pid) + '\')">'
       + fig
@@ -14623,7 +14646,7 @@ function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):'<span class="noimg"><span class="ini">'+esc((Array.from(a.name||'')[0]||''))+'</span>図版なし</span>')+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):noPhotoHTML())+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(a.name)+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(a.name_latin||a.name_native||'')+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -17746,7 +17769,7 @@ function galleryLinksHTML(exs){
     }
     let ph;
     if(work){ const gi = galCardWiring.length; galCardWiring.push(work); ph = '<div class="ph" data-gci="'+gi+'">' + imgHTML(work, IMG_SIZE.thumb) + '</div>'; }
-    else ph = '<div class="ph noplate"><span class="noimg"><span class="ini">'+esc(Array.from(g.name||'')[0]||'')+'</span></span></div>';
+    else ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
     return '<figure class="work galcard">' + ph +
       '<figcaption><div class="nm">'+esc(g.name)+'</div>' +
       '<div class="galmeta">'+esc(label)+' ・ 図鑑の展示 '+n+'件'+(held.length? ' ・ 収蔵 '+held.length+'点': '')+'</div></figcaption>' +
@@ -18535,7 +18558,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド6章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["藝大・美大の画面に「何を学ぶか」（美大で何を学ぶか）を入れました（v5.43.0に制作ガイドの章として作り、v5.48.0で藝大・美大へ移設）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「藝大・美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「藝大・美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、藝大・美大のページから作家ページへ飛べるようになります。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人の著作を集めています。いま270冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド6章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["藝大・美大の画面に「何を学ぶか」（美大で何を学ぶか）を入れました（v5.43.0に制作ガイドの章として作り、v5.48.0で藝大・美大へ移設）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「藝大・美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「藝大・美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、藝大・美大のページから作家ページへ飛べるようになります。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22437,6 +22460,7 @@ function backTarget(forSwipe){
 }
 function goBack(){
   if(view==='settings' && settingsPanel){ closeSettingsPanel(); return; }
+  if(view==='makerdetail' && xMakerReturn){ xMakerBack(); return; } /* v5.49.0: a schools-entered maker page backs to the university page */
   const t = backTarget(); if(t) showView(t);
 }
 /* v27.9 (return-jump diagnosis §6.1-2): the swipe-back landing is
@@ -22650,7 +22674,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.48.0';
+const APP_VERSION = '5.49.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -23497,7 +23521,8 @@ button.xchip{cursor:pointer;}
 .profname{font-family:var(--headfont); font-size:16.5px; font-weight:600;}
 button.proflink{background:none; border:none; padding:0; font-family:var(--headfont); font-size:16.5px; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; text-align:left;}
 .profpos{font-size:12.5px; color:var(--accent); font-weight:600;}
-.profreg{font-size:11px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:1px 7px;}
+.profreg{font-size:11px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:1px 7px; white-space:nowrap;}
+.profmk{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 .proffield{font-size:13.5px; line-height:1.6; margin-top:3px;}
 .profcls{font-size:12.5px; color:var(--muted); line-height:1.65; margin-top:2px;}
 /* v5.48.0: 藝大・美大 — card grids (professors / universities)
@@ -23582,6 +23607,34 @@ function xJumpArtist(id){
     restoreSchoolsSession(frame);
   }
 }
+/* v5.49.0: the maker-professor counterpart of xJumpArtist.
+   The 6 non-artist professors are registered in the 立役者
+   data; their cards snapshot the schools session into
+   xMakerReturn, hide the guide for the detour, and open the
+   maker page. The maker page's back button (and goBack)
+   consume the frame via xMakerBack; leaving the maker page
+   by any other route drops it (showView disarm, the xBizReturn
+   precedent). openMakerDetail always lands somewhere — the
+   maker page renders its own not-found state with the armed
+   back button — so the reader is never stranded. */
+function xJumpMaker(mid){
+  const frame = { panel: 'schools', ds: DS, view: view,
+    guide: !$('guidepanel').classList.contains('hidden'),
+    stack: XSTACK.slice() };
+  xMakerReturn = frame;
+  if(frame.guide){
+    $('guidepanel').classList.add('hidden');
+    const ng = $('navGuide'); if(ng) ng.classList.remove('on');
+    sheetLockSync();
+  }
+  xClose();
+  openMakerDetail(mid);
+}
+function xMakerBack(){
+  const s = xMakerReturn; xMakerReturn = null;
+  if(!s){ showView('makers'); return; }
+  xRestoreSession(s);
+}
 /* v5.48.0: restore a snapshotted 藝大・美大 session (schools
    stack + the base view and dataset under it + the guide
    panel when it was open). Shared by the detail chain's
@@ -23627,7 +23680,8 @@ async function xLoadMakers(){
 /* v32.3: a maker's portrait work object — makers.json carries
    it as photo (a Drive fileId in the 図鑑画像 folder; a plain
    URL is also accepted). No photo -> null, and the plate
-   falls back to the designed initial tile.
+   shows the shared no-photo mark (v5.49.0; the big initial
+   tile is retired on every surface).
    v32.7.1 (fix A): the fileId branch takes the works URL form
    too — the {img:{fileId}} route (loadDriveImage) is the one
    that fails on his relay-synced phone; see keyWork. */
@@ -23639,8 +23693,7 @@ function xMakerWork(m){
 function xMakerPlateHTML(m, big){
   const w = xMakerWork(m);
   if(w) return '<div class="ph mkph' + (big? ' big': '') + '" data-mkphoto="' + escA(String(m.photo)) + '" data-mkname="' + escA(m.name || '') + '">' + imgHTML(w, 256) + '</div>';
-  const ini = esc((Array.from(m.name || '')[0] || ''));
-  return '<div class="ph mkph mkini' + (big? ' big': '') + '"><span class="mkini-c">' + ini + '</span></div>';
+  return '<div class="ph mkph' + (big? ' big': '') + '">' + noPhotoHTML() + '</div>';
 }
 function xWireMakerPlates(scope){
   (scope || document).querySelectorAll('.mkph[data-mkphoto]').forEach(ph => {
@@ -23822,8 +23875,11 @@ function renderMakerDetail(){
   const v = $('viewMakerDetail'); if(!v) return;
   if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xLoadMakers().then(() => { if(view === 'makerdetail') renderMakerDetail(); }); return; }
   const m = (XMAKERS.artists || []).find(x => String(x.id) === String(xMakerSelId));
-  if(!m){ v.innerHTML = '<div class="detailhead"><button class="backbtn" onclick="showView(\'makers\')">‹ 一覧へ戻る</button></div><div class="empty">立役者が見つかりません</div>'; return; }
-  let h = '<div class="detailhead"><button class="backbtn" onclick="showView(\'makers\')">‹ 一覧へ戻る</button></div>';
+  /* v5.49.0: entered from a university page (xMakerReturn
+     armed), the back button returns to that page instead. */
+  const backBtn = '<div class="detailhead"><button class="backbtn" onclick="' + (xMakerReturn? 'xMakerBack()': 'showView(\'makers\')') + '">' + (xMakerReturn? '‹ 戻る': '‹ 一覧へ戻る') + '</button></div>';
+  if(!m){ v.innerHTML = backBtn + '<div class="empty">立役者が見つかりません</div>'; return; }
+  let h = backBtn;
   h += '<div class="mkdhead">' + xMakerPlateHTML(m, true) + '<div class="mkdmeta">'
     + '<div class="mkdname">' + esc(m.name) + '</div>'
     + ((m.name_kana || m.name_latin)? '<div class="small">' + esc([m.name_kana, m.name_latin].filter(Boolean).join(' / ')) + '</div>': '')
@@ -23898,14 +23954,14 @@ function xOpenGenealogies(){
       /* v32.4.0 (item 1): the genealogy list is artist-style
          cards now. The thumbnail is the representative work of
          a registered member （所属 first, then 祖型）; a genealogy
-         with no registered artist or no image gets the designed
-         initial tile — never an empty slot. */
+         with no registered artist or no image gets the shared
+         no-photo mark (v5.49.0) — never an empty slot. */
       h += '<div class="smodewrap">' + surfModebarHTML('gen', 'setGenMode') + '</div><div class="grid ' + SURF.gen + '" id="gengrid">';
       (d.genealogies || []).forEach(g => {
         const reg = (g.artists || []).filter(r => r.artist_id).length;
         const rep = xGenRepWork(g);
         const plate = rep? '<div class="ph" data-work="' + escA(rep.a.id) + '" data-ds="artists">' + imgHTML(rep.w, tileSize()) + '</div>'
-          : '<div class="ph genini"><span class="genini-c">' + esc((Array.from(g.name || '')[0] || '')) + '</span></div>';
+          : '<div class="ph">' + noPhotoHTML() + '</div>';
         h += '<figure class="work gencard" onclick="xGenDetail(\'' + escA(g.id) + '\')">' + plate
           + '<figcaption class="gencap"><div class="genname">' + esc(g.name) + '</div>'
           + (g.feel? '<div class="genmeta">' + esc(g.feel) + '</div>': '')
@@ -24129,7 +24185,7 @@ function xOpenWords(){
       const a = byId[String(x.aid)];
       const th = a? thumbOf(a): null;
       const plate = th? '<div class="ph" data-work="' + escA(String(x.aid)) + '" data-ds="artists">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
-        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(x.anm || '')[0] || '')) + '</span>図版なし</span></div>';
+        : '<div class="ph noplate">' + noPhotoHTML() + '</div>';
       return '<button class="xwcard" onclick="xJumpArtist(\'' + escA(String(x.aid)) + '\')"><span class="xwfig"><figure class="work">' + plate + '</figure></span><span class="xwmain">' + main + '<span class="xwname">' + esc(x.anm) + '</span></span></button>';
     };
     const draw = q => {
@@ -24340,11 +24396,14 @@ async function xLoadGal(){
    A professor whose zukan_id is set is a registered artist:
    the name is underlined (the app's tappable convention) and
    jumps via xJumpArtist into the normal artist page.
-   Professors without an id — unregistered artists and the
-   non-artist faculty (critics, curators, the anatomist) —
-   display plainly, with no link. Entry: the 美大 pillrow in
-   その他. The section's search follows the makers pattern:
-   a professor's name finds their university's professors. */
+   v5.49.0: a professor whose maker_id is set — the 6
+   non-artist faculty (critics, curators, the anatomist),
+   registered in the 立役者 data — jumps via xJumpMaker into
+   the maker page. Professors with neither id (unregistered
+   artists) display plainly, with no link. Entry: the 美大
+   pillrow in その他. The section's search follows the makers
+   pattern: a professor's name finds their university's
+   professors. */
 let XSCHOOLSDOC = null;
 async function xLoadSchools(){
   if(XSCHOOLS) return XSCHOOLS;
@@ -24395,7 +24454,7 @@ function xSchoolsListHTML(){
 function xUnivCardHTML(u){
   const linked = (u.professors || []).filter(p => p.zukan_id != null).length;
   return '<figure class="work" onclick="xSchoolDetail(\'' + escA(u.id) + '\')">'
-    + '<div class="ph noplate"><span class="npname">' + esc(u.name) + '</span><span class="npmark">図版なし</span></div>'
+    + '<div class="ph noplate">' + noPhotoHTML() + '</div>'
     + '<figcaption><div class="nm">' + esc(u.name) + '</div>'
     + '<div class="yrs">' + esc(u.place || '') + '</div>'
     + '<div class="yrs">教授 ' + (u.professors || []).length + '名（図鑑登録 ' + linked + '名）</div></figcaption></figure>';
@@ -24451,7 +24510,13 @@ function xSchoolDetail(uid){
    detail frame with the FULL roster info (役職・担当・分野 —
    the complete 担当 text stays reachable). The old row layout
    is gone wholesale, which also removes the row text overlap
-   seen in the 2026-11-17 recording. */
+   seen in the 2026-11-17 recording.
+   v5.49.0: the plates' holders are wired through hydrateImg
+   by xWireSchPlates (before, they never settled — the photo
+   sat at natural size next to the stuck loading label); the
+   6 non-artist professors link to their 立役者 pages; and
+   every image-less plate shows the shared no-photo mark
+   instead of name text or a big initial. */
 function xArtistRec(id){
   try{
     const d = CTX.artists.DB;
@@ -24464,12 +24529,67 @@ function xSchWorkOf(a){
   if(a.portrait) return keyWork(a.portrait, a.name);
   return (a.works && a.works[0]) || null;
 }
+/* v5.49.0 (device bug, his screenshot 2026-11-17 18:30):
+   professor-card images rendered at natural size with the
+   読み込んでいます… label sitting BESIDE the photo, clipped
+   at the card edge. Diagnosis: imgHTML births every holder
+   in the loading state — a real <img> PLUS an in-flow label
+   inside a flex holder — and the label is only ever removed
+   by hydrateImg's settle path (imgLoadDone on success, the
+   plate on failure). Every other surface wires its holders
+   through hydrateImg (observer or direct); the schools view
+   never did — it only filled EMPTY plates and skipped any
+   plate that already had an <img>, i.e. exactly the broken
+   ones. The browser's own load still revealed the photo
+   (the document-level .imgok listener), so the card showed
+   photo + never-removed label sharing the flex row: the img
+   squeezed off its 4/3 fill, the nowrap label clipped by the
+   plate's overflow. Fix at the mechanism: schools plates now
+   run the SAME holder lifecycle as every other surface —
+   xWireHolder below mirrors xWireMakerPlates (immediate
+   hydration in view, observer outside it). */
+function xWireHolder(span, w){
+  span._work = w;
+  const r = span.getBoundingClientRect();
+  if(r.height > 0 && r.bottom > -50 && r.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+  else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+let xSchMakerLoadP = null;
 function xWireSchPlates(scope){
   if(!scope) return;
   scope.querySelectorAll('[data-schwork]').forEach(ph => {
-    if(ph.querySelector('img')) return;
     const w = xSchWorkOf(xArtistRec(ph.getAttribute('data-schwork')));
-    if(w) ph.innerHTML = imgHTML(w, tileSize());
+    if(!w) return;
+    let span = ph.querySelector('.imgholder');
+    if(!span){ ph.innerHTML = imgHTML(w, tileSize()); span = ph.querySelector('.imgholder'); }
+    if(span) xWireHolder(span, w);
+  });
+  /* maker-professor plates: born with the no-photo mark;
+     once the makers data is on hand, a maker WITH a portrait
+     gets the portrait holder wired exactly like a work plate
+     (the mkinitial stamp routes a failed load to the maker
+     settle — the shared mark — not the generic 図版 plate). */
+  scope.querySelectorAll('[data-schmaker]').forEach(ph => {
+    const mid = ph.getAttribute('data-schmaker');
+    let m = ((XMAKERS && XMAKERS.artists) || []).find(x => String(x.id) === String(mid));
+    if(!m){
+      if(!xSchMakerLoadP){
+        xSchMakerLoadP = xLoadMakers().then(() => {
+          xSchMakerLoadP = null;
+          if($('xscreen').classList.contains('open')) xWireSchPlates($('xbody'));
+        });
+        /* a cache-backed load lands synchronously (xLoadMakers
+           applies the cache before its first await) — re-check
+           before giving this plate up to the promise re-wire */
+        m = ((XMAKERS && XMAKERS.artists) || []).find(x => String(x.id) === String(mid));
+      }
+      if(!m) return;
+    }
+    const w = xMakerWork(m);
+    if(!w) return; /* no portrait — the no-photo mark stands */
+    let span = ph.querySelector('.imgholder');
+    if(!span){ ph.innerHTML = imgHTML(w, 256); span = ph.querySelector('.imgholder'); }
+    if(span){ span.dataset.mkinitial = (Array.from(m.name || '')[0] || ''); xWireHolder(span, w); }
   });
 }
 function xProfCardHTML(p, uid, idx){
@@ -24478,12 +24598,23 @@ function xProfCardHTML(p, uid, idx){
     const w = xSchWorkOf(xArtistRec(p.zukan_id));
     const plate = w
       ? '<div class="ph" data-schwork="' + escA(String(p.zukan_id)) + '">' + imgHTML(w, tileSize()) + '</div>'
-      : '<div class="ph noplate"><span class="npname">' + esc(p.name) + '</span><span class="npmark">図版なし</span></div>';
+      : '<div class="ph noplate">' + noPhotoHTML() + '</div>';
     return '<figure class="work" onclick="xJumpArtist(\'' + escA(String(p.zukan_id)) + '\')">' + plate
       + '<figcaption><div class="nm">' + esc(p.name) + ' <span class="profreg">図鑑登録</span></div>' + meta + '</figcaption></figure>';
   }
+  if(p.maker_id != null){
+    /* v5.49.0: the 6 non-artist professors live in the 立役者
+       data — a solid 立役者 chip (distinct from the outline
+       図鑑登録）, the maker's portrait when one exists (the
+       plate is born with the no-photo mark and xWireSchPlates
+       swaps in the portrait holder), and the tap opens the
+       maker's own page via xJumpMaker. */
+    return '<figure class="work" onclick="xJumpMaker(' + Number(p.maker_id) + ')">'
+      + '<div class="ph" data-schmaker="' + escA(String(p.maker_id)) + '">' + noPhotoHTML() + '</div>'
+      + '<figcaption><div class="nm">' + esc(p.name) + ' <span class="profreg profmk">立役者</span></div>' + meta + '</figcaption></figure>';
+  }
   return '<figure class="work" onclick="xProfDetail(\'' + escA(uid) + '\',' + idx + ')">'
-    + '<div class="ph noplate"><span class="npname">' + esc(p.name) + '</span><span class="npmark">図版なし</span></div>'
+    + '<div class="ph noplate">' + noPhotoHTML() + '</div>'
     + '<figcaption><div class="nm">' + esc(p.name) + '</div>' + meta + '</figcaption></figure>';
 }
 function xProfDetail(uid, idx){
@@ -24600,7 +24731,7 @@ function xMuseumRoster(){
       }
       const nm2 = (en && en.name) || '';
       if(!nm2) return '';
-      return '<figure class="work"><div class="ph noplate"><span class="noimg"><span class="ini">' + esc(Array.from(nm2)[0] || '') + '</span></span></div><figcaption><div class="nm">' + esc(nm2) + '</div></figcaption></figure>';
+      return '<figure class="work"><div class="ph noplate">' + noPhotoHTML() + '</div><figcaption><div class="nm">' + esc(nm2) + '</div></figcaption></figure>';
     }).join('');
     if(!cards) return;
     const tabs = document.createElement('div');
@@ -24701,7 +24832,7 @@ function xJijiTheme(i){
       const rec = (CTX.artists.DB && CTX.artists.DB.artists || []).find(x => String(x.id) === String(a.id));
       const th = rec? thumbOf(rec): null;
       const plate = th? '<div class="ph" data-work="' + escA(String(a.id)) + '" data-ds="artists">' + imgHTML(th, IMG_SIZE.thumb) + '</div>'
-        : '<div class="ph noplate"><span class="noimg"><span class="ini">' + esc((Array.from(nm || '')[0] || '')) + '</span>図版なし</span></div>';
+        : '<div class="ph noplate">' + noPhotoHTML() + '</div>';
       h += '<button class="xwcard" onclick="xJumpArtist(\'' + escA(String(a.id)) + '\')"><span class="xwfig"><figure class="work">' + plate + '</figure></span><span class="xwmain"><span class="xwname">' + esc(nm) + '</span><span class="xwbody" style="display:block;">' + esc(a.why || '') + '</span></span></button>';
     });
     b.innerHTML = h;
