@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.52.0">
+<meta name="app-version" content="5.53.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1083,6 +1083,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    :active-only brown surface (visible only while touching)
    is gone — the panel is simply always there. */
 .uprow{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px 12px; margin:0 0 10px;}
+/* v5.53.0: the roadmap tab only — slightly tighter cards (his
+   2026-11-17 call: the 更新予定 list was excessive). The update
+   history tab shares .uprow and keeps its spacing. */
+#roadmaplist .uprow{padding:10px 12px 9px; margin:0 0 8px;}
+#roadmaplist .upnotes{margin-top:4px;}
+#roadmaplist .upnotes li{line-height:1.55; margin-top:1px;}
 /* v13.0: notification panel section headings (unused since v13.1) */
 .notifsec{font-size:12.5px; letter-spacing:.14em; color:var(--muted); font-weight:700; font-family:var(--sans); margin:18px 2px 2px;}
 .notifsec:first-child{margin-top:2px;}
@@ -1283,7 +1289,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .gcalbtn .gcalchev{margin-left:auto; color:var(--muted); font-weight:400;}
 .gdictwrap{margin:2px 0 10px;}
 .gdictwrap input{width:100%; box-sizing:border-box; font-size:16px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text);}
-.gtermrow{display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:9px 2px; color:var(--text); min-height:44px;}
+/* v5.53.0 (his call, 2026-11-17 20:58): the dictionary rows go to
+   the compact floor — vertical padding 9px -> 3px, the inherited
+   1.65 line-height tightened to 1.25 on the row, min-height 44px
+   -> 36px. One line (term + reading) as before, separators kept,
+   font sizes kept. Row pitch 44px -> ~37px. */
+.gtermrow{display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:3px 2px; color:var(--text); min-height:36px; line-height:1.25;}
 .gterm{font-size:15px; font-weight:600;}
 .gread{font-size:12px; color:var(--muted);}
 .ggo{margin-left:auto; color:var(--muted);}
@@ -1755,7 +1766,7 @@ button.blockbtn:disabled{opacity:.4;}
    arrive via the harvest/registration flow, not manual adds. The editor
    itself stays, reachable from a detail view's 編集 button.) */
 /* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
-#pillnav{position:fixed; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+#pillnav{position:absolute; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
 /* v2.28: the pill is centred WITHOUT a transform (left/right 0 + auto
    margins). It used to be left:50% + translateX(-50%) — a permanent
    transform on a position:fixed element keeps it on the composited
@@ -1780,7 +1791,27 @@ button.blockbtn:disabled{opacity:.4;}
 /* v21.9 (his call): inside Art Business the bottom bar itself changes
    jobs — the main pill nav steps aside and the chapter pills live in
    the same floating bar, so the thumb reaches them like any tab. */
-#bizpillbar{position:fixed; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
+#bizpillbar{position:absolute; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
+/* v5.53.0 DESIGN CHANGE (pill bug, 5th recurrence — his screenshot
+   2026-11-17 21:03: the bar floating mid-screen over the favourites
+   list). Four earlier cures each removed one suspect from the bar
+   itself (JS position rewriting in v2.22, its own centring transform
+   in v2.28, the sliding indicator in v16.0) and the bar was already a
+   direct child of body with no transformed ancestor — yet on the
+   device the fixed layer still lost its viewport anchor while the
+   layout rect (all the self-heal guard can see) stayed healthy.
+   The structure changes this time: the bar is no longer a
+   position:fixed element at all. Both bottom bars now live inside
+   #navshell — a dedicated root-level shell, the LAST element in
+   body, outside every view, panel and sheet — which is the single
+   fixed layer (inset:0, both edges anchored, the same shape as the
+   viewer / hub sheet / guide panel, none of which has ever been
+   reported displaced). Inside it the bars are position:absolute at
+   its bottom edge: they own no fixed layer for the compositor to
+   misplace, and they ride the one shell layer instead. The shell
+   is pointer-events:none except on the bars themselves. Visuals,
+   sizing and show/hide behaviour are unchanged. */
+#navshell{position:fixed; inset:0; z-index:40; pointer-events:none;}
 #bizpillbar .bizpillscroll{display:flex; gap:5px; overflow-x:auto; height:100%; align-items:center; padding:0 2px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 #bizpillbar .bizpillscroll::-webkit-scrollbar{display:none;}
 #bizpillbar button{flex:none; height:40px; padding:0 10px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
@@ -1976,6 +2007,8 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .hubgrid{display:grid; grid-template-columns:repeat(3, 52px); gap:8px;}
 .hubrow{position:relative; display:flex; align-items:center; justify-content:center; width:52px; height:52px; padding:0; background:var(--bg2); border:1px solid var(--line); border-radius:14px; color:var(--text); cursor:pointer;}
 #hublist .hubrow .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
+/* v5.53.0: the hub badges are presence dots (see refreshReqNotifBtn) */
+#navHub .nbadge.dot, #hublist .hubrow .nbadge.dot{min-width:0; width:9px; height:9px; padding:0; top:-3px; right:-3px;}
 .hubrow svg{width:24px; height:24px;}
 /* sticky era row (item 9) */
 .erarow{display:flex; align-items:center; gap:8px; padding:5px 2px 7px; border-top:1px solid var(--line); min-height:34px; box-sizing:border-box;}
@@ -2239,14 +2272,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 </main>
 
 <div id="verBadge"></div>
-<nav id="pillnav">
-  <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
-  <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
-  <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
-  <button id="pnMakers" onclick="showView('makers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.2c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2"/></svg><span>立役者</span></button>
-  <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
-</nav>
-<div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
 
 <div id="figzoom" class="hidden" role="dialog" aria-label="図の拡大表示">
   <div class="fzhead"><button class="backbtn" onclick="closeFigZoom()">‹ 戻る</button></div>
@@ -2281,6 +2306,19 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 </div>
 
 <div id="toast"><span id="toastmsg"></span><button id="toastact" class="hidden" type="button">元に戻す</button></div>
+
+<!-- v5.53.0: the bottom chrome lives in its own root shell (see the
+     #navshell CSS note). Nothing view-related may wrap this element. -->
+<div id="navshell">
+<nav id="pillnav">
+  <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
+  <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
+  <button id="pnDesigners" onclick="switchDataset('designers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19.5l1.2-4.2L16.6 4.4a2.05 2.05 0 012.9 0l.1.1a2.05 2.05 0 010 2.9L8.7 18.3l-4.2 1.2z"/><path d="M14.8 6.2l2.9 2.9"/></svg><span>デザイナー</span></button>
+  <button id="pnMakers" onclick="showView('makers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.2c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2"/></svg><span>立役者</span></button>
+  <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
+</nav>
+<div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
+</div>
 
 <script>
 'use strict';
@@ -11449,14 +11487,18 @@ const r = nav.getBoundingClientRect();
 if(!r.height) return;
 const gap = window.innerHeight - r.bottom;
 if(gap < -1 || gap > 90){
-nav.style.display = 'none';
-void nav.offsetHeight;
+/* v5.53.0: the layer that gets rebuilt is the root shell's — the
+   bar itself is absolute inside it now, so dropping the shell's
+   layer is what re-anchors the chrome. */
+const shell = $('navshell') || nav;
+shell.style.display = 'none';
+void shell.offsetHeight;
 /* restore on the NEXT frame, not in the same task: a full frame with
    the element unrendered guarantees the stale layer is dropped before
    the rebuilt one is anchored. A timeout runs the same restore as a
    fallback so a throttled rAF can never leave the pill hidden. */
 let restored = false;
-const restore = ()=>{ if(restored) return; restored = true; nav.style.display = ''; };
+const restore = ()=>{ if(restored) return; restored = true; shell.style.display = ''; };
 requestAnimationFrame(restore);
 setTimeout(restore, 80);
 }
@@ -18603,7 +18645,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全668人中402人まで完了。残り266人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：171点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人の著作を集めています。いま270冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド6章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は34人・計67点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、栗原一成2点、川角岳大2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点、石田尚志1点、足立智美1点、高橋大輔1点、奥秋由美1点）が入りました。肖像写真は45人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント／石田尚志／菊地武彦／諏訪未知／松浦寿夫／友政麻理子／足立智美／山田淳吉／渡辺泰子／高橋大輔／布施琳太郎／坂本龍幸／原裕子／川添彩／楊いくみ／園田将久／矢野憩啓／並木咲）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は970件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["藝大・美大の画面に「何を学ぶか」（美大で何を学ぶか）を入れました（v5.43.0に制作ガイドの章として作り、v5.48.0で藝大・美大へ移設）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「藝大・美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「藝大・美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名と多摩美術大学の36名は図鑑への登録が済みました。まだ登録されていない作家は28名です（武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、藝大・美大のページから作家ページへ飛べるようになります。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全668人中402人まで完了。残り266人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは171点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は34人・計67点。","肖像写真は45人。"]},{"v":null,"label":"展示情報","lines":["展示は970件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は、残り武蔵野美術大学の28名。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -18723,10 +18765,18 @@ function refreshReqNotifBtn(){
   const b = $('hubBadge'); if(!b) return;
   let n = 0;
   try{ n = reqUnseenForDS(DS) + regUnseenCount(DS); }catch(e){}
-  b.textContent = n? String(n): '';
+  /* v5.53.0 (his call, 2026-11-17 20:55): the hub surfaces show
+     PRESENCE only — a plain red dot when anything is unread, never
+     a number. The counts themselves live at their destinations:
+     the 通知 tab carries this same sum and the 更新履歴 tab
+     carries the changelog's unseen count (both belldot pills in
+     the notifications panel). Counting and clearing semantics are
+     exactly as before; only the placement changed. */
+  b.textContent = '';
+  b.classList.toggle('dot', n > 0);
   b.style.display = n? '': 'none';
   const bb = $('hubBellBadge');
-  if(bb){ bb.textContent = n? String(n): ''; bb.style.display = n? '': 'none'; }
+  if(bb){ bb.textContent = ''; bb.classList.toggle('dot', n > 0); bb.style.display = n? '': 'none'; }
 }
 /* v7.0: new-registration notifications (his ask, 2026-11-13).
    Until now only request-driven registrations produced a
@@ -22719,7 +22769,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.52.0';
+const APP_VERSION = '5.53.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -23905,7 +23955,7 @@ function renderMakersBody(){
 }
 function renderMakers(){
   const v = $('viewMakers'); if(!v) return;
-  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xMakerBuilt = false; xLoadMakers().then(() => { if(view === 'makers') renderMakers(); }); return; }
+  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xMakerBuilt = false; /* v5.53.0: re-render ONLY when the load produced data — chaining the retry on a failed load (no cache + relay unreachable) re-rendered forever and froze the app (the v5.51.0 freeze class, found in sandbox validation). With no data the view honestly stays on 読み込み中. */ xLoadMakers().then(d => { if(d && view === 'makers') renderMakers(); }); return; }
   $('topcount').textContent = xMakerCountText();
   if(!xMakerBuilt) buildMakersView(XMAKERS);
   renderMakersBody();
@@ -23918,7 +23968,7 @@ window.addEventListener('scroll', () => {
 function openMakerDetail(id){ xMakerSelId = id; showView('makerdetail'); }
 function renderMakerDetail(){
   const v = $('viewMakerDetail'); if(!v) return;
-  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; xLoadMakers().then(() => { if(view === 'makerdetail') renderMakerDetail(); }); return; }
+  if(!XMAKERS){ v.innerHTML = '<div class="empty">読み込み中…</div>'; /* v5.53.0: same failed-load retry guard as renderMakers */ xLoadMakers().then(d => { if(d && view === 'makerdetail') renderMakerDetail(); }); return; }
   const m = (XMAKERS.artists || []).find(x => String(x.id) === String(xMakerSelId));
   /* v5.49.0: entered from a university page (xMakerReturn
      armed), the back button returns to that page instead. */
