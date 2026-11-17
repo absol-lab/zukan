@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.49.0">
+<meta name="app-version" content="5.50.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11708,7 +11708,7 @@ const GUIDE_TAX = [
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
   { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
-  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques']] },
+  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
 ];
 /* v30.9: one line icon per guide major (his call: swap the
@@ -12970,6 +12970,37 @@ function bizFigSVG(f){
   +'<line x1="238" y1="50" x2="294" y2="50" stroke="var(--accent)" stroke-width="2"/><polygon points="294,50 284,45 284,55" fill="var(--accent)"/>'
   +'<line x1="20" y1="100" x2="320" y2="100" stroke="var(--line)"/>'
   +S(79,44,f.layers||'','middle')+S(266,40,f.dir||'','middle')+S(248,120,f.under||'','middle')+S(170,140,f.blade||'','middle')
+  +'</svg>';}
+ if(f.kind==='phscale'){const W=340,H=104;let zs='',mk='';
+  (f.zones||[]).forEach(z=>{const x1=24+(z.from/14)*300,x2=24+(z.to/14)*300;zs+='<rect x="'+x1.toFixed(1)+'" y="36" width="'+(x2-x1).toFixed(1)+'" height="24" fill="'+z.color+'"/>';if(z.label)zs+=S((x1+x2)/2,52,z.label,'middle','#f5ecd9');});
+  (f.marks||[]).forEach(m=>{const x=24+(m.at/14)*300;mk+='<line x1="'+x.toFixed(1)+'" y1="28" x2="'+x.toFixed(1)+'" y2="34" stroke="var(--accent)"/>'+S(x,20,m.label,'middle');});
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'+zs+mk
+  +S(24,84,f.left||'','start')+S(324,84,f.right||'','end')+'</svg>';}
+ if(f.kind==='mirror'){const W=340,H=176;
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<line x1="40" y1="24" x2="168" y2="66" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="5 4"/>'
+  +'<line x1="168" y1="66" x2="298" y2="22" stroke="var(--accent)" stroke-width="2"/><polygon points="298,22 287,22 293,31" fill="var(--accent)"/>'
+  +'<rect x="60" y="66" width="220" height="7" fill="#8a7a5c"/><rect x="60" y="73" width="220" height="9" fill="#c9ccd4"/><rect x="60" y="82" width="220" height="15" fill="#241a12"/><rect x="60" y="97" width="220" height="20" fill="#4a3a28"/>'
+  +S(110,16,f.ray||'','middle')+S(298,12,f.eye||'','end')+S(290,70,f.coat||'','start')+S(290,92,f.metal||'','start')+S(290,110,f.base||'','start')+S(170,142,f.support||'','middle')+S(170,160,f.order||'','middle')
+  +'</svg>';}
+ if(f.kind==='thermo'){const W=340,H=152;
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<rect x="16" y="34" width="132" height="62" fill="'+(f.cold||'#46689c')+'" stroke="var(--line)"/><rect x="192" y="34" width="132" height="62" fill="'+(f.warm||'#ddd3bd')+'" stroke="var(--line)"/>'
+  +'<line x1="156" y1="65" x2="186" y2="65" stroke="var(--accent)" stroke-width="2"/><polygon points="186,65 176,60 176,70" fill="var(--accent)"/>'
+  +S(82,26,f.coldLabel||'','middle')+S(258,26,f.warmLabel||'','middle')+S(171,52,f.at||'','middle')
+  +'<line x1="16" y1="136" x2="324" y2="136" stroke="var(--line)"/><line x1="'+(f.mark||170)+'" y1="130" x2="'+(f.mark||170)+'" y2="142" stroke="var(--accent)" stroke-width="2"/>'
+  +S(16,124,f.coldT||'','start')+S((f.mark||170),124,f.markT||'','middle')+S(324,124,f.warmT||'','end')
+  +'</svg>';}
+ if(f.kind==='retro'){const W=340,H=168;
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">'
+  +'<rect x="16" y="98" width="308" height="16" fill="#3a2c1c" stroke="var(--line)"/>'
+  +'<circle cx="40" cy="20" r="4" fill="var(--accent)"/>'
+  +'<line x1="40" y1="20" x2="160" y2="86" stroke="var(--ink2)" stroke-width="1.5"/>'
+  +'<line x1="160" y1="86" x2="180" y2="110" stroke="var(--accent)" stroke-width="2"/>'
+  +'<line x1="180" y1="110" x2="52" y2="26" stroke="var(--accent)" stroke-width="2"/><polygon points="52,26 62,26 56,34" fill="var(--accent)"/>'
+  +'<circle cx="170" cy="98" r="17" fill="rgba(232,200,144,.30)" stroke="var(--ink2)"/>'
+  +'<line x1="262" y1="86" x2="252" y2="52" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="4 3"/><line x1="262" y1="86" x2="284" y2="56" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="4 3"/>'
+  +S(66,16,f.back||'','start')+S(170,132,f.bead||'','middle')+S(266,132,f.flat||'','middle')
   +'</svg>';}
  return '';
 }
@@ -22674,7 +22705,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.49.0';
+const APP_VERSION = '5.50.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
