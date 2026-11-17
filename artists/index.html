@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.41.2">
+<meta name="app-version" content="5.41.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10547,33 +10547,74 @@ if(!w || !/^https:\/\/drive\.google\.com\/thumbnail\?/.test(s)) return s;
 if(/([?&])sz=[^&]*/.test(s)) return s.replace(/([?&])sz=[^&]*/, '$1sz=w'+w);
 return s+'&sz=w'+w;
 }
-/* v5.41.1: the candidate ladder, shared by imgHTML (which bakes
-   candidate 0 into the holder as a real <img src>) and hydrateImg
-   (which walks the rest on error). The ORDER is the v32.17.3
-   ladder, unchanged: the stored direct URL sized for the
-   placement; the stored URL at its stored size (a different
-   cache entry, in case the sized variant is the broken one);
-   for {fileId} works the derived direct thumbnail URL, then the
-   OAuth route; the primary direct URL once more with a
-   cache-buster (exactly once — no retry multiplication); the
-   local files. sz is the placement tier (0 = the stored URL
-   as-is), read back from the span's data-size by hydrateImg. */
+/* v5.41.3: the DIRECT address of a Drive image. drive.google.com/
+   thumbnail answers with a 302 redirect to lh3.googleusercontent
+   .com — and the on-device diagnostic (run 2026-11-17 on
+   v5.41.2, results screenshotted by the user) proved that inside
+   the app every request passing through drive.google.com FAILS
+   in ~300ms (thumbnail w400 / w1200 / w1600 and uc?export=view
+   all error), while the lh3 address itself loads instantly
+   (P8: 400x317 in 12ms; Wikimedia and gstatic controls also
+   fine; the same thumbnail URL opens fine in Safari). So the
+   app now asks lh3 directly and keeps drive.google.com only as
+   a fallback. The file id comes from img.fileId when present,
+   else is parsed out of the stored thumbnail URL; a work with
+   neither keeps the previous forms. Stored data is untouched —
+   the derivation happens here, at request time. */
+function imgFileId(work){
+if(!work || !work.img) return '';
+if(work.img.fileId) return String(work.img.fileId);
+const m = /[?&]id=([^&]+)/.exec(String(work.img.url || ''));
+if(!m) return '';
+try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; }
+}
+function directThumbUrl(work, w){
+const id = imgFileId(work);
+if(!id) return '';
+return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1200);
+}
+function directThumbUrlFromUrl(url, w){
+const s = String(url || '');
+if(s.indexOf('drive.google.com') < 0) return '';
+const m = /[?&]id=([^&]+)/.exec(s);
+if(!m) return '';
+let id = m[1];
+try{ id = decodeURIComponent(id); }catch(e){}
+return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1200);
+}
+/* The candidate ladder, shared by imgHTML (which bakes
+   candidate 0 into the holder as a real <img src>) and
+   hydrateImg (which walks the rest on error). v5.41.3 ORDER:
+   the direct lh3 address sized for the placement; the lh3
+   address at the stored size w1200 (a different cache entry,
+   in case the sized variant is the broken one); the stored
+   drive.google.com/thumbnail URL sized for the placement, then
+   at its stored size (the pre-v5.41.3 leaders, kept as fallback
+   in case lh3 ever fails); for {fileId} works the derived
+   thumbnail URL, then the OAuth route; the primary once more
+   with a cache-buster (exactly once — no retry multiplication);
+   the local files. sz is the placement tier (0 = the stored
+   size), read back from the span's data-size by hydrateImg. */
 function imgCandidates(work, sz){
 const attempts = [];
+const push = (u)=>{ if(u && !attempts.some(a=> a.u === u)) attempts.push({ t:'url', u }); };
+const lhSized = directThumbUrl(work, sz || 1200);
+push(lhSized);
+push(directThumbUrl(work, 1200));
 let primaryUrl = '';
 if(work && work.img && work.img.url){
 primaryUrl = sizedThumbUrl(String(work.img.url), sz);
-attempts.push({ t:'url', u: primaryUrl });
-const storedUrl = sizedThumbUrl(String(work.img.url), 1200);
-if(storedUrl !== primaryUrl) attempts.push({ t:'url', u: storedUrl });
+push(primaryUrl);
+push(sizedThumbUrl(String(work.img.url), 1200));
 }
 if(work && work.img && work.img.fileId){
 const du = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(work.img.fileId) + '&sz=w' + (sz || 1200);
-if(!attempts.some(a=> a.u === du)) attempts.push({ t:'url', u: du });
+push(du);
 attempts.push({ t:'drive', fid: work.img.fileId });
 if(!primaryUrl) primaryUrl = du;
 }
-if(primaryUrl) attempts.push({ t:'url', u: primaryUrl + '&retry=1' });
+const primary = lhSized || primaryUrl;
+if(primary) push(primary + (primary.indexOf('?') >= 0? '&': '?') + 'retry=1');
 if(work && work.file) localCandidates(work.file).forEach(u=> attempts.push({ t:'url', u: u, local: true }));
 return attempts;
 }
@@ -10855,7 +10896,15 @@ const fail = ()=>{ const ph = span.closest('.ph'); if(span.dataset && span.datas
    (.imgok gate in the CSS + the reveal-on-load listener):
    the holder shows its label, then either a real photo or
    the honest plate. The ladder, the watchdog and the re-arm
-   are unchanged; no scheduler returns. */
+   are unchanged; no scheduler returns.
+   v5.41.3 addendum: the ladder's ADDRESSES changed, not its
+   machinery — the on-device diagnostic (see imgCandidates)
+   proved the drive.google.com redirect hop itself fails inside
+   the app on his iPhone while the final lh3 address loads
+   instantly, so candidate 0 is now the direct lh3 address and
+   the drive.google.com forms follow as fallback. The viewer,
+   deep-zoom, prewarm and news/timeline surfaces lead with the
+   same direct address. */
 const IMG_ATTEMPT_TIMEOUT_MS = 12000;
 const IMG_LOCAL_TIMEOUT_MS = 6000;
 const hasFid = !!(work.img && work.img.fileId);
@@ -14597,7 +14646,7 @@ const ws = worksOf(a); if(!ws.length) return;
 const w = ws[0];
 if(w && w.img && w.img.url){
 const im = new Image();
-im.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
+im.src = directThumbUrl(w, IMG_SIZE.viewer) || sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
 }
 }
 function openDetail(id){
@@ -15562,7 +15611,7 @@ dScatterSel = -1;
 let scatterStr = '';
 {
   const dPts = pricesArr.map(p => ({ p: p, j: jpyOf(p) })).filter(x => x.j != null);
-  dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, imgUrl: (x.p.img && x.p.img.url) ? sizedThumbUrl(x.p.img.url, 256) : '', wid: x.p.work_id || '' }));
+  dScatterPlot = dPts.map(x => ({ year: x.p.year, jpy: x.j, imgUrl: (x.p.img && x.p.img.url) ? (directThumbUrl(x.p, 256) || sizedThumbUrl(x.p.img.url, 256)) : '', wid: x.p.work_id || '' }));
   dScatterRecs = dPts.map(x => x.p);
   if(dScatterPlot.length){
     scatterStr = '<h3 class="subhead">全落札の分布（年 × 価格）</h3><div id="dscatterWrap" class="bpchart">' + ptScatter(dScatterPlot, 'detailScatterPick', -1) + '</div><div id="dscatterDetail">' + detailScatterDetailHTML() + '</div>';
@@ -15929,7 +15978,7 @@ try{
 if(!w || !w.img) return;
 if(w.img.fileId){ if(!driveImgCache[w.img.fileId]) loadDriveImage(w.img.fileId).catch(()=>{}); return; }
 if(!w.img.url) return;
-const pu = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
+const pu = directThumbUrl(w, IMG_SIZE.plate) || sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
 if(prewarmedPlates[pu]) return; prewarmedPlates[pu] = 1;
 const pim = new Image(); pim.src = pu;
 }catch(e){}
@@ -16112,7 +16161,12 @@ return;
    image simply stays: no black, no failure plate. */
 const base = document.createElement('img');
 base.loading = 'eager'; base.alt = w.caption || '';
-base.src = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
+/* v5.41.3: the plate leads with the direct lh3 address (see
+   imgCandidates); one fall back to the thumbnail form on error. */
+const baseThumb = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate);
+const baseDirect = directThumbUrl(w, IMG_SIZE.plate);
+base.src = baseDirect || baseThumb;
+if(baseDirect) base.addEventListener('error', ()=>{ if(base.src !== baseThumb) base.src = baseThumb; });
 stage.appendChild(base);
 /* v29.1 (his ask): when the plate is NOT already cached, the stage
    used to sit black while it fetched — say 読み込んでいます… over
@@ -16138,7 +16192,10 @@ im.loading = 'eager'; im.alt = (w && w.caption) || ''; im.src = url;
 st.innerHTML = ''; st.appendChild(im);
 }
 function upgradeViewerImg(box, w, seq){
-const fullUrl = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
+/* v5.41.3: lead with the direct lh3 address; the last attempts
+   fall back to the drive.google.com/thumbnail form. */
+const fullUrl = directThumbUrl(w, IMG_SIZE.viewer) || sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
+const fullThumb = sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer);
 const WAITS = [350, 1000, 2200];
 let attemptNo = 0;
 const attempt = ()=>{
@@ -16165,7 +16222,8 @@ vDeepCheck();
 };
 up.onerror = fail;
 box.appendChild(up);
-up.src = attemptNo > 1 ? fullUrl + '&retry=' + attemptNo : fullUrl;
+const useUrl = (attemptNo >= 3 && fullThumb !== fullUrl)? fullThumb: fullUrl;
+up.src = attemptNo > 1 ? useUrl + (useUrl.indexOf('?') >= 0? '&retry=': '?retry=') + attemptNo : useUrl;
 setTimeout(()=>{ if(!settled && !up.complete) fail(); }, 7000);
 };
 attempt();
@@ -16235,7 +16293,7 @@ if(!viewerWorks || viewerWorks.length < 2) return;
 const n = viewerWorks.length;
 [viewerIdx - 1, viewerIdx + 1].forEach(i=>{
 const w = viewerWorks[((i % n) + n) % n]; if(!w) return;
-if(w.img && w.img.url){ vWarmImage(sizedThumbUrl(String(w.img.url), IMG_SIZE.plate)); vWarmImage(sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer)); }
+if(w.img && w.img.url){ vWarmImage(directThumbUrl(w, IMG_SIZE.plate) || sizedThumbUrl(String(w.img.url), IMG_SIZE.plate)); vWarmImage(directThumbUrl(w, IMG_SIZE.viewer) || sizedThumbUrl(String(w.img.url), IMG_SIZE.viewer)); }
 else if(w.img && w.img.fileId && !driveImgCache[w.img.fileId]){ try{ loadDriveImage(w.img.fileId); }catch(e){} }
 });
 }
@@ -16243,7 +16301,7 @@ else if(w.img && w.img.fileId && !driveImgCache[w.img.fileId]){ try{ loadDriveIm
    loaded — the no-placeholder rule lives here */
 function turnPlateOf(w){
 if(!w) return null;
-if(w.img && w.img.url){ const u = sizedThumbUrl(String(w.img.url), IMG_SIZE.plate); const im = vPreloaded[u]; return (im && im._ok)? u: null; }
+if(w.img && w.img.url){ const u = directThumbUrl(w, IMG_SIZE.plate) || sizedThumbUrl(String(w.img.url), IMG_SIZE.plate); const im = vPreloaded[u]; return (im && im._ok)? u: null; }
 if(w.img && w.img.fileId) return driveImgCache[w.img.fileId] || null;
 return null;
 }
@@ -16959,8 +17017,12 @@ vDeepNoteSave(); vDeepRenderNote();
 vDeepCheck();
 }
 };
-probe.onerror = ()=>{ if(settled) return; settled = true; clearTimeout(wd); vDeepFail(url, seq); };
-probe.src = sizedThumbUrl(url, next);
+/* v5.41.3: probe the direct lh3 address first (see
+   imgCandidates); on its error, retry this tier once through
+   the drive.google.com/thumbnail form before failing. */
+const directNext = directThumbUrlFromUrl(url, next);
+probe.onerror = ()=>{ if(settled) return; if(directNext && probe.src === directNext){ probe.src = sizedThumbUrl(url, next); return; } settled = true; clearTimeout(wd); vDeepFail(url, seq); };
+probe.src = directNext || sizedThumbUrl(url, next);
 }
 /* v12.3: the viewer's live layer readout (shown while zoomed
    or once a deep layer is on screen) + a persisted record the
@@ -18270,7 +18332,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは513件。残り271件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "作家の解剖の続き", "lines": ["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。", "いまの状態：全617人中349人まで完了。残り268人。", "進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]}, {"v": null, "label": "来歴を厚くする", "lines": ["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。", "いまの状態：対象は作家61人・デザイナー7人。"]}, {"v": null, "label": "ドローイング収集", "lines": ["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。", "いまの状態：132点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]}, {"v": null, "label": "関係データの拡充", "lines": ["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。", "いまの状態：564件・312人分まで構築済み。", "次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]}, {"v": null, "label": "作品・ドローイング画像の候補の消化", "lines": ["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。", "確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]}, {"v": null, "label": "系譜で保留になった作家", "lines": ["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。", "保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。", "画像の出どころが開けた人から順に登録します。"]}, {"v": null, "label": "立役者の書籍", "lines": ["立役者125人の著作を集めています。いま245冊まで収録。", "著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]}, {"v": null, "label": "必見の印を作品にも", "lines": ["「必見」の印は、いま作家88人と制作ガイド14章に付いています。", "作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]}, {"v": null, "label": "作家本人のSNSからの作品回収", "lines": ["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。", "キャプションの付け方に規律がある作家へ、順に広げていきます。"]}, {"v": null, "label": "新しい作家の登録", "lines": ["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。", "リクエストで名前が挙がった作家は、そのまま登録します。", "登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]}, {"v": null, "label": "制作過程の写真を集める", "lines": ["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。", "作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。", "載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。", "いまの状態：制作過程の写真は22人・計50点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、カプーア2点、ウォーホル2点、菅木志雄2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点）が入りました。肖像写真は21人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]}, {"v": null, "label": "年代記の型を広げる", "lines": ["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。", "いまの状態：五木田智央にだけ適用済みです。", "広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]}, {"v": null, "label": "展示情報を集める", "lines": ["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。", "いまの状態：展示は521件入っています。展示の画像（ポスターやキービジュアル）があるのは136件で、残りは作家の代表作の画像で代用表示しています。", "進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]}, {"v": null, "label": "価格のある作品の写真を揃える", "lines": ["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。", "いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは528件。残り256件は写真がまだ無く、早見表では「図版なし」で表示されます。", "進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -18756,10 +18818,10 @@ function renderNews(){
   const item = (n) =>
     '<a class="newsrow" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><span class="nmain"><div class="nm" style="margin:0 0 5px"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div><span class="nt">'+esc(n.title||'')+'</span>' +
     (n.note? '<div class="nnote">'+esc(n.note)+'</div>': '') + '</span>' +
-    (n.img && n.img.url? '<img class="nimg" src="'+escA(sizedThumbUrl(n.img.url, 400))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">': '') +
+    (n.img && n.img.url? '<img class="nimg" src="'+escA(directThumbUrlFromUrl(n.img.url, 400) || sizedThumbUrl(n.img.url, 400))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">': '') +
     '</a>';
   const hero = (n) =>
-    '<a class="newshero" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><img class="himg" src="'+escA(sizedThumbUrl(n.img.url, 800))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="nt">'+esc(n.title||'')+'</span><div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>'+(n.note? '<div class="nnote">'+esc(n.note)+'</div>': '')+'</a>';
+    '<a class="newshero" href="'+escA(n.url||'')+'" target="_blank" rel="noopener"><img class="himg" src="'+escA(directThumbUrlFromUrl(n.img.url, 800) || sizedThumbUrl(n.img.url, 800))+'" alt="" loading="lazy" onerror="this.style.display=\'none\'"><span class="nt">'+esc(n.title||'')+'</span><div class="nm"><b>'+esc(n.source||'')+'</b>'+(n.date? ' ・ '+esc(n.date): '')+' ↗</div>'+(n.note? '<div class="nnote">'+esc(n.note)+'</div>': '')+'</a>';
   const corrHTML = () => {
     let h = '<div class="corwrap">';
     if(c.summary) h += '<div class="corlead">'+esc(c.summary)+'</div>';
@@ -19097,7 +19159,7 @@ function tlPhotoHTML(e){
   const ph = e && e.photo;
   if(!ph || !ph.url) return '';
   const cap = [ph.artist? esc(ph.artist): '', ph.title? '《'+esc(ph.title)+'》': '', (ph.year != null && ph.year !== '')? String(ph.year): '', ph.holder? esc(ph.holder): ''].filter(Boolean).join(' ');
-  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="this.classList.add(\'imgok\');var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
+  return '<div class="tlphoto"><span class="imgload">読み込んでいます…</span><img src="'+esc(directThumbUrlFromUrl(ph.url, 1200) || ph.url)+'" alt="'+esc(ph.title || e.title || '')+'" loading="lazy" onload="this.classList.add(\'imgok\');var s=this.previousElementSibling;if(s)s.remove()" onerror="var s=this.previousElementSibling;if(s)s.remove()">'+(cap? '<div class="tlphotocap">'+cap+'</div>': '')+'</div>';
 }
 /* v32.3: one resolver for every timeline artist chip (cards,
    era pages, map sheet) and for eraWorks. Through v32.2 a
@@ -22355,7 +22417,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.41.2';
+const APP_VERSION = '5.41.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
