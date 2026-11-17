@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.58.1">
+<meta name="app-version" content="5.59.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -334,7 +334,7 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
    makers toolbar (id mktoolbar) keeps its own geometry. */
 .moderow .modebar{flex:none; flex-shrink:0;}
 .moderow .modebar button{flex:0 0 40px; width:40px;}
-#toolbar.slim .moderow .modebar, #toolbar.slim .revbtn, #toolbar.slim .regionrow{display:none;}
+#toolbar.slim .moderow .modebar, #toolbar.slim .sortrow, #toolbar.slim .regionrow{display:none;}
 /* v32.13.1: region segmented control — its own row under the
    moderow (artists book only; state synced by syncRegionSeg).
    The globe segment is an icon, the other two are short
@@ -671,6 +671,30 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    cards （作家の言葉 / 姿勢・思想） carry a 要約 chip wherever the text
    is a sourced summary rather than the artist's verbatim words. */
 .procqja{display:block; margin-top:7px; font-size:.85em; color:var(--muted); line-height:1.75;}
+/* v5.59.0: a quote's context line (data-side scene note, one
+   line — his 2026-11-18 rule: a quote is a complete unit of
+   thought and carries its context) and the link-back quote
+   card: when the quote's source is one of the artist's own
+   interview entries, the whole card opens that entry in the
+   reader; the affordance line is underlined (the house rule
+   for tappable text). */
+.qctx{display:block; font-family:var(--sans); font-size:12.5px; color:var(--muted); line-height:1.65; margin-bottom:6px;}
+.procquote.qlink{display:block; width:100%; text-align:left; color:var(--text); cursor:pointer; background:var(--bg2); border:none; border-left:3px solid var(--accent); border-radius:0 10px 10px 0; box-sizing:border-box;}
+.qopen{display:block; margin-top:7px; font-family:var(--sans); font-size:12.5px; color:var(--accent); text-decoration:underline;}
+/* v5.59.0: the clock tab inside the sort segs (works view +
+   list home) — a clock glyph with a tiny direction arrow:
+   ▲ = 古い順 (ascending), ▼ = 新しい順 (descending). */
+.seg button.clkbtn{gap:4px;}
+.seg button.clkbtn svg{width:16px; height:16px; flex:none;}
+.clkdir{font-size:9.5px; line-height:1; flex:none;}
+/* v5.59.0: the list home's sort row — the [登録順][年代別]
+   [clock] seg on its own row under the moderow (the moderow
+   never compresses, v32.13.1; the retired #revBtn pill's
+   place is here). Hidden in the slim bar like the region
+   row. */
+.sortrow{margin-top:8px;}
+.sortrow .seg{flex-wrap:nowrap; gap:6px;}
+.sortrow .seg button{flex:none; white-space:nowrap; min-height:36px; padding:5px 13px; font-size:12.5px;}
 .stmtcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .stmtterm{font-family:var(--serif); font-size:calc(var(--fs) * 1.05); font-weight:600;}
 .stmtreading{font-size:12px; color:var(--muted); margin-left:7px;}
@@ -2314,7 +2338,13 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         <button id="slimFilter" onclick="expandToolbar('filter')" aria-label="タグ絞り込みを開く"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.1 7.1v5.4l-3.8 2v-7.4L4 5z"/></svg><span class="fcount hidden" id="slimFilterCount"></span></button>
       </div>
       <button id="favFilterBtn" class="favfilter" onclick="toggleFavFilter()" aria-label="お気に入りだけ表示">★</button>
-      <button id="revBtn" class="revbtn" onclick="toggleListRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button>
+    </div>
+    <div class="sortrow" id="sortRow">
+      <span class="seg mini" role="group" aria-label="並び替え">
+        <button data-lm="reg" onclick="setListMode('reg')">登録順</button>
+        <button data-lm="era" onclick="setListMode('era')">年代別</button>
+        <button data-lm="clk" class="clkbtn" onclick="toggleListClock()" aria-label="古い順／新しい順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir" id="listClkDir">▲</span></button>
+      </span>
     </div>
     <div class="regionrow" id="regionRow">
       <div class="regseg" id="regSeg" role="group" aria-label="表示する地域">
@@ -10553,7 +10583,7 @@ function cardCapText(cap){
 function displayWorks(a){
   const ws = worksOf(a).slice();
   const mode = state.workSort || 'reg';
-  if(mode === 'reg' || ws.length < 2) return ws;
+  if(mode === 'reg' || mode === 'decades' || ws.length < 2) return ws; /* v5.59.0: 年代別 is a mode of the tab, not a sort — the grouping orders the display list itself */
   const dir = mode === 'old'? 1: -1;
   return ws.map((w, i) => ({ w: w, i: i, y: workYearOf(w) }))
     .sort((p, q) => {
@@ -10596,22 +10626,18 @@ const v = $('viewDetail'); if(!v) return;
 const h = v.querySelector('[data-wgrp="' + key + '"]');
 if(h) h.scrollIntoView({ block: 'start' });
 }
-/* The grouped works tab: the 代表作 shelf first, then ALL works
-   again in decade groups (representatives appear twice by
-   design — a catalogue's plates section plus its full list).
-   The year rule is workYearOf (the caption's first 4-digit
-   number — the same rule the works sort uses); a work with no
-   determinable year lands in the final 制作年不詳 group. Within
-   a group the display order (ws) is kept. Every card carries
-   its ws index in data-workidx, so the existing detail wiring
-   (viewer open + image hydration) serves shelf and groups
-   unchanged, duplicates included. */
-function groupedWorksHTML(a, ws, mkCard){
-const idxOf = new Map();
-ws.forEach((w, i)=>{ if(!idxOf.has(w)) idxOf.set(w, i); });
-const reps = representativeWorks(a).filter(w=> idxOf.has(w));
-let h = '<h3 class="subhead">代表作</h3>';
-h += packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode);
+/* The decade grouping of a works list. The year rule is
+   workYearOf (the caption's first 4-digit number — the same
+   rule the works sort uses); a work with no determinable
+   year lands in the final 制作年不詳 group. Within a group
+   the display order (ws) is kept. Every card carries its ws
+   index in data-workidx, so the existing detail wiring
+   (viewer open + image hydration) serves the groups
+   unchanged. Up to v5.58.1 this rendering (with the 代表作
+   shelf in front of it) WAS the works tab for 30+ artists;
+   v5.59.0 makes it the tab's 年代別 mode — the shelf and
+   the flat full grid live in the 登録順 mode. */
+function decadeGroupsOf(ws){
 const groups = new Map();
 ws.forEach((w, i)=>{
 const y = workYearOf(w);
@@ -10624,12 +10650,14 @@ if(p === 'unknown') return 1;
 if(q === 'unknown') return -1;
 return (+p) - (+q);
 });
+return { groups: groups, keys: keys };
+}
+function decadeSectionsHTML(ws, mkCard, dg){
 const label = k=> (k === 'unknown')? '制作年不詳': (k + '年代');
-h += '<h3 class="subhead">全作品</h3>';
-h += '<div class="wgrpchips">' + keys.map(k=> '<button onclick="jumpWorkGroup(\'' + k + '\')">' + esc(label(k)) + '（' + groups.get(k).length + '）</button>').join('') + '</div>';
-keys.forEach(k=>{
-h += '<h3 class="subhead wgrphead" data-wgrp="' + k + '">' + esc(label(k)) + '<span class="wgrpcnt">' + groups.get(k).length + '点</span></h3>';
-h += packGalleryHTML(groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
+let h = '<div class="wgrpchips">' + dg.keys.map(k=> '<button onclick="jumpWorkGroup(\'' + k + '\')">' + esc(label(k)) + '（' + dg.groups.get(k).length + '）</button>').join('') + '</div>';
+dg.keys.forEach(k=>{
+h += '<h3 class="subhead wgrphead" data-wgrp="' + k + '">' + esc(label(k)) + '<span class="wgrpcnt">' + dg.groups.get(k).length + '点</span></h3>';
+h += packGalleryHTML(dg.groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
 });
 return h;
 }
@@ -10748,7 +10776,28 @@ function profileBandHTML(a){
   }
   return h + '</div>';
 }
-function setWorkSort(mode){ state.workSort = mode; renderDetail(); }
+/* v5.59.0: the works sort row is three mode tabs —
+   [登録順] [年代別] [clock]. workSort carries the mode:
+   'reg' (flat, registration order; the default), 'decades'
+   (the decade-grouped presentation), 'old' / 'new' (flat,
+   chronological). The clock tab toggles the two chronological
+   sorts; entered from 登録順 / 年代別 it re-enters at the
+   last direction used (古い順 the first time). workSort is
+   the state field it always was — it rides the per-book
+   session state, as before. */
+let workClockDir = 'old';
+function setWorkSort(mode){ if(mode === 'old' || mode === 'new') workClockDir = mode; state.workSort = mode; renderDetail(); }
+function toggleWorkClock(){
+const cur = state.workSort || 'reg';
+const next = cur === 'old'? 'new': cur === 'new'? 'old': workClockDir;
+workClockDir = next;
+state.workSort = next;
+renderDetail();
+/* v32.13.2: the order toggle jumps to the top (the list's
+   renderListToTop rule) — mode switches （登録順 / 年代別）
+   do not jump. */
+window.scrollTo(0, 0);
+}
 /* v5.57.0: the works tab's series filter selection, kept per
    artist for the detail session (renderDetail resets it when
    the person changes). null = すべて. */
@@ -14241,7 +14290,7 @@ el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+w
 }
 function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on', b.dataset.m===state.mode); if(MODE_GRIDS[b.dataset.m]){ b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); } });
-syncRevBtn();
+syncSortSeg();
 syncRegionSeg();
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
@@ -14819,32 +14868,65 @@ if(da != null) return y + ' ・享年' + da + '歳';
 return y;
 }
 /* v32.13.0: display-order reverse for the person lists (his
-   2026-11-16 call). The default stays oldest-first; the
-   toggle flips the chronological order to newest-first and
-   back. The direction persists per book under
-   zukan.rev.<ds> (the zukan.smode.<key> pattern); makers
-   keep their own zukan.rev.makers. Unknown birth years stay
-   at the end of their section in BOTH directions — they are
-   not "newest", just unknown — mirroring how they already
-   sink in the default order. Search results keep their
-   name ranking (v27.2) and are not affected. */
-const listRev = {};
-function revOn(){
-  if(listRev[DS] == null){ try{ listRev[DS] = storeGet('zukan.rev.' + DS) === '1'; }catch(e){ listRev[DS] = false; } }
-  return !!listRev[DS];
+   2026-11-16 call) — a pill toggling the chronological order
+   between oldest-first and newest-first.
+   v5.59.0 (his 2026-11-18 call): the order control is rebuilt
+   to match the works view — three tabs [登録順] [年代別]
+   [clock]. listMode replaces the rev toggle: 'reg' = one
+   flat list in registration order; 'era' = the era-sectioned
+   presentation (the list's long-standing form, and the
+   default); 'old' / 'new' = one flat list sorted by birth
+   year, oldest / newest first. Unknown birth years stay at
+   the end in BOTH clock directions — they are not "newest",
+   just unknown (the v32.13.0 rule, kept). The mode persists
+   per book under zukan.lmode.<ds> (the zukan.smode.<key>
+   pattern); the retired zukan.rev.<ds> key is removed on
+   first read (the zukan.merge.<ds> precedent) and its
+   holders land on the default. Makers keep their own toggle
+   (zukan.rev.makers, #mkRevBtn). Search results keep their
+   name ranking (v27.2) in every mode. */
+const listMode = {};
+const listClockDir = {};
+function listModeOn(){
+  if(listMode[DS] == null){
+    let v = null;
+    try{ v = storeGet('zukan.lmode.' + DS); localStorage.removeItem('zukan.rev.' + DS); }catch(e){}
+    listMode[DS] = (v === 'reg' || v === 'old' || v === 'new')? v: 'era';
+    listClockDir[DS] = (v === 'old' || v === 'new')? v: 'old';
+  }
+  return listMode[DS];
 }
-function syncRevBtn(){
-  const b = $('revBtn'); if(!b) return;
-  const r = revOn();
-  b.textContent = r? '新しい順': '古い順';
-  b.classList.toggle('on', r);
+function setListModePersist(m){
+  listMode[DS] = m;
+  if(m === 'old' || m === 'new') listClockDir[DS] = m;
+  try{ storeSet('zukan.lmode.' + DS, m); }catch(e){}
 }
-function toggleListRev(){
-  const v = !revOn();
-  listRev[DS] = v;
-  try{ storeSet('zukan.rev.' + DS, v? '1': '0'); }catch(e){}
-  syncRevBtn();
-  renderListToTop();
+function syncSortSeg(){
+  const row = $('sortRow'); if(!row) return;
+  const m = listModeOn();
+  row.querySelectorAll('button[data-lm]').forEach(b=>{
+    const k = b.dataset.lm;
+    b.classList.toggle('on', k === 'clk'? (m === 'old' || m === 'new'): (k === m));
+  });
+  const dir = $('listClkDir');
+  if(dir) dir.textContent = listClockDir[DS] === 'new'? '▼': '▲';
+}
+function setListMode(m){
+  if(m !== 'reg' && m !== 'era') return;
+  if(listModeOn() === m){ syncSortSeg(); return; }
+  setListModePersist(m);
+  syncSortSeg();
+  /* a presentation switch is a filter-class change: the
+     scroll stays (v32.13.2 reserves the top jump for the
+     order toggle alone). */
+  renderListKeepScroll();
+}
+function toggleListClock(){
+  const m = listModeOn();
+  const next = m === 'old'? 'new': m === 'new'? 'old': listClockDir[DS];
+  setListModePersist(next);
+  syncSortSeg();
+  renderListToTop(); /* v32.13.2: the order toggle jumps to the top */
 }
 /* v32.13.1: the order switch re-orders the WHOLE list, so
    keeping the scroll anchor (renderListKeepScroll) would
@@ -15036,7 +15118,7 @@ listDirty = false; /* v27.7: the list DOM now matches data+state (see markListDi
 listRenderedQuery = state.query;
 syncFavFilterBtn();
 const arr = filteredArtists();
-const rev = revOn();
+const lmode = listModeOn();
 const body = $('listbody');
 const searching = queryToks().length > 0;
 if(!arr.length){
@@ -15061,7 +15143,7 @@ if(searching){
 html += '<div class="grid '+state.mode+'">';
 rankByName(arr).forEach(a=>{ html += personCardHTML(a, null); });
 html += '</div>';
-} else {
+} else if(lmode === 'era') {
 /* v32.13.1: the region control decides both the grouping
    and the cast. 'all' (the default) groups by the era part
    of the section name (eraPartOf) — sections, section keys,
@@ -15095,7 +15177,7 @@ if(s1==='') return 1; if(s2==='') return -1;
 const k1 = secKey[s1], k2 = secKey[s2];
 const i1 = !isFinite(k1), i2 = !isFinite(k2);
 if(i1 || i2) return i1 === i2? 0: (i1? 1: -1);
-return rev? (k1 > k2? -1: k1 < k2? 1: 0): (k1 < k2? -1: k1 > k2? 1: 0);
+return (k1 < k2? -1: k1 > k2? 1: 0);
 });
 order.forEach(sec=>{
 const group = secArr.filter(a=> secOf(a)===sec);
@@ -15112,7 +15194,7 @@ group.sort((x, y)=>{
 const kx = birthSortKey(x), ky = birthSortKey(y);
 const ix = !isFinite(kx), iy = !isFinite(ky);
 if(ix || iy) return ix === iy? 0: (ix? 1: -1);
-return rev? (kx > ky? -1: kx < ky? 1: 0): (kx < ky? -1: kx > ky? 1: 0);
+return (kx < ky? -1: kx > ky? 1: 0);
 });
 /* v32.13.2: the 時代/すべて controls live ONLY in the sticky
    era bar (#eraChips) — repeating them in every in-flow head
@@ -15126,6 +15208,30 @@ html += '</div>';
 /* v32.13.1: a region segment combined with other filters can
    leave the cast empty — say so instead of a blank list. */
 if(!secArr.length) html += '<div class="empty">該当する項目がありません</div>';
+} else {
+/* v5.59.0: the flat modes — 登録順 is the filtered cast in
+   registration order; the clock modes sort the same cast by
+   birth year (oldest / newest first, unknown birth years
+   last in both — the v32.13.0 rule). The region control
+   narrows the cast exactly as it does for the sections. */
+const region = DS === 'artists'? regionOn(): 'all';
+const cast = region === 'all'? arr: arr.filter(a=> regionOfSection(a.section || '') === (region === 'jp'? '日本': '西洋'));
+const flat = cast.slice();
+if(lmode === 'old' || lmode === 'new'){
+const sgn = lmode === 'old'? 1: -1;
+flat.sort((x, y)=>{
+const kx = birthSortKey(x), ky = birthSortKey(y);
+const ix = !isFinite(kx), iy = !isFinite(ky);
+if(ix || iy) return ix === iy? 0: (ix? 1: -1);
+return (kx < ky? -1: kx > ky? 1: 0) * sgn;
+});
+}
+if(!flat.length) html += '<div class="empty">該当する項目がありません</div>';
+else {
+html += '<div class="grid '+state.mode+'">';
+flat.forEach(a=>{ html += personCardHTML(a, null); });
+html += '</div>';
+}
 }
 if(searching){
 const shownIds = new Set(arr.map(a=>String(a.id)));
@@ -15270,8 +15376,14 @@ openSettingsPanel('reqnotif');
    exhibitions, latest first. Artists book only: the button and
    panel ride the prices convention (always in the DTABS order,
    shown only when the record carries exhibitions). */
-const DTABS = ['works','drawings','exhibitions','feat','relations','bio','process','quotes','interviews','influences','books','prices'];
+/* v5.59.0: 発言 (quotes) MERGES into インタビュー (his
+   decision, 2026-11-18) — one tab named インタビュー at the
+   old interviews position, shown when either side carries
+   content. A restored state.tab of 'quotes' is normalized
+   to 'interviews' (setTab + renderDetail). */
+const DTABS = ['works','drawings','exhibitions','feat','relations','bio','process','interviews','influences','books','prices'];
 function setTab(t){
+if(t === 'quotes') t = 'interviews'; /* v5.59.0: the merged tab's old name */
 state.tab = t;
 const pg = $('dpager');
 if(!pg){ renderDetail(); return; }
@@ -15923,7 +16035,10 @@ const procObj = a.process || null;
    the artist's own terms, and the dissection stance. The tab is
    field-driven like the others: it exists only when at least one
    of the three is present. Statement content lives ONLY here;
-   the process tab keeps the making-of material. */
+   the process tab keeps the making-of material.
+   v5.59.0: this content feeds the merged インタビュー tab —
+   hasQuotesTab gates that tab together with the interviews
+   array (the tab shows when either side is present). */
 const termsArr = Array.isArray(a.terms)? a.terms: [];
 const disObj = (procObj && procObj.dissection)? procObj.dissection: null;
 const stanceObj = (disObj && disObj.stance && disObj.stance.text)? disObj.stance: null;
@@ -15957,8 +16072,11 @@ const relCount = relGroups.received.length + relGroups.given.length + relGroups.
 if(state.tab==='drawings' && !dws.length) state.tab = 'works';
 if(state.tab==='exhibitions' && !exsOfA.length) state.tab = 'works';
 if(state.tab==='process' && !hasProcessContent && !pps.length) state.tab = 'works';
-if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
-if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
+/* v5.59.0: a restored 'quotes' state lands on the merged
+   インタビュー tab; the merged tab falls back to 作品 only
+   when it would be entirely empty. */
+if(state.tab==='quotes') state.tab = 'interviews';
+if(state.tab==='interviews' && !intvArr.length && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 if(state.tab==='relations' && !relCount) state.tab = 'works';
 let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
@@ -15981,8 +16099,7 @@ profileBandHTML(a)+
 '<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+(relCount? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+((hasProcessContent || pps.length)? '': ' style="display:none"')+'>制作過程</button>'+
-'<button class="'+(state.tab==='quotes'?'on':'')+'" onclick="setTab(\'quotes\')"'+(hasQuotesTab? '': ' style="display:none"')+'>発言</button>'+
-'<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+(intvArr.length? '': ' style="display:none"')+'>インタビュー</button>'+
+'<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+((intvArr.length || hasQuotesTab)? '': ' style="display:none"')+'>インタビュー</button>'+
 '<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+((inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>影響</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
@@ -16007,17 +16124,33 @@ const seriesKey = wgArr.some(g=> g.key === workSeries.key)? workSeries.key: null
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
 const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(ct)+'</div></figcaption></figure>', e: packEst(ct, workMode) }; };
-/* v5.41.0: 30+ works → 代表作 shelf + decade-grouped archive
-   (groupedWorksHTML); below the threshold the tab renders
-   exactly as before — one packed gallery, no shelf, no
-   headers. */
+/* v5.41.0: 30+ works → 代表作 shelf + decade-grouped archive;
+   below the threshold the tab renders exactly as before —
+   one packed gallery, no shelf, no headers.
+   v5.59.0 (his call, 2026-11-18): the tab's default is the
+   FLAT grid again (the app's original form) — for 30+, the
+   shelf rides on top of one flat grid of all works. The
+   decade-grouped presentation is the 年代別 mode; the clock
+   modes are the flat chronological sorts. The shelf rides
+   in 登録順 only. */
 if(seriesKey){
 const fCards = [];
 ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
 const wgHit = wgArr.find(g=> g.key === seriesKey);
 worksHTML = '<div class="small wseriescnt">'+esc(wgHit.label)+'：'+fCards.length+'点</div>' + packGalleryHTML(fCards, workMode);
 }
-else if(ws.length >= WORKS_GROUP_MIN) worksHTML = groupedWorksHTML(a, ws, mkCard);
+else if((state.workSort || 'reg') === 'decades'){
+worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws));
+}
+else if(ws.length >= WORKS_GROUP_MIN){
+const idxOf = new Map();
+ws.forEach((w, i)=>{ if(!idxOf.has(w)) idxOf.set(w, i); });
+const reps = representativeWorks(a).filter(w=> idxOf.has(w));
+const wCards = [];
+ws.forEach((w, i)=>{ wCards.push(mkCard(w, i)); });
+worksHTML = '<h3 class="subhead">代表作</h3>' + packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode)
++ '<h3 class="subhead">全作品</h3>' + packGalleryHTML(wCards, workMode);
+}
 else{
 const wCards = [];
 ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
@@ -16041,8 +16174,8 @@ worksHTML = '<div class="worksreq shelf"><div class="wrrow"><span class="small">
    person+plus glyph (his 2026-11-16 call). */
 '<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
 '<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
-'<button class="'+(state.workSort==='old'?'on':'')+'" onclick="setWorkSort(\'old\')">古い順</button>' +
-'<button class="'+(state.workSort==='new'?'on':'')+'" onclick="setWorkSort(\'new\')">新しい順</button>' +
+'<button class="'+(state.workSort==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
+'<button class="clkbtn'+((state.workSort==='old' || state.workSort==='new')?' on':'')+'" onclick="toggleWorkClock()" aria-label="古い順／新しい順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(((state.workSort==='old' || state.workSort==='new')? state.workSort: workClockDir)==='new'? '▼': '▲')+'</span></button>' +
 '</span></div><div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
 /* v32.6.0 (item 2): the works mode seg is generated from the
    SAME MODES array as the list side — five stops including
@@ -16311,8 +16444,13 @@ if(procObj.sources && procObj.sources.length) processHTML += '<div class="small"
    while a term's own quote field stays verbatim quote-styled. */
 let quotesHTML = '';
 if(procObj && procObj.quotes && procObj.quotes.length){
-quotesHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>
-'<blockquote class="procquote">'+pTermEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+(q.text_ja? '<span class="procqja">'+pTermEsc(q.text_ja)+'</span>': '')+'</blockquote>').join('');
+quotesHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>{
+const mi = quoteIntvMatch(q, intvArr);
+const ctx = q.context? '<span class="qctx">'+esc(q.context)+'</span>': '';
+const ja = q.text_ja? '<span class="procqja">'+pTermEsc(q.text_ja)+'</span>': '';
+if(mi >= 0) return '<button class="procquote qlink" onclick="openIntvReader('+mi+')">'+ctx+pTermEsc(q.text)+ja+'<span class="qopen">出典のインタビューを開く ›</span></button>';
+return '<blockquote class="procquote">'+ctx+pTermEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+ja+'</blockquote>';
+}).join('');
 }
 if(stanceObj || termsArr.length){
 quotesHTML += '<h3 class="subhead">大事にしている思想</h3>';
@@ -16357,8 +16495,14 @@ return '<button class="intvcard" onclick="openIntvReader('+ii+')">'
 +([iv.source, iv.date].filter(Boolean).length? '<span>'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')
 +(hasFull? '<span class="intvfull">全文あり</span>': '')
 +'</span></span></button>';
-}).join('');
+ }).join('');
 }
+/* v5.59.0: the merged インタビュー panel — the interview
+   cards lead; the former 発言 tab's content follows in the
+   same panel （本人の言葉, then 大事にしている思想 — stance
+   and terms ride inside quotesHTML exactly as before).
+   Nothing from either old tab is dropped. */
+if(quotesHTML) interviewsHTML = interviewsHTML? interviewsHTML + quotesHTML: quotesHTML;
 /* v27.0: 影響 tab — the artists who shaped this one (data-side
    curated). A row whose id resolves in the current dataset
    navigates to that person's detail; an unregistered influence
@@ -16401,7 +16545,6 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="relations">'+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
-+'<div class="dpage" data-dtab="quotes">'+quotesHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
 +'<div class="dpage" data-dtab="influences">'+influencesHTML+'</div>'
 +'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
@@ -16592,6 +16735,22 @@ let viewerKindNext = null;
    the same panel, then the note and the source link — the
    link is underlined, per the house rule for tappable text. */
 let intvReader = { idx: -1, lang: 'ja' };
+/* v5.59.0 (his adopted proposal, 2026-11-18): quote →
+   interview link-back. A quote in the merged インタビュー tab
+   whose source IS one of the same artist's interview entries
+   opens that entry in the reader. Matching is conservative:
+   the quote's URL (its url field, or its source when the
+   source is a URL) against the entries' urls; otherwise an
+   exact source-string equality. No match → the quote renders
+   as a plain card, exactly as before — nothing is inferred
+   and nothing is fabricated. */
+function quoteIntvMatch(q, intvArr){
+if(!q || !intvArr || !intvArr.length) return -1;
+const qurl = q.url || (q.source && /^https?:\/\//.test(String(q.source))? q.source: '');
+if(qurl){ const i = intvArr.findIndex(iv=> !!iv.url && iv.url === qurl); if(i >= 0) return i; }
+if(q.source){ const i = intvArr.findIndex(iv=> !!iv.source && iv.source === q.source); if(i >= 0) return i; }
+return -1;
+}
 function intvEntry(){
 const a = artistById(state.detailId); if(!a) return null;
 const arr = Array.isArray(a.interviews)? a.interviews: [];
@@ -19047,7 +19206,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中457人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは252点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は70人・計161点。","肖像写真は77人。"]},{"v":null,"label":"展示情報","lines":["展示は1,691件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中510人まで完了。残り216人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは252点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は70人・計161点。","肖像写真は77人。"]},{"v":null,"label":"展示情報","lines":["展示は1,691件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23203,7 +23362,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.58.1';
+const APP_VERSION = '5.59.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
