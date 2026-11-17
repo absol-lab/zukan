@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.58.0">
+<meta name="app-version" content="5.58.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -907,16 +907,26 @@ button.inflrow{cursor:pointer;}
 .profband{display:flex; gap:10px; align-items:stretch; margin:9px 0 0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px 10px;}
 /* v5.58.0 (his suggestion, 2026-11-18): the portrait spans the
    band's FULL height — the band's height is set by the row
-   count, and the thumb stretches with it at a 4:5 aspect, so a
-   many-row artist gets a proportionally larger portrait while a
-   few-row artist stays modest. min-height keeps the old 40x50
-   floor for a portrait-only band (no rows). The button and the
-   plate fill the thumb box; the photo itself covers. */
-.pfthumb{flex:0 0 auto; min-width:0; aspect-ratio:4/5; min-height:50px; display:flex;}
+   count, so a many-row artist gets a proportionally larger
+   portrait while a few-row artist stays modest. min-height
+   keeps the old 40x50 floor for a portrait-only band (no rows).
+   v5.58.1 (his device report, 2026-11-18: 「比率もあって
+   ない」): the v5.58.0 plate was a FIXED 4:5 box and the photo
+   COVERED it, so a landscape portrait (Dorrey's editorial
+   photo) was cropped into the tall box and his face was cut.
+   The thumb box now takes the SOURCE IMAGE'S NATURAL aspect:
+   phFit mirrors the loaded image's ratio onto .pfthumb (see
+   phFit); the 4:5 below is only the pre-load placeholder, and
+   the img is contain — a portrait photo is never cropped.
+   The width is capped at 45% of the band: a very wide image
+   stops at the cap and letterboxes inside the box (scaled by
+   width, centred vertically) instead of squeezing the fact
+   rows off the band. */
+.pfthumb{flex:0 1 auto; min-width:0; max-width:45%; aspect-ratio:4/5; min-height:50px; display:flex;}
 .pfthumb .bioportraitbtn{flex:1; height:100%;}
 .pfthumb .ph{display:block; width:100%; height:100%; border-radius:7px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
 .pfthumb .imgholder{display:block; width:100%; height:100%;}
-.pfthumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.pfthumb img{width:100%; height:100%; object-fit:contain; display:block;}
 .pfthumb .biozoom{width:17px; height:17px; right:4px; bottom:4px;}
 .pfthumb .biozoom svg{width:10px; height:10px;}
 /* v5.57.1 (his call, 2026-11-18): the band's items form a
@@ -988,6 +998,20 @@ h3.subhead:first-child{margin-top:8px;}
 .irnote{white-space:pre-wrap; line-height:1.7; margin:10px 0;}
 .irsrc{font-size:13px; margin:10px 0 4px;}
 .irsrc a{text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere;}
+/* v5.58.1: the portrait lightbox — the profile band's portrait
+   opens HERE, not in the works viewer (see openPortraitBox).
+   The #figzoom / #intvreader shell pattern: a fixed overlay, a
+   pill back button in a fixed head, the photo fit-contain on a
+   dark backdrop, its credit beneath. NO transforms, NO zoom,
+   NO animation, NO shared state with the viewer. */
+#portraitbox{position:fixed; inset:0; z-index:700; background:var(--bg); display:flex; flex-direction:column;}
+#portraitbox.hidden{display:none;}
+#portraitbox .pbhead{flex:none; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center;}
+#portraitbox .pbstage{flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:8px 16px;}
+#portraitbox .pbstage .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%; position:relative;}
+#portraitbox .pbstage .imgholder img{max-width:100%; max-height:100%; object-fit:contain; display:block;}
+#portraitbox .pbstage .imgload{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;}
+#portraitbox .pbcap{flex:none; padding:8px 16px calc(14px + env(safe-area-inset-bottom)); color:var(--muted); font-size:12.5px; line-height:1.65; text-align:center; overflow-wrap:anywhere;}
 .tagline{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 .tagline span{border:1px solid var(--line); background:var(--card); border-radius:999px; padding:3px 11px; font-size:12.5px;}
 /* viewer */
@@ -2344,6 +2368,12 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="intvreader" class="hidden" role="dialog" aria-label="インタビュー本文">
   <div class="irhead"><button class="backbtn" onclick="closeIntvReader()">‹ 戻る</button></div>
   <div class="irbody" id="irbody"></div>
+</div>
+
+<div id="portraitbox" class="hidden" role="dialog" aria-label="肖像写真" onclick="closePortraitBox()">
+  <div class="pbhead"><button class="backbtn" onclick="closePortraitBox()">‹ 戻る</button></div>
+  <div class="pbstage" id="pbstage"></div>
+  <div class="pbcap" id="pbcap"></div>
 </div>
 
 <div id="viewer">
@@ -10700,13 +10730,15 @@ function profileBandHTML(a){
   let h = '<div class="profband">';
   if(hasPortrait){
     /* v5.54.0 (his call, 2026-11-17): the portrait itself is
-       tappable — it opens in the works viewer with the source
-       credit (portrait_src) as the caption. The small zoom chip
+       tappable — it opens full-screen with the source credit
+       (portrait_src) as the caption. The small zoom chip
        in the corner is the affordance; no text label. v5.55.0:
        the thumb shrinks to band height and the credit line
        under the photo goes with the big block — the credit
-       still reaches him as the viewer's caption. */
-    h += '<div class="pfthumb"><button class="bioportraitbtn" onclick="openViewerPortrait(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.thumb) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button></div>';
+       still reaches him as the caption. v5.58.1: the opener
+       is the portrait's own lightbox (#portraitbox), NOT the
+       works viewer — see openPortraitBox. */
+    h += '<div class="pfthumb"><button class="bioportraitbtn" onclick="openPortraitBox(artistById(\'' + escA(String(a.id)) + '\'))" aria-label="肖像写真を大きく見る"><span class="ph" data-portrait="1">' + imgHTML(keyWork(a.portrait, a.name || ''), IMG_SIZE.thumb) + '</span><span class="biozoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L21 21"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg></span></button></div>';
   }
   if(rows.length){
     /* v5.57.1: label/value pairs are direct grid items of
@@ -11010,6 +11042,14 @@ const clamped = Math.max(0.55, Math.min(2.0, r));
 if(clamped !== r) ph.classList.add('arx'); else ph.classList.remove('arx');
 ph.style.aspectRatio = clamped.toFixed(3) + ' / 1';
 ph.classList.add('arnat');
+/* v5.58.1: inside the profile band, the box that sizes is
+   .pfthumb (the band's stretched height is the definite axis;
+   the .ph inside is pinned 100%x100%, so the write above is
+   inert there) — mirror the natural ratio onto the thumb box
+   too, so the band portrait renders at the source image's own
+   proportions instead of the old fixed 4:5 cover-crop. */
+const pft = ph.closest('.pfthumb');
+if(pft) pft.style.aspectRatio = clamped.toFixed(3) + ' / 1';
 }
 function phFitSpan(span){
 if(!span) return;
@@ -16603,15 +16643,45 @@ function openViewerProc(a, idx){
 viewerKindNext = 'proc';
 openViewer(processPhotosOf(a).map(p => keyWork(p.img, p.caption || '')), idx, a.id);
 }
-/* v5.54.0: the profile portrait opens in the same viewer;
-   the caption is the portrait's source credit. It rides the
-   'proc' viewer kind — no thumbnail-setting for a portrait.
-   (v5.55.0: the portrait lives in the header's compact band;
-   this opener is unchanged.) */
-function openViewerPortrait(a){
+/* v5.58.1 (DESIGN CHANGE — his device video, 2026-11-18
+   01:55): the profile portrait NO LONGER opens in the works
+   viewer. v5.54.0 routed it there as a synthetic one-item
+   "works" list riding the 'proc' kind, so a single non-work
+   photo was put through the viewer's whole transform stack:
+   the WAAPI sheet animation (translateY, fill both) on the
+   fixed #viewer overlay itself, the page-turn strata
+   (.vpage/.vstage — will-change, 3D perspective on .vimg),
+   the pinch-zoom transform on .vstage and the deep-zoom
+   bitmap swaps. On his iPhone that fixed+transform stack is
+   the recurring compositor fault family (the v5.41.4 and
+   v5.53.0 signatures: ghost copies of the page stacking up,
+   the app painted shrunk into a corner over the wood
+   background, duplicated headers, large white unpainted
+   rectangles) — tapping the enlarged band portrait corrupted
+   the whole page until he navigated back to the list. The
+   portrait now opens in its own minimal lightbox
+   (#portraitbox, the #figzoom / interview-reader shell): the
+   photo fit-contain and whole, its source credit
+   (portrait_src) as the caption beneath, a pill back button;
+   open shows the overlay, close hides it, and a tap anywhere
+   on it closes it. No transforms, no zoom, no slide
+   choreography, no viewer state. The works viewer itself is
+   untouched. (v5.54.0–v5.58.0 this was openViewerPortrait,
+   riding openViewer; the band's tap target is unchanged.) */
+function openPortraitBox(a){
 if(!a || !a.portrait) return;
-viewerKindNext = 'proc';
-openViewer([keyWork(a.portrait, a.portrait_src || a.name || '')], 0, a.id);
+const wobj = keyWork(a.portrait, a.portrait_src || a.name || '');
+const stage = $('pbstage'); if(!stage) return;
+stage.innerHTML = imgHTML(wobj, IMG_SIZE.viewer);
+const span = stage.querySelector('.imgholder');
+if(span) hydrateImg(span, wobj);
+const cap = $('pbcap'); if(cap) cap.textContent = a.portrait_src || a.name || '';
+const ov = $('portraitbox'); if(ov) ov.classList.remove('hidden');
+}
+function closePortraitBox(){
+const ov = $('portraitbox'); if(ov) ov.classList.add('hidden');
+const stage = $('pbstage'); if(stage) stage.innerHTML = '';
+const cap = $('pbcap'); if(cap) cap.textContent = '';
 }
 function openViewer(ws, idx, artistId){
 viewerKind = viewerKindNext || 'works'; viewerKindNext = null;
@@ -18977,7 +19047,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全721人中452人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは250点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は66人・計150点。","肖像写真は76人。"]},{"v":null,"label":"展示情報","lines":["展示は1,664件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中457人まで完了。残り269人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは252点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は577件・320人分まで構築済み。","必見88人のうち、関係がまだ無い18人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は70人・計161点。","肖像写真は77人。"]},{"v":null,"label":"展示情報","lines":["展示は1,691件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23051,6 +23121,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#bizpillbar')) return; /* v23.3: chapter-pill drags belong to the bar's own native scroller; arming the swipe-back here slid the whole screen (his video report) */
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest('#intvreader')) return; /* v5.57.0: the interview reader is a modal overlay — the guide panel's treatment */
+    if(e.target && e.target.closest && e.target.closest('#portraitbox')) return; /* v5.58.1: the portrait lightbox is a modal overlay — the interview reader's treatment */
     if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
@@ -23132,7 +23203,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.58.0';
+const APP_VERSION = '5.58.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
