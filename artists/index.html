@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.47.0">
+<meta name="app-version" content="5.48.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2132,7 +2132,7 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    back button that never scrolls away (flex head row). */
 .figzoomhint{font-size:11px; color:var(--muted); text-align:right; margin-top:4px;}
 .figsvg.zoomable, .figtablewrap.zoomable{cursor:zoom-in;}
-#figzoom{position:fixed; inset:0; z-index:120; background:var(--bg); display:flex; flex-direction:column;}
+#figzoom{position:fixed; inset:0; z-index:700; background:var(--bg); display:flex; flex-direction:column;}
 #figzoom.hidden{display:none;}
 #figzoom .fzhead{flex:none; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center;}
 #figzoom .fzstage{flex:1 1 auto; overflow:auto; padding:10px 14px calc(18px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch;}
@@ -11179,6 +11179,12 @@ let detailStack = [];
    own 戻る still follows reqNotifReturn, so the chain stays
    detail → panel → the screen the panel was opened from. */
 let pendingPanelOrigin = null;
+/* v5.48.0: the 藝大・美大 screen's 世界の美大 entry arms this
+   with a snapshot of the schools session; the Art Business
+   chapter's back button then returns there instead of to the
+   biz index. Declared here (main script) because showView and
+   openBizChapter consult it. */
+let xBizReturn = null;
 /* v32.17.0 (route-aware detail return): the detail's back
    button used to be hard-wired to the person list, so arriving
    from another surface （価格早見表 / 展示 / 年表 / 系譜 …) left
@@ -11198,6 +11204,7 @@ function showView(v){
 if(v === 'list') detailStack = [];
 if(swipeSt && swipeSt.engaged){ const st = swipeSt; swipeSt = null; teardownSwipe(st, false); }
 const prev = view;
+if(prev === 'bizch' && v !== 'bizch') xBizReturn = null; /* v5.48.0: leaving the chapter by any other route drops the 藝大・美大 return */
 if(v!=='settings') document.body.classList.remove('notifopen');
 syncTimelineBtn(v);
 /* v2.70: record the pill-trail — entering the list from a hub view
@@ -11676,7 +11683,7 @@ let guideCalOpen = false;
    chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
-  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['何を学ぶか', 'guide-ch-school-curriculum'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['出願', 'exam-ch8'], ['多摩美・出願', 'exam-ch9'], ['武蔵美・出願', 'exam-ch10'], ['藝大・出願', 'exam-ch11'], ['入学金', 'exam-ch12']] },
+  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
@@ -12097,8 +12104,8 @@ function guideChapterCardHTML(s){
    surface untouched — from here, this major index; from
    その他, the settings view, as before. */
 function guideSchoolsCardHTML(){
-  return '<figure class="work bizcard" onclick="xOpenSchools()">'
-    + '<figcaption><div class="bizcname">大学と教授</div><div class="bizcmeta">東京藝術大学・多摩美術大学・武蔵野美術大学</div></figcaption></figure>';
+  return '<figure class="work bizcard gwcard" onclick="xOpenSchools()">'
+    + '<figcaption><div class="bizcname">藝大・美大</div><div class="bizcmeta">東京藝術大学・多摩美術大学・武蔵野美術大学／大学ごとの教授・出願・学びと、大学情報のまとめ</div></figcaption></figure>';
 }
 /* v28.4: chapter switches inside a major swapped ONLY the
    chapter region (#gchap) in place, driven by the chapter
@@ -12191,7 +12198,7 @@ function renderGuide(){
          button, hidden until opened). */
       bizFigStore = [];
       h += '<div class="smodewrap">' + surfModebarHTML('gd', 'setGdMode') + '</div>';
-      h += '<div class="grid ' + SURF.gd + '" id="gdgrid">' + (m.id === 'exam'? guideSchoolsCardHTML(): '') + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
+      h += '<div class="grid ' + SURF.gd + (m.id === 'exam'? ' examgrid': '') + '" id="gdgrid">' + (m.id === 'exam'? guideSchoolsCardHTML(): '') + m.subs.map(s=> guideChapterCardHTML(s)).join('') + '</div>';
     } else {
       h += '<div class="gbackbar"><button class="backbtn" onclick="guideBackToIdx()">‹ 章の一覧へ戻る</button></div>';
       h += '<div id="gchap">' + guideChapterHTML() + '</div>';
@@ -12949,7 +12956,7 @@ function wireBizFigs(el){
     const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
   });
 }
-function openBizChapter(id){ bizChapterId = id; showView('bizch'); }
+function openBizChapter(id){ if(id !== 'art-schools-of-the-world') xBizReturn = null; bizChapterId = id; showView('bizch'); }
 /* v21.9: the chapter pills moved into the bottom floating bar.
    The bar takes the main pill nav's place while any Art Business
    view is open (syncBizBar, called from showView); on the index no
@@ -13040,7 +13047,8 @@ function renderBiz(){
 }
 function renderBizCh(){
   const el = $('viewBizCh'); if(!el) return;
-  let h = '<div class="bizwrap"><div class="bizbackbar"><button class="backbtn" onclick="showView(\'biz\')">‹ 目次へ戻る</button></div>';
+  const fromSch = !!(xBizReturn && bizChapterId === 'art-schools-of-the-world');
+  let h = '<div class="bizwrap"><div class="bizbackbar"><button class="backbtn" onclick="' + (fromSch? 'xBizWorldBack()': "showView('biz')") + '">' + (fromSch? '‹ 藝大・美大へ戻る': '‹ 目次へ戻る') + '</button></div>';
   if(!bizData){ h += '<div class="empty">読み込み中…</div></div>'; el.innerHTML = h; bizEnsure(); return; }
   if(bizChapterId === 'glossary'){
     h += '<h2 class="biztitle">用語辞典</h2>';
@@ -13214,7 +13222,7 @@ function modeIcon(m){
    v32.16.0: ex/bp are grid cards now too — their switches swap
    grid classes in place like all the others, and the <html>
    data attributes are retired. */
-const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def', exd:'def' };
+const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', gd:'def', exd:'def', sch:'def', univ:'def' };
 /* v32.17.1: the price strip's scroll position, kept across
    re-renders so the detail round-trip returns to the same
    place in the ranking (renderBizPrice rebuilds the strip on
@@ -13234,6 +13242,12 @@ function setGalMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gal = m; storeSet(
   document.querySelectorAll('.galgrid').forEach(g=>{ g.className = 'galgrid m-' + m; }); syncSurfBar('gal'); }
 function setGenMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gen = m; storeSet('zukan.smode.gen', m);
   const g = $('gengrid'); if(g) g.className = 'grid ' + m; syncSurfBar('gen'); }
+/* v5.48.0: the 藝大・美大 surfaces' own switchers — professor
+   cards (zukan.smode.sch) and university cards (zukan.smode.
+   univ). The schools view's frames are render functions, so a
+   mode switch simply re-renders the current frame. */
+function setSchMode(m){ if(MODES.indexOf(m) < 0) return; SURF.sch = m; storeSet('zukan.smode.sch', m); xRenderTop(); }
+function setUnivMode(m){ if(MODES.indexOf(m) < 0) return; SURF.univ = m; storeSet('zukan.smode.univ', m); xRenderTop(); }
 function setExMode(m){ if(MODES.indexOf(m) < 0) return; SURF.ex = m; storeSet('zukan.smode.ex', m);
   document.querySelectorAll('.exgrid').forEach(g=>{ MODES.forEach(x=>g.classList.remove(x)); g.classList.add(m); packGridEl(g, m); }); syncSurfBar('ex'); }
 function setBpMode(m){ if(MODES.indexOf(m) < 0) return; SURF.bp = m; storeSet('zukan.smode.bp', m);
@@ -13246,7 +13260,7 @@ function setBizMode(m){ if(MODES.indexOf(m) < 0) return; SURF.biz = m; storeSet(
 /* v32.12.0: the guide chapter index grid swaps its mode class
    in place, same as the biz/gen grids. Own stored key. */
 function setGdMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gd = m; storeSet('zukan.smode.gd', m);
-  const g = $('gdgrid'); if(g) g.className = 'grid ' + m; syncSurfBar('gd'); }
+  const g = $('gdgrid'); if(g) g.className = 'grid ' + m + (g.classList.contains('examgrid')? ' examgrid': ''); syncSurfBar('gd'); }
 /* v32.15.0: the artist page's 展示 tab grids (two of them —
    開催中・これから / 過去） swap their mode class in place,
    exactly like the gd/biz grids. Own stored key (zukan.smode.exd);
@@ -14840,6 +14854,13 @@ prefetchViewerImage(a);
    showView re-renders every target surface on entry, so the
    origin comes back exactly as its own renderer builds it. */
 function detailHome(){
+/* v5.48.0: a chain entered from the 藝大・美大 (schools) view
+   carries its session frame at the stack's bottom and no
+   detailOrigin; the primary back button returns to the
+   university page, like ‹ 前へ does via restorePanelOrigin. */
+if(!detailOrigin && detailStack.length && detailStack[0] && detailStack[0].panel === 'schools'){
+const f = detailStack[0]; detailStack = []; restoreSchoolsSession(f); return;
+}
 const o = detailOrigin; detailOrigin = null; detailStack = [];
 if(o && o.view && o.view !== 'detail' && o.view !== 'list'){
 if(o.ds && o.ds !== DS){ switchDataset(o.ds); if(view !== o.view) showView(o.view); }
@@ -14856,6 +14877,7 @@ showView('list');
    reqNotifReturn with the detail view; the return target the
    panel remembered must survive the detour. */
 function restorePanelOrigin(f){
+if(f.panel === 'schools'){ detailStack = []; restoreSchoolsSession(f); return; }
 detailStack = [];
 if(f.ds && f.ds !== DS) switchDataset(f.ds);
 bellTab = f.bellTab || 'notifs';
@@ -15580,7 +15602,7 @@ if(state.tab==='quotes' && !hasQuotesTab) state.tab = 'works';
 if(state.tab==='interviews' && !intvArr.length) state.tab = 'works';
 if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
 if(state.tab==='relations' && !relCount) state.tab = 'works';
-let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail')? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(a.name)+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
@@ -18513,7 +18535,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド14章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["制作ガイドの「美大」に、章「美大で何を学ぶか——入学前に搾り取る」を入れました（v5.43.0）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、美大のページから作家ページへ飛べるようになります。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖の続き","lines":["作家1人につき、どう作るか（制作プロセス）、本人の発言・思想、評価と批判、論文やエッセイの吸収までを揃える作業です。","いまの状態：全632人中370人まで完了。残り262人。","進め方：作家のリクエストや収集があるたびに、その作家は解剖を含む全項目を集め直す決まりにしています。"]},{"v":null,"label":"来歴を厚くする","lines":["来歴（作家の歩み）が短い・薄い作家を、出典のある事実で厚くします。","いまの状態：対象は作家61人・デザイナー7人。"]},{"v":null,"label":"ドローイング収集","lines":["作家ページの「ドローイング」タブに、作品と同じ基準（公式の出どころ・作品の同定を確認）でドローイングを集めます。","いまの状態：150点まで収録。作家の登録・収集のたびに、その作家のドローイングも一緒に集める決まりです。"]},{"v":null,"label":"関係データの拡充","lines":["作家同士の関係（影響・師弟・同じ系譜・比較）を、両方の作家ページに出る形で増やします。","いまの状態：577件・320人分まで構築済み。","次は「必見」の88人のうち、関係がまだ無い21人（もの派・具体の作家、日本の近代の作家が中心）から埋めます。"]},{"v":null,"label":"作品・ドローイング画像の候補の消化","lines":["登録候補の画像189点（作品173点・ドローイング16点）が、1点ずつ目で見て確認する順番待ちになっています。","確認できたものから登録します。当て推量の画像や、別作品・部分図は入れません。"]},{"v":null,"label":"系譜で保留になった作家","lines":["絵画の系譜に名前はあるのに、まだ図鑑に登録できていない作家が60人います。","保留の理由：公式の出どころに、権利の確認できる作品画像が無いためです。基準を下げて入れることはしません。","画像の出どころが開けた人から順に登録します。"]},{"v":null,"label":"立役者の書籍","lines":["立役者125人の著作を集めています。いま245冊まで収録。","著作がまだ1冊も無い18人と、収録が薄い人を順に埋めます。"]},{"v":null,"label":"必見の印を作品にも","lines":["「必見」の印は、いま作家88人と制作ガイド6章に付いています。","作品にも広げたいところですが、どの作品に付けるか（選び方のルール）がまだ決まっていません。ルールを決めてから付けます。"]},{"v":null,"label":"作家本人のSNSからの作品回収","lines":["作家本人のSNS投稿から作品を集める方法を、クランストンで検証しました（完成作が全体で写っているものだけを、キャプションと照合して同定する）。","キャプションの付け方に規律がある作家へ、順に広げていきます。"]},{"v":null,"label":"新しい作家の登録","lines":["いまは、登録済みの作家の情報を濃くする期間にしているので、新しい作家の登録は止めています。","リクエストで名前が挙がった作家は、そのまま登録します。","登録を再開するときは、美術史の年表に名前がある作家から、作品画像の権利が確認できた順に進めます。"]},{"v":null,"label":"制作過程の写真を集める","lines":["作家が描いている所や、作品ができていく途中の写真を集めます。完成した作品だけでは分からない、どうやって絵が作られていくかが見えるのが、一番参考になるからです。","作品とは別の種類として集めます（完成した作品の登録の基準はそのまま）。その作家が実際に作っている所か、その作品の制作途中だと確認できる写真だけを入れます。どの作品の制作風景か分かる写真は、その作品と結びつけて載せます。","載せる場所は作家ページにできています：「制作過程」タブ（制作風景の写真か、作り方の解剖がある作家だけ出ます）と、来歴タブの上の肖像写真です。あとは写真を集めて入れる作業が残っています。","いまの状態：制作過程の写真は28人・計59点（ベーコン12点、クランストン10点、小畑多丘4点、毛利悠子3点、クリスティーヌ・サファ3点、カプーア2点、ウォーホル2点、菅木志雄2点、ヒルマ・アフ・クリント2点、安藤忠雄1点、杉本博司1点、森山大道1点、クォールズ1点、ゴードン1点、サラ・ジー1点、名和晃平1点、川島秀明1点、友沢こたお1点、バーニー1点、アダム・エリオット1点、水江未来1点、タトリン1点、イソロット1点、フカミエリ1点、宮島達男1点、イケムラレイコ1点、藤本由紀夫1点、クエイ兄弟1点）が入りました。肖像写真は28人（カプーア／安藤忠雄／クランストン／ウォーホル／ベーコン／シャーマン／岡崎乾二郎／クォールズ／鴨治晃次／小林正人／毛利悠子／ゴードン／春日佳歩／湯浅政明／ディクス／モディリアーニ／タトリン／フカミエリ／小畑多丘／サイドコア／ダムタイプ／ルフ／ケントリッジ／イケムラレイコ／宮崎駿／中村政人／クリスティーヌ・サファ／ヒルマ・アフ・クリント）に入っています。作家の収集のたびに、制作過程の写真と肖像も一緒に集める決まりです。"]},{"v":null,"label":"年代記の型を広げる","lines":["作家ページの「年代記」を、五木田智央のページで作った型に作り替えます。時代ごとに「何を描いていたか」「何をしていたか」を分けて書き、代表作を大きく見せ、時代の切り替えは上のチップでできる形です。","いまの状態：五木田智央にだけ適用済みです。","広げ方：時代の区切りと中身が出典のある資料から作れる作家から順に。区切りを当て推量で作ることはしません。"]},{"v":null,"label":"展示情報を集める","lines":["作家ページに「展示」タブができました（v32.15.0）。その作家の展示が、開催中・これから→過去の展示の順に、ポスターのカードで並びます。","いまの状態：展示は637件入っています。展示自身の画像（ポスターやキービジュアル）が登録されているのは117件で、残りは作家の代表作の画像で代用表示しています。","進め方：開催中・開催予定の展示とポスター画像を、公式の出どころで確認できたものから足していきます。"]},{"v":null,"label":"価格のある作品の写真を揃える","lines":["作品価格早見表のカードには、その作品自身の写真だけを出す決まりにしました（v32.17.1）。別の作品の写真で代用はしません。","いまの状態：価格の記録784件のうち、その作品自身の写真が登録されているのは627件。残り157件は写真がまだ無く、早見表では「図版なし」で表示されます。","進め方：価格の高い作品から順に、公式の出どころで確認できた写真を登録していきます。"]},{"v":null,"label":"美大カリキュラムの深掘り","lines":["藝大・美大の画面に「何を学ぶか」（美大で何を学ぶか）を入れました（v5.43.0に制作ガイドの章として作り、v5.48.0で藝大・美大へ移設）。日本の3校と世界のトップ校について、公式のカリキュラムを調べた第1層です。","いまの状態：第2層（藝大油画のシラバスの本文、技法・材料の研究室の出版物、学生や卒業生の声、本）は集まりました。YouTubeでは藝大の地塗りや講評の映像は見つかっていません。","進め方：集まった分を章へ反映していきます。あわせて「藝大・美大」のページ（v5.44.0）で、3大学の教授陣をまとめました。"]},{"v":null,"label":"美大の教授を図鑑に登録","lines":["「藝大・美大」のページ（v5.44.0）に載せた教授94名のうち、東京藝術大学の14名は図鑑への登録が済みました。まだ登録されていない作家は64名です（多摩美術大学36名・武蔵野美術大学28名）。","進め方：大学ごとの波に分けて、出典と作品画像が確認できた人から登録します。登録した教授は、藝大・美大のページから作家ページへ飛べるようになります。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22628,7 +22650,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.47.0';
+const APP_VERSION = '5.48.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -22945,7 +22967,7 @@ function renderSettingsMain(){
     '<div class="setttl">その他</div>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'drive\')"><span class="ic">'+SICON.cloud+'</span><span class="lb">Google Drive 同期</span><span id="driveval">'+esc(driveVal())+'</span><span class="chev">›</span></button>'+
     '<button class="pillrow" onclick="openSettingsPanel(\'request\')"><span class="ic">'+SICON.personPlus+'</span><span class="lb">作家・デザイナーの登録依頼</span><span>'+esc(reqSummaryLabel())+'</span><span class="chev">›</span></button>'+
-    '<button class="pillrow" onclick="xOpenSchools()"><span class="ic">'+SICON.palette+'</span><span class="lb">美大——大学と教授</span><span>3大学・教授94名</span><span class="chev">›</span></button>'+
+    '<button class="pillrow" onclick="xOpenSchools()"><span class="ic">'+SICON.palette+'</span><span class="lb">藝大・美大</span><span>3大学・教授94名</span><span class="chev">›</span></button>'+
     '<div class="groupcard">'+
       srow(SICON.palette, 'テーマカラー', themeName(), "openSettingsPanel('theme')")+
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
@@ -23478,6 +23500,15 @@ button.proflink{background:none; border:none; padding:0; font-family:var(--headf
 .profreg{font-size:11px; border:1px solid var(--accent); color:var(--accent); border-radius:999px; padding:1px 7px;}
 .proffield{font-size:13.5px; line-height:1.6; margin-top:3px;}
 .profcls{font-size:12.5px; color:var(--muted); line-height:1.65; margin-top:2px;}
+/* v5.48.0: 藝大・美大 — card grids (professors / universities)
+   and the guide 美大 index brush-up (gateway spans the row;
+   chapter-card meta aligns to the bottom edge). */
+.schgrid{margin:2px 0 10px;}
+#gdgrid .gwcard{grid-column:1/-1; border:1.5px solid var(--accent);}
+#gdgrid .gwcard .bizcname{font-size:17px;}
+#gdgrid.examgrid figure.work{display:flex;}
+#gdgrid.examgrid figure.work figcaption{display:flex; flex-direction:column; flex:1;}
+#gdgrid.examgrid .bizcmeta{margin-top:auto; padding-top:3px;}
 </style>
 <div id="xscreen" role="dialog" aria-modal="true">
   <div class="xhead"><button class="txtbtn" id="xbackbtn" onclick="xBack()">← 戻る</button><div class="xttl" id="xtitle">立役者</div><button class="txtbtn" onclick="xClose()">閉じる</button></div>
@@ -23522,9 +23553,54 @@ function xJumpArtist(id){
     const d = CTX.artists.DB;
     if(d && d.artists){ const a = d.artists.find(x => String(x.id) === String(id)); if(a) realId = a.id; }
   }catch(e){}
+  /* v5.48.0 (device bug, his recording 2026-11-17 17:58): from
+     the guide's 美大 major, tapping a registered professor
+     bounced back to the guide index — the artist page renders
+     in the BASE layer, and the guide panel (a fixed overlay
+     above it) was still open on top, hiding the detail. The
+     schools session is now snapshotted as a panel-origin
+     frame: the guide panel is hidden for the detour, and BACK
+     (either button) restores the whole session — university
+     page, schools view, and the guide underneath if it was
+     open. From その他 the same frame makes BACK land on the
+     university page instead of dropping the schools view. */
+  const frame = { panel: 'schools', ds: DS, view: view,
+    guide: !$('guidepanel').classList.contains('hidden'),
+    stack: XSTACK.slice() };
+  pendingPanelOrigin = frame;
+  if(frame.guide){
+    $('guidepanel').classList.add('hidden');
+    const ng = $('navGuide'); if(ng) ng.classList.remove('on');
+    sheetLockSync();
+  }
   xClose();
   openCrossDetail('artists', realId);
+  if(view !== 'detail'){
+    /* the record is not on this device — openDetail refused;
+       put the session back rather than stranding the reader */
+    pendingPanelOrigin = null;
+    restoreSchoolsSession(frame);
+  }
 }
+/* v5.48.0: restore a snapshotted 藝大・美大 session (schools
+   stack + the base view and dataset under it + the guide
+   panel when it was open). Shared by the detail chain's
+   panel-origin restore and the 世界の美大 link's return. */
+function xRestoreSession(s){
+  if(!s) return;
+  if(s.ds && s.ds !== DS) switchDataset(s.ds);
+  const target = (s.view && s.view !== 'detail')? s.view: 'list';
+  if(view !== target) showView(target);
+  if(s.guide){
+    $('guidepanel').classList.remove('hidden');
+    const ng = $('navGuide'); if(ng) ng.classList.add('on');
+  }
+  XSTACK.length = 0;
+  (s.stack || []).forEach(fr => XSTACK.push(fr));
+  if(XSTACK.length){ $('xscreen').classList.add('schmode'); xRenderTop(); }
+  sheetLockSync();
+}
+function restoreSchoolsSession(f){ xRestoreSession(f); }
 function xJumpDesigner(id){
   xClose();
   openCrossDetail('designers', id);
@@ -24269,64 +24345,185 @@ async function xLoadGal(){
    display plainly, with no link. Entry: the 美大 pillrow in
    その他. The section's search follows the makers pattern:
    a professor's name finds their university's professors. */
+let XSCHOOLSDOC = null;
 async function xLoadSchools(){
   if(XSCHOOLS) return XSCHOOLS;
-  try{ const d = await xFetchJSON('schools.json'); XSCHOOLS = (d && d.universities) || []; }catch(e){}
+  try{ const d = await xFetchJSON('schools.json'); XSCHOOLSDOC = d || null; XSCHOOLS = (d && d.universities) || []; }catch(e){}
   return XSCHOOLS;
 }
 let xSchoolQuery = '';
 function xOpenSchools(){
   XSTACK.length = 0;
   $('xscreen').classList.add('schmode');
-  xGo('美大', b => {
+  xGo('藝大・美大', b => {
     b.innerHTML = '<p class="bodytext">読み込んでいます…</p>';
     xLoadSchools().then(us => {
-      if(!us || !us.length){ b.innerHTML = '<p class="bodytext">大学データを読み込めませんでした。</p>'; return; }
-      let h = '<p class="bodytext">大学ごとに、油画系の教授陣（専任・客員・非常勤）をまとめたページ。図鑑に登録されている作家の教授は名前が押せるようになっていて、押すとその作家のページへ飛ぶ。</p>';
-      h += '<input class="xsearch" id="schq" type="text" placeholder="教授の名前で探す" autocomplete="off" value="' + escA(xSchoolQuery) + '" oninput="xSchoolInput(this.value)">';
+      if(!us || !us.length){ if(XSTACK.length === 1) b.innerHTML = '<p class="bodytext">大学データを読み込めませんでした。</p>'; return; }
+      if(XSTACK.length !== 1) return; /* a deeper frame owns the body now */
+      let h = '<p class="bodytext">大学ごとに、教授・出願・試験・学びをまとめたページ。大学情報のまとめ（何を学ぶか・出願の全体像・入学金）と、世界の美大への入口もここにある。</p>';
+      h += '<input class="xsearch" id="schq" type="text" placeholder="教授の名前・大学・大学情報で探す" autocomplete="off" value="' + escA(xSchoolQuery) + '" oninput="xSchoolInput(this.value)">';
       h += '<div id="schlist">' + xSchoolsListHTML() + '</div>';
       b.innerHTML = h;
+      xWireSchPlates(b);
     });
   });
 }
 function xSchoolsListHTML(){
   const us = XSCHOOLS || [];
+  const feats = (XSCHOOLSDOC && XSCHOOLSDOC.features) || [];
   const nq = normSearch(xSchoolQuery || '');
   if(!nq){
-    return us.map(u => {
-      const linked = (u.professors || []).filter(p => p.zukan_id != null).length;
-      return '<button class="xcard" onclick="xSchoolDetail(\'' + escA(u.id) + '\')"><span class="xn">' + esc(u.name) + '</span><div class="xm">' + esc(u.departments || '') + '<br>教授 ' + (u.professors || []).length + '名（図鑑に登録されている作家 ' + linked + '名）</div></button>';
-    }).join('');
+    let h = surfModebarHTML('univ', 'setUnivMode');
+    h += '<div class="grid ' + SURF.univ + ' schgrid">' + us.map(u => xUnivCardHTML(u)).join('') + '</div>';
+    h += '<div class="xsec">大学情報</div>';
+    feats.forEach((f, i) => { h += xFeatureRowHTML(i); });
+    h += '<button class="xcard" onclick="xOpenBizWorld()"><span class="xn">世界の美大</span><div class="xm">アートビジネスの章「世界の美大」へ（海外の美大）</div></button>';
+    return h;
   }
   let h = '';
+  const um = us.filter(u => normSearch(u.name || '').includes(nq));
+  if(um.length) h += '<div class="grid ' + SURF.univ + ' schgrid">' + um.map(u => xUnivCardHTML(u)).join('') + '</div>';
+  feats.forEach((f, i) => { if(normSearch((f.title || '') + ' ' + (f.short || '') + ' ' + (f.lead || '')).includes(nq)) h += xFeatureRowHTML(i); });
   us.forEach(u => {
-    const hits = (u.professors || []).filter(p => normSearch((p.name || '') + ' ' + (p.field || '')).includes(nq));
+    const hits = (u.professors || []).map((p, i) => [p, i]).filter(([p]) => normSearch((p.name || '') + ' ' + (p.field || '')).includes(nq));
     if(!hits.length) return;
-    h += '<div class="xsec">' + esc(u.name) + '</div>' + hits.map(p => xProfRowHTML(p)).join('');
+    h += '<div class="xsec">' + esc(u.name) + '</div>' + surfModebarHTML('sch', 'setSchMode')
+      + '<div class="grid ' + SURF.sch + ' schgrid">' + hits.map(([p, i]) => xProfCardHTML(p, u.id, i)).join('') + '</div>';
   });
-  return h || '<div class="empty">該当する教授はいません</div>';
+  return h || '<div class="empty">該当するものはいません</div>';
 }
-function xSchoolInput(v){ xSchoolQuery = v; const el = $('schlist'); if(el) el.innerHTML = xSchoolsListHTML(); }
+function xUnivCardHTML(u){
+  const linked = (u.professors || []).filter(p => p.zukan_id != null).length;
+  return '<figure class="work" onclick="xSchoolDetail(\'' + escA(u.id) + '\')">'
+    + '<div class="ph noplate"><span class="npname">' + esc(u.name) + '</span><span class="npmark">図版なし</span></div>'
+    + '<figcaption><div class="nm">' + esc(u.name) + '</div>'
+    + '<div class="yrs">' + esc(u.place || '') + '</div>'
+    + '<div class="yrs">教授 ' + (u.professors || []).length + '名（図鑑登録 ' + linked + '名）</div></figcaption></figure>';
+}
+function xFeatureRowHTML(i){
+  const f = ((XSCHOOLSDOC && XSCHOOLSDOC.features) || [])[i]; if(!f) return '';
+  const head = f.short || f.title;
+  const sub = ((f.short && f.short !== f.title)? f.title + '　': '') + (f.lead? String(f.lead).slice(0, 56) + '…': '');
+  return '<button class="xcard" onclick="xOpenFeature(' + i + ')"><span class="xn">' + esc(head) + '</span>' + (sub? '<div class="xm">' + esc(sub) + '</div>': '') + '</button>';
+}
+function xOpenFeature(i){
+  const f = ((XSCHOOLSDOC && XSCHOOLSDOC.features) || [])[i]; if(!f) return;
+  xGo(f.title, b => { b.innerHTML = xChapterHTML(f); wireBizFigs(b); });
+}
+/* v5.48.0: 世界の美大 is a LINK, not a move — the chapter stays
+   in Art Business (single source); the schools session is
+   snapshotted so the chapter's back button returns here. */
+function xOpenBizWorld(){
+  xBizReturn = { ds: DS, view: view,
+    guide: !$('guidepanel').classList.contains('hidden'),
+    stack: XSTACK.slice() };
+  xClose();
+  openBizChapter('art-schools-of-the-world');
+}
+function xBizWorldBack(){
+  const s = xBizReturn; xBizReturn = null;
+  if(!s){ showView('biz'); return; }
+  xRestoreSession(s);
+}
+function xSchoolInput(v){ xSchoolQuery = v; const el = $('schlist'); if(el){ el.innerHTML = xSchoolsListHTML(); xWireSchPlates(el); } }
 function xSchoolDetail(uid){
   const u = (XSCHOOLS || []).find(x => x.id === uid); if(!u) return;
   xGo(u.name, b => {
-    let h = '';
+    let h = '<div class="xsec" style="margin-top:2px;">概要</div>';
     if(u.intro) h += xParas(u.intro);
     h += '<div class="small" style="margin:2px 0 6px;">' + esc(u.departments || '') + '／教授 ' + (u.professors || []).length + '名</div>';
-    h += (u.professors || []).map(p => xProfRowHTML(p)).join('');
+    h += '<div class="xsec">教授</div>' + surfModebarHTML('sch', 'setSchMode');
+    h += '<div class="grid ' + SURF.sch + ' schgrid">' + (u.professors || []).map((p, i) => xProfCardHTML(p, u.id, i)).join('') + '</div>';
+    if(u.exam) h += '<div class="xsec">出願・試験</div>' + xChapterHTML(u.exam);
+    if(u.study) h += '<div class="xsec">学び</div>' + (u.study.sections || []).map(sec => xSectionBodyHTML(sec)).join('');
+    b.innerHTML = h;
+    xWireSchPlates(b);
+    wireBizFigs(b);
+  });
+}
+/* v5.48.0: professor rosters are CARDS now (the pinned artist
+   grid card), with this surface's own 5-mode switcher
+   (zukan.smode.sch). Registered professors carry their
+   artist's image — portrait first, else the first work, the
+   artist cards' own resolution order — and tap through to the
+   artist page via xJumpArtist. Unregistered professors get
+   the no-image plate (never a substitute image) and tap to a
+   detail frame with the FULL roster info (役職・担当・分野 —
+   the complete 担当 text stays reachable). The old row layout
+   is gone wholesale, which also removes the row text overlap
+   seen in the 2026-11-17 recording. */
+function xArtistRec(id){
+  try{
+    const d = CTX.artists.DB;
+    if(d && d.artists){ const a = d.artists.find(x => String(x.id) === String(id)); if(a) return a; }
+  }catch(e){}
+  return null;
+}
+function xSchWorkOf(a){
+  if(!a) return null;
+  if(a.portrait) return keyWork(a.portrait, a.name);
+  return (a.works && a.works[0]) || null;
+}
+function xWireSchPlates(scope){
+  if(!scope) return;
+  scope.querySelectorAll('[data-schwork]').forEach(ph => {
+    if(ph.querySelector('img')) return;
+    const w = xSchWorkOf(xArtistRec(ph.getAttribute('data-schwork')));
+    if(w) ph.innerHTML = imgHTML(w, tileSize());
+  });
+}
+function xProfCardHTML(p, uid, idx){
+  const meta = '<div class="yrs">' + esc(p.position || '') + '</div>' + (p.field? '<div class="yrs">' + esc(p.field) + '</div>': '');
+  if(p.zukan_id != null){
+    const w = xSchWorkOf(xArtistRec(p.zukan_id));
+    const plate = w
+      ? '<div class="ph" data-schwork="' + escA(String(p.zukan_id)) + '">' + imgHTML(w, tileSize()) + '</div>'
+      : '<div class="ph noplate"><span class="npname">' + esc(p.name) + '</span><span class="npmark">図版なし</span></div>';
+    return '<figure class="work" onclick="xJumpArtist(\'' + escA(String(p.zukan_id)) + '\')">' + plate
+      + '<figcaption><div class="nm">' + esc(p.name) + ' <span class="profreg">図鑑登録</span></div>' + meta + '</figcaption></figure>';
+  }
+  return '<figure class="work" onclick="xProfDetail(\'' + escA(uid) + '\',' + idx + ')">'
+    + '<div class="ph noplate"><span class="npname">' + esc(p.name) + '</span><span class="npmark">図版なし</span></div>'
+    + '<figcaption><div class="nm">' + esc(p.name) + '</div>' + meta + '</figcaption></figure>';
+}
+function xProfDetail(uid, idx){
+  const u = (XSCHOOLS || []).find(x => x.id === uid); if(!u) return;
+  const p = (u.professors || [])[idx]; if(!p) return;
+  xGo(p.name, b => {
+    let h = '<div class="profhead"><span class="profname">' + esc(p.name) + '</span>'
+      + (p.position? '<span class="profpos">' + esc(p.position) + '</span>': '') + '</div>';
+    h += '<div class="proffield">' + esc(u.name) + '</div>';
+    if(p.field) h += '<div class="proffield">' + esc(p.field) + '</div>';
+    if((p.classes || []).length) h += '<div class="profcls">担当：' + p.classes.map(c => esc(c)).join('／') + '</div>';
     b.innerHTML = h;
   });
 }
-function xProfRowHTML(p){
-  const nm = (p.zukan_id != null)
-    ? '<button class="proflink" onclick="xJumpArtist(\'' + escA(String(p.zukan_id)) + '\')">' + esc(p.name) + '</button>'
-    : '<span class="profname">' + esc(p.name) + '</span>';
-  let h = '<div class="profrow"><div class="profhead">' + nm
-    + (p.position? '<span class="profpos">' + esc(p.position) + '</span>': '')
-    + (p.zukan_id != null? '<span class="profreg">図鑑登録</span>': '') + '</div>';
-  if(p.field) h += '<div class="proffield">' + esc(p.field) + '</div>';
-  if((p.classes || []).length) h += '<div class="profcls">担当：' + p.classes.map(c => esc(c)).join('／') + '</div>';
-  return h + '</div>';
+/* v5.48.0: chapter content rendered inside the schools view —
+   the moved 出願 chapters on each university page, the 学び
+   sections, and the 大学情報 features. Mirrors the guide
+   renderer's shape (lead, section headings, paragraphs, cases,
+   figures interleaved by after/beforeCase) but paragraphs stay
+   PLAIN text: the guide's term links would push snapshots onto
+   the hidden guide's stack and corrupt it. Figures reuse
+   bizFigsHTML (data-pure) + wireBizFigs; #figzoom sits above
+   this view now (z-index 700 > 600). */
+function xSectionBodyHTML(sec){
+  const paras = sec.paras || [], cases = sec.cases || [], figs = sec.figs || [];
+  const byAfter = {}, byCase = {}, tail = [];
+  figs.forEach(f => { if(!f) return; if(f.beforeCase != null && cases[f.beforeCase]) (byCase[f.beforeCase] = byCase[f.beforeCase] || []).push(f); else if(f.after != null && paras[f.after] != null) (byAfter[f.after] = byAfter[f.after] || []).push(f); else tail.push(f); });
+  let h = '';
+  if(sec.h) h += '<h3 class="subhead">' + esc(sec.h) + '</h3>';
+  paras.forEach((p, i) => { h += '<p class="bodytext">' + esc(p) + '</p>'; if(byAfter[i]) h += bizFigsHTML(byAfter[i]); });
+  cases.forEach((c, i) => { if(byCase[i]) h += bizFigsHTML(byCase[i]); h += '<div class="casebox"><div class="casetitle">' + esc(c.title || '') + '</div><div class="bodytext">' + esc(c.body || '').replace(/\n/g, '<br>') + '</div></div>'; });
+  h += bizFigsHTML(tail);
+  return h;
+}
+function xChapterHTML(c){
+  let h = '';
+  if(c.lead) h += '<p class="bodytext">' + esc(c.lead) + '</p>';
+  if(c.leadFigs) h += bizFigsHTML(c.leadFigs);
+  (c.sections || []).forEach(sec => { h += xSectionBodyHTML(sec); });
+  return h;
 }
 function xMuseumGallery(){
   const v = $('viewMuseum'); if(!v || !museumName || $('xgalblock')) return;
