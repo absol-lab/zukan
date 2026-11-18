@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.63.0">
+<meta name="app-version" content="5.63.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -334,15 +334,15 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
    makers toolbar (id mktoolbar) keeps its own geometry. */
 .moderow .modebar{flex:none; flex-shrink:0;}
 .moderow .modebar button{flex:0 0 40px; width:40px;}
-#toolbar.slim .moderow .modebar, #toolbar.slim .sortrow, #toolbar.slim .regionrow{display:none;}
-/* v32.13.1: region segmented control — its own row under the
-   moderow (artists book only; state synced by syncRegionSeg).
-   The globe segment is an icon, the other two are short
-   labels; .on follows the modebar's active treatment. */
-.regionrow{margin-top:6px;}
-.regseg{display:inline-flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
-.regseg button{background:none; border:none; border-left:1px solid var(--line); padding:0 13px; min-height:38px; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
-.regseg button:first-child{border-left:none; padding:0 11px;}
+#toolbar.slim .moderow .modebar, #toolbar.slim .sortrow{display:none;}
+/* v32.13.1: region segmented control (artists book only;
+   state synced by syncRegionSeg). The globe segment is an
+   icon, the other two are short labels; .on follows the
+   modebar's active treatment. v5.63.1: it rides in the
+   sort row, right side — no longer its own row. */
+.regseg{display:inline-flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; flex:none;}
+.regseg button{background:none; border:none; border-left:1px solid var(--line); padding:0 7px; min-height:38px; font-size:12.5px; letter-spacing:.06em; color:var(--muted); font-family:var(--sans); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;}
+.regseg button:first-child{border-left:none; padding:0 6px;}
 .regseg button svg{width:19px; height:19px; display:block;}
 .regseg button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
 .slimtools{display:none; gap:8px;}
@@ -353,6 +353,15 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .slimtools .qdot{position:absolute; top:7px; right:7px; width:8px; height:8px; border-radius:50%; background:var(--accent);}
 .tbcollapse{flex:none; width:48px; height:48px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0;}
 .tbcollapse svg{width:20px; height:20px;}
+/* v5.63.1 (his 2026-11-18 order): the whole list control
+   cluster can be hidden so the grid takes the screen. The
+   search row stays (the toggle rides in it); the facet row,
+   the mode row, the merged sort/region row and the era row
+   leave the flow. Hidden controls keep their state — the
+   filters, size mode, sort mode and region stay applied.
+   Per-book, persisted (zukan.uicluster.<ds>). */
+#toolbar.clustoff #tbwTags{display:none;}
+#toolbar.clustoff .moderow, #toolbar.clustoff .sortrow, #toolbar.clustoff .erarow{display:none;}
 @media (prefers-reduced-motion: reduce){
   .tbwrap{transition:none;}
   .toolbar.slim .tbwrap{transition:none;}
@@ -706,7 +715,12 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    never compresses, v32.13.1; the retired #revBtn pill's
    place is here). Hidden in the slim bar like the region
    row. */
-.sortrow{margin-top:8px;}
+/* v5.63.1 (his 2026-11-18 order): the sort row and the region
+   row are ONE row — sort tabs left, region segment right —
+   the two half-empty rows wasted the whole right side. Tap
+   heights unchanged; the region segment only narrows its
+   horizontal padding so the row fits at 375px. */
+.sortrow{margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:6px;}
 .sortrow .seg{flex-wrap:nowrap; gap:6px;}
 .sortrow .seg button{flex:none; white-space:nowrap; min-height:36px; padding:5px 13px; font-size:12.5px;}
 .stmtcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
@@ -2393,7 +2407,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         <input type="search" id="searchbox" placeholder="名前・分野・タグ・本文から検索" oninput="onSearch(this.value)">
         <button id="searchclear" class="searchclear hidden" onclick="clearSearch()" aria-label="検索をクリア"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
-        <button class="tbcollapse hidden" id="tbCollapse" onclick="collapseToolbar()" aria-label="ツールバーを畳む"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14.5l7-7 7 7"/></svg></button>
+        <button class="tbcollapse hidden" id="tbCollapse" onclick="toggleUiCluster()" aria-label="操作パネルを隠す" title="操作パネルを隠す／出す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14.5l7-7 7 7"/></svg></button>
       </div>
     </div></div>
     <div class="tbwrap tbw-tags" id="tbwTags"><div class="tbin">
@@ -2419,8 +2433,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
         <button data-lm="era" onclick="setListMode('era')">年代別</button>
         <button data-lm="clk" class="clkbtn" onclick="toggleListClock()" aria-label="古い順／新しい順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir" id="listClkDir">▲</span></button>
       </span>
-    </div>
-    <div class="regionrow" id="regionRow">
       <div class="regseg" id="regSeg" role="group" aria-label="表示する地域">
         <button data-r="all" onclick="setListRegion('all')" aria-label="全部（西洋と日本を一緒に表示）" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.8" ry="8.5"/><path d="M3.5 12h17M5 7.2h14M5 16.8h14"/></svg></button>
         <button data-r="jp" onclick="setListRegion('jp')" aria-pressed="false">日本</button>
@@ -10621,6 +10633,25 @@ function workYearOf(w){
   const m = /(\d{4})/.exec((w && w.caption) || '');
   return m? parseInt(m[1], 10): null;
 }
+/* v5.63.1: the works-tab clock sort's year reader — the
+   same ancient-date rules as the list's birthSortKey,
+   applied to work captions (「約15,000〜13,000年前」,
+   「紀元前430年頃」). workYearOf itself is unchanged: the
+   decade grouping and the biography strip keep reading
+   plain AD years only. The caption's leading 《…》 title
+   is skipped first, so a title that itself names a span
+   (《104年前の火》2026年) cannot outrank the stated year;
+   unparseable stays null and sinks in both directions. */
+function workSortYearOf(w){
+  let cap = String((w && w.caption) || '');
+  const tm = /^[《『][^》』]+[》』]/.exec(cap);
+  if(tm) cap = cap.slice(tm[0].length);
+  const ago = yearsAgoOf(cap);
+  if(ago != null) return (new Date().getFullYear()) - ago;
+  let m = cap.match(/紀元前\s*(\d{1,5})\s*世紀/); if(m) return -(parseInt(m[1], 10) * 100);
+  m = cap.match(/紀元前\s*(\d{1,5})/); if(m) return -parseInt(m[1], 10);
+  return workYearOf(w);
+}
 /* v5.56.0 (his 2026-11-17 23:14 instruction): the works and
    drawings GRID cards show the work's title and year ONLY —
    the full caption made the grid text-heavy (「この画面で文字
@@ -10710,7 +10741,7 @@ function displayWorks(a){
   const mode = state.workSort || 'reg';
   if(mode === 'reg' || mode === 'decades' || ws.length < 2) return ws; /* v5.59.0: 年代別 is a mode of the tab, not a sort — the grouping orders the display list itself */
   const dir = mode === 'old'? 1: -1;
-  return ws.map((w, i) => ({ w: w, i: i, y: workYearOf(w) }))
+  return ws.map((w, i) => ({ w: w, i: i, y: workSortYearOf(w) }))
     .sort((p, q) => {
       if(p.y == null && q.y == null) return p.i - q.i;
       if(p.y == null) return 1;
@@ -11958,6 +11989,7 @@ function updateToolbarSlim(){
 const tb = $('toolbar'); if(!tb) return;
 tb.classList.toggle('slim', toolbarIsSlimWanted());
 updateSlimTools();
+syncUiCluster();
 }
 function updateSlimTools(){
 const fc = $('slimFilterCount');
@@ -11965,13 +11997,14 @@ if(fc){ const n = state.tags? state.tags.size: 0; fc.textContent = n? String(n):
 const qd = $('slimQDot');
 if(qd) qd.classList.toggle('hidden', !(state.query && state.query.length));
 const cb = $('tbCollapse');
-/* v5.1: the fold chevron is offered whenever the full bar is up
-   and he has scrolled a little — discovering the fold no longer
-   requires the fold to happen by itself first. Toggling this
-   button's visibility changes no layout (it shares the search
-   row's fixed height), so the scroll listener below may run it
-   freely. */
-if(cb) cb.classList.toggle('hidden', !(!tbSlim && view==='list' && (window.scrollY || 0) >= 40));
+/* v5.63.1: the chevron is the control-cluster toggle now
+   (see toggleUiCluster) and stays reachable in BOTH states,
+   so it is simply shown on the list view. It shares the
+   search row's fixed height, so toggling its visibility
+   changes no layout and the scroll listener may run freely.
+   (v5.1's rule — offered only once he had scrolled a little
+   — retired with the repurposing.) */
+if(cb) cb.classList.toggle('hidden', view!=='list');
 }
 function expandToolbar(which){
 tbSlim = false;
@@ -11991,6 +12024,49 @@ tbSlim = true;
 const sb = $('searchbox');
 if(sb && document.activeElement===sb){ try{ sb.blur(); }catch(e){} }
 updateToolbarSlim();
+}
+/* ---------- list control cluster show/hide (v5.63.1) ----------
+   His 2026-11-18 order: a toggle that hides the WHOLE list
+   control cluster (facet row, mode row incl. the ★ button,
+   the merged sort/region row, the era row) so the artist
+   grid takes the screen; the search row stays, with the
+   toggle at its right end. The toggle is the search row's
+   chevron button, repurposed: it used to fold the bar to
+   the v2.25 slim state (which folded the search row too);
+   that fold is superseded by this cluster hide — tbSlim is
+   never engaged by any button now, and the slim CSS simply
+   never activates. The state is per-book and persisted
+   (zukan.uicluster.<ds>, the zukan.lmode pattern), so it
+   survives view changes and restarts. Toggling touches
+   nothing else: no re-render, no scroll handling (in
+   particular never the order toggle's scroll-to-top), and
+   every control keeps its state and stays applied while
+   hidden. */
+const uiClusterHidden = {};
+function uiClusterOn(){
+if(uiClusterHidden[DS] == null){
+let v = null;
+try{ v = storeGet('zukan.uicluster.' + DS); }catch(e){}
+uiClusterHidden[DS] = (v === '1');
+}
+return uiClusterHidden[DS];
+}
+function syncUiCluster(){
+const tb = $('toolbar'); if(!tb) return;
+const hid = uiClusterOn();
+tb.classList.toggle('clustoff', hid);
+const cb = $('tbCollapse');
+if(cb){
+cb.setAttribute('aria-label', hid? '操作パネルを出す': '操作パネルを隠す');
+cb.setAttribute('aria-pressed', hid? 'true': 'false');
+const path = cb.querySelector('svg path');
+if(path) path.setAttribute('d', hid? 'M5 9.5l7 7 7-7': 'M5 14.5l7-7 7 7');
+}
+}
+function toggleUiCluster(){
+uiClusterHidden[DS] = !uiClusterOn();
+try{ storeSet('zukan.uicluster.' + DS, uiClusterHidden[DS]? '1': '0'); }catch(e){}
+syncUiCluster();
 }
 window.addEventListener('scroll', ()=>{
 if(tbRafPending) return;
@@ -14575,6 +14651,7 @@ function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on', b.dataset.m===state.mode); if(MODE_GRIDS[b.dataset.m]){ b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); } });
 syncSortSeg();
 syncRegionSeg();
+syncUiCluster();
 $('topcount').textContent = '全'+DB.artists.length+'名';
 $('searchbox').value = state.query;
 updateSearchClear();
@@ -15079,19 +15156,60 @@ function searchSnipHTML(a){
   }
   return '';
 }
+/* v5.63.1: the years-ago （年前） reader shared by the two
+   sort-key parsers (birthSortKey for people, workSortYearOf
+   for works). Returns the OLDEST end of the first years-ago
+   expression in the string — for years-ago the larger
+   number is the older end — or null when there is none.
+   年前後 (before/after, as in 「1950年前後」) is not
+   years-ago and never matches. */
+function yearsAgoOf(s){
+const num = t => parseInt(t.replace(/,/g, ''), 10);
+let m = s.match(/(\d[\d,]*)\s*年前\s*から\s*(?:約\s*)?(\d[\d,]*)\s*年前/);
+if(m) return Math.max(num(m[1]), num(m[2]));
+m = s.match(/(\d[\d,]*)\s*(?:〜|~|–|—|-)\s*(?:約\s*)?(\d[\d,]*)\s*年前(?!後)/);
+if(m) return Math.max(num(m[1]), num(m[2]));
+m = s.match(/(\d[\d,]*)\s*年前(?!後)/);
+if(m) return num(m[1]);
+return null;
+}
 /* v28.0: birth-year sort key — sort_year (BCE-safe, negative
    for BCE) when the record carries one, else the first year
    found in the years string （紀元前N → -N; N世紀 → its first
    year). +Infinity when nothing can be read, so undated
-   records sink to the end of their section in data order. */
-function birthSortKey(a){
-if(a && typeof a.sort_year === 'number' && isFinite(a.sort_year)) return a.sort_year;
-const y = String((a && a.years) || '').replace(/,/g, '');
+   records sink to the end of their section in data order.
+   v5.63.1 (his 2026-11-18 device report): the 「〜年前」
+   strings of the cave / site records (「約37,000〜28,000年前」)
+   fell through to the generic digit match and keyed as
+   +3700, so in newest-first they floated above living
+   artists and in oldest-first they sank out of sight.
+   yearsAgoOf now reads them first (key = current year −
+   years ago, oldest end). The parse also runs on the head
+   of the string (up to the first parenthesis) before the
+   whole string, so a parenthetical aside cannot outrank
+   the stated span （ファイユームの肖像: head 「1世紀〜3世紀」
+   beats the aside's 「紀元前1世紀末」); a head with no year
+   at all （東洲斎写楽「生没年不詳（1794–1795年活動）」) falls
+   through to the full text. Unparseable stays +Infinity —
+   the comparators sink those records to the end in BOTH
+   directions, never NaN into the comparator. */
+function birthKeyOfString(y){
+const ago = yearsAgoOf(y);
+if(ago != null) return (new Date().getFullYear()) - ago;
 let m = y.match(/紀元前\s*(\d{1,5})\s*世紀/); if(m) return -(parseInt(m[1], 10) * 100);
 m = y.match(/紀元前\s*(\d{1,5})/); if(m) return -parseInt(m[1], 10);
+m = y.match(/(\d{1,5})\s*BC\b/i); if(m) return -parseInt(m[1], 10);
 m = y.match(/(\d{3,4})/); if(m) return parseInt(m[1], 10);
 m = y.match(/(\d{1,2})\s*世紀/); if(m) return (parseInt(m[1], 10) - 1) * 100 + 1;
 return Infinity;
+}
+function birthSortKey(a){
+if(a && typeof a.sort_year === 'number' && isFinite(a.sort_year)) return a.sort_year;
+const raw = String((a && a.years) || '').replace(/,/g, '');
+if(!raw) return Infinity;
+const head = raw.split(/[（(]/)[0];
+const k = birthKeyOfString(head);
+return isFinite(k)? k: birthKeyOfString(raw);
 }
 /* v28.3: years line for cards + the person-page header (his
    2026-11-14 19:34: 「死んだ人は何年に死んだのか。生きてる
@@ -15344,7 +15462,9 @@ function detailNameLineHTML(a){
 function syncRegionSeg(){
   const seg = $('regSeg'); if(!seg) return;
   const show = DS === 'artists';
-  const row = $('regionRow'); if(row) row.style.display = show? '': 'none';
+  /* v5.63.1: the segment rides inside the sort row now (no
+     separate region row) — only the segment itself hides
+     for the designers book; the sort tabs stay. */
   seg.style.display = show? '': 'none';
   const r = regionOn();
   seg.querySelectorAll('button').forEach(b=>{
@@ -19556,7 +19676,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中651人まで完了。残り82人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは585点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は194人・計462点。","肖像写真は194人。"]},{"v":null,"label":"展示情報","lines":["展示は3,279件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全734人中671人まで完了。残り63人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは717点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は211人・計541点。","肖像写真は213人。"]},{"v":null,"label":"展示情報","lines":["展示は3,521件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23712,7 +23832,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.63.0';
+const APP_VERSION = '5.63.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
