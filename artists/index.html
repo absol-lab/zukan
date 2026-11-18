@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.60.0">
+<meta name="app-version" content="5.61.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2292,6 +2292,44 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    figures flagged stack:true in the data opt in. */
 .figworks.stack{flex-direction:column; overflow-x:visible;}
 .figworks.stack .figwork{width:100%;}
+/* v5.61.0: annotated painting figures (the skill chapter's
+   worked dissections) — painting and explanation card form
+   ONE unit: numbered markers sit on the image; tapping a
+   marker dims the rest of the painting (a ring element whose
+   box-shadow shades everything outside the circle, leaving
+   the marked region full-bright) and the passage's text
+   appears in the card directly beneath the painting, so the
+   eye travels marker → region → text without leaving the
+   figure. 前へ/次へ pills step through the passages; the
+   numbered list below the unit is an index (tapping an item
+   selects it and scrolls the figure back into view). */
+.figannunit{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--bg2);}
+.figannstage{position:relative; overflow:hidden; cursor:zoom-in; background:var(--bg2);}
+.figannstage .imgholder{display:block;}
+.figannstage .imgholder img{width:100%; height:auto; display:block;}
+.figannstage .imgload{position:absolute; left:0; right:0; top:6px; z-index:1;}
+.figannhole{position:absolute; width:34%; aspect-ratio:1/1; transform:translate(-50%,-50%); border-radius:50%; border:2px solid rgba(232,200,122,.95); box-shadow:0 0 0 9999px rgba(22,13,5,.52); pointer-events:none; z-index:2;}
+.figannhole.hidden{display:none;}
+.figmark{position:absolute; transform:translate(-50%,-50%); width:23px; height:23px; border-radius:50%; border:1.5px solid #e8c87a; background:rgba(24,15,7,.74); color:#f3e9d2; font-size:12px; font-weight:700; line-height:1; padding:0; z-index:3; cursor:pointer;}
+.figmark.on{background:var(--accent); border-color:#fff2cf; color:#241a0c;}
+.figanncard{border-top:1px solid var(--line); padding:11px 13px 13px;}
+.figannchead{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; min-height:26px;}
+.figanncount{font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.06em;}
+.figannnav{display:flex; gap:8px;}
+.figannbtn{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:999px; padding:5px 15px; font-size:12.5px; cursor:pointer;}
+.figannbtn:active{background:var(--card2);}
+.figanncall{font-size:14.5px; font-weight:700; line-height:1.5; margin-bottom:3px;}
+.figanntext{font-size:14px; line-height:1.75;}
+.figannlist{margin-top:10px; display:flex; flex-direction:column; gap:6px;}
+.figannitem{display:flex; gap:9px; align-items:flex-start; width:100%; text-align:left; background:none; border:1px solid var(--line); border-radius:10px; padding:8px 10px; color:var(--text); cursor:pointer;}
+.figannitem.on{border-color:var(--accent); background:var(--bg2);}
+.figannn{flex:none; width:20px; height:20px; border-radius:50%; border:1.5px solid #e8c87a; background:rgba(24,15,7,.74); color:#f3e9d2; font-size:11.5px; font-weight:700; line-height:17px; text-align:center; margin-top:1px;}
+.figannitem.on .figannn{background:var(--accent); color:#241a0c;}
+.figanncmain{display:flex; flex-direction:column; gap:1px; min-width:0;}
+.figannc{font-size:13px; font-weight:600; line-height:1.45;}
+.figannl{font-size:11.5px; color:var(--muted); line-height:1.45;}
+#figzoom .fzstage .figannz{display:inline-block;}
+#figzoom .fzstage .figannz img{height:auto; display:block; border-radius:10px;}
 .figsvg{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:14px 12px;}
 .figsvg svg{display:block; width:100%; height:auto;}
 .figtable{width:100%; border-collapse:collapse; font-size:13px;}
@@ -12927,6 +12965,23 @@ function bizCasesHTML(cases){
      vs 4 broken colours + 1 high note; f.a / f.b captions),
      'stain' (the same shape staining into the ground vs
      covering it as a film; f.left / f.right {label, sub}).
+     v5.61.0 addition:
+     {type:'annotated', title?, artist, work, intro,
+      markers:[{x, y, loc, callout, text}], note?}
+       One registered painting at full width and natural
+       aspect (never cropped) with numbered markers at x/y
+       % positions. Painting + card are one unit: tapping a
+       marker selects that passage — a ring element whose
+       box-shadow dims everything outside the region — and
+       the passage's explanation appears in the card directly
+       beneath the painting (n / N counter + 前へ/次へ
+       stepping). The default card shows f.intro. Below the
+       unit, the numbered callout list is an index: tapping
+       an item selects it and scrolls the figure into view.
+       Tapping the painting itself opens the PLAIN painting
+       (no markers) in #figzoom; the selection stays in the
+       chapter view. Marker data rides in data-* attributes,
+       so no extra store is needed.
    SVG text uses the app's fonts via CSS variables; every label is
    escaped. wireBizFigs (called by renderBizCh) hydrates the work
    images. */
@@ -12987,6 +13042,61 @@ function closeFigZoom(){
   const ov = $('figzoom'); if(ov) ov.classList.add('hidden');
   const stage = $('fzstage'); if(stage) stage.innerHTML = '';
 }
+/* v5.61.0: annotated-figure interaction. Selection state lives
+   on the figure root (data-sel); the passage data rides in the
+   marker buttons' data-* attributes, so re-rendering a section
+   (guideSetSection swaps innerHTML) needs no store rebuild.
+   Selecting a passage moves the ring (its box-shadow dims the
+   rest of the painting), lights the marker and the matching
+   index item, and rewrites the anchored card in place. */
+function annSetSel(root, i){
+  const marks = [...root.querySelectorAll('.figmark')];
+  const n = marks.length; if(!n) return;
+  i = ((i % n) + n) % n;
+  root.dataset.sel = i;
+  marks.forEach((m, j)=> m.classList.toggle('on', j === i));
+  root.querySelectorAll('.figannitem').forEach((it, j)=> it.classList.toggle('on', j === i));
+  const m = marks[i];
+  const hole = root.querySelector('.figannhole');
+  if(hole){ hole.classList.remove('hidden'); hole.style.left = m.dataset.x + '%'; hole.style.top = m.dataset.y + '%'; }
+  const cnt = root.querySelector('.figanncount'); if(cnt) cnt.textContent = (i + 1) + ' / ' + n;
+  const call = root.querySelector('.figanncall'); if(call) call.textContent = m.dataset.call || '';
+  const txt = root.querySelector('.figanntext'); if(txt) txt.textContent = m.dataset.text || '';
+}
+function annSelect(ev, btn){
+  if(ev) ev.stopPropagation();
+  const root = btn.closest('.figann'); if(!root) return;
+  const isItem = btn.classList.contains('figannitem');
+  const set = [...root.querySelectorAll(isItem? '.figannitem': '.figmark')];
+  const i = set.indexOf(btn); if(i < 0) return;
+  annSetSel(root, i);
+  if(isItem){ const st = root.querySelector('.figannstage'); if(st) st.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+function annStep(ev, btn, dir){
+  if(ev) ev.stopPropagation();
+  const root = btn.closest('.figann'); if(!root) return;
+  const cur = (root.dataset.sel === '' || root.dataset.sel == null)? (dir > 0? -1: 0): +root.dataset.sel;
+  annSetSel(root, cur + dir);
+}
+function annStageTap(ev, stage){
+  if(ev.target.closest('.figmark')) return;
+  openAnnZoom(stage);
+}
+/* v5.61.0: tap-to-enlarge for annotated figures shows the
+   PLAIN painting (no markers, no ring) in the shared #figzoom
+   overlay; the selection stays in the chapter view. */
+function openAnnZoom(stage){
+  const img = stage.querySelector('.imgholder img'); if(!img) return;
+  const st = $('fzstage'), ov = $('figzoom'); if(!st || !ov) return;
+  st.innerHTML = '';
+  const wrap = document.createElement('div'); wrap.className = 'figannz';
+  const clone = img.cloneNode(false);
+  clone.removeAttribute('id'); clone.classList.add('imgok');
+  clone.style.width = Math.round((img.clientWidth || stage.clientWidth) * 1.9) + 'px';
+  wrap.appendChild(clone); st.appendChild(wrap);
+  ov.classList.remove('hidden');
+  st.scrollTop = 0; st.scrollLeft = 0;
+}
 function bizFigsHTML(figs){
   if(!Array.isArray(figs) || !figs.length) return '';
   return figs.map(f=>{
@@ -13009,6 +13119,23 @@ function bizFigsHTML(figs){
     if(f.type === 'svg'){
       const inner = bizFigSVG(f); if(!inner) return '';
       return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figsvg zoomable" onclick="openFigZoom(this)">' + inner + '</div><div class="figzoomhint">図はタップで拡大できます</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+    }
+    if(f.type === 'annotated'){
+      const r = bizFigResolve(f.artist, f.work); if(!r) return '';
+      const ix = bizFigStore.length; bizFigStore.push(r.w);
+      const marks = (f.markers || []).map((m, i)=>
+        '<button class="figmark" style="left:' + (+m.x) + '%;top:' + (+m.y) + '%" data-x="' + (+m.x) + '" data-y="' + (+m.y) + '" data-call="' + escA(m.callout || '') + '" data-text="' + escA(m.text || '') + '" onclick="annSelect(event,this)" aria-label="マーカー' + (i + 1) + '">' + (i + 1) + '</button>').join('');
+      const items = (f.markers || []).map((m, i)=>
+        '<button class="figannitem" onclick="annSelect(event,this)"><span class="figannn">' + (i + 1) + '</span><span class="figanncmain"><span class="figannc">' + esc(m.callout || '') + '</span><span class="figannl">' + esc(m.loc || '') + '</span></span></button>').join('');
+      return '<div class="bizfig figann" data-sel="">'
+        + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '')
+        + '<div class="figannunit"><div class="figannstage" data-bfig="' + ix + '" onclick="annStageTap(event,this)">'
+        + imgHTML(r.w, IMG_SIZE.plate)
+        + '<div class="figannhole hidden"></div>' + marks + '</div>'
+        + '<div class="figanncard"><div class="figannchead"><span class="figanncount"></span><span class="figannnav"><button class="figannbtn" onclick="annStep(event,this,-1)">前へ</button><button class="figannbtn" onclick="annStep(event,this,1)">次へ</button></span></div>'
+        + '<div class="figanncall"></div><div class="figanntext">' + esc(f.intro || '') + '</div></div></div>'
+        + '<div class="figannlist">' + items + '</div><div class="figzoomhint">絵はタップで拡大できます</div>'
+        + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     return '';
   }).join('');
@@ -19331,7 +19458,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中576人まで完了。残り157人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは366点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は129人・計300点。","肖像写真は142人。"]},{"v":null,"label":"展示情報","lines":["展示は2,396件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中594人まで完了。残り139人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは408点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は144人・計330点。","肖像写真は153人。"]},{"v":null,"label":"展示情報","lines":["展示は2,652件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23487,7 +23614,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.60.0';
+const APP_VERSION = '5.61.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
