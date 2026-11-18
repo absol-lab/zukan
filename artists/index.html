@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.67.0">
+<meta name="app-version" content="5.68.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18769,8 +18769,9 @@ function hiresDotHTML(w){ return (w && w.hires)? '<span class="hiresdot"></span>
    "Today" is the device's date at runtime. Cards ride the
    house grid form: the exhibition's poster when the record
    carries one (e.poster / e.img — the keyWork image route),
-   else the artist's representative work works[0] (the v32.8.0
-   exhibition-card rule), else no plate at all. There is no
+   else the no-photo plate (v5.68.0: the v32.8.0 fallback to
+   the artist's representative work works[0] is retired — see
+   the card function). There is no
    exhibition detail route in the app, so the card's tap opens
    the venue page — the same destination the exhibitions view's
    venue link uses (openMuseum). */
@@ -18792,12 +18793,18 @@ function artistExhibitionsHTML(a, exsOfA){
   upcoming.sort((x, y)=>{ const kx = x.start_date || x.end_date || '9999-99-99', ky = y.start_date || y.end_date || '9999-99-99'; return kx < ky? -1: (kx > ky? 1: 0); });
   past.sort((x, y)=>{ const kx = x.start_date || x.end_date || '', ky = y.start_date || y.end_date || ''; return kx > ky? -1: (kx < ky? 1: 0); });
   const card = (e, isUp)=>{
+    /* v5.68.0: the exhibition's OWN poster only. The v32.8.0
+       fallback to the artist's representative work is retired
+       (his report, 2026-11-19: on Yu Nishimura's page every
+       exhibition card showed the same painting). A record with
+       no poster of its own gets the no-photo plate — never
+       another image in its place. */
     let wobj = null;
     if(e.poster) wobj = keyWork(e.poster, e.title || '');
     else if(e.img && e.img.url) wobj = { caption: e.title || '', img: e.img };
-    else wobj = thumbOf(a);
-    let ph = '';
+    let ph;
     if(wobj){ const gi = exdCardWiring.length; exdCardWiring.push(wobj); ph = '<div class="ph" data-exdi="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>'; }
+    else ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
     const meta = [e.venue, e.city].filter(Boolean).join('／');
     const dates = (e.start_date || '') + (e.end_date? ' – ' + e.end_date: '');
     let badge = '';
@@ -18825,7 +18832,12 @@ function artistExhibitionsHTML(a, exsOfA){
    opening the card: a poster when the exhibition has one, else
    the artist's representative work (works[0]) as a thumbnail
    that doubles as the link to the artist's page. No visual at
-   all when neither exists — no empty plate. */
+   all when neither exists — no empty plate.
+   v5.68.0: this rule is RETIRED (his report, 2026-11-19 — every
+   exhibition card on an artist's page showed the same painting).
+   Exhibition cards now show the exhibition's own poster only,
+   else the no-photo plate. exArtistRef below survives for the
+   artist name line and cross-book lookups, not for images. */
 function exArtistRef(e){
   if(!e || e.artist_id == null) return null;
   const a0 = artistById(e.artist_id); if(a0) return { kind: DS, a: a0 };
@@ -18840,10 +18852,10 @@ function exArtistRef(e){
    exhibition list render as GRID CARDS (the pinned form),
    replacing the .exitem horizontal rows and exVisualHTML.
    Visual: the poster when the exhibition has one, else the
-   artist's representative work — the v32.8.0 exhibition-card
-   rule. Poster plates ride the works image route via a wiring
-   array (the exdcard pattern); representative-work plates keep
-   the data-work route that wireListImages binds. */
+   no-photo plate (v5.68.0: the v32.8.0 representative-work
+   fallback is retired — see the v32.8.0 note above). Poster
+   plates ride the works image route via a wiring array (the
+   exdcard pattern). */
 let exGridWiring = [];
 /* v5.59.2: inside an exhibition card's note, wrap ONLY the
    practically important facts in a subtle emphasis span
@@ -18867,15 +18879,17 @@ function exNoteHTML(note){
 }
 function exGridCardHTML(e, o){
   o = o || {};
-  let ph = '';
+  /* v5.68.0: the exhibition's OWN poster only — the v32.8.0
+     representative-work fallback is retired here too (the
+     exhibitions view and museum pages share this renderer).
+     No poster on the record = the no-photo plate. */
+  let ph;
   if(e.poster || (e.img && e.img.url)){
     const wobj = e.poster? keyWork(e.poster, e.title || ''): { caption: e.title || '', img: e.img };
     const gi = exGridWiring.length; exGridWiring.push(wobj);
     ph = '<div class="ph" data-exg="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>';
   } else {
-    const ref = exArtistRef(e);
-    const w = ref? thumbOf(ref.a): null;
-    if(w) ph = '<div class="ph" data-work="' + escA(ref.a.id) + '" data-ds="' + ref.kind + '">' + imgHTML(w, IMG_SIZE.thumb) + '</div>';
+    ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
   }
   let acts = '';
   if(e.url) acts += '<a href="' + escA(e.url) + '" target="_blank" rel="noopener">公式ページ</a>';
@@ -24123,7 +24137,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.67.0';
+const APP_VERSION = '5.68.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
