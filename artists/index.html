@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.59.1">
+<meta name="app-version" content="5.59.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1105,6 +1105,14 @@ h3.subhead:first-child{margin-top:8px;}
 .exgridcard .exvenue .linkbtn{font-size:12.5px; min-height:0; padding:0; text-decoration:underline;}
 .exgridcard .exdays{color:var(--accent); font-weight:600; font-size:12.5px; margin-top:2px;}
 .exgridcard .exnote{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.5;}
+/* v5.59.2: on exhibition cards the practically important facts
+   get a gentle emphasis — the date line (.exdates), and inside
+   the note only money amounts and opening-hours expressions
+   (.exfact, wrapped by exNoteHTML). The same treatment as
+   .exdays: the warm accent colour + weight 600. No underline
+   (underline means tappable in this app), no background. */
+.exgridcard .exdates{color:var(--accent); font-weight:600;}
+.exgridcard .exnote .exfact{color:var(--accent); font-weight:600;}
 .exgridcard .exacts{display:flex; gap:16px; margin-top:2px;}
 .exgridcard .exacts .linkbtn{font-size:12.5px; min-height:40px; padding:0; text-decoration:underline;}
 .exgridcard .exacts a{display:inline-flex; align-items:center; min-height:40px; font-size:12.5px;}
@@ -18243,6 +18251,26 @@ function exArtistRef(e){
    array (the exdcard pattern); representative-work plates keep
    the data-work route that wireListImages binds. */
 let exGridWiring = [];
+/* v5.59.2: inside an exhibition card's note, wrap ONLY the
+   practically important facts in a subtle emphasis span
+   (.exfact): money amounts (…円 or ¥…) and opening-hours
+   expressions (HH:MM–HH:MM ranges, 最終入場HH:MM). The match
+   is deliberately conservative — years, calendar dates,
+   headcounts and lone times never match. The RAW note is
+   split on the matches and each piece escaped separately,
+   so the surrounding text renders byte-identically to
+   esc(note); only the wrapped spans are added. */
+function exNoteHTML(note){
+  const t = String(note == null? '': note);
+  const re = /(?:¥|￥)\s?(?:\d{1,3}(?:,\d{3})+|\d+)|(?:\d{1,3}(?:,\d{3})+|\d+)円|最終入場\s*\d{1,2}:\d{2}|\d{1,2}:\d{2}\s*[-–—−~〜]\s*\d{1,2}:\d{2}/g;
+  let out = '', last = 0, m;
+  while((m = re.exec(t)) !== null){
+    if(m[0].length === 0){ re.lastIndex++; continue; }
+    out += esc(t.slice(last, m.index)) + '<span class="exfact">' + esc(m[0]) + '</span>';
+    last = m.index + m[0].length;
+  }
+  return out + esc(t.slice(last));
+}
 function exGridCardHTML(e, o){
   o = o || {};
   let ph = '';
@@ -18267,9 +18295,9 @@ function exGridCardHTML(e, o){
     + '<div class="nm">' + esc(e.title || '') + (o.badge || '') + '</div>'
     + (exArtistDisp? '<div class="exartist">' + esc(exArtistDisp) + '</div>': '')
     + (o.venueHTML || '')
-    + (o.dates? '<div class="exdmeta dates">' + esc(o.dates) + '</div>': '')
+    + (o.dates? '<div class="exdmeta dates exdates">' + esc(o.dates) + '</div>': '')
     + (o.extra || '')
-    + (e.note? '<div class="exnote">' + esc(e.note) + '</div>': '')
+    + (e.note? '<div class="exnote">' + exNoteHTML(e.note) + '</div>': '')
     + (acts? '<div class="exacts">' + acts + '</div>': '')
     + '</figcaption></figure>';
 }
@@ -19220,7 +19248,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全726人中537人まで完了。残り189人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは289点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は98人・計235点。","肖像写真は109人。"]},{"v":null,"label":"展示情報","lines":["展示は1,957件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中567人まで完了。残り166人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは335点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は124人・計288点。","肖像写真は135人。"]},{"v":null,"label":"展示情報","lines":["展示は2,292件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23376,7 +23404,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.59.1';
+const APP_VERSION = '5.59.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -25517,10 +25545,19 @@ function xExAlert(){
     const e = x.e;
     const anm = (e.artist_id != null? xArtistName(e.artist_id): null) || e.artist_name || '';
     const md = e.end_date? (Number(e.end_date.slice(5, 7)) + '/' + Number(e.end_date.slice(8, 10))): '';
-    return '<div class="xalrow"><div class="xalmain">'
+    /* v5.59.2: the WHOLE row is the tap target (his order,
+       2026-11-18: 「これ枠内全部押せるようにして」) — a tap
+       anywhere in the frame opens the venue page, the same
+       destination the venue link has always used (that page
+       is where the exhibition's full detail — poster, dates,
+       note, links — is presented). The venue button keeps
+       its own handler (same destination) with
+       stopPropagation, so a tap on it fires exactly once.
+       Rows without a venue keep no target, as before. */
+    return '<div class="xalrow"' + (e.venue? ' onclick="openMuseum(\'' + escA(e.venue) + '\')"': '') + '><div class="xalmain">'
       + (anm? '<div class="xalartist">' + esc(anm) + '</div>': '')
       + '<div class="xaltitle">' + esc(e.title || '') + '</div>'
-      + (e.venue? '<div class="xalvenue"><button class="linkbtn" onclick="openMuseum(\'' + escA(e.venue) + '\')">' + esc(e.venue) + '</button>' + (e.city? '<span class="xalcity">／' + esc(e.city) + '</span>': '') + '</div>': '')
+      + (e.venue? '<div class="xalvenue"><button class="linkbtn" onclick="event.stopPropagation(); openMuseum(\'' + escA(e.venue) + '\')">' + esc(e.venue) + '</button>' + (e.city? '<span class="xalcity">／' + esc(e.city) + '</span>': '') + '</div>': '')
       + '</div><div class="xaldays"><b>' + (x.days === 0? '本日終了': 'あと' + x.days + '日') + '</b>・<span>' + md + 'まで</span></div></div>';
   }).join('');
   const head = v.querySelector('.tlhead');
