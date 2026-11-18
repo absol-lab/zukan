@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.65.1">
+<meta name="app-version" content="5.66.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -302,6 +302,14 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .favbtn{background:none; border:none; font-size:21px; line-height:1; color:var(--muted); padding:6px 8px; cursor:pointer; font-family:var(--sans);}
 .favbtn.on{color:#e3a93c;}
 .favmark{color:#e3a93c; font-size:11px;}
+/* v5.66.0: the favorite toggle on person cards — a 32px star
+   riding a translucent dark disc in the image area's top-right
+   corner, so it stays visible and tappable on any photo and on
+   the pale no-photo plate, at every card size mode. It flips
+   the person through the same setFavPerson path as the detail
+   page's star (see toggleFavCard) — no store of its own. */
+.cardfav{position:absolute; top:2px; right:2px; z-index:4; width:32px; height:32px; min-width:32px; min-height:32px; padding:0; border:none; border-radius:50%; background:rgba(26,20,12,.45); color:#f3ecdc; font-size:16px; line-height:32px; text-align:center; cursor:pointer; font-family:var(--sans);}
+.cardfav.on{color:#e3a93c;}
 /* v30.13: the 必見 (must-see) mark — a small pill chip in the
    tagchip family (border + 999px radius, accent colour), sized
    to ride inside a card name line, a detail title, a guide
@@ -15546,8 +15554,14 @@ function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
 const fk = kanaName(a);
+const fav = isFavPerson(kind||DS, a.id);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):noPhotoHTML())+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(dispName(a))+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (fk? '<div class="fkana">'+esc(fk)+'</div>': '') + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(subName(a))+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+/* v5.66.0: the card's own favorite toggle, in the image area's
+   top-right corner. toggleFavCard runs the same setFavPerson
+   path as the detail page's star and stops propagation, so the
+   rest of the card keeps opening the detail exactly as before. */
+const favb = '<button class="cardfav'+(fav?' on':'')+'" onclick="toggleFavCard(event,'+(kind? '\''+kind+'\'': 'null')+',\''+escA(a.id)+'\')" aria-label="お気に入り" aria-pressed="'+(fav?'true':'false')+'">'+(fav?'★':'☆')+'</button>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):noPhotoHTML())+favb+'</div><figcaption><div class="nm">'+(fav? '<span class="favmark">★</span> ': '')+esc(dispName(a))+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (fk? '<div class="fkana">'+esc(fk)+'</div>': '') + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(subName(a))+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -19438,8 +19452,13 @@ function favWorkKey(kind, id, caption){ return kind+':'+id+'|'+caption; }
 function isFavPerson(kind, id){ const e = favsLoad().people[favPersonKey(kind,id)]; return !!(e && e.fav); }
 function isFavWork(kind, id, caption){ const e = favsLoad().works[favWorkKey(kind,id,caption)]; return !!(e && e.fav); }
 function favPeopleCount(kind){ const m = favsLoad().people; return Object.keys(m).filter(k=> k.indexOf(kind+':')===0 && m[k].fav).length; }
-async function setFavPerson(a, on){
-  const k = favPersonKey(DS, a.id);
+async function setFavPerson(a, on, kind){
+  /* v5.66.0: kind is optional — the detail-page caller passes
+     nothing and keeps keying by the current book (DS), exactly
+     as before; a cross-book list card passes its own dataset so
+     the write lands under the person's own book. One path for
+     every surface: memory + IndexedDB + the Drive mirror. */
+  const k = favPersonKey(kind || DS, a.id);
   const m = favsLoad();
   /* memory applies instantly — the star follows at once; the
      verdict below is about IDB persistence only. */
@@ -19507,6 +19526,49 @@ function syncFavBtn(){
   const a = artistById(state.detailId); const b = $('favBtn'); if(!b || !a) return;
   const on = isFavPerson(DS, a.id);
   b.classList.toggle('on', on); b.textContent = on? '★': '☆';
+}
+/* v5.66.0: the favorite toggle from a list card's star. Same
+   write as the detail page (setFavPerson → memory + IndexedDB
+   + Drive mirror), same honesty rule for the toast: an
+   unverified write is reported as a save failure, never as
+   success. The card DOM is patched in place by syncCardFav —
+   the list is never rebuilt for a toggle (the v27.4 rule), so
+   rapid marking keeps its scroll and never repaints the grid. */
+async function toggleFavCard(ev, kind, id){
+  if(ev) ev.stopPropagation();
+  const ds = kind || DS;
+  const c = CTX[ds];
+  const a = c && c.DB && Array.isArray(c.DB.artists)? c.DB.artists.find(x=>String(x.id)===String(id)) : null;
+  if(!a) return;
+  const okSave = await setFavPerson(a, !isFavPerson(ds, a.id), ds);
+  syncCardFav(ds, a.id);
+  if(ds === DS) syncFavFilterBtn();
+  if(!okSave){ toast('お気に入りを保存できませんでした', 2600); return; }
+  toast(isFavPerson(ds, a.id)? 'お気に入りに追加しました': 'お気に入りから外しました', 1600);
+}
+function syncCardFav(ds, id){
+  const on = isFavPerson(ds, id);
+  document.querySelectorAll('figure.work[data-aid]').forEach(fig=>{
+    if(String(fig.getAttribute('data-aid')) !== String(id)) return;
+    const ph = fig.querySelector('.ph');
+    const cds = ph? (ph.getAttribute('data-ds') || DS) : DS;
+    if(cds !== ds) return;
+    const b = fig.querySelector('.cardfav');
+    if(b){ b.classList.toggle('on', on); b.textContent = on? '★': '☆'; b.setAttribute('aria-pressed', on? 'true': 'false'); }
+    const nm = fig.querySelector('.nm');
+    if(nm){
+      const fm = nm.querySelector('.favmark');
+      if(on && !fm){
+        const s = document.createElement('span'); s.className = 'favmark'; s.textContent = '★';
+        nm.insertBefore(s, nm.firstChild);
+        nm.insertBefore(document.createTextNode(' '), s.nextSibling);
+      } else if(!on && fm){
+        const nx = fm.nextSibling;
+        fm.remove();
+        if(nx && nx.nodeType === 3 && nx.textContent === ' ') nx.remove();
+      }
+    }
+  });
 }
 async function toggleFavWork(){
   const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
@@ -23951,7 +24013,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.65.1';
+const APP_VERSION = '5.66.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
