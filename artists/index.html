@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.59.2">
+<meta name="app-version" content="5.60.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2285,6 +2285,13 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .figwork figure.work{margin:0;}
 .figwork .fwcap{font-size:12px; line-height:1.45; margin-top:5px;}
 .figwork .fwartist{font-size:11.5px; color:var(--accent); text-decoration:underline;}
+/* v5.60.0: stacked works figures (the skill chapter's
+   early-vs-late Cranston comparison) — full-width cards in
+   a column, so the pair stays readable at phone width
+   instead of shrinking into the side-by-side row. Only
+   figures flagged stack:true in the data opt in. */
+.figworks.stack{flex-direction:column; overflow-x:visible;}
+.figworks.stack .figwork{width:100%;}
 .figsvg{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:14px 12px;}
 .figsvg svg{display:block; width:100%; height:auto;}
 .figtable{width:100%; border-collapse:collapse; font-size:13px;}
@@ -12911,6 +12918,15 @@ function bizCasesHTML(cases){
      {type:'svg', kind:'pyramid', title?, layers:[{t,s}]}
        Stacked layers, widest at the bottom.
      {type:'table', title?, head:[...], rows:[[...]]}
+     v5.60.0 additions: a works figure may carry stack:true —
+     its cards render full-width in a column instead of the
+     horizontal row (for comparisons that must stay readable
+     at phone width). New svg kinds: 'edgehard' (one motif
+     with every edge hard vs only one hard edge; f.left /
+     f.right {label, sub}), 'palette' (12 equal colour chips
+     vs 4 broken colours + 1 high note; f.a / f.b captions),
+     'stain' (the same shape staining into the ground vs
+     covering it as a film; f.left / f.right {label, sub}).
    SVG text uses the app's fonts via CSS variables; every label is
    escaped. wireBizFigs (called by renderBizCh) hydrates the work
    images. */
@@ -12983,7 +12999,7 @@ function bizFigsHTML(figs){
         cards.push('<button class="figwork" onclick="figOpenDetail(\'' + r.ds + '\',\'' + escA(r.a.id) + '\')"><figure class="work"><div class="ph" data-bfig="' + ix + '">' + imgHTML(r.w, IMG_SIZE.plate) + '</div></figure><div class="fwcap">' + esc(it.label || (r.w.caption || '')) + '</div><div class="fwartist">' + esc(dispName(r.a)) + '</div></button>');
       });
       if(!cards.length) return '';
-      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figworks">' + cards.join('') + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
+      return '<div class="bizfig">' + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '') + '<div class="figworks' + (f.stack? ' stack': '') + '">' + cards.join('') + '</div>' + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     if(f.type === 'table'){
       const head = (f.head || []).map(c=>'<th>' + esc(c) + '</th>').join('');
@@ -13324,6 +13340,73 @@ function bizFigSVG(f){
   +'<line x1="262" y1="86" x2="252" y2="52" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="4 3"/><line x1="262" y1="86" x2="284" y2="56" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="4 3"/>'
   +S(66,16,f.back||'','start')+S(170,132,f.bead||'','middle')+S(266,132,f.flat||'','middle')
   +'</svg>';}
+ /* ---- v5.60.0: three figure kinds for the expanded skill
+    chapter (guide-ch-skill). Panel colours are literal, like
+    the edges / contrast figures: each panel carries its own
+    ground. Gradient ids are suffixed per render (figUid). ---- */
+ if(f.kind==='edgehard'){
+  /* one motif (disc + horizon + block) drawn twice: every
+     boundary hard vs only ONE hard edge — the rest soft or
+     lost into the ground. */
+  const uid='eh'+(++figUid);
+  const W=340,pw=162,ph=100,y0=6,ground='#e9e2cf',ink='#39404d';
+  let s='<svg viewBox="0 0 '+W+' 142" role="img">';
+  s+='<defs>'
+   +'<radialGradient id="'+uid+'s"><stop offset="55%" stop-color="'+ink+'"/><stop offset="82%" stop-color="'+ink+'" stop-opacity="0.45"/><stop offset="100%" stop-color="'+ink+'" stop-opacity="0"/></radialGradient>'
+   +'<linearGradient id="'+uid+'h" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="'+ink+'" stop-opacity="0.75"/><stop offset="100%" stop-color="'+ink+'" stop-opacity="0"/></linearGradient>'
+   +'</defs>';
+  let x=6;
+  s+='<rect x="'+x+'" y="'+y0+'" width="'+pw+'" height="'+ph+'" fill="'+ground+'" stroke="var(--line)"/>';
+  s+='<rect x="'+(x+10)+'" y="'+(y0+62)+'" width="'+(pw-20)+'" height="3.5" fill="'+ink+'"/>';
+  s+='<circle cx="'+(x+pw/2)+'" cy="'+(y0+38)+'" r="24" fill="'+ink+'"/>';
+  s+='<rect x="'+(x+pw-44)+'" y="'+(y0+12)+'" width="20" height="20" fill="'+ink+'"/>';
+  s+=S(x+pw/2,y0+ph+18,(f.left||{}).label||'全部の輪郭が同じ硬さ');
+  s+=S(x+pw/2,y0+ph+33,(f.left||{}).sub||'目はどこにも止まれない');
+  x=W-6-pw;
+  s+='<rect x="'+x+'" y="'+y0+'" width="'+pw+'" height="'+ph+'" fill="'+ground+'" stroke="var(--line)"/>';
+  s+='<rect x="'+(x+10)+'" y="'+(y0+62)+'" width="'+(pw-20)+'" height="3.5" fill="url(#'+uid+'h)"/>';
+  s+='<circle cx="'+(x+pw/2)+'" cy="'+(y0+38)+'" r="27" fill="url(#'+uid+'s)"/>';
+  s+='<path d="M'+(x+pw/2-17)+' '+(y0+38-17)+' A24 24 0 0 1 '+(x+pw/2+4)+' '+(y0+38-23.7)+'" fill="none" stroke="'+ink+'" stroke-width="3"/>';
+  s+='<rect x="'+(x+pw-44)+'" y="'+(y0+12)+'" width="20" height="20" fill="'+ink+'" opacity="0.28"/>';
+  s+=S(x+pw/2,y0+ph+18,(f.right||{}).label||'硬いきわは1か所だけ');
+  s+=S(x+pw/2,y0+ph+33,(f.right||{}).sub||'目がそこへ集まる');
+  return s+'</svg>';}
+ if(f.kind==='palette'){
+  /* palette restriction: 12 chips of equal weight vs
+     4 broken colours + 1 high note. Literal colours. */
+  const W=340;
+  const rowA=['#c8452c','#d97b29','#e3c33c','#7ba23f','#3f7f5e','#2f7f8f','#33549e','#5b3a8e','#8e3a6e','#a03a4a','#6e5636','#4a4a52'];
+  const rowB=['#8a7f6a','#6f7a72','#7d6a5e','#5e6a7d'];
+  let s='<svg viewBox="0 0 '+W+' 124" role="img">';
+  rowA.forEach((c,i)=>{ s+='<rect x="'+(6+i*27.4).toFixed(1)+'" y="8" width="25" height="26" fill="'+c+'" stroke="var(--line)"/>'; });
+  s+=S(170,50,f.a||'12色が同格——率いる色が無い');
+  rowB.forEach((c,i)=>{ s+='<rect x="'+(6+i*66)+'" y="66" width="62" height="26" fill="'+c+'" stroke="var(--line)"/>'; });
+  s+='<rect x="'+(6+4*66)+'" y="66" width="62" height="26" fill="#d43a2a" stroke="var(--line)"/>';
+  s+='<text x="'+(6+4*66+31)+'" y="60" font-size="10" font-weight="700" fill="var(--accent)" text-anchor="middle">高い音</text>';
+  s+=S(170,110,f.b||'4色に制限＋高い音1点——1色の動きが事件になる');
+  return s+'</svg>';}
+ if(f.kind==='stain'){
+  /* stain vs cover: the same shape in two relations to
+     the ground — bleeding into it, or sitting on it as a
+     film with a crisp edge. */
+  const uid='st'+(++figUid);
+  const W=340,pw=162,ph=100,y0=6,ground='#e9e2cf',ink='#39404d';
+  let s='<svg viewBox="0 0 '+W+' 142" role="img">';
+  s+='<defs><radialGradient id="'+uid+'g"><stop offset="30%" stop-color="'+ink+'" stop-opacity="0.62"/><stop offset="72%" stop-color="'+ink+'" stop-opacity="0.30"/><stop offset="100%" stop-color="'+ink+'" stop-opacity="0"/></radialGradient></defs>';
+  let x=6;
+  s+='<rect x="'+x+'" y="'+y0+'" width="'+pw+'" height="'+ph+'" fill="'+ground+'" stroke="var(--line)"/>';
+  s+='<ellipse cx="'+(x+pw/2+4)+'" cy="'+(y0+54)+'" rx="52" ry="34" fill="url(#'+uid+'g)"/>';
+  s+='<ellipse cx="'+(x+pw/2)+'" cy="'+(y0+50)+'" rx="42" ry="27" fill="url(#'+uid+'g)"/>';
+  s+=S(x+pw/2,y0+ph+18,(f.left||{}).label||'染みる——地が最後まで絵の一部');
+  s+=S(x+pw/2,y0+ph+33,(f.left||{}).sub||'輪郭は染みの際に決まる');
+  x=W-6-pw;
+  s+='<rect x="'+x+'" y="'+y0+'" width="'+pw+'" height="'+ph+'" fill="'+ground+'" stroke="var(--line)"/>';
+  s+='<ellipse cx="'+(x+pw/2+2)+'" cy="'+(y0+53)+'" rx="42" ry="27" fill="'+ink+'" opacity="0.18"/>';
+  s+='<ellipse cx="'+(x+pw/2)+'" cy="'+(y0+50)+'" rx="42" ry="27" fill="'+ink+'"/>';
+  s+='<path d="M'+(x+pw/2-30)+' '+(y0+50-21)+' A50 32 0 0 1 '+(x+pw/2+28)+' '+(y0+50-22)+'" fill="none" stroke="#e9e2cf" stroke-width="2.4" opacity="0.55"/>';
+  s+=S(x+pw/2,y0+ph+18,(f.right||{}).label||'被さる——膜の縁で形が立つ');
+  s+=S(x+pw/2,y0+ph+33,(f.right||{}).sub||'地は覆われて消える');
+  return s+'</svg>';}
  return '';
 }
 function wireBizFigs(el){
@@ -19248,7 +19331,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中567人まで完了。残り166人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは335点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は124人・計288点。","肖像写真は135人。"]},{"v":null,"label":"展示情報","lines":["展示は2,292件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中576人まで完了。残り157人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは366点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は129人・計300点。","肖像写真は142人。"]},{"v":null,"label":"展示情報","lines":["展示は2,396件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23404,7 +23487,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.59.2';
+const APP_VERSION = '5.60.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
