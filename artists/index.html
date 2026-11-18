@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.63.1">
+<meta name="app-version" content="5.64.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -19676,7 +19676,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全734人中671人まで完了。残り63人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは717点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は211人・計541点。","肖像写真は213人。"]},{"v":null,"label":"展示情報","lines":["展示は3,521件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全772人中671人まで完了。残り101人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは758点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は219人・計560点。","肖像写真は254人。"]},{"v":null,"label":"展示情報","lines":["展示は4,063件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23832,7 +23832,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.63.1';
+const APP_VERSION = '5.64.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
