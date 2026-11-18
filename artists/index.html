@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.62.0">
+<meta name="app-version" content="5.63.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -565,6 +565,15 @@ figure.work .yrs{font-size:11px; color:var(--muted); letter-spacing:.03em; line-
 .grid.micro figure.work .nm{font-size:9.5px;}
 .grid.micro figure.work .sub{display:none;}
 .grid.micro figure.work .yrs{font-size:8.5px; -webkit-line-clamp:1;}
+/* v5.63.0: the furigana line on person cards (swap cases only —
+   see kanaName). Sized off the .sub line it accompanies and
+   hidden at the same small stops, where a sub-8px kana line
+   would be illegible; the detail header keeps it at all sizes. */
+figure.work .fkana{font-size:10px; color:var(--muted); line-height:1.35; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.grid.wide figure.work .fkana{font-size:12.5px;}
+.grid.compact figure.work .fkana{display:none;}
+.grid.mini figure.work .fkana{display:none;}
+.grid.micro figure.work .fkana{display:none;}
 .grid.micro figure.work{padding:2px;}
 .grid.micro figure.work figcaption{padding:2px 1px 1px;}
 .empty{padding:40px 0; text-align:center; color:var(--muted); font-size:13.5px; letter-spacing:.06em;}
@@ -631,6 +640,11 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    No links -> no row, no frame (the 画像なしはなし rule). */
 .dlatinrow{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px;}
 .dlatinrow .dlatin{margin-top:0;}
+/* v5.63.0: the detail header's furigana line (swap cases) —
+   the stored kana reading under the Latin primary name, with
+   a native-script name, when present, kept after it. */
+.dlatinrow .dnwrap{display:flex; align-items:baseline; gap:10px; min-width:0;}
+.dfuri{font-size:16px; color:var(--muted); letter-spacing:.04em;}
 .snsrow{display:inline-flex; gap:6px; flex:none;}
 .snsbtn{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1.5px solid var(--lineStrong); border-radius:999px; color:var(--text); background:var(--card); text-decoration:none;}
 .snsbtn svg{width:16px; height:16px; display:block;}
@@ -1880,7 +1894,7 @@ button.blockbtn:disabled{opacity:.4;}
    arrive via the harvest/registration flow, not manual adds. The editor
    itself stays, reachable from a detail view's 編集 button.) */
 /* bottom pill navigation (ported from diary #pillnav: fixed height, glass, sliding indicator) */
-#pillnav{position:absolute; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
+#pillnav{position:fixed; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; display:flex; gap:0; padding:3px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03);}
 /* v2.28: the pill is centred WITHOUT a transform (left/right 0 + auto
    margins). It used to be left:50% + translateX(-50%) — a permanent
    transform on a position:fixed element keeps it on the composited
@@ -1905,7 +1919,7 @@ button.blockbtn:disabled{opacity:.4;}
 /* v21.9 (his call): inside Art Business the bottom bar itself changes
    jobs — the main pill nav steps aside and the chapter pills live in
    the same floating bar, so the thumb reaches them like any tab. */
-#bizpillbar{position:absolute; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
+#bizpillbar{position:fixed; pointer-events:auto; left:0; right:0; margin-left:auto; margin-right:auto; z-index:40; bottom:calc(env(safe-area-inset-bottom, 0px) + 10px); width:calc(100vw - 92px); max-width:430px; height:56px; box-sizing:border-box; font-family:var(--sans); background:var(--nav); border:1px solid color-mix(in srgb, var(--text) 13%, transparent); border-radius:999px; box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.10), inset 0 -8px 16px rgba(255,255,255,.03); padding:3px;}
 /* v5.53.0 DESIGN CHANGE (pill bug, 5th recurrence — his screenshot
    2026-11-17 21:03: the bar floating mid-screen over the favourites
    list). Four earlier cures each removed one suspect from the bar
@@ -1925,7 +1939,10 @@ button.blockbtn:disabled{opacity:.4;}
    misplace, and they ride the one shell layer instead. The shell
    is pointer-events:none except on the bars themselves. Visuals,
    sizing and show/hide behaviour are unchanged. */
-#navshell{position:fixed; inset:0; z-index:40; pointer-events:none;}
+/* v5.63.0: #navshell is ABOLISHED (the note above is the
+   v5.53.0 design it replaced). Both bars are direct children of
+   body again, each its own position:fixed layer — see the
+   rebuilt guard at ensurePillAnchor for the full reasoning. */
 #bizpillbar .bizpillscroll{display:flex; gap:5px; overflow-x:auto; height:100%; align-items:center; padding:0 2px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
 #bizpillbar .bizpillscroll::-webkit-scrollbar{display:none;}
 #bizpillbar button{flex:none; height:40px; padding:0 10px; border-radius:999px; border:1px solid transparent; background:none; color:var(--muted); font-size:12.5px; font-weight:500; font-family:inherit; white-space:nowrap;}
@@ -2492,9 +2509,9 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 
 <div id="toast"><span id="toastmsg"></span><button id="toastact" class="hidden" type="button">元に戻す</button></div>
 
-<!-- v5.53.0: the bottom chrome lives in its own root shell (see the
-     #navshell CSS note). Nothing view-related may wrap this element. -->
-<div id="navshell">
+<!-- v5.63.0: the bottom bars are direct children of body, each
+     its own position:fixed layer (the v5.53.0 #navshell wrapper
+     is abolished — see the note at ensurePillAnchor). -->
 <nav id="pillnav">
   <button id="pnEx" onclick="openExhibitions()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><rect x="4" y="6" width="16" height="14" rx="2"/><circle cx="9.3" cy="11" r="1.3"/><path d="M5 18.5l4.3-3.8 3 2.8 2.4-1.9 4.3 3.4"/></svg><span>展示</span></button>
   <button id="pnArtists" class="on" onclick="switchDataset('artists')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9.2" cy="10" r="1.5"/><path d="M4.5 18.5l4.7-4.7 3.3 3 2.9-2.4 4.1 4.1"/></svg><span>作家</span></button>
@@ -2503,7 +2520,6 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
   <button id="pnSet" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>その他</span></button>
 </nav>
 <div id="bizpillbar" style="display:none"><div class="bizpillscroll"></div></div>
-</div>
 
 <script>
 'use strict';
@@ -10637,6 +10653,58 @@ function cardCapText(cap){
   const seg = (s.split(/[、。]/)[0] || '').trim();
   return seg.length > 30? seg.slice(0, 30) + '…': seg;
 }
+/* v5.63.0 (his call, 2026-11-18): compact years display.
+   DISPLAY ONLY — the stored years string is never altered
+   (the cardCapText principle); search keeps indexing the raw
+   string. 紀元前…年 becomes …BC, and a circa (頃) becomes a
+   "c. " prefix on the year or range it belongs to:
+   紀元前460年頃–紀元前415年頃 → "c. 460–415 BC",
+   1450年頃–1520年頃 → "c. 1450–1520",
+   1115–1135年頃に活動 → "c. 1115–1135 に活動".
+   Only the head of the string (up to the first parenthesis)
+   is rewritten; trailing prose stays byte-identical. Applied
+   inside yearsDisplay, so every compact surface that shows a
+   person's years (cards, the profile band, relations minis,
+   tp-cards, museum / maker cards) gets the same form. */
+function bcYears(s){
+  s = String(s == null? '': s);
+  if(!s) return s;
+  const cut = s.search(/[（(]/);
+  const head = cut < 0? s: s.slice(0, cut);
+  const tail = cut < 0? '': s.slice(cut);
+  if(!head) return s;
+  const NUM = '([0-9][0-9,\/]*)';
+  const SEP = '[–—―~〜～-]';
+  let h = head, m;
+  if(m = h.match(new RegExp('^紀元前' + NUM + '年(頃)?' + SEP + '紀元前' + NUM + '年(頃)?'))){
+    h = ((m[2] || m[4])? 'c. ': '') + m[1] + '–' + m[3] + ' BC' + h.slice(m[0].length);
+  }
+  else if(m = h.match(new RegExp('^紀元前' + NUM + '世紀(頃)?' + SEP + '紀元前' + NUM + '世紀(頃)?'))){
+    h = ((m[2] || m[4])? 'c. ': '') + m[1] + '世紀–' + m[3] + '世紀 BC' + h.slice(m[0].length);
+  }
+  else if(m = h.match(new RegExp('^紀元前' + NUM + '年(頃)?'))){
+    h = (m[2]? 'c. ': '') + m[1] + ' BC' + h.slice(m[0].length);
+  }
+  else if(m = h.match(new RegExp('^紀元前' + NUM + '世紀(頃)?'))){
+    h = (m[2]? 'c. ': '') + m[1] + '世紀 BC' + h.slice(m[0].length);
+  }
+  else if(m = h.match(new RegExp(NUM + '年?(頃)?' + SEP + NUM + '年?(頃)?'))){
+    const rest = h.slice(m.index + m[0].length);
+    const sp = (m[2] || m[4]) && /^[ぁ-んァ-ヶ一-龥]/.test(rest)? ' ': '';
+    h = h.slice(0, m.index) + ((m[2] || m[4])? 'c. ': '') + m[1] + '–' + m[3] + sp + rest;
+  }
+  else if(m = h.match(new RegExp(NUM + '年頃'))){
+    h = h.slice(0, m.index) + 'c. ' + m[1] + h.slice(m.index + m[0].length);
+  }
+  else if(m = h.match(new RegExp(NUM + '世紀頃'))){
+    h = h.slice(0, m.index) + 'c. ' + m[1] + '世紀' + h.slice(m.index + m[0].length);
+  }
+  else if(m = h.match(new RegExp(NUM + '頃'))){
+    h = h.slice(0, m.index) + 'c. ' + m[1] + h.slice(m.index + m[0].length);
+  }
+  h = h.replace(/紀元(?=[0-9])/, '');
+  return h + tail;
+}
 function displayWorks(a){
   const ws = worksOf(a).slice();
   const mode = state.workSort || 'reg';
@@ -11522,7 +11590,7 @@ function backToListSync(){
   window.scrollTo(0, y);
   updateToolbarSlim();
   requestAnimationFrame(()=>{ const t2 = $('toolbar'); if(t2) t2.classList.remove('tbnoanim'); });
-  ensurePillAnchor();
+  ensurePillAnchor(true);
 }
 /* v27.2: one-step-back stack for person→person hops inside the
    detail view (influence rows and their derived reverse rows).
@@ -11679,7 +11747,7 @@ if(restoreListY) vtAfterFinish = ()=>{ if(view==='list') window.scrollTo(0, rest
 Object.keys(VIEW_EL).forEach(k=>{ const el = $(VIEW_EL[k]); if(el) el.classList.toggle('hidden', k!==v); });
 const tb0 = $('toolbar'); if(tb0) tb0.classList.remove('tbnoanim');
 if(restoreListY) window.scrollTo(0, restoreListY); else window.scrollTo(0,0); /* v27.9: one-shot (was restoreListScroll) */
-ensurePillAnchor();
+ensurePillAnchor(true);
 }
 /* v30.10: arriving at the timeline with a remembered map
    sheet (tlMapOpenArtist's detour) reopens it. When a view
@@ -11755,7 +11823,7 @@ document.body.classList.remove('vt-run');
 const tb = $('toolbar'); if(tb) tb.classList.remove('tbnoanim');
 vtBusy = false; vtFinish = null;
 if(vtAfterFinish){ const f = vtAfterFinish; vtAfterFinish = null; f(); }
-ensurePillAnchor();
+ensurePillAnchor(true);
 };
 vtFinish = finish;
 Promise.all([aIn, aOut].filter(Boolean).map(a=>a.finished.catch(()=>{}))).then(finish);
@@ -11773,49 +11841,68 @@ try{ const a = el.animate([{ transform:'translateX('+(dir*22)+'px)', opacity:.3 
 function segDir(order, from, to){ const d = Math.sign(order.indexOf(to) - order.indexOf(from)); return d || 1; }
 /* v16.0: moveNavInd is gone with the indicator it positioned.
    updatePill() toggling .on is now the whole mechanism. */
-/* ---------- v2.28: pill anchor self-heal ----------
-   The recurring iOS bug: during the full-screen fixed/transformed view
-   transitions, Safari's compositor can lose the viewport anchor of the
-   fixed pill layer and leave it rendered mid-screen until restart.
-   v2.22 removed the JS position rewriting and the backdrop filter;
-   the pill's own transform is now gone too (above). As the final
-   layer of defence, this guard measures the pill's real rect at every
-   settle point (transition finish, swipe teardown, scroll settle,
-   viewport resize, visibility return): a healthy pill's bottom edge
-   sits (safe-area + 10px, i.e. at most ~50px) above the viewport
-   bottom, so a gap outside [-1, 90] means the layer is displaced,
-   and a display toggle forces the browser to rebuild it in place.
-   Invisible when healthy; never writes positions itself. */
-let pillHealQueued = false;
-let pillHealQueuedAt = 0;
-function ensurePillAnchor(){
-/* a queued heal older than 1s means its rAF was starved (backgrounded
-   webview); treat the queue as stale instead of wedging the guard */
-if(pillHealQueued && Date.now() - pillHealQueuedAt < 1000) return;
-pillHealQueued = true; pillHealQueuedAt = Date.now();
-requestAnimationFrame(()=>{
-pillHealQueued = false;
-const nav = $('pillnav'); if(!nav) return;
-const r = nav.getBoundingClientRect();
-if(!r.height) return;
-const gap = window.innerHeight - r.bottom;
-if(gap < -1 || gap > 90){
-/* v5.53.0: the layer that gets rebuilt is the root shell's — the
-   bar itself is absolute inside it now, so dropping the shell's
-   layer is what re-anchors the chrome. */
-const shell = $('navshell') || nav;
-shell.style.display = 'none';
-void shell.offsetHeight;
-/* restore on the NEXT frame, not in the same task: a full frame with
-   the element unrendered guarantees the stale layer is dropped before
-   the rebuilt one is anchored. A timeout runs the same restore as a
-   fallback so a throttled rAF can never leave the pill hidden. */
-let restored = false;
-const restore = ()=>{ if(restored) return; restored = true; shell.style.display = ''; };
-requestAnimationFrame(restore);
-setTimeout(restore, 80);
+/* ---------- pill anchor guard (v2.28 origin; rebuilt v5.63.0) ----------
+   The recurring iOS bug (6th report 2026-11-18, on the Art Business
+   index): a bottom pill bar paints MID-VIEWPORT while its layout
+   rect stays healthy — a compositor paint-layer desync, not a
+   layout fault. History: v2.22 removed the JS position rewriting
+   and the backdrop filter; v2.28 removed the centring transform;
+   v16.0 removed the sliding indicator; v5.53.0 moved both bars
+   into #navshell — one full-viewport, fully transparent,
+   always-on fixed layer — on the theory that a single shell
+   layer could not be misplaced. On device it displaced anyway:
+   when that giant layer's tiles desync, its only painted content
+   (the bottom-anchored bars) is what shows the offset. Two
+   structural defects compounded it: (1) the bars' anchor depended
+   on the shell's layer — the largest, most repaint-heavy fixed
+   layer in an app whose view transitions constantly rebuild the
+   fixed layer tree (main.vt-fixed + transformed sliding views);
+   (2) the self-heal guard measured ONLY #pillnav, which is
+   display:none in Art Business views — the biz bar was never
+   guarded at all, which is why this instance persisted into a
+   screenshot.
+   v5.63.0 design change: #navshell is abolished. Each bar is a
+   DIRECT child of body and its own small position:fixed layer —
+   the shape of the diary app's pill (never reported displaced)
+   and of this app's viewer / sheets (small, self-owned layers).
+   The guard now measures the CURRENTLY VISIBLE bar and, at every
+   view-change settle point (hard call), forces a one-frame layer
+   rebuild of that bar (display none → reflow → restore next
+   frame, timeout fallback) whether or not displacement is
+   detected: prevention at the exact moments the layer tree is
+   rebuilt, instead of detection after the fact. Scroll / resize
+   keep the soft rect check (a healthy bar's bottom edge sits at
+   most ~90px above the viewport bottom). The sandbox cannot
+   reproduce the iOS compositor fault; geometry is validated in
+   the harness, the fault itself is device-verified. */
+let pillHealBusy = false;
+function pillBarEl(){
+  const bp = $('bizpillbar');
+  if(bp && bp.style.display !== 'none') return bp;
+  return $('pillnav');
 }
-});
+function ensurePillAnchor(hard){
+  const bar = pillBarEl(); if(!bar) return;
+  const r = bar.getBoundingClientRect();
+  if(!r.height) return;
+  if(!hard){
+    const gap = window.innerHeight - r.bottom;
+    if(gap >= -1 && gap <= 90) return;
+  }
+  if(pillHealBusy) return;
+  pillHealBusy = true;
+  const prev = bar.style.display;
+  bar.style.display = 'none';
+  void bar.offsetHeight;
+  /* restore on the NEXT frame, not in the same task: a full frame
+     with the bar unrendered guarantees the stale layer is dropped
+     before the rebuilt one is anchored. A timeout runs the same
+     restore as a fallback so a throttled rAF can never leave the
+     bar hidden. */
+  let restored = false;
+  const restore = ()=>{ if(restored) return; restored = true; bar.style.display = prev; pillHealBusy = false; };
+  requestAnimationFrame(restore);
+  setTimeout(restore, 80);
 }
 let pillScrollT = null, pillScrollCheckAt = 0;
 window.addEventListener('scroll', ()=>{
@@ -11829,7 +11916,7 @@ if(pillScrollT) clearTimeout(pillScrollT);
 pillScrollT = setTimeout(ensurePillAnchor, 180);
 }, { passive:true });
 if(window.visualViewport) visualViewport.addEventListener('resize', ()=>{ setTimeout(ensurePillAnchor, 60); });
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensurePillAnchor(); });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensurePillAnchor(true); });
 /* v2.24: the list toolbar docks under the sticky app header; the
    header's height (safe-area inset + title row + sync line) is measured
    into --hdrh so the dock point is exact on any device. Re-measured on
@@ -13565,45 +13652,23 @@ function syncBizBar(v){
   if(nav) nav.style.display = biz? 'none': '';
   if(bar){ bar.style.display = biz? 'block': 'none'; if(biz) renderBizPillBar(); }
 }
-/* v32.10.0: each Art Business chapter's card image is the
-   representative work (works[0]) of the artist at the chapter's
-   centre, read off the chapter's own cases and text:
-   ch.1 Leonardo (the 《サルヴァトール・ムンディ》 case is the
-   chapter's only case), ch.2 Pollock (the 《Blue Poles》 case,
-   most-mentioned), ch.3 Hockney (the 2018 leap case), ch.5
-   Basquiat (the chapter's main thread — the Maezawa purchase),
-   ch.6 Matisse (the 「生前に決まった例外」 case), ch.7 Picasso
-   (the lead's model; Hirst is the counter-example).
-   v32.11.0: ch.4 (money and life, inserted after ch.3) is
-   Hockney again — its central case is the same 2018 leap,
-   read for what the artist actually received (nothing).
-   Chapters 8 (joining a major gallery), 10 (how to read data),
-   11 (market trends) and 12 (Japan/Asia's position) have no
-   single central artist, so their cards — and the price
-   table's and glossary's — carry a typographic plate instead.
-   v32.14.0: ch.9 (art schools of the world, inserted after
-   ch.8) is Richter — the chapter's archetype of the non-elite
-   route (Dresden → Düsseldorf), resolved as artist id 75.
-   v32.17.0: ch.10 (artist produce, inserted after ch.9) is
-   Murakami — the chapter's central case of an artist who
-   built the audience machinery himself (Kaikai Kiki /
-   GEISAI), resolved as artist id 89.
-   The original assignment is recorded in the v32.10.0
-   WORKLOG. If the artist or the work image cannot be resolved
-   in the loaded data, the card falls back to the typographic
-   plate — never an empty slot. */
-const BIZ_CH_ARTIST = { 'what-is-art-business': 55, 'how-the-market-works': 69, 'how-prices-move': 77, 'money-and-life': 77, 'the-explosion': 'jean-michel-basquiat', 'what-makes-a-master': 8, 'how-to-do-it-well': 63, 'art-schools-of-the-world': 75, 'artist-produce': 89 };
+/* v5.63.0 (his call, 2026-11-18): the Art Business index is
+   TEXT-ONLY — no chapter images, no typographic plates — in
+   the Production Guide chapter index's composition (title +
+   meta text cards), and the grid is fixed at the middle size
+   ('compact', the guide's fixed stop): this surface's 5-mode
+   size switch (zukan.smode.biz) is REMOVED, mirroring the
+   guide index's treatment since v5.51.0. The per-chapter
+   artist assignment that fed the old card images (v32.10.0,
+   works[0] of each chapter's central artist) is retired with
+   the plates; the assignment is recorded in the v32.10.0
+   WORKLOG. Chapter titles were shortened in artbusiness.json
+   in the same build, pill labels aligned to the same forms. */
 function bizIndexCardHTML(o){
-  let plate = null;
-  if(o.artist != null){
-    const db = CTX.artists && CTX.artists.DB;
-    const a = db? db.artists.find(x=> String(x.id) === String(o.artist)): null;
-    const w = a? thumbOf(a): null;
-    if(w && w.img) plate = '<div class="ph" data-work="' + escA(a.id) + '" data-ds="artists">' + imgHTML(w, tileSize()) + '</div>';
-  }
-  if(!plate) plate = '<div class="ph biztypo"><span class="biztypo-c">' + esc(o.no) + '</span></div>';
-  return '<figure class="work bizcard" onclick="' + o.onclick + '">' + plate
-    + '<figcaption><div class="bizcname">' + esc(o.title) + '</div><div class="bizcmeta">' + esc(o.meta) + '</div></figcaption></figure>';
+  return '<figure class="work bizcard" onclick="' + o.onclick + '"><figcaption>'
+    + '<div class="bizcname">' + esc(o.title) + '</div>'
+    + (o.meta? '<div class="bizcmeta">' + esc(o.meta) + '</div>': '')
+    + '</figcaption></figure>';
 }
 function renderBiz(){
   const el = $('viewBiz'); if(!el) return;
@@ -13613,17 +13678,13 @@ function renderBiz(){
   if(!bizData && !bizError) h += '<div class="empty">読み込み中…</div>';
   else if(bizError && !bizData) h += '<div class="empty">読み込めませんでした。<br><button class="txtbtn" onclick="bizRetry()">再試行</button></div>';
   else {
-    /* v32.10.0: the index rides the artist-list card component
-       (his pinned definition 2026-11-16 13:06): vertical grid
-       cards — image on top, title + chapter number below — in
-       a .grid whose column count follows this surface's own
-       5-mode switch (zukan.smode.biz). Chapter transitions are
+    /* v5.63.0: text-only cards at the fixed middle size — see
+       the note at bizIndexCardHTML. Chapter transitions are
        unchanged (openBizPrice / openBizChapter). */
-    h += '<div class="smodewrap">' + surfModebarHTML('biz', 'setBizMode') + '</div>';
-    h += '<div class="grid ' + SURF.biz + '" id="bizgrid">';
-    h += bizIndexCardHTML({ no:'表', title:'作品価格早見表', meta:'価格がわかる作品の一覧', onclick:'openBizPrice()' });
-    h += bizChapters().map((c, i)=> bizIndexCardHTML({ no:String(i + 1), title:c.title || '', meta:'第' + (i + 1) + '章', artist:(BIZ_CH_ARTIST[c.id] != null? BIZ_CH_ARTIST[c.id]: null), onclick:'openBizChapter(\'' + escA(c.id) + '\')' })).join('');
-    if(bizGlossary().length) h += bizIndexCardHTML({ no:'辞', title:'用語辞典', meta:'全' + bizGlossary().length + '語', onclick:'openBizChapter(\'glossary\')' });
+    h += '<div class="grid compact" id="bizgrid">';
+    h += bizIndexCardHTML({ title:'作品価格早見表', meta:'価格がわかる作品の一覧', onclick:'openBizPrice()' });
+    h += bizChapters().map((c, i)=> bizIndexCardHTML({ title:c.title || '', meta:'第' + (i + 1) + '章', onclick:'openBizChapter(\'' + escA(c.id) + '\')' })).join('');
+    if(bizGlossary().length) h += bizIndexCardHTML({ title:'用語辞典', meta:'全' + bizGlossary().length + '語', onclick:'openBizChapter(\'glossary\')' });
     h += '</div>';
   }
   h += '</div>';
@@ -15079,15 +15140,18 @@ function deathAge(a){
 function yearsDisplay(a){
 const y = String((a && a.years) || '');
 if(!y) return '';
+/* v5.63.0: the displayed form is bcYears-compacted (BC / c.);
+   the age arithmetic below keeps reading the raw string. */
+const yy = bcYears(y);
 const m = y.match(/^(\d{3,4})\s*[–—-]\s*$/) || y.match(/^(\d{3,4})$/);
 if(m){
   const age = new Date().getFullYear() - parseInt(m[1], 10);
-  if(age >= 0 && age <= 110) return y + ' ・' + age + '歳';
-  return y;
+  if(age >= 0 && age <= 110) return yy + ' ・' + age + '歳';
+  return yy;
 }
 const da = deathAge(a);
-if(da != null) return y + ' ・享年' + da + '歳';
-return y;
+if(da != null) return yy + ' ・享年' + da + '歳';
+return yy;
 }
 /* v32.13.0: display-order reverse for the person lists (his
    2026-11-16 call) — a pill toggling the chronological order
@@ -15244,6 +15308,39 @@ function subName(a){
   if(nat && nat !== pri && parts.indexOf(nat) < 0) parts.push(nat);
   return parts.join('　');
 }
+/* v5.63.0 (his call, 2026-11-18): the furigana line. Only in
+   the v5.58.0 swap cases — the primary displayed name is the
+   Latin / original form — and only from stored data:
+   name_kana first, else the registered name itself (a kana
+   transliteration by construction in swap cases). NEVER
+   invented: no stored kana form, no line. Japanese-section
+   artists and records whose primary already is the kana form
+   never reach the swap branch, so they get no line. */
+function isKanaOnly(s){ return /^[ぁ-んァ-ヶー・\s]+$/.test(s); }
+function kanaName(a){
+  if(!a) return '';
+  const pri = dispName(a);
+  if(pri === String(a.name || '')) return '';
+  const k = String(a.name_kana || '').trim();
+  if(k && k !== pri && isKanaOnly(k)) return k;
+  const n = String(a.name || '').trim();
+  if(n && n !== pri && isKanaOnly(n)) return n;
+  return '';
+}
+/* v5.63.0: the detail header's name line. In the swap cases
+   it becomes the furigana line (kanaName, stored data only);
+   a native-script name that differs from both the primary
+   and the kana stays after it. Non-swap cases keep the
+   current subName line unchanged. */
+function detailNameLineHTML(a){
+  const fk = kanaName(a);
+  if(fk){
+    const nat = String((a && a.name_native) || '').trim();
+    const showNat = nat && nat !== dispName(a) && nat !== fk;
+    return '<span class="dnwrap"><span class="dfuri">' + esc(fk) + '</span>' + (showNat? '<span class="dlatin">' + esc(nat) + '</span>': '') + '</span>';
+  }
+  return '<span class="dlatin">' + esc(subName(a)) + '</span>';
+}
 function syncRegionSeg(){
   const seg = $('regSeg'); if(!seg) return;
   const show = DS === 'artists';
@@ -15285,8 +15382,9 @@ function toggleMakerRev(){
 function personCardHTML(a, kind){
 const th = thumbOf(a);
 const vn = videoCountOf(a);
+const fk = kanaName(a);
 const click = kind? 'openCrossDetail(\''+kind+'\',\''+escA(a.id)+'\')' : 'openDetail(\''+escA(a.id)+'\')';
-return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):noPhotoHTML())+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(dispName(a))+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(subName(a))+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
+return '<figure class="work" data-aid="'+escA(a.id)+'" onclick="'+click+'"><div class="ph'+(th?'':' noplate')+'" data-work="'+escA(a.id)+'"'+(kind?' data-ds="'+kind+'"':'')+'>'+(th?imgHTML(th, tileSize()):noPhotoHTML())+'</div><figcaption><div class="nm">'+(isFavPerson(kind||DS, a.id)? '<span class="favmark">★</span> ': '')+esc(dispName(a))+(isMustSeeArtist(kind||DS, a)? mustSeeChipHTML(): '')+'</div>' + (fk? '<div class="fkana">'+esc(fk)+'</div>': '') + (a.years? '<div class="yrs">'+esc(yearsDisplay(a))+'</div>': '') + (vn? '<div class="lvid">▶×'+vn+'</div>': '') + fieldSymsHTML(a) + '<div class="sub">'+esc(subName(a))+'</div>' + searchSnipHTML(a) + '</figcaption></figure>';
 }
 function crossSectionHTML(){
 const cross = crossMatches(); if(!cross.length) return '';
@@ -16305,7 +16403,7 @@ let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" o
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(dispName(a))+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
-((subName(a)||snsLinksHTML(a))? '<div class="dlatinrow"><span class="dlatin">'+esc(subName(a))+'</span>'+snsLinksHTML(a)+'</div>': '')+
+((subName(a)||snsLinksHTML(a))? '<div class="dlatinrow">'+detailNameLineHTML(a)+snsLinksHTML(a)+'</div>': '')+
 /* v5.54.0: the .dmeta strip that sat here (years / field /
    section) is gone from the header — its information moved
    into the profile block for everyone.
@@ -19458,7 +19556,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中624人まで完了。残り109人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは450点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は170人・計401点。","肖像写真は173人。"]},{"v":null,"label":"展示情報","lines":["展示は2,907件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中651人まで完了。残り82人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは585点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は194人・計462点。","肖像写真は194人。"]},{"v":null,"label":"展示情報","lines":["展示は3,279件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23521,7 +23619,7 @@ function teardownSwipe(st, commit){
     st.newEl.classList.add('hidden');
     window.scrollTo(0, st.y||0);
   }
-  ensurePillAnchor();
+  ensurePillAnchor(true);
 }
 (function(){
   document.addEventListener('touchstart', e=>{
@@ -23614,7 +23712,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.62.0';
+const APP_VERSION = '5.63.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
