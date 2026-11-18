@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.68.0">
+<meta name="app-version" content="5.69.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -15913,9 +15913,20 @@ openSettingsPanel('reqnotif');
    old interviews position, shown when either side carries
    content. A restored state.tab of 'quotes' is normalized
    to 'interviews' (setTab + renderDetail). */
-const DTABS = ['works','drawings','exhibitions','feat','relations','bio','process','interviews','influences','books','prices'];
+/* v5.69.0: the tab order is reset to his list (2026-11-19) —
+   作品 / ドローイング / 制作過程 / 特徴 / 関係 / インタビュー /
+   展示 / 価格 / 来歴 / 作品集 — and 影響 (influences) MERGES
+   into 関係 (relations): the standalone 影響 tab is gone; its
+   panel content (the curated influences + the derived
+   reverse list, rendering and links unchanged) now rides at
+   the end of the 関係 panel, and the 関係 button/fallback
+   count that content as relations content. A restored
+   state.tab of 'influences' is normalized to 'relations'
+   (setTab + renderDetail), like 'quotes' before it. */
+const DTABS = ['works','drawings','process','feat','relations','interviews','exhibitions','prices','bio','books'];
 function setTab(t){
 if(t === 'quotes') t = 'interviews'; /* v5.59.0: the merged tab's old name */
+if(t === 'influences') t = 'relations'; /* v5.69.0: the merged tab's old name */
 state.tab = t;
 const pg = $('dpager');
 if(!pg){ renderDetail(); return; }
@@ -16673,8 +16684,11 @@ if(state.tab==='process' && !hasProcessContent && !pps.length) state.tab = 'work
    when it would be entirely empty. */
 if(state.tab==='quotes') state.tab = 'interviews';
 if(state.tab==='interviews' && !intvArr.length && !hasQuotesTab) state.tab = 'works';
-if(state.tab==='influences' && !inflArr.length && !inflGiven.length) state.tab = 'works';
-if(state.tab==='relations' && !relCount) state.tab = 'works';
+/* v5.69.0: a restored 'influences' state lands on the merged
+   関係 tab; the merged tab falls back to 作品 only when BOTH
+   sides would be entirely empty. */
+if(state.tab==='influences') state.tab = 'relations';
+if(state.tab==='relations' && !relCount && !inflArr.length && !inflGiven.length) state.tab = 'works';
 let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
@@ -16690,15 +16704,14 @@ profileBandHTML(a)+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
-'<button class="'+(state.tab==='exhibitions'?'on':'')+'" onclick="setTab(\'exhibitions\')"'+(exsOfA.length? '': ' style="display:none"')+'>展示</button>'+
-'<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
-'<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+(relCount? '': ' style="display:none"')+'>関係</button>'+
-'<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+((hasProcessContent || pps.length)? '': ' style="display:none"')+'>制作過程</button>'+
+'<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
+'<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+((relCount || inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+((intvArr.length || hasQuotesTab)? '': ' style="display:none"')+'>インタビュー</button>'+
-'<button class="'+(state.tab==='influences'?'on':'')+'" onclick="setTab(\'influences\')"'+((inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>影響</button>'+
-'<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
+'<button class="'+(state.tab==='exhibitions'?'on':'')+'" onclick="setTab(\'exhibitions\')"'+(exsOfA.length? '': ' style="display:none"')+'>展示</button>'+
 '<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
+'<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
+'<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '</div>';
 let worksHTML = '', bioHTML = '', featHTML = '';
 bioStripWiring = [];
@@ -17118,7 +17131,10 @@ if(quotesHTML) interviewsHTML = interviewsHTML? interviewsHTML + quotesHTML: quo
    curated). A row whose id resolves in the current dataset
    navigates to that person's detail; an unregistered influence
    (id null, or an id this dataset does not hold) renders as
-   plain text — the name is the record, not a dead link. */
+   plain text — the name is the record, not a dead link.
+   v5.69.0: this block no longer forms its own tab — it is
+   appended to the 関係 panel at the pager assembly, with its
+   rendering and links exactly as they were here. */
 let influencesHTML = '';
 if(inflArr.length){
 influencesHTML = '<h3 class="subhead">影響を受けた作家</h3>' + inflArr.map(inf=>{
@@ -17141,25 +17157,30 @@ return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner
    for 影響, the direction); ties and compared rows shown from
    the reverse side carry the name-prefixed note (see
    relationsFor). Empty for artists with no relations, who
-   never see the tab. */
+   never see the tab.
+   v5.69.0: the former 影響 tab's content (influencesHTML,
+   built just above) is appended to this panel at the pager
+   assembly — one 関係 tab now carries both datasets. */
 let relationsHTML = '';
 if(relGroups.received.length) relationsHTML += '<h3 class="subhead">影響を受けた作家</h3>' + relGroups.received.map(r=>relRowHTML(r, false)).join('');
 if(relGroups.given.length) relationsHTML += '<h3 class="subhead">影響を与えた作家</h3>' + relGroups.given.map(r=>relRowHTML(r, false)).join('');
 if(relGroups.ties.length) relationsHTML += '<h3 class="subhead">師弟・つながり</h3>' + relGroups.ties.map(r=>relRowHTML(r, true)).join('');
 if(relGroups.genealogy.length) relationsHTML += '<h3 class="subhead">同じ系譜の作家</h3>' + relGroups.genealogy.map(r=>relRowHTML(r, false)).join('');
 if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較される作家</h3>' + relGroups.compared.map(r=>relRowHTML(r, true)).join('');
+/* v5.69.0: panels follow the new DTABS order; there is no
+   influences panel — its content rides inside the relations
+   panel (see the merge at the relations assembly below). */
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
-+'<div class="dpage" data-dtab="exhibitions">'+exhibitionsHTML+'</div>'
-+'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
-+'<div class="dpage" data-dtab="relations">'+relationsHTML+'</div>'
-+'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
++'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
++'<div class="dpage" data-dtab="relations">'+relationsHTML+influencesHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
-+'<div class="dpage" data-dtab="influences">'+influencesHTML+'</div>'
-+'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
++'<div class="dpage" data-dtab="exhibitions">'+exhibitionsHTML+'</div>'
 +'<div class="dpage" data-dtab="prices">'+pricesHTML+'</div>'
++'<div class="dpage" data-dtab="bio">'+bioHTML+'</div>'
++'<div class="dpage" data-dtab="books">'+booksHTML+'</div>'
 +'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
 /* v5.65.0: the deregistration request rides at the very bottom
@@ -24137,7 +24158,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.68.0';
+const APP_VERSION = '5.69.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
