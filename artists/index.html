@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.66.0">
+<meta name="app-version" content="5.67.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -662,6 +662,11 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    a native-script name, when present, kept after it. */
 .dlatinrow .dnwrap{display:flex; align-items:baseline; gap:10px; min-width:0;}
 .dfuri{font-size:16px; color:var(--muted); letter-spacing:.04em;}
+/* v5.67.0: the held (minimal) view's two own lines — the years
+   under the name, and the quiet closing note. Everything else
+   on that view reuses the detail head / gallery styles. */
+.heldyears{font-size:13px; color:var(--muted); margin-top:3px;}
+.heldnote{font-size:12px; color:var(--muted); text-align:center; line-height:1.7; margin:26px 12px 10px;}
 .snsrow{display:inline-flex; gap:6px; flex:none;}
 .snsbtn{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1.5px solid var(--lineStrong); border-radius:999px; color:var(--text); background:var(--card); text-decoration:none;}
 .snsbtn svg{width:16px; height:16px; display:block;}
@@ -10584,6 +10589,12 @@ updated_at: String(a.updated_at||'')
    contract with the harvest side: a record carrying thumb_pinned_at
    has a user-chosen works[0]; automated reordering must not touch it */
 if(a.thumb_pinned_at) rec.thumb_pinned_at = String(a.thumb_pinned_at);
+/* v5.67.0: held （保留） — the holding-layer flag, curated on the
+   data side only (the app never sets it). Carried here, in
+   mergeDataInto and in saveEditor from the start — the
+   name_kana lesson: a field the whitelist strips is a field
+   the next device sync erases from the canonical. */
+if(a.held) rec.held = true;
 return rec;
 }
 function saveDB(){ dataSave(CONFIG.prefix, JSON.stringify(DB));}
@@ -10611,6 +10622,21 @@ function artistById(id){
 if(id==null) return null;
 return DB.artists.find(a=>String(a.id)===String(id)) || null;
 }
+/* v5.67.0: the holding layer （保留層）. A record-level `held:true`
+   (artists book only, set on the data side) takes the person out
+   of every roster surface — the list, its counts, search, the
+   gallery roster tab — while the record itself stays fully in
+   the data: cross-references (relations, professors, museum
+   holdings, price cards) keep resolving and open the minimal
+   view (renderHeldDetail) instead of the full page. Absent or
+   false = a normal roster member. With no held records in the
+   data, every path through these helpers reduces to the
+   pre-v5.67.0 behaviour exactly. */
+function isHeld(a){ return !!(a && a.held); }
+function rosterBase(){
+return DS==='artists'? DB.artists.filter(a=>!isHeld(a)): DB.artists;
+}
+function rosterCount(){ return rosterBase().length; }
 function nextId(){
 let m = 0; DB.artists.forEach(a=>{ const n=parseInt(a.id,10); if(!isNaN(n) && n>m) m=n;});
 return m+1;
@@ -13890,7 +13916,7 @@ $('appname').textContent = CONFIG.appName;
    header (seen in the user's 2026-11-12 recording: 作家図鑑 header
    showing 全236名 on an artist detail). Write it here, where the
    dataset binding has just changed. */
-$('topcount').textContent = '全'+DB.artists.length+'名';
+$('topcount').textContent = '全'+rosterCount()+'名'; /* v5.67.0: the header count is the roster count (held excluded) */
 }
 /* ---------- dataset switching （ページ遷移なし・文脈はデータセット毎に保持） ---------- */
 function switchDataset(kind){
@@ -14367,7 +14393,11 @@ scored.sort((x, y)=> (y.s - x.s) || (x.i - y.i));
 return scored.map(x=> x.a);
 }
 function filteredArtists(){
-let arr = DB.artists;
+/* v5.67.0: the cast starts from the roster — held records are
+   not roster members (see isHeld). This one substitution
+   carries the list (era-grouped + flat), search results, the
+   sort/era/tag/symbol groupings and the favorites filter. */
+let arr = rosterBase();
 const toks = queryToks();
 if(toks.length){
 arr = arr.filter(a=>artistMatches(a, toks));
@@ -14389,7 +14419,10 @@ const toks = queryToks(); if(!toks.length) return [];
 const other = DS==='artists'? 'designers':'artists';
 const oc = CTX[other];
 if(!oc || !oc.DB || !Array.isArray(oc.DB.artists)) return [];
-return oc.DB.artists.filter(a=>artistMatches(a, toks));
+const hits = oc.DB.artists.filter(a=>artistMatches(a, toks));
+/* v5.67.0: held artists never surface as search results, from
+   either book (the flag is artists-only, so designers pass). */
+return other==='artists'? hits.filter(a=>!isHeld(a)): hits;
 }
 function openCrossDetail(kind, id){
 /* v32.17.0: arm the route origin BEFORE the dataset switch —
@@ -14503,6 +14536,8 @@ const scored = [];
 for(const kind of ['artists','designers']){
 const c = CTX[kind]; if(!c || !c.DB || !Array.isArray(c.DB.artists)) continue;
 c.DB.artists.forEach(a=>{
+/* v5.67.0: the near-miss rescue never resurrects a held artist */
+if(kind==='artists' && isHeld(a)) return;
 const cl = nearCloseness(a, qForms);
 if(cl) scored.push({ kind, a, score: -cl.d, dist: cl.d, head: cl.head, flen: cl.flen });
 });
@@ -14703,7 +14738,7 @@ document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on
 syncSortSeg();
 syncRegionSeg();
 syncUiCluster();
-$('topcount').textContent = '全'+DB.artists.length+'名';
+$('topcount').textContent = '全'+rosterCount()+'名'; /* v5.67.0: roster count, as in updateHeader */
 $('searchbox').value = state.query;
 updateSearchClear();
 
@@ -14713,7 +14748,7 @@ updateSearchClear();
    selection saved before the curation is re-canonicalised here too. */
 if(state.tags && state.tags.size){ const nt = new Set(); state.tags.forEach(t=>{ if(!tagHidden(t) && !tagChipHidden(t)) nt.add(normTag(t)); }); state.tags = nt; }
 const counts = {};
-DB.artists.forEach(a=>{ normTagSet(a).forEach(t=>{ counts[t]=(counts[t]||0)+1; }); });
+rosterBase().forEach(a=>{ normTagSet(a).forEach(t=>{ counts[t]=(counts[t]||0)+1; }); }); /* v5.67.0: chip counts count the roster */
 const tags = Object.keys(counts).filter(t=>!tagChipHidden(t)).sort((x,y)=>counts[y]-counts[x]);
 const TAG_LIMIT = 12;
 const tagChip = t=>'<button class="tagchip'+(state.tags.has(t)?' on':'')+'" data-t="'+escA(t)+'" onclick="toggleTag(\''+escA(t)+'\')">'
@@ -14981,9 +15016,9 @@ document.querySelectorAll('#viewList .symsecbtn').forEach(el => {
 });
 }
 function symMatchCount(sel){
-if(!sel || !sel.size) return DB.artists.length;
+if(!sel || !sel.size) return rosterCount(); /* v5.67.0: roster counts throughout the list's filter UI */
 let n = 0;
-DB.artists.forEach(a => { if(fieldSymsList(a).some(g => sel.has(g))) n++; });
+rosterBase().forEach(a => { if(fieldSymsList(a).some(g => sel.has(g))) n++; });
 return n;
 }
 function openSymSheet(){
@@ -14997,8 +15032,8 @@ function renderSymSheet(){
 const list = $('symlist'); if(!list) return;
 const sel = symDraft || symSel();
 const counts = {};
-DB.artists.forEach(a => fieldSymsList(a).forEach(g => { counts[g] = (counts[g] || 0) + 1; }));
-let h = '<button class="symopt' + (sel.size? '' : ' on') + '" onclick="toggleSymDraft(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (sel.size? '' : ' ✓') + '</span></button>';
+rosterBase().forEach(a => fieldSymsList(a).forEach(g => { counts[g] = (counts[g] || 0) + 1; })); /* v5.67.0: roster counts */
+let h = '<button class="symopt' + (sel.size? '' : ' on') + '" onclick="toggleSymDraft(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + rosterCount() + '名' + (sel.size? '' : ' ✓') + '</span></button>';
 SYM_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (sel.has(g)? ' on' : '') + '" onclick="toggleSymDraft(\'' + g + '\')"><span class="symg">' + g + '</span>' + label + '<span class="symcnt">' + counts[g] + '名' + (sel.has(g)? ' ✓' : '') + '</span></button>'; });
 list.innerHTML = h;
 const ap = $('symApply'); if(ap) ap.textContent = symMatchCount(sel) + '名を見る';
@@ -15065,7 +15100,7 @@ function eraBtnHTML(){
 }
 function renderEraFilter(){
   const present = new Set();
-  DB.artists.forEach(a => { const e = eraOf(a); if(e) present.add(e); });
+  rosterBase().forEach(a => { const e = eraOf(a); if(e) present.add(e); }); /* v5.67.0: roster only */
   if(eraFilter && !present.has(eraFilter)){ eraFilter = ''; try{ storeSet('zukan.eraFilter', ''); }catch(e){} }
   const cur = eraTabOf(eraFilter);
   /* v32.6 (item E): scoped to the list view. The document-wide
@@ -15081,8 +15116,8 @@ function renderEraFilter(){
 function openEraSheet(){
   const list = $('eralist'); if(!list) return;
   const counts = {};
-  DB.artists.forEach(a => { const e = eraOf(a); if(e) counts[e] = (counts[e] || 0) + 1; });
-  let h = '<button class="symopt' + (eraFilter? '' : ' on') + '" onclick="setEraFilter(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + DB.artists.length + '名' + (eraFilter? '' : ' ✓') + '</span></button>';
+  rosterBase().forEach(a => { const e = eraOf(a); if(e) counts[e] = (counts[e] || 0) + 1; }); /* v5.67.0: roster counts */
+  let h = '<button class="symopt' + (eraFilter? '' : ' on') + '" onclick="setEraFilter(\'\')"><span class="symg"></span>すべて<span class="symcnt">全' + rosterCount() + '名' + (eraFilter? '' : ' ✓') + '</span></button>';
   ERA_TABS.forEach(([g, label]) => { if(counts[g]) h += '<button class="symopt' + (eraFilter === g? ' on' : '') + '" onclick="setEraFilter(\'' + g + '\')\"><span class="symg">◷</span>' + label + '（' + ERA_RANGE_TXT[g] + '）<span class="symcnt">' + counts[g] + '名' + (eraFilter === g? ' ✓' : '') + '</span></button>'; });
   list.innerHTML = h;
   $('erasheet').classList.remove('hidden');
@@ -16506,9 +16541,73 @@ const ph = th? '<div class="relph" data-relid="'+escA(r.id)+'">'+imgHTML(th, 256
 const mini = '<span class="relmini">'+ph+'<span class="relmeta"><span class="relname">'+esc(r.name)+'</span>'+(r.years? '<span class="relyears">'+esc(r.years)+'</span>': '')+'</span></span>';
 return '<button class="relrow" onclick="openDetail(\''+escA(r.id)+'\')">'+mini+'<span class="relnote">'+note+'</span><span class="inflgo">›</span></button>';
 }
+/* v5.67.0: the minimal view for a held artist — his exact spec:
+   the name (original + kana), the years, and the representative
+   works (the first 1–3 entries of the works array that carry an
+   image) as large photos opening the standard viewer. NOTHING
+   else: no profile band, no tabs, no fav/edit buttons, no
+   biography, no deregistration button — only the standard back
+   pill (its label logic is the full page's own: 一覧へ戻る, or
+   戻る when the chain entered from another surface / the
+   schools frame) and one honest line at the bottom. The view
+   rides the detail view's own shell, so the slide transition,
+   swipe-back and the back pill are the same mechanics as any
+   other sub-page. */
+function heldRepWorks(a){
+return worksOf(a).filter(w=> w && imgCandidates(w, 0).length).slice(0, 3);
+}
+let heldViewerWorks = [];
+function openHeldWork(i){ openViewer(heldViewerWorks, i, state.detailId); }
+function renderHeldDetail(a){
+const reps = heldRepWorks(a);
+heldViewerWorks = reps;
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button></div>'
++ '<h2 class="dname">'+esc(dispName(a))+'</h2>'
++ ((kanaName(a) || subName(a))? '<div class="dlatinrow">'+detailNameLineHTML(a)+'</div>': '')
++ (a.years? '<div class="heldyears">'+esc(yearsDisplay(a))+'</div>': '')
++ '</div>';
+if(reps.length){
+const cards = reps.map((w, i)=> ({ h: '<figure class="work" onclick="openHeldWork('+i+')"><div class="ph" data-heldidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(cardCapText(w.caption))+'</div></figcaption></figure>', e: packEst(cardCapText(w.caption), 'wide') }));
+html += packGalleryHTML(cards, 'wide');
+}
+html += '<p class="heldnote">この作家は現在、図鑑の一覧には表示されていません</p>';
+const v = $('viewDetail'); v.innerHTML = html;
+/* the plates hydrate exactly like the works tab's: directly
+   when already in the viewport, via the observer otherwise */
+v.querySelectorAll('[data-heldidx]').forEach(ph=>{
+const w = reps[+ph.dataset.heldidx]; if(!w) return;
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
+/* v27.9 (§6.4-1): the same post-slide promotion the full page
+   runs — two frames in, any visible plate still pending goes
+   direct. Idempotent (hydrateImg's job guard). */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+if(state.detailId == null || String(state.detailId) !== String(a.id)) return;
+const vv = $('viewDetail'); if(!vv || vv.classList.contains('hidden')) return;
+const vh2 = window.innerHeight || 800;
+vv.querySelectorAll('[data-heldidx]').forEach(ph2=>{
+const sp2 = ph2.querySelector('.imgholder');
+if(!sp2 || !sp2._work || sp2._imgJob || sp2.querySelector('img')) return;
+const r2 = sp2.getBoundingClientRect();
+if(r2.height > 0 && r2.bottom > -50 && r2.top < vh2 + 50){ if(imgObserver) imgObserver.unobserve(sp2); hydrateImg(sp2, sp2._work); }
+});
+}));
+}
 function renderDetail(){
 relsEnsure();
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
+/* v5.67.0: a held artist never renders the full page. Every
+   route into a person — relations and influence rows, the
+   schools' professor cards, museum holdings and exhibition
+   artist links, price-table cards — funnels through
+   openDetail into this render, so the minimal view is decided
+   here, once. Designers are never held (the flag is
+   artists-only and this gate also keys on the dataset). */
+if(DS==='artists' && isHeld(a)){ renderHeldDetail(a); return; }
 const ws = displayWorks(a);
 /* v30.6: drawings （ドローイング) — shown as their own tab right
    after 作品， only for artists who have at least one. */
@@ -22471,6 +22570,8 @@ if(old && old.interviews && old.interviews.length) rec.interviews = old.intervie
 if(old && old.influences && old.influences.length) rec.influences = old.influences;
 /* v5.57.0: nor the work_groups (no form field either) */
 if(old && old.work_groups && old.work_groups.length) rec.work_groups = old.work_groups;
+/* v5.67.0: nor the held flag (no form field either) */
+if(old && old.held) rec.held = true;
 /* v9.2: nor a work's held_by （所蔵館） — matched per work, like the pin */
 if(old && old.works) old.works.forEach(ow=>{ if(ow && ow.held_by){ const t = rec.works.find(x=> (x.file && ow.file && x.file===ow.file) || (x.img && ow.img && x.img.url && ow.img.url && x.img.url===ow.img.url)); if(t && !t.held_by) t.held_by = ow.held_by; } });
 /* v10.3: nor a work's hires flag — same per-work carry.
@@ -22567,6 +22668,15 @@ function mergeDataInto(local, incoming){
     if(ia.work_groups && ia.work_groups.length) merged.work_groups = ia.work_groups;
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
+    /* v5.67.0: held （保留）, the record-level holding flag — the
+       NEWER record's statement wins (the scalarFromRemote
+       authority above): a data-side set or clear always bumps
+       updated_at, so a strictly newer incoming record states
+       the flag for the merged record, present or absent; with
+       an older or equal incoming copy the local statement
+       stands, so a stale base can neither resurrect a cleared
+       flag nor strip a set one it never knew. */
+    if(scalarFromRemote){ if(ia.held) merged.held = true; else delete merged.held; }
     /* works merged by file key / fileId / url / caption — a work is registered
        under every key it has, so the same work dedupes across sources whose
        representations differ (e.g. local file key vs. remote img.url).
@@ -24013,7 +24123,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.66.0';
+const APP_VERSION = '5.67.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -26085,7 +26195,11 @@ function xMuseumRoster(){
     const cards = hit.artists.map(en => {
       if(en && en.id != null){
         const a = pool.find(x => String(x.id) === String(en.id));
-        if(a) return personCardHTML(a, 'artists');
+        /* v5.67.0: a held artist leaves the roster tab too (no
+           card, not even the name-only form — the tab is a
+           roster surface; the name stays reachable from the
+           gallery's own page data, not from this grid) */
+        if(a) return isHeld(a)? '': personCardHTML(a, 'artists');
       }
       const nm2 = (en && en.name) || '';
       if(!nm2) return '';
