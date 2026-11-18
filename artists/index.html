@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.61.0">
+<meta name="app-version" content="5.61.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12975,9 +12975,11 @@ function bizCasesHTML(cases){
        box-shadow dims everything outside the region — and
        the passage's explanation appears in the card directly
        beneath the painting (n / N counter + 前へ/次へ
-       stepping). The default card shows f.intro. Below the
-       unit, the numbered callout list is an index: tapping
-       an item selects it and scrolls the figure into view.
+       stepping). The default card shows f.intro. (v5.61.1:
+       the numbered callout index that sat below the unit
+       was removed — his verdict: the locations are already
+       marked in the painting itself, so the list only
+       duplicated the markers.)
        Tapping the painting itself opens the PLAIN painting
        (no markers) in #figzoom; the selection stays in the
        chapter view. Marker data rides in data-* attributes,
@@ -13047,8 +13049,8 @@ function closeFigZoom(){
    marker buttons' data-* attributes, so re-rendering a section
    (guideSetSection swaps innerHTML) needs no store rebuild.
    Selecting a passage moves the ring (its box-shadow dims the
-   rest of the painting), lights the marker and the matching
-   index item, and rewrites the anchored card in place. */
+   rest of the painting), lights the marker, and rewrites the
+   anchored card in place. */
 function annSetSel(root, i){
   const marks = [...root.querySelectorAll('.figmark')];
   const n = marks.length; if(!n) return;
@@ -13125,8 +13127,6 @@ function bizFigsHTML(figs){
       const ix = bizFigStore.length; bizFigStore.push(r.w);
       const marks = (f.markers || []).map((m, i)=>
         '<button class="figmark" style="left:' + (+m.x) + '%;top:' + (+m.y) + '%" data-x="' + (+m.x) + '" data-y="' + (+m.y) + '" data-call="' + escA(m.callout || '') + '" data-text="' + escA(m.text || '') + '" onclick="annSelect(event,this)" aria-label="マーカー' + (i + 1) + '">' + (i + 1) + '</button>').join('');
-      const items = (f.markers || []).map((m, i)=>
-        '<button class="figannitem" onclick="annSelect(event,this)"><span class="figannn">' + (i + 1) + '</span><span class="figanncmain"><span class="figannc">' + esc(m.callout || '') + '</span><span class="figannl">' + esc(m.loc || '') + '</span></span></button>').join('');
       return '<div class="bizfig figann" data-sel="">'
         + (f.title? '<div class="figcap"><b>' + esc(f.title) + '</b></div>': '')
         + '<div class="figannunit"><div class="figannstage" data-bfig="' + ix + '" onclick="annStageTap(event,this)">'
@@ -13134,7 +13134,7 @@ function bizFigsHTML(figs){
         + '<div class="figannhole hidden"></div>' + marks + '</div>'
         + '<div class="figanncard"><div class="figannchead"><span class="figanncount"></span><span class="figannnav"><button class="figannbtn" onclick="annStep(event,this,-1)">前へ</button><button class="figannbtn" onclick="annStep(event,this,1)">次へ</button></span></div>'
         + '<div class="figanncall"></div><div class="figanntext">' + esc(f.intro || '') + '</div></div></div>'
-        + '<div class="figannlist">' + items + '</div><div class="figzoomhint">絵はタップで拡大できます</div>'
+        + '<div class="figzoomhint">絵はタップで拡大できます</div>'
         + (f.note? '<div class="figcap">' + esc(f.note) + '</div>': '') + '</div>';
     }
     return '';
@@ -19458,7 +19458,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中594人まで完了。残り139人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは408点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は144人・計330点。","肖像写真は153人。"]},{"v":null,"label":"展示情報","lines":["展示は2,652件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全733人中604人まで完了。残り129人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは423点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は151人・計345点。","肖像写真は156人。"]},{"v":null,"label":"展示情報","lines":["展示は2,718件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23614,7 +23614,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.61.0';
+const APP_VERSION = '5.61.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
