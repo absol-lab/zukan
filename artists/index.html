@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.64.0">
+<meta name="app-version" content="5.65.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2006,6 +2006,16 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 #confirmdlg .cd-ok{display:flex; align-items:center; justify-content:center; width:100%; min-height:56px; margin-top:18px; border-radius:999px; background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:15px; font-weight:600; font-family:var(--sans);}
 #confirmdlg .cd-ok.danger{background:var(--danger); background:color-mix(in srgb, var(--danger) 74%, #000); border-color:var(--danger); border-color:color-mix(in srgb, var(--danger) 74%, #000); color:#fff;}
 #confirmdlg .cd-cancel{display:flex; align-items:center; justify-content:center; width:100%; min-height:56px; margin-top:16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-size:15px; font-family:var(--sans);}
+/* ---------- deregistration request (v5.65.0) ----------
+   A quiet text button at the very bottom of the detail page —
+   destructive-adjacent, so never prominent, never near the works.
+   Once the request has been sent, the filed state is plain muted
+   text; while it still sits in the local outbox it stays a button
+   (tapping offers withdrawal — the only state the app can retract,
+   since the requests file is append-only for the app). */
+.removereq{margin:36px 0 6px; text-align:center;}
+.removereq-btn{background:none; border:none; color:var(--muted); font-size:12.5px; font-family:var(--sans); text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:12px 16px; min-height:44px;}
+.removereq-filed{display:inline-block; color:var(--muted); font-size:12.5px; padding:12px 16px;}
 @media (prefers-reduced-motion: reduce){
   #confirmdlg .cd-sheet{animation:none;}
 }
@@ -2515,7 +2525,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <div class="cd-title" id="cdTitle"></div>
     <div class="cd-body" id="cdBody"></div>
     <button class="cd-ok" id="cdOk" type="button" onclick="cdDone(true)"></button>
-    <button class="cd-cancel" type="button" onclick="cdDone(false)">やめる</button>
+    <button class="cd-cancel" id="cdCancel" type="button" onclick="cdDone(false)">やめる</button>
   </div>
 </div>
 
@@ -10141,6 +10151,8 @@ $('cdBody').textContent = opts.body || '';
 const ok = $('cdOk');
 ok.textContent = opts.okLabel || '削除する';
 ok.classList.toggle('danger', opts.danger!==false);
+const cn = $('cdCancel');
+if(cn) cn.textContent = opts.cancelLabel || 'やめる';
 $('confirmdlg').classList.remove('hidden');
 });
 }
@@ -17001,6 +17013,11 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="prices">'+pricesHTML+'</div>'
 +'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
+/* v5.65.0: the deregistration request rides at the very bottom
+   of the detail — below every tab panel and the tag line, far
+   from the works. Filing never removes or hides the person
+   locally (see requestRemove). */
+html += removeReqHTML(a);
 html += '</div>';
 const v = $('viewDetail'); v.innerHTML = html;
 wireDPager(v); wireDTabs(v);
@@ -19676,7 +19693,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全772人中671人まで完了。残り101人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは758点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は219人・計560点。","肖像写真は254人。"]},{"v":null,"label":"展示情報","lines":["展示は4,063件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全772人中671人まで完了。残り101人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは761点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は821件・444人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は219人・計560点。","肖像写真は259人。"]},{"v":null,"label":"展示情報","lines":["展示は4,169件。ポスターなど展示自身の画像があるのは118件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -23316,7 +23333,7 @@ function reqSummaryLabel(){
 }
 function reqStatusOf(r, pos){
   if(r._local) return { key:'queued', label:'送信待ち' };
-  if(r.status==='registered') return { key:'registered', label: r.kind==='works'? '✓ 回収済み': '✓ 登録済み' };
+  if(r.status==='registered') return { key:'registered', label: r.kind==='works'? '✓ 回収済み': (r.kind==='remove'? '✓ 解除済み': '✓ 登録済み') };
   if(r.status==='declined') return { key:'declined', label:'見送り' };
   /* v8.2: pending splits into 処理中 (the processor stamped
      processing_at) and 順番待ち (not yet claimed, with its
@@ -23362,6 +23379,72 @@ function requestWorks(){
   const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
   flushArtistRequests();
   toast((getValidToken() || relayReady())? '情報をリクエストしました（優先的に探します）' : '送信待ちに保存しました（接続時に送られます）', 3600);
+}
+/* v5.65.0: deregistration request — the quiet button at the very
+   bottom of the detail page (his order, 2026-11-18). Same
+   outbox → flush path as the works request above; the item is
+   distinguished by kind:'remove' + artist_id + dataset. Filing
+   NEVER removes or hides the person locally: the removal itself
+   is decided on the data side, and per his rule of the same day
+   it is never executed without a final consultation with him —
+   the confirm dialog's copy says exactly that. Withdrawal is
+   possible only while the item still sits in the local outbox:
+   once flushed, the requests file is append-only for the app
+   (the processor owns status edits), so the filed state then
+   renders as disabled plain text. */
+function removeReqItemFor(a){
+  if(!a) return null;
+  return reqAllItems().find(r=> r.kind==='remove' && String(r.artist_id)===String(a.id) && r.dataset===DS && (r._local || r.status==='pending')) || null;
+}
+function removeReqHTML(a){
+  const it = removeReqItemFor(a);
+  if(it){
+    if(it._local) return '<div class="removereq" id="removereq"><button type="button" class="removereq-btn" onclick="withdrawRemove()">解除申請中（取り消す）</button></div>';
+    return '<div class="removereq" id="removereq"><span class="removereq-filed">解除申請中</span></div>';
+  }
+  return '<div class="removereq" id="removereq"><button type="button" class="removereq-btn" onclick="requestRemove()">登録解除を申請する</button></div>';
+}
+function removeReqSyncUI(a){
+  const el = $('removereq'); if(el && a) el.outerHTML = removeReqHTML(a);
+}
+async function requestRemove(){
+  const a = (state.detailId!=null)? artistById(state.detailId): null;
+  if(!a){ toast('対象の人物が開かれていません'); return; }
+  if(removeReqItemFor(a)){ toast('「'+a.name+'」の登録解除はすでに申請中です'); return; }
+  const ok = await confirmDialog({
+    title: a.name+'の登録解除を申請しますか',
+    body: '申請してもすぐには消えません。削除の前に確認が入ります。',
+    okLabel: '申請する',
+    cancelLabel: 'キャンセル',
+    danger: false
+  });
+  if(!ok) return;
+  const item = { id:'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), kind:'remove', artist_id:a.id, name:a.name, dataset:DS, requested_at:new Date().toISOString(), status:'pending' };
+  try{
+    const ob = reqOutbox(); ob.push(item); reqSaveOutbox(ob);
+  }catch(e){ toast('申請を保存できませんでした'); return; }
+  flushArtistRequests();
+  removeReqSyncUI(a);
+  toast((getValidToken() || relayReady())? '登録解除を申請しました' : '送信待ちに保存しました（接続時に送られます）', 3600);
+}
+async function withdrawRemove(){
+  const a = (state.detailId!=null)? artistById(state.detailId): null;
+  if(!a) return;
+  const it = removeReqItemFor(a);
+  if(!it) return;
+  if(!it._local){ removeReqSyncUI(a); toast('すでに送信済みのため、アプリからは取り消せません'); return; }
+  const ok = await confirmDialog({
+    title: a.name+'の解除申請を取り消しますか',
+    body: 'まだ送信されていない申請です。取り消すと、申請はなかったことになります。',
+    okLabel: '取り消す',
+    cancelLabel: 'やめる',
+    danger: false
+  });
+  if(!ok) return;
+  try{ reqSaveOutbox(reqOutbox().filter(r=> r.id !== it.id)); }
+  catch(e){ toast('取り消しを保存できませんでした'); return; }
+  removeReqSyncUI(a);
+  toast('解除申請を取り消しました');
 }
 async function flushArtistRequests(){
   const tok = getValidToken(); if(!tok && !relayReady()) return;
@@ -23832,7 +23915,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.64.0';
+const APP_VERSION = '5.65.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
