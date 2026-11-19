@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.4">
+<meta name="app-version" content="5.73.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23577,7 +23577,12 @@ function relayClear(){
 async function relaySaveAndTest(){
   const u = $('relayUrl'), s = $('relaySecret'), st = $('relayStat');
   if(!u || !s) return;
-  if(!relaySave(u.value, s.value)) return;
+  /* v5.73.5: with a secret already saved the field opens empty
+     (the saved secret is never rendered back into the page), so
+     an empty field means "keep the saved one": re-save it with
+     the (possibly edited) URL and run the test with it. */
+  const keep = !String(s.value || '').trim() ? relayCfg() : null;
+  if(!relaySave(u.value, keep ? keep.secret : s.value)) return;
   if(st) st.textContent = '接続テスト中…';
   try{
     await relayCall('ping');
@@ -24686,7 +24691,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.4';
+const APP_VERSION = '5.73.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -25232,7 +25237,8 @@ function renderSettingsPanel(){
       '<div class="setlabel" style="margin-top:12px">中継の URL</div>'+
       '<input class="reqinput" id="relayUrl" type="text" placeholder="https://script.google.com/macros/s/…" autocomplete="off" value="'+escA(rc? rc.url: RELAY_URL_DEFAULT)+'">'+
       '<div class="setlabel">シークレット</div>'+
-      '<input class="reqinput" id="relaySecret" type="text" placeholder="シークレット" autocomplete="off" value="'+(rc? escA(rc.secret): '')+'">'+
+      '<input class="reqinput" id="relaySecret" type="password" placeholder="'+(rc? '設定済み（変更するときだけ入力）': 'シークレットを貼り付け')+'" autocomplete="off" value="">'+
+      (rc? '<div class="note">シークレットは保存済みです。欄は空で表示されます（中身は見えません）。空のまま保存すると、今のシークレットがそのまま使われます。</div>': '')+
       '<button class="blockbtn" onclick="relaySaveAndTest()">保存して接続テスト</button>'+
       '<div id="relayStat" class="note">'+(rc? '設定済みです。接続テストで中継の応答を確認できます。': '未設定です。')+'</div>'+
       (rc? '<button class="btn" style="margin-top:10px" onclick="relayClear()">中継を解除</button>': '')+
