@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.1">
+<meta name="app-version" content="5.73.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -22758,7 +22758,7 @@ function stampGt(a, b){
   if(!isNaN(ta) && !isNaN(tb)) return ta > tb;
   return sa > sb;
 }
-function mergeDataInto(local, incoming){
+function mergeDataInto(local, incoming, opts){
   const inc = normalizeData(incoming);
   const localMax = sbMaxUpdated(local), incMax = sbMaxUpdated(inc);
   inc.sections.forEach(s=>{ if(local.sections.indexOf(s)<0) local.sections.push(s); });
@@ -22804,6 +22804,34 @@ function mergeDataInto(local, incoming){
        that did not stamp, and the device's live record is the
        safer holder (server writers stamp their changes). */
     const scalarFromRemote = stampGt(ia.updated_at, la.updated_at);
+    /* v5.73.2: one equal-stamp state is NOT an edit, and the
+       rule above made it unhealable. A sync run under the
+       pre-v5.72.1 merge could advance a record's updated_at
+       to the server's stamp while keeping the device's old
+       text (the old truthy gate dropped the server's empty
+       string but took its stamp — the 2026-11-19 cleanup's
+       emptied relations, 中園孔二's among them). From then on
+       the stamps were EQUAL, the wholesale rule never fired
+       again, and the delta path never re-delivered the record
+       (its stamp no longer beats the watermark): the stale
+       text was permanent on his device even after v5.72.1.
+       The authoritative-path callers therefore pass
+       opts.eqConv when the local dataset carries NO unsynced
+       edit — tested the way the put-back discipline has
+       always tested it: the stored mirror still hashes to
+       the syncMeta hash of the last committed sync (a clean
+       side never puts). With eqConv, an incoming record whose
+       stamp is not OLDER than the local one states its scalar
+       fields wholesale at equal stamps too. A dirty local
+       side passes no eqConv — any record in it may hold an
+       edit the server has not seen, fill-only stays, and the
+       convergence lands on the first sync after that edit
+       has been put. The stamp alone never decides: a local
+       record stamped strictly newer (every device edit —
+       editor save, thumbnail pin — stamps the moment it
+       happens) keeps its text under eqConv as well. */
+    const scalarConverge = scalarFromRemote ||
+      (!stampGt(la.updated_at, ia.updated_at) && !!(opts && opts.eqConv));
     ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','birth_date','death_date','updated_at'].forEach(k=>{
       /* v5.72.1: a strictly newer incoming record states its
          scalar fields WHOLESALE — an empty string included.
@@ -22818,8 +22846,12 @@ function mergeDataInto(local, incoming){
          the held flag (v5.67.0) already follows. An older or
          equal incoming copy keeps the historical fill-only
          rule below, so a device edit the server has not seen
-         (it carries the fresher stamp) is never clobbered. */
-      if(scalarFromRemote){ if(k in ia) merged[k] = ia[k]; }
+         (it carries the fresher stamp) is never clobbered.
+         v5.73.2: scalarConverge extends the wholesale rule to
+         EQUAL stamps when the caller passes opts.eqConv (the
+         local dataset provably holds no unsynced edit — see
+         the scalarConverge note above the loop). */
+      if(scalarConverge){ if(k in ia) merged[k] = ia[k]; }
       else if(ia[k] && !la[k]) merged[k] = ia[k];
     });
     /* v5.70.0: on an id-matched rename the incoming name is
@@ -22854,14 +22886,14 @@ function mergeDataInto(local, incoming){
     /* thumb_pinned_at: keep the latest pin event from either side */
     if(ia.thumb_pinned_at && (!la.thumb_pinned_at || ia.thumb_pinned_at > la.thumb_pinned_at)) merged.thumb_pinned_at = ia.thumb_pinned_at;
     /* v5.67.0: held （保留）, the record-level holding flag — the
-       NEWER record's statement wins (the scalarFromRemote
+       NEWER record's statement wins (the scalarConverge
        authority above): a data-side set or clear always bumps
        updated_at, so a strictly newer incoming record states
        the flag for the merged record, present or absent; with
        an older or equal incoming copy the local statement
        stands, so a stale base can neither resurrect a cleared
        flag nor strip a set one it never knew. */
-    if(scalarFromRemote){ if(ia.held) merged.held = true; else delete merged.held; }
+    if(scalarConverge){ if(ia.held) merged.held = true; else delete merged.held; }
     /* works merged by file key / fileId / url / caption — a work is registered
        under every key it has, so the same work dedupes across sources whose
        representations differ (e.g. local file key vs. remote img.url).
@@ -23657,7 +23689,11 @@ async function syncDatasetRelay(kind, data){
       if(j && typeof j.content === 'string'){
         const delta = normalizeFor(kind, JSON.parse(j.content));
         const before = (data.artists||[]).length;
-        merged = mergeDataInto(data, delta);
+        /* v5.73.2: this branch only runs on a CLEAN local side
+           (no unsynced edit anywhere in the dataset), so a
+           delivered record may converge at equal stamps too
+           (see scalarConverge in mergeDataInto). */
+        merged = mergeDataInto(data, delta, { eqConv: true });
         if(delta.timeline && JSON.stringify(delta.timeline) !== JSON.stringify(merged.timeline || null)) merged.timeline = delta.timeline;
         if((merged.artists||[]).length < before) throw new Error('delta shrank the dataset');
         /* v5.57.1: an EMPTY delta here is not proof that
@@ -23686,7 +23722,9 @@ async function syncDatasetRelay(kind, data){
     const j = await relayCall('get', cfg.dataFile);
     if(!j || typeof j.content !== 'string') throw new Error('中継からデータを得られませんでした');
     remoteFull = normalizeFor(kind, JSON.parse(j.content));
-    merged = mergeDataInto(data, remoteFull);
+    /* v5.73.2: equal-stamp convergence only while the local
+       side is clean (no unsynced edit — see mergeDataInto). */
+    merged = mergeDataInto(data, remoteFull, { eqConv: localClean });
     /* v5.70.0: the full download IS the server's complete
        current file — converge the merged dataset to it
        (server deletions drop out, rename ghosts collapse)
@@ -23785,9 +23823,12 @@ async function syncDatasetOnce(kind, reason){
            resolved BEFORE the merge, from the pre-merge local
            dataset. */
         const metaT = await dsMetaGet(prefix);
+        /* v5.73.2: the same clean test the anchor resolution
+           uses — no unsynced edit in the local dataset. */
+        const tokenLocalClean = !!(metaT && metaT.hash === syncHashOfStr(JSON.stringify(data)));
         tokenAnchorUsed = resolveConvergeAnchor(metaT, data, { bootFromSeed: c.bootFromSeed, kind: kind,
-          localClean: !!(metaT && metaT.hash === syncHashOfStr(JSON.stringify(data))) });
-        data = mergeDataInto(data, remote);
+          localClean: tokenLocalClean });
+        data = mergeDataInto(data, remote, { eqConv: tokenLocalClean });
         const cvT = convergeDataToServer(data, remote, tokenAnchorUsed);
         if(cvT.droppedA || cvT.droppedE || cvT.deduped || cvT.realigned) c.converged = cvT;
       }
@@ -24532,7 +24573,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.1';
+const APP_VERSION = '5.73.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
