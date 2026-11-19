@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.74.0">
+<meta name="app-version" content="5.75.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2286,16 +2286,15 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    container only records the mode now; setExMode / setExdMode
    re-pack in place on a switch. */
 .grid.exgrid, .grid.exdgrid{display:block;}
-/* v5.74.0: exhibition cards are laid out only near the viewport
-   (content-visibility). The completed exhibitions view holds
-   ~7,800 cards / ~143,000 nodes; laying the whole mass out on
-   every fill slice, pack and mode switch was the freeze (see
-   the note above exFillGrid). Each card's contain-intrinsic-size
-   is set inline from the same estimate the packer uses, so an
-   unvisited card still reserves close to its real height.
-   Browsers without content-visibility ignore this rule and
-   behave exactly as before. */
-.exgrid figure.work, .exdgrid figure.work{content-visibility:auto;}
+/* v5.75.0: the exhibitions view's grids are windowed in JS
+   (see the note above exFillGrid) — only the cards near the
+   viewport exist as elements at all; the rest of each column
+   is a spacer div reserving the estimated height. The v5.74.0
+   content-visibility rule is retired: the DOM bound now holds
+   on any browser, with no layout containment involved. The
+   artist page's 展示 grids (.exdgrid) are small and keep the
+   plain pack. */
+.exspacer{flex:0 0 auto; width:100%;}
 /* v32.17.0 (fix 2): the price table read shabby in the dense
    modes on his iPhone (2026-11-16 23:13) — prices cut off
    mid-number ("$450,31…": figure.work clips overflow and the
@@ -11477,6 +11476,10 @@ var exGridJobs = new WeakMap();
 var exJobGen = 0;
 function packGridEl(grid, mode){
 if(!grid) return;
+/* v5.75.0: a windowed exhibitions grid never holds its full
+   card set — a mode switch recomputes its skeleton window
+   instead of packing (see exWinSetMode). */
+if(grid._exWin){ exWinSetMode(grid, mode); return; }
 if(exGridJobs.get(grid)) exJobFlush(grid);
 grid._exPack = null; /* v5.74.0: incremental pack state belongs to the structure being replaced */
 if(!grid._cards) grid._cards = Array.prototype.filter.call(grid.children, el=> el.tagName === 'FIGURE');
@@ -11499,11 +11502,7 @@ grid.innerHTML = '';
    design. */
 if(n <= 1){ cards.forEach(c=> grid.appendChild(c)); return; }
 if(!cards.length) return;
-/* v5.74.0: on exhibition grids, refresh each card's reserved
-   height for the new mode — content-visibility skips off-screen
-   cards at their contain-intrinsic-size until first layout. */
-const isExGrid = grid.classList.contains('exgrid') || grid.classList.contains('exdgrid');
-const items = cards.map(el=> { const e = packEst(el.textContent, mode, 30); if(isExGrid) el.style.containIntrinsicSize = 'auto ' + Math.round(e) + 'px'; return { h: el, e: e }; });
+const items = cards.map(el=> { const e = packEst(el.textContent, mode, 30); return { h: el, e: e }; });
 const wrap = document.createElement('div');
 wrap.className = 'pcols wm-' + mode;
 packCols(items, n).forEach(colItems=>{
@@ -19313,97 +19312,256 @@ function setExRegion(r){
   try{ localStorage.setItem('zukan.exRegion', r); }catch(e){}
   if(view === 'cal') renderCal(); else if(view === 'ex') renderEx();
 }
-/* v5.74.0 (DESIGN CHANGE — the exhibitions freeze, third
-   report): the end state is the disease, not the feeding rate.
-   v5.73.3 sliced the build and v5.73.4 stopped the fill when
-   the view is left, but the completed view still materialised
-   all ~7,800 cards as real DOM (~143,000 elements, a
-   ~1,500,000 px tall page), and every structural step paid a
-   full layout of that mass. Measured on the live data in the
-   harness (v5.73.5 code): the 8.4 s fill was 0.98 s of script
-   but 5.32 s of layout, with single tasks of 1,558 ms and
-   2,490 ms — the second one is the layout the completion pack
-   triggered after re-parenting 5,948 cards into columns; a
-   size-mode switch on the completed view blocked for
-   3.6-5.4 s over a 0.22 s pack. Two things change:
-   (1) Cards carry content-visibility:auto (see the .exgrid
-   CSS rule) with a contain-intrinsic-size taken from the same
-   estimate the packer uses, so the browser lays out and paints
-   only the cards near the viewport; the rest reserve their
-   estimated height. The DOM, the sections, the cards and
-   their order are exactly what the old render produced.
-   (2) The fill packs AS IT GOES: the column structure is built
-   up front and each card is dealt straight into the currently
-   shortest column — the same greedy sequence packCols runs,
-   so the assignment is identical to the old batch pack — and
-   the completion pack (the 2.5 s layout) no longer exists.
-   A new render invalidates pending fills by generation;
-   packGridEl flushes a pending fill before packing (see its
-   hook), so a size-mode switch mid-fill still ends with the
-   full card set. */
-/* v5.73.3 (history): the fill runs in time-boxed slices — the
-   first slice synchronously, so the view paints at once, the
-   rest on timers. v5.73.4: slices are view-gated — leaving the
-   exhibitions view stops the fill instead of building the
-   remaining thousands of cards behind the user's back. */
-const EX_FILL_MS = 30, EX_FILL_MAX = 200;
-function exSetupPack(grid, mode){
-const n = PCOLS_N[mode] || 2;
-grid._cards = [];
-if(n <= 1){ grid._exPack = { n: 1, cols: null, colH: null }; return; }
-const wrap = document.createElement('div');
-wrap.className = 'pcols wm-' + mode;
-const cols = [], colH = [];
-for(let i = 0; i < n; i++){ const c = document.createElement('div'); c.className = 'pcol'; wrap.appendChild(c); cols.push(c); colH.push(0); }
-grid.appendChild(wrap);
-grid._exPack = { n: n, cols: cols, colH: colH };
+/* v5.75.0 (DESIGN CHANGE — the exhibitions freeze, FOURTH
+   report): v5.74.0 changed WHEN the completed mass is laid
+   out (content-visibility), not HOW MUCH of it exists: the
+   finished view still held all ~7,800 cards / ~143,000 nodes
+   in the document, and his iPhone still froze on v5.74.0.
+   Measured on the fresh live data (7,843 exhibitions after
+   the boot merge) in the harness: with content-visibility
+   disabled — the simulation of a browser where the property
+   does not take effect (iOS < 18) — the v5.74.0 fill took
+   6,198 ms with 32 long tasks (max 265 ms) on a fast desktop
+   CPU; with it enabled, opening was fast but a full
+   scroll-through to the bottom took 43.7 s of rAF steps,
+   because every card is laid out as it is approached and the
+   143,000-node document keeps paying style/layout tax. The
+   quantity itself is the disease, so this time the quantity
+   changes: TRUE WINDOWING, no content-visibility anywhere.
+   - Up front, the item list is reduced to a SKELETON: for
+     each item, its card HTML string, the exact text the
+     packer would read (parsed once, detached, in time-boxed
+     slices — no layout), the packEst estimate, and its
+     column assignment. The assignment runs the same greedy
+     shortest-column sequence as packCols / the old fill, so
+     it is identical to the pre-change pack (validator R2).
+   - Only the slots near the viewport are ever materialised
+     as figure elements. The rest of each column is two
+     spacer divs (.exspacer) reserving the estimated height,
+     so the page keeps its full height and every card stays
+     reachable by scrolling. Measured card heights replace
+     estimates as regions are visited (the spacer heights
+     follow), exactly the settle behaviour v5.74.0 had.
+   - The DOM bound is a function of the VIEWPORT, not of the
+     data: at most EX_WIN_MAXFIG exhibition cards exist at
+     once (in practice ~40–120), however many exhibitions the
+     dataset holds — the validator proves the bound at
+     several scroll depths, in the densest (micro) mode, and
+     on a dataset inflated to ~31,000 exhibitions.
+   - Mode switches recompute estimates + assignment from the
+     cached texts and rebuild the window in place (packGridEl
+     diverts windowed grids to exWinSetMode); region / sort
+     switches re-render the view as before, and leaving the
+     view stops the skeleton slices (the v5.73.4 rule). */
+/* v5.73.3/v5.73.4 (history): the fill ran in time-boxed
+   slices, view-gated; v5.74.0 packed as it filled and put
+   content-visibility on the cards. All superseded above. */
+const EX_FILL_MS = 30, EX_FILL_MAX = 400;
+const EX_WIN_OVER = 1000;  /* px of overscan above / below the viewport */
+const EX_WIN_MAXFIG = 400; /* hard cap: materialised exhibition cards */
+const EX_WIN_VGAP = { wide: 0, def: 12, compact: 10, mini: 8, micro: 7 };
+const exWinTmp = document.createElement('div');
+let exWinScrollTick = false;
+function exWinSlotH(W, idx){ return W.real[idx] || W.est[idx]; }
+function exWinBuildCols(W){
+  W.grid.innerHTML = '';
+  W.grid._cards = [];
+  W.grid._exPack = null;
+  W.colEls = []; W.rendered = []; W.spacers = [];
+  for(let i = 0; i < W.n; i++){ W.rendered.push(null); W.spacers.push(null); }
+  if(W.n <= 1){ W.colEls = [W.grid]; W.wrap = null; return; }
+  const wrap = document.createElement('div');
+  wrap.className = 'pcols wm-' + W.mode;
+  for(let i = 0; i < W.n; i++){ const c = document.createElement('div'); c.className = 'pcol'; wrap.appendChild(c); W.colEls.push(c); }
+  W.grid.appendChild(wrap);
+  W.wrap = wrap;
 }
-function exPackCard(grid, fig, mode){
-const pk = grid._exPack; if(!pk) return;
-const est = packEst(fig.textContent, mode, 30);
-fig.style.containIntrinsicSize = 'auto ' + Math.round(est) + 'px';
-grid._cards.push(fig);
-if(!pk.cols){ grid.appendChild(fig); return; }
-let best = 0;
-for(let i = 1; i < pk.n; i++) if(pk.colH[i] < pk.colH[best]) best = i;
-pk.cols[best].appendChild(fig);
-pk.colH[best] += est + 12;
+function exWinSetup(grid, items, build, mode, root){
+  const W = { gen: exJobGen, grid: grid, root: root, items: items, build: build, mode: mode,
+    n: PCOLS_N[mode] || 2, vgap: (EX_WIN_VGAP[mode] != null? EX_WIN_VGAP[mode]: 12),
+    html: new Array(items.length), text: new Array(items.length),
+    est: new Float64Array(items.length), real: new Float64Array(items.length),
+    cols: [], colH: [], tops: [], topDirty: [],
+    built: 0, done: false, started: false, timer: 0, measureQueued: false, wrap: null, colEls: [], rendered: [], spacers: [] };
+  for(let i = 0; i < W.n; i++){ W.cols.push([]); W.colH.push(0); W.tops.push(null); W.topDirty.push(true); }
+  grid._exWin = W;
+  exWinBuildCols(W);
+  exWinStep(W);
+  W.started = true; /* v5.73.4: the synchronous first step is part of the render; only timer-driven steps are view-gated */
+  /* renderEx runs BEFORE showView un-hides the view, so the
+     first geometry-dependent render is deferred to a frame —
+     by then the view is visible and scroll has settled. */
+  requestAnimationFrame(()=>{ if(W.gen === exJobGen && grid._exWin === W) exWinRender(W); });
 }
+function exWinStepCore(W){
+  const t0 = performance.now();
+  let n = 0;
+  while(W.built < W.items.length && n < EX_FILL_MAX){
+    const i = W.built;
+    const h = W.build(W.items[i]);
+    W.html[i] = h;
+    exWinTmp.innerHTML = h;
+    const fig = exWinTmp.firstElementChild;
+    const txt = fig? fig.textContent: '';
+    W.text[i] = txt;
+    const e = packEst(txt, W.mode, 30);
+    W.est[i] = e;
+    let best = 0;
+    for(let c = 1; c < W.n; c++) if(W.colH[c] < W.colH[best]) best = c;
+    W.cols[best].push(i);
+    W.colH[best] += e + 12;
+    W.topDirty[best] = true;
+    W.built++; n++;
+    if(performance.now() - t0 >= EX_FILL_MS) break;
+  }
+  if(W.built >= W.items.length) W.done = true;
+}
+function exWinStep(W){
+  if(W.gen !== exJobGen || !W.grid.isConnected || W.grid._exWin !== W) return;
+  if(W.started && typeof view !== 'undefined' && view !== 'ex') return;
+  exWinStepCore(W);
+  if(!W.done) W.timer = setTimeout(()=> exWinStep(W), 0);
+  exWinRender(W);
+}
+function exWinTops(W, c){
+  if(!W.topDirty[c] && W.tops[c]) return W.tops[c];
+  const slots = W.cols[c];
+  const t = new Float64Array(slots.length + 1);
+  for(let k = 0; k < slots.length; k++) t[k + 1] = t[k] + exWinSlotH(W, slots[k]) + W.vgap;
+  W.tops[c] = t; W.topDirty[c] = false;
+  return t;
+}
+function exWinColTotal(W, c){
+  const slots = W.cols[c]; if(!slots.length) return 0;
+  return exWinTops(W, c)[slots.length] - W.vgap;
+}
+function exWinSpacer(h){
+  const d = document.createElement('div');
+  d.className = 'exspacer';
+  d.style.height = Math.max(0, Math.round(h)) + 'px';
+  return d;
+}
+function exWinBuildColumn(W, c, s0, s1){
+  const colEl = W.colEls[c];
+  if(typeof imgObserver !== 'undefined' && imgObserver) colEl.querySelectorAll('.imgholder').forEach(s=>{ try{ imgObserver.unobserve(s); }catch(e){} });
+  colEl.innerHTML = '';
+  const slots = W.cols[c];
+  const tops = exWinTops(W, c);
+  const total = exWinColTotal(W, c);
+  const sp = { top: null, bot: null };
+  if(s1 < s0){
+    if(total > 0){ sp.top = exWinSpacer(total); colEl.appendChild(sp.top); }
+  } else {
+    if(s0 > 0){ sp.top = exWinSpacer(tops[s0] - W.vgap); colEl.appendChild(sp.top); }
+    for(let k = s0; k <= s1; k++){
+      const idx = slots[k];
+      exWinTmp.innerHTML = W.html[idx];
+      const fig = exWinTmp.firstElementChild;
+      if(fig){ fig.dataset.ordi = idx; colEl.appendChild(fig); fig.querySelectorAll('[data-exg]').forEach(wireExHolder); }
+    }
+    if(s1 < slots.length - 1){ sp.bot = exWinSpacer(total - (tops[s1] + exWinSlotH(W, slots[s1])) - W.vgap); colEl.appendChild(sp.bot); }
+  }
+  W.spacers[c] = sp;
+  W.rendered[c] = { s0: s0, s1: s1 };
+}
+function exWinFixSpacer(W, c){
+  const r = W.rendered[c], sp = W.spacers[c];
+  if(!r || !sp) return;
+  const slots = W.cols[c]; if(!slots.length) return;
+  const tops = exWinTops(W, c);
+  const total = exWinColTotal(W, c);
+  if(r.s1 < r.s0){ if(sp.top) sp.top.style.height = Math.max(0, Math.round(total)) + 'px'; return; }
+  if(sp.top && r.s0 > 0) sp.top.style.height = Math.max(0, Math.round(tops[r.s0] - W.vgap)) + 'px';
+  if(sp.bot && r.s1 < slots.length - 1) sp.bot.style.height = Math.max(0, Math.round(total - (tops[r.s1] + exWinSlotH(W, slots[r.s1])) - W.vgap)) + 'px';
+}
+function exWinRender(W){
+  const grid = W.grid;
+  if(!grid.isConnected || grid._exWin !== W) return;
+  if(grid.offsetParent === null) return; /* view not shown yet — the setup rAF / next step renders */
+  const gridTop = grid.getBoundingClientRect().top + window.scrollY;
+  const y0 = window.scrollY - EX_WIN_OVER - gridTop;
+  const y1 = window.scrollY + window.innerHeight + EX_WIN_OVER - gridTop;
+  if(!W.done){
+    /* the reader is already past the built skeleton (a deep
+       scroll restore, a fling): build forward under a bounded
+       budget so the window below can materialise now */
+    const t0 = performance.now();
+    while(!W.done && performance.now() - t0 < 60){
+      let covered = true;
+      for(let c = 0; c < W.n; c++){ if(exWinColTotal(W, c) < y1){ covered = false; break; } }
+      if(covered) break;
+      exWinStepCore(W);
+    }
+  }
+  let anyChange = false;
+  for(let c = 0; c < W.n; c++){
+    const slots = W.cols[c]; if(!slots.length) continue;
+    const tops = exWinTops(W, c);
+    let s0 = slots.length - 1;
+    for(let k = 0; k < slots.length; k++){ if(tops[k] + exWinSlotH(W, slots[k]) > y0){ s0 = k; break; } }
+    let s1 = -1;
+    for(let k = slots.length - 1; k >= 0; k--){ if(tops[k] < y1){ s1 = k; break; } }
+    const r = W.rendered[c];
+    if(r && r.s0 === s0 && r.s1 === s1){ exWinFixSpacer(W, c); continue; }
+    exWinBuildColumn(W, c, s0, s1);
+    anyChange = true;
+  }
+  if(anyChange && !W.measureQueued){
+    W.measureQueued = true;
+    requestAnimationFrame(()=>{ W.measureQueued = false; if(W.gen === exJobGen && W.grid._exWin === W) exWinMeasure(W); });
+  }
+}
+function exWinMeasure(W){
+  let changed = false;
+  W.grid.querySelectorAll('figure.exgridcard').forEach(fig=>{
+    const idx = +(fig.dataset.ordi || 0);
+    const h = fig.offsetHeight;
+    if(h && Math.abs(h - exWinSlotH(W, idx)) > 1){ W.real[idx] = h; changed = true; }
+  });
+  if(!changed) return;
+  for(let c = 0; c < W.n; c++){ W.topDirty[c] = true; exWinFixSpacer(W, c); }
+  exWinRender(W); /* corrected tops may pull further slots into range */
+}
+function exWinSetMode(grid, mode){
+  const W = grid._exWin; if(!W) return;
+  if(W.timer) clearTimeout(W.timer);
+  W.mode = mode;
+  W.n = PCOLS_N[mode] || 2;
+  W.vgap = (EX_WIN_VGAP[mode] != null? EX_WIN_VGAP[mode]: 12);
+  W.real = new Float64Array(W.items.length); /* card heights are mode-specific */
+  W.cols = []; W.colH = []; W.tops = []; W.topDirty = [];
+  for(let i = 0; i < W.n; i++){ W.cols.push([]); W.colH.push(0); W.tops.push(null); W.topDirty.push(true); }
+  for(let i = 0; i < W.built; i++){
+    const e = packEst(W.text[i] || '', mode, 30);
+    W.est[i] = e;
+    let best = 0;
+    for(let c = 1; c < W.n; c++) if(W.colH[c] < W.colH[best]) best = c;
+    W.cols[best].push(i);
+    W.colH[best] += e + 12;
+    W.topDirty[best] = true;
+  }
+  exWinBuildCols(W);
+  if(!W.done) W.timer = setTimeout(()=> exWinStep(W), 0);
+  exWinRender(W);
+}
+function exWinOnScroll(){
+  if(typeof view === 'undefined' || view !== 'ex') return;
+  const v = document.getElementById('viewEx'); if(!v) return;
+  v.querySelectorAll('.exgrid').forEach(g=>{ if(g._exWin) exWinRender(g._exWin); });
+}
+window.addEventListener('scroll', ()=>{
+  if(exWinScrollTick) return;
+  exWinScrollTick = true;
+  requestAnimationFrame(()=>{ exWinScrollTick = false; exWinOnScroll(); });
+}, { passive: true });
+window.addEventListener('resize', ()=> exWinOnScroll());
 function exFillGrid(grid, items, build, mode, root){
-if(!grid || !items || !items.length) return;
-exSetupPack(grid, mode);
-const job = { gen: exJobGen, grid: grid, items: items, build: build, mode: mode, root: root, idx: 0, timer: 0, tmp: document.createElement('div') };
-exGridJobs.set(grid, job);
-exJobStep(job);
-job.started = true; /* v5.73.4: the synchronous first slice is part of the render; only timer-driven slices are view-gated */
+  if(!grid || !items || !items.length) return;
+  exWinSetup(grid, items, build, mode, root);
 }
-function exJobStep(job){
-if(job.gen !== exJobGen || !job.grid.isConnected){ exGridJobs.delete(job.grid); return; }
-if(job.started && typeof view !== 'undefined' && view !== 'ex'){ exGridJobs.delete(job.grid); return; }
-const t0 = performance.now();
-let n = 0;
-while(job.idx < job.items.length && n < EX_FILL_MAX){
-job.tmp.innerHTML = job.build(job.items[job.idx++]);
-const fig = job.tmp.firstElementChild;
-if(fig){ exPackCard(job.grid, fig, job.mode); fig.querySelectorAll('[data-exg]').forEach(wireExHolder); }
-n++;
-if(performance.now() - t0 >= EX_FILL_MS) break;
-}
-if(job.idx < job.items.length){ job.timer = setTimeout(()=> exJobStep(job), 0); return; }
-exGridJobs.delete(job.grid);
-wireExGrid(job.root);
-}
-function exJobFlush(grid){
-const job = exGridJobs.get(grid); if(!job) return;
-if(job.timer) clearTimeout(job.timer);
-while(job.idx < job.items.length){
-job.tmp.innerHTML = job.build(job.items[job.idx++]);
-const fig = job.tmp.firstElementChild;
-if(fig) exPackCard(job.grid, fig, job.mode);
-}
-exGridJobs.delete(grid);
-wireExGrid(job.root);
-}
+/* v5.75.0: windowed grids hold no fill job — the flush hook in
+   packGridEl only ever drains a legacy job entry now. */
+function exJobFlush(grid){ exGridJobs.delete(grid); }
 function renderExArtists(){
 exJobGen++;
 let exs = (DB.exhibitions||[]).slice();
@@ -24736,7 +24894,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.74.0';
+const APP_VERSION = '5.75.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
