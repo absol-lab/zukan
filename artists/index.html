@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.71.2">
+<meta name="app-version" content="5.72.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -15933,11 +15933,21 @@ openSettingsPanel('reqnotif');
    the end of the 関係 panel, and the 関係 button/fallback
    count that content as relations content. A restored
    state.tab of 'influences' is normalized to 'relations'
-   (setTab + renderDetail), like 'quotes' before it. */
-const DTABS = ['works','drawings','process','feat','relations','interviews','exhibitions','prices','bio','books'];
+   (setTab + renderDetail), like 'quotes' before it.
+   v5.72.0: 特徴 (feat) is ABOLISHED (his decision, 2026-11-19) —
+   its contents move to the tabs they belong to: 見どころ (the
+   relation field) and 特徴メモ (the notes remainder) lead the
+   作品 panel; 技法・メディウム (the notes' tech split) joins
+   the 制作過程 panel. The order is now
+   作品 / ドローイング / 制作過程 / 関係 / インタビュー /
+   展示 / 価格 / 来歴 / 作品集. A restored state.tab of 'feat'
+   is normalized to 'works' (setTab + renderDetail), like
+   'quotes' and 'influences' before it. */
+const DTABS = ['works','drawings','process','relations','interviews','exhibitions','prices','bio','books'];
 function setTab(t){
 if(t === 'quotes') t = 'interviews'; /* v5.59.0: the merged tab's old name */
 if(t === 'influences') t = 'relations'; /* v5.69.0: the merged tab's old name */
+if(t === 'feat') t = 'works'; /* v5.72.0: the abolished 特徴 tab lands on 作品 */
 state.tab = t;
 const pg = $('dpager');
 if(!pg){ renderDetail(); return; }
@@ -16663,8 +16673,12 @@ const stanceObj = (disObj && disObj.stance && disObj.stance.text)? disObj.stance
 const hasQuotesTab = !!((procObj && procObj.quotes && procObj.quotes.length) || termsArr.length || stanceObj);
 /* the process tab keeps its own material only — an artist whose
    dossier is nothing but quotes no longer shows an empty process
-   panel behind a lit button. */
-const hasProcessContent = !!(procObj && (procObj.summary || (procObj.steps && procObj.steps.length) || procObj.environment || procObj.materials_notes || procObj.not_public || (procObj.sources && procObj.sources.length) || (disObj && (disObj.thinking || disObj.drawings || disObj.notes))));
+   panel behind a lit button.
+   v5.72.0: the notes' 技法・メディウム split (moved here from the
+   abolished 特徴 tab) counts toward the tab's presence too, as
+   does the dissection evaluation axis (it renders in this panel
+   but was never counted before). */
+const hasProcessContent = !!((procObj && (procObj.summary || (procObj.steps && procObj.steps.length) || procObj.environment || procObj.materials_notes || procObj.not_public || (procObj.sources && procObj.sources.length) || (disObj && (disObj.thinking || disObj.drawings || disObj.notes || disObj.evaluation)))) || sp.tech);
 const intvArr = Array.isArray(a.interviews)? a.interviews: [];
 const inflArr = Array.isArray(a.influences)? a.influences: [];
 /* v27.1: the 影響 tab also runs BACKWARD — the artists this
@@ -16693,6 +16707,7 @@ if(state.tab==='process' && !hasProcessContent && !pps.length) state.tab = 'work
 /* v5.59.0: a restored 'quotes' state lands on the merged
    インタビュー tab; the merged tab falls back to 作品 only
    when it would be entirely empty. */
+if(state.tab==='feat') state.tab = 'works'; /* v5.72.0: 特徴 abolished — its prose now leads the 作品 panel */
 if(state.tab==='quotes') state.tab = 'interviews';
 if(state.tab==='interviews' && !intvArr.length && !hasQuotesTab) state.tab = 'works';
 /* v5.69.0: a restored 'influences' state lands on the merged
@@ -16716,7 +16731,6 @@ profileBandHTML(a)+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
 '<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+((hasProcessContent || pps.length)? '': ' style="display:none"')+'>制作過程</button>'+
-'<button class="'+(state.tab==='feat'?'on':'')+'" onclick="setTab(\'feat\')">特徴</button>'+
 '<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+((relCount || inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+((intvArr.length || hasQuotesTab)? '': ' style="display:none"')+'>インタビュー</button>'+
 '<button class="'+(state.tab==='exhibitions'?'on':'')+'" onclick="setTab(\'exhibitions\')"'+(exsOfA.length? '': ' style="display:none"')+'>展示</button>'+
@@ -16724,7 +16738,7 @@ profileBandHTML(a)+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '</div>';
-let worksHTML = '', bioHTML = '', featHTML = '';
+let worksHTML = '', bioHTML = '';
 bioStripWiring = [];
 /* v5.57.0: series / group filter — an artist carrying
    work_groups gets a chip row at the top of the works tab
@@ -16826,6 +16840,14 @@ worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで�
 + wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
 + '</div>' + worksHTML;
 }
+/* v5.72.0: the abolished 特徴 tab's works-facing prose leads the
+   作品 panel — 見どころ (the relation field) first, then
+   特徴メモ (the notes remainder), in the standard prose
+   rendering, above the series chips / shelf / works grid. */
+let highlightsHTML = '';
+if(a.relation) highlightsHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
+if(sp.rest) highlightsHTML += '<h3 class="subhead">特徴メモ</h3>'+proseHTML(sp.rest);
+if(highlightsHTML) worksHTML = highlightsHTML + worksHTML;
 /* v30.6: the drawings panel — the same gallery as works (same
    tile shape, same viewer, same page turn), its own list. The
    tiles carry data-drawidx, NOT data-workidx: the works wiring
@@ -17022,10 +17044,6 @@ bioHTML += bioWorksStrip(a, ws);
    detail head as the compact band (profileBandHTML, rendered
    with the header above) — the bio tab is the career only,
    nothing duplicated. */
-if(a.relation) featHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
-if(sp.tech) featHTML += '<h3 class="subhead">技法・メディウム</h3>'+proseHTML(sp.tech);
-if(sp.rest) featHTML += '<h3 class="subhead">特徴メモ</h3>'+proseHTML(sp.rest);
-if(!a.relation && !sp.tech && !sp.rest && !a.key_works) featHTML = '<div class="empty">特徴の記載はまだありません</div>';
 /* v27.0: 制作プロセス tab — the making dossier (data-side
    curated, per artist). The summary leads; the steps run as a
    numbered sequence, each with its source; environment and
@@ -17038,6 +17056,11 @@ let processHTML = '';
    under their own 制作風景 heading; the making dossier follows.
    Either side alone still fills the tab. */
 if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
+/* v5.72.0: 技法・メディウム (the notes' tech split) moves here
+   from the abolished 特徴 tab — technique belongs with the
+   making-of material. It follows the process photos and leads
+   the dossier text. */
+if(sp.tech) processHTML += '<h3 class="subhead">技法・メディウム</h3>'+proseHTML(sp.tech);
 if(procObj){
 if(procObj.summary) processHTML += '<div class="bodytext">'+pTermEsc(procObj.summary)+'</div>';
 if(procObj.steps && procObj.steps.length){
@@ -17180,12 +17203,13 @@ if(relGroups.genealogy.length) relationsHTML += '<h3 class="subhead">同じ系�
 if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較される作家</h3>' + relGroups.compared.map(r=>relRowHTML(r, true)).join('');
 /* v5.69.0: panels follow the new DTABS order; there is no
    influences panel — its content rides inside the relations
-   panel (see the merge at the relations assembly below). */
+   panel (see the merge at the relations assembly below).
+   v5.72.0: there is no feat panel either — its sections ride
+   inside the works and process panels (see above). */
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+drawingsHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+processHTML+'</div>'
-+'<div class="dpage" data-dtab="feat">'+featHTML+'</div>'
 +'<div class="dpage" data-dtab="relations">'+relationsHTML+influencesHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
 +'<div class="dpage" data-dtab="exhibitions">'+exhibitionsHTML+'</div>'
@@ -17220,7 +17244,7 @@ if(fig) fig.addEventListener('click', ()=>{
    full-list index and opened the viewer over the full ws —
    the tapped work itself was right, but sliding moved
    through the full list, so the next slide was an unrelated
-   work. Scoped to the works tab page: the 特徴 tab's
+   work. Scoped to the works tab page: the 来歴 tab's
    chronicle figures carry data-workidx too and keep the
    full-list behaviour. */
 if(seriesKey && ph.closest('[data-dtab="works"]')){
@@ -24376,7 +24400,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.71.2';
+const APP_VERSION = '5.72.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
