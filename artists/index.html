@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.72.0">
+<meta name="app-version" content="5.72.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -22683,6 +22683,19 @@ saveDB(); scheduleSync(); renderList(); toast('元に戻しました');
 
 <script>
 /* ================= import / export ================= */
+/* v5.72.1: instant-true stamp comparison. updated_at arrives
+   in two formats — the data side stamps ISO with a +09:00
+   offset, the app stamps Z — and a lexical race between them
+   can call an older record newer (17:36:36+09:00 is 08:36Z,
+   yet as a string it beats a device edit stamped 10:30Z).
+   Parse both sides; when either side will not parse, fall
+   back to the historical string order. */
+function stampGt(a, b){
+  const sa = a || '', sb = b || '';
+  const ta = Date.parse(sa), tb = Date.parse(sb);
+  if(!isNaN(ta) && !isNaN(tb)) return ta > tb;
+  return sa > sb;
+}
 function mergeDataInto(local, incoming){
   const inc = normalizeData(incoming);
   const localMax = sbMaxUpdated(local), incMax = sbMaxUpdated(inc);
@@ -22728,9 +22741,24 @@ function mergeDataInto(local, incoming){
        conflict — same-stamp differing content means an edit
        that did not stamp, and the device's live record is the
        safer holder (server writers stamp their changes). */
-    const scalarFromRemote = (ia.updated_at||'') > (la.updated_at||'');
-    ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','updated_at'].forEach(k=>{
-      if(ia[k] && (!la[k] || scalarFromRemote)) merged[k] = ia[k];
+    const scalarFromRemote = stampGt(ia.updated_at, la.updated_at);
+    ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','birth_date','death_date','updated_at'].forEach(k=>{
+      /* v5.72.1: a strictly newer incoming record states its
+         scalar fields WHOLESALE — an empty string included.
+         The old rule counted an incoming value only when it
+         was truthy, which made a server-side clearing
+         un-deliverable: the 2026-11-19 text cleanup emptied
+         中園孔二's relation on the server and bumped the
+         record's stamp, yet every sync kept the device's old
+         text, because '' never passed the truthy gate (and
+         the stamp still advanced, so no later sync could
+         heal it). The newer-record authority is the same one
+         the held flag (v5.67.0) already follows. An older or
+         equal incoming copy keeps the historical fill-only
+         rule below, so a device edit the server has not seen
+         (it carries the fresher stamp) is never clobbered. */
+      if(scalarFromRemote){ if(k in ia) merged[k] = ia[k]; }
+      else if(ia[k] && !la[k]) merged[k] = ia[k];
     });
     /* v5.70.0: on an id-matched rename the incoming name is
        the person's name even at equal stamps (the scalar rule
@@ -24400,7 +24428,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.72.0';
+const APP_VERSION = '5.72.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
