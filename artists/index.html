@@ -6,13 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="図鑑">
+<meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.70.0">
+<meta name="app-version" content="5.71.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
-<title>図鑑</title>
+<title>Arcanum</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" async defer></script>
 <style>
@@ -14742,7 +14742,7 @@ const vb = $('verBadge'); if(vb) vb.textContent = 'v'+APP_VERSION;
 const el = $('aboutbox'); if(!el) return;
 const cnt = k=>liveDB(k).artists.length;
 const wrk = k=>liveDB(k).artists.reduce((n,aa)=>n+worksOf(aa).length,0);
-el.textContent = '図鑑 v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+wrk('artists')+'点 ・ デザイナー '+cnt('designers')+'名／'+wrk('designers')+'点';
+el.textContent = 'Arcanum v'+APP_VERSION+' ・ 作家 '+cnt('artists')+'名／'+wrk('artists')+'点 ・ デザイナー '+cnt('designers')+'名／'+wrk('designers')+'点';
 }
 function renderList(){
 document.querySelectorAll('#modeseg button').forEach(b=>{ b.classList.toggle('on', b.dataset.m===state.mode); if(MODE_GRIDS[b.dataset.m]){ b.innerHTML = modeIcon(b.dataset.m); b.setAttribute('aria-label', modeLabel(b.dataset.m)); } });
@@ -24370,7 +24370,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.70.0';
+const APP_VERSION = '5.71.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
