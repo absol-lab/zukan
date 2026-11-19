@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="図鑑">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.69.0">
+<meta name="app-version" content="5.70.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -9976,10 +9976,21 @@ async function dsMetaGet(prefix){
   if(raw == null) return null;
   try{ const m = JSON.parse(raw); return (m && typeof m === 'object')? m: null; }catch(e){ return null; }
 }
-async function dsMetaSet(prefix, data, stamp){
+async function dsMetaSet(prefix, data, stamp, anchor){
   if(!IDB_OK) return;
-  const str = JSON.stringify({ stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) });
-  await idbRun(()=> idbSetRaw(prefix + 'syncMeta', str, 'datasets'));
+  const m = { stamp: (typeof stamp === 'number')? stamp: null, maxUpd: sbMaxUpdated(data), hash: syncHashOfStr(JSON.stringify(data)) };
+  /* v5.70.0: the convergence anchor (the key sets of the
+     dataset as this commit leaves it — see
+     convergeDataToServer) rides in the same meta object, in
+     the datasets store only: the Drive data files themselves
+     are unchanged. A commit that passes no anchor keeps the
+     stored one. */
+  if(anchor && Array.isArray(anchor.loc) && Array.isArray(anchor.exk)){ m.loc = anchor.loc; m.exk = anchor.exk; }
+  else {
+    const prev = await dsMetaGet(prefix);
+    if(prev && Array.isArray(prev.loc) && Array.isArray(prev.exk)){ m.loc = prev.loc; m.exk = prev.exk; }
+  }
+  await idbRun(()=> idbSetRaw(prefix + 'syncMeta', JSON.stringify(m), 'datasets'));
 }
 /* pendingImages hydrate: the in-memory map stays the read
    source (bindCtx binds it); boot fills it from the datasets
@@ -10037,7 +10048,7 @@ async function dataInitDataset(kind){
   }
   c.hasMirror = raw != null;
   c.mirrorBytes = raw? raw.length: 0;
-  if(!c.mirrorSource) c.mirrorSource = 'seed';
+  if(!c.mirrorSource){ c.mirrorSource = 'seed'; c.bootFromSeed = true; }
   await hydratePendingImages(kind);
   c.mirrorVerified = false;
   if(raw == null) c.mirrorVerified = true;
@@ -10082,7 +10093,7 @@ function bootFallbackBuild(kind){
     try{ c.DB = normalizeFor(kind, JSON.parse(raw)); c.loadedFromStore = true; if(!c.mirrorSource) c.mirrorSource = 'ls-legacy'; c.hasMirror = true; return; }
     catch(e){ c.storeUnreadable = true; }
   }
-  if(kind === 'artists') c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED)));
+  if(kind === 'artists'){ c.DB = normalizeFor(kind, JSON.parse(JSON.stringify(EMBEDDED_SEED))); c.bootFromSeed = true; }
   else c.DB = { kind: kind, version: 1, sections: [], artists: [], exhibitions: [] };
 }
 /* v27.6 pressure valve: while the DB mirrors remain in
@@ -19925,7 +19936,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中667人まで完了。残り100人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは792点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は820件・442人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は216人・計553点。","肖像写真は304人。"]},{"v":null,"label":"展示情報","lines":["展示は6,428件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは888点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は221人・計563点。","肖像写真は352人。"]},{"v":null,"label":"展示情報","lines":["展示は7,868件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22653,8 +22664,29 @@ function mergeDataInto(local, incoming){
   const localMax = sbMaxUpdated(local), incMax = sbMaxUpdated(inc);
   inc.sections.forEach(s=>{ if(local.sections.indexOf(s)<0) local.sections.push(s); });
   inc.artists.forEach(ia=>{
-    let ix = -1;
+    let ix = -1, idRename = false;
     if(ia.id!=null) ix = local.artists.findIndex(a=>String(a.id)===String(ia.id) && a.name===ia.name);
+    if(ix<0 && ia.id!=null){
+      /* v5.70.0: rename convergence — the id is the identity.
+         A same-id record under a different name is the same
+         person renamed (data-side renames always bump
+         updated_at and keep the old spelling in aliases), not
+         a second person. The old id+name match let the
+         pre-rename copy survive as a ghost duplicate (id 144
+         永井朋子 vs 長井朋子 — his device, 2026-11-18). Merge
+         onto the id match when the incoming record is at
+         least as new as the local one, or when the names
+         cross-match through aliases; otherwise fall through
+         to the name match below, so a stale foreign record
+         that merely shares an id cannot swallow a local
+         person. */
+      const jx = local.artists.findIndex(a=>String(a.id)===String(ia.id));
+      if(jx>=0){
+        const la0 = local.artists[jx];
+        const aliasHit = (ia.aliases||[]).indexOf(la0.name)>=0 || (la0.aliases||[]).indexOf(ia.name)>=0;
+        if(aliasHit || (ia.updated_at||'') >= (la0.updated_at||'')){ ix = jx; idRename = true; }
+      }
+    }
     if(ix<0) ix = local.artists.findIndex(a=>a.name===ia.name);
     if(ix<0){ local.artists.push(ia); return; }
     const la = local.artists[ix];
@@ -22676,6 +22708,10 @@ function mergeDataInto(local, incoming){
     ['name','name_latin','name_native','name_kana','years','field','section','relation','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','updated_at'].forEach(k=>{
       if(ia[k] && (!la[k] || scalarFromRemote)) merged[k] = ia[k];
     });
+    /* v5.70.0: on an id-matched rename the incoming name is
+       the person's name even at equal stamps (the scalar rule
+       above needs a strictly newer stamp to move a name). */
+    if(idRename && (ia.updated_at||'') >= (la.updated_at||'')) merged.name = ia.name;
     if(ia.tags && ia.tags.length) merged.tags = ia.tags;
     /* v2.65: books are curated wholesale on the Muse side — a
        non-empty incoming set replaces the local one. */
@@ -22760,6 +22796,142 @@ function mergeDataInto(local, incoming){
   if(inc.timeline && (local.timeline==null || incMax >= localMax)) local.timeline = inc.timeline;
   if(quizHasData(inc.quiz) && (!quizHasData(local.quiz) || incMax >= localMax)) local.quiz = inc.quiz;
   return local;
+}
+/* ---------- v5.70.0: convergence to the server file ----------
+   mergeDataInto only ever unions, so a record the server side
+   deleted lived on the device forever (and a rename left a
+   ghost duplicate — the id-match above now prevents new ones).
+   His phone read 全339名 against a 332-record file for this
+   reason (diagnosed in v5.68.0). convergeDataToServer runs
+   ONLY where the incoming data is the server's complete
+   current file — the relay full download and the token-path
+   download in the sync flows. It never runs for deltas (a
+   delta's silence means nothing), datapack applies (the pack
+   is an old snapshot) or user imports (partial by design).
+   A local record is dropped only when BOTH hold:
+   - its key is absent from the server file, and
+   - its key is in the ANCHOR — the key set the last completed
+     sync committed (stored in syncMeta, see dsMetaSet), i.e.
+     the record was already on this device at that sync and
+     the server has since let it go.
+   A record created or imported since that commit is not in
+   the anchor and always survives, so unsynced device work is
+   never eaten — it rides the same sync's put-back exactly as
+   before. When no anchor is stored yet, one is resolved
+   conservatively (resolveConvergeAnchor): a local dataset
+   byte-identical to the last commit anchors on its own keys;
+   this boot's seed state anchors on the EMBEDDED_SEED keys
+   (a shipped server snapshot — editor creations always take
+   a fresh id outside it); otherwise pruning waits a sync and
+   the commit at the end of this one establishes the anchor.
+   Duplicate ids (the rename-ghost pair) collapse to the
+   freshest copy regardless of the anchor — one id is one
+   person everywhere else in the app already. Exhibitions,
+   which are never created on-device, prune by their merge
+   key under the same anchor rule. Favorites and ratings live
+   outside this dataset (the requests file + the kv store)
+   and are untouched by everything in this section. */
+function dsKeysOf(data){
+  const ids = new Set(), names = new Set(), ex = new Set();
+  ((data && data.artists) || []).forEach(a=>{
+    if(!a) return;
+    if(a.id != null) ids.add(String(a.id)); else if(a.name) names.add(a.name);
+  });
+  ((data && data.exhibitions) || []).forEach(e=>{ if(e) ex.add((e.title||'')+'|'+(e.start_date||'')+'|'+(e.venue||'')); });
+  return { ids: ids, names: names, ex: ex };
+}
+function resolveConvergeAnchor(meta, localData, ctx){
+  if(meta && Array.isArray(meta.loc) && Array.isArray(meta.exk)){
+    const ids = new Set(), names = new Set();
+    meta.loc.forEach(k=>{ if(k.indexOf('i:')===0) ids.add(k.slice(2)); else if(k.indexOf('n:')===0) names.add(k.slice(2)); });
+    return { ids: ids, names: names, ex: new Set(meta.exk), src: 'meta' };
+  }
+  const clean = (ctx && ('localClean' in ctx))? !!ctx.localClean
+    : !!(meta && typeof meta.hash === 'string' && meta.hash === syncHashOfStr(JSON.stringify(localData)));
+  if(clean){ const k = dsKeysOf(localData); k.src = 'clean'; return k; }
+  if(ctx && ctx.bootFromSeed && ctx.kind === 'artists'){
+    const k = dsKeysOf(JSON.parse(JSON.stringify(EMBEDDED_SEED))); k.src = 'seed'; return k;
+  }
+  return null;
+}
+function convergeDataToServer(local, remoteFull, anchor){
+  const srv = dsKeysOf(remoteFull);
+  let droppedA = 0, droppedE = 0, deduped = 0, realigned = 0;
+  /* a local record whose id the server no longer carries, but
+     whose name the server still carries as an id-null stub
+     (the id was stripped server-side — セバスチャン・トリュシェ
+     was id 34 in the seed, a stub in the current file): it is
+     the same person, not a deletion. Align it to the stub
+     (id = null) before the prune test, or the prune would
+     erase a living record. A genuinely deleted artist's name
+     is absent from the server file too, so the prune below
+     still takes them. */
+  (local.artists || []).forEach(a=>{
+    if(a && a.id != null && a.name && !srv.ids.has(String(a.id)) && srv.names.has(a.name)){ a.id = null; realigned++; }
+  });
+  /* duplicate ids / duplicate stub names collapse first —
+     the rename-ghost pair is two records for one person */
+  const seenId = new Map(), seenName = new Set();
+  const kept = [];
+  (local.artists || []).forEach(a=>{
+    if(!a){ kept.push(a); return; }
+    if(a.id != null){
+      const k = String(a.id);
+      if(seenId.has(k)){
+        const ix = seenId.get(k);
+        if((a.updated_at||'') > (kept[ix].updated_at||'')) kept[ix] = a;
+        deduped++; return;
+      }
+      seenId.set(k, kept.length); kept.push(a);
+    } else if(a.name){
+      if(seenName.has(a.name)){ deduped++; return; }
+      seenName.add(a.name); kept.push(a);
+    } else kept.push(a);
+  });
+  local.artists = kept;
+  if(anchor){
+    local.artists = local.artists.filter(a=>{
+      if(!a) return true;
+      if(a.id != null){
+        const k = String(a.id);
+        if(!srv.ids.has(k) && anchor.ids.has(k)){ droppedA++; return false; }
+      } else if(a.name){
+        if(!srv.names.has(a.name) && anchor.names.has(a.name)){ droppedA++; return false; }
+      }
+      return true;
+    });
+    if(Array.isArray(local.exhibitions)){
+      local.exhibitions = local.exhibitions.filter(e=>{
+        if(!e) return true;
+        const k = (e.title||'')+'|'+(e.start_date||'')+'|'+(e.venue||'');
+        if(!srv.ex.has(k) && anchor.ex.has(k)){ droppedE++; return false; }
+        return true;
+      });
+    }
+  }
+  return { droppedA: droppedA, droppedE: droppedE, deduped: deduped, realigned: realigned };
+}
+function anchorKeysForCommit(data){
+  const k = dsKeysOf(data), loc = [];
+  k.ids.forEach(id=>loc.push('i:'+id));
+  k.names.forEach(n=>loc.push('n:'+n));
+  return { loc: loc, exk: Array.from(k.ex) };
+}
+/* after a totals-guard veto the server still holds only
+   remoteFull — the next anchor is what it holds plus what was
+   already anchored, so an unpushed local record keeps its
+   protection instead of being adopted into the anchor and
+   pruned by the next sync */
+function anchorAfterVeto(prevAnchor, remoteFull){
+  const srv = dsKeysOf(remoteFull), loc = [], ex = new Set(srv.ex);
+  if(prevAnchor){
+    prevAnchor.ids.forEach(id=>{ if(!srv.ids.has(id)) loc.push('i:'+id); });
+    prevAnchor.names.forEach(n=>{ if(!srv.names.has(n)) loc.push('n:'+n); });
+    prevAnchor.ex.forEach(k=>ex.add(k));
+  }
+  srv.ids.forEach(id=>loc.push('i:'+id));
+  srv.names.forEach(n=>loc.push('n:'+n));
+  return { loc: loc, exk: Array.from(ex) };
 }
 async function importFile(input){
   const file = input.files && input.files[0]; input.value = '';
@@ -23289,7 +23461,7 @@ function syncTotalsOk(payload, remote){
    throughout, so the getters/setters are async twins of the
    old synchronous pair. */
 async function syncMetaGet(prefix){ return await dsMetaGet(prefix); }
-async function syncMetaSet(prefix, data, stamp){ await dsMetaSet(prefix, data, stamp); }
+async function syncMetaSet(prefix, data, stamp, anchor){ await dsMetaSet(prefix, data, stamp, anchor); }
 async function syncDatasetRelay(kind, data){
   const c = CTX[kind]; if(!c) throw new Error('対象がありません');
   const cfg = c.cfg, prefix = cfg.prefix;
@@ -23300,8 +23472,10 @@ async function syncDatasetRelay(kind, data){
   if(!stat.exists){
     await relayCall('put', cfg.dataFile, JSON.stringify(data));
     /* v27.18 C2: the meta is only STAGED here — syncDatasetOnce
-       commits it after the mirror write has actually landed */
-    c.pendingMeta = { data: data, stamp: null };
+       commits it after the mirror write has actually landed.
+       v5.70.0: the put makes the server hold exactly this
+       dataset, so its key set is the convergence anchor. */
+    c.pendingMeta = { data: data, stamp: null, anchor: anchorKeysForCommit(data) };
     return data;
   }
   const stamp = (typeof stat.updated === 'number')? stat.updated: null;
@@ -23309,7 +23483,7 @@ async function syncDatasetRelay(kind, data){
   if(stamp !== null && meta && meta.stamp === stamp && localClean){
     return data;
   }
-  let merged = null, remoteFull = null;
+  let merged = null, remoteFull = null, convAnchorUsed = null;
   /* C: the delta may refresh the local VIEW only while the
      local side is clean — a clean side never puts, so a
      partial delta can never become an upload base (v14.0).
@@ -23351,6 +23525,16 @@ async function syncDatasetRelay(kind, data){
     if(!j || typeof j.content !== 'string') throw new Error('中継からデータを得られませんでした');
     remoteFull = normalizeFor(kind, JSON.parse(j.content));
     merged = mergeDataInto(data, remoteFull);
+    /* v5.70.0: the full download IS the server's complete
+       current file — converge the merged dataset to it
+       (server deletions drop out, rename ghosts collapse)
+       under the anchor discipline. Pruning only ever removes
+       records the server file itself lacks, so the totals
+       guard below cannot trip on convergence: the merged
+       totals still cover remoteFull's. */
+    convAnchorUsed = resolveConvergeAnchor(meta, data, { bootFromSeed: c.bootFromSeed, localClean: localClean, kind: kind });
+    const cv = convergeDataToServer(merged, remoteFull, convAnchorUsed);
+    if(cv.droppedA || cv.droppedE || cv.deduped || cv.realigned) c.converged = cv;
   }
   /* A1: push only what the server lacks. A put can only be
      reached with a full download in hand (v14.0 rule 1). */
@@ -23378,7 +23562,16 @@ async function syncDatasetRelay(kind, data){
     }
   }
   c.syncNote = adjusted ? 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）' : null;
-  c.pendingMeta = { data: merged, stamp: adjusted ? null : stampAfter };
+  /* v5.70.0: the staged meta carries the convergence anchor.
+     After a put (or when none was needed) the server holds
+     exactly the merged dataset, so its key set anchors the
+     next sync; after a totals-guard veto it holds only
+     remoteFull, and the anchor follows anchorAfterVeto. On
+     the delta path (remoteFull === null) the merged key set
+     anchors — a clean local side holds no unpushed records
+     the anchor could endanger. */
+  c.pendingMeta = { data: merged, stamp: adjusted ? null : stampAfter,
+    anchor: adjusted ? anchorAfterVeto(convAnchorUsed, remoteFull) : anchorKeysForCommit(merged) };
   return merged;
 }
 async function syncDatasetFlow(kind, reason){
@@ -23413,16 +23606,28 @@ async function syncDatasetOnce(kind, reason){
     if(!file){
       const created = await createDataFileFor(tok, cfg.dataFile, data);
       if(created && created.id) storeSet(prefix+'driveFileId', created.id);
+      /* v5.70.0: the created file holds exactly this dataset —
+         stage its key set as the convergence anchor */
+      c.pendingMeta = { data: data, stamp: null, anchor: anchorKeysForCommit(data) };
     } else {
       storeSet(prefix+'driveFileId', file.id);
-      let remoteStr = null, remoteNorm = null;
+      let remoteStr = null, remoteNorm = null, tokenAnchorUsed = null, tokenVeto = false;
       if(reason!=='wipe'){
         const res = await driveReq(tok, '/files/'+encodeURIComponent(file.id)+'?alt=media', null, 60000);
         if(!res.ok) throw new Error('download HTTP '+res.status);
         const remote = normalizeFor(kind, JSON.parse(await res.text()));
         remoteStr = JSON.stringify(remote);
         remoteNorm = remote;
+        /* v5.70.0: converge to the downloaded file — the same
+           discipline as the relay full path. The anchor is
+           resolved BEFORE the merge, from the pre-merge local
+           dataset. */
+        const metaT = await dsMetaGet(prefix);
+        tokenAnchorUsed = resolveConvergeAnchor(metaT, data, { bootFromSeed: c.bootFromSeed, kind: kind,
+          localClean: !!(metaT && metaT.hash === syncHashOfStr(JSON.stringify(data))) });
         data = mergeDataInto(data, remote);
+        const cvT = convergeDataToServer(data, remote, tokenAnchorUsed);
+        if(cvT.droppedA || cvT.droppedE || cvT.deduped || cvT.realigned) c.converged = cvT;
       }
       /* v12.0 (A1): no put-back when the merge changed nothing
          relative to what the server already has */
@@ -23430,9 +23635,16 @@ async function syncDatasetOnce(kind, reason){
         /* v14.0 rule 2 + v14.1 convergence (token path): a
            shrinking payload is never uploaded; the merged
            state is adopted locally instead of erroring. */
-        if(remoteNorm && !syncTotalsOk(data, remoteNorm)){ c.syncNote = 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）'; }
+        if(remoteNorm && !syncTotalsOk(data, remoteNorm)){ c.syncNote = 'サーバの最新に合わせ直しました（巻き戻し防止のため古い送信を止めました）'; tokenVeto = true; }
         else await uploadDataUpdateFor(tok, file.id, data);
       }
+      /* v5.70.0: stage the sync meta on this path too (the
+         commit below writes it behind the mirror save, like
+         the relay path) so the convergence anchor persists;
+         the stamp stays null — the relay B shortcut simply
+         re-downloads next time, the safe direction. */
+      c.pendingMeta = { data: data, stamp: null,
+        anchor: tokenVeto ? anchorAfterVeto(tokenAnchorUsed, remoteNorm) : anchorKeysForCommit(data) };
     }
     }
     /* v27.11 D2: a failed device save is surfaced in the sync
@@ -23449,7 +23661,7 @@ async function syncDatasetOnce(kind, reason){
        its mirror would let the B path trust a copy that is
        not there (the old order ran syncMetaSet inside the
        relay flow, before this save). */
-    if(saveOk && c.pendingMeta){ try{ await syncMetaSet(prefix, c.pendingMeta.data, c.pendingMeta.stamp); }catch(e){} }
+    if(saveOk && c.pendingMeta){ try{ await syncMetaSet(prefix, c.pendingMeta.data, c.pendingMeta.stamp, c.pendingMeta.anchor); }catch(e){} }
     c.pendingMeta = null;
     c.DB = data;
     if(kind===DS) DB = data;
@@ -24158,7 +24370,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.69.0';
+const APP_VERSION = '5.70.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
