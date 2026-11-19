@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.3">
+<meta name="app-version" content="5.73.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -14237,6 +14237,18 @@ curHead.classList.add('duptitle');
 dupTitleHead = curHead;
 }
 }
+/* v5.73.4: post-render era-name settles are rAF-coalesced. The
+   synchronous calls at the end of renderListBody /
+   renderListToTop forced a full layout inside the render task
+   (measured ~71 ms of rect reads in one render); the rAF
+   callback still lands before the paint that follows the
+   render, so the bar name and the duplicate-title suppression
+   appear in the same frame as before. */
+let eraNameQueued = false;
+function queueEraName(){
+if(eraNameQueued) return; eraNameQueued = true;
+requestAnimationFrame(()=>{ eraNameQueued = false; updateEraName(); });
+}
 let eraNameTick = false;
 window.addEventListener('scroll', ()=>{
 if(typeof view === 'undefined' || view !== 'list' || eraNameTick) return;
@@ -15505,7 +15517,7 @@ function renderListToTop(){
   renderListBody();
   window.scrollTo(0, 0);
   requestAnimationFrame(()=>{ if(tb) tb.classList.remove('tbnoanim'); });
-  updateEraName();
+  queueEraName(); /* v5.73.4: deferred settle (see queueEraName) */
 }
 /* v32.13.1: region control (his 2026-11-16 decisions,
    superseding the v32.13.0 on/off merge toggle) — 西洋 and
@@ -15849,8 +15861,11 @@ wireListImages(body);
 /* v32.13.2: settle the sticky bar's name (and the duplicate-
    title suppression) on the FRESH heads in this same task —
    renderList calls updateEraName before this render, so
-   without this call the first paint could show both titles. */
-updateEraName();
+   without this call the first paint could show both titles.
+   v5.73.4: the settle itself is deferred to the next frame
+   (queueEraName) — it still lands before that paint, but the
+   rect reads no longer force a layout inside the render task. */
+queueEraName();
 }
 
 /* ---------- detail ---------- */
@@ -16050,6 +16065,19 @@ const panel = pg.querySelectorAll('.dpage')[idx]; if(!panel) return;
 const h = panel.offsetHeight;
 if(h > 0) pg.style.height = h + 'px';
 }
+/* v5.73.4: refits are rAF-coalesced. The pager's load listener
+   used to call fitDPagerHeight on EVERY image load inside the
+   pager — one forced layout per image (measured: 148 calls
+   while a heavy page's images streamed in). Loads schedule a
+   single fit per frame instead, and only a load inside the
+   ACTIVE panel can change the pager's height at all (inactive
+   panels are fitted by setTab's own synchronous call when the
+   user switches to them). */
+let dfitQueued = false;
+function scheduleFitDPager(){
+if(dfitQueued) return; dfitQueued = true;
+requestAnimationFrame(()=>{ dfitQueued = false; fitDPagerHeight(); });
+}
 function dtabHighlight(t){
 const bar = document.querySelector('#viewDetail .dtabs'); if(!bar) return;
 [...bar.querySelectorAll('button')].forEach((b, i)=>b.classList.toggle('on', DTABS[i]===t));
@@ -16089,9 +16117,12 @@ const t = DTABS[i];
 if(t && t !== state.tab){ state.tab = t; dtabHighlight(t); fitDPagerHeight(); }
 });
 }, { passive:true });
-pg.addEventListener('load', ()=>fitDPagerHeight(), true);
-requestAnimationFrame(()=>fitDPagerHeight());
-setTimeout(()=>{ if(pg.isConnected) fitDPagerHeight(); }, 700);
+pg.addEventListener('load', (e)=>{
+const panel = pg.querySelectorAll('.dpage')[Math.max(0, DTABS.indexOf(state.tab))];
+if(panel && e.target && panel.contains(e.target)) scheduleFitDPager();
+}, true);
+scheduleFitDPager();
+setTimeout(()=>{ if(pg.isConnected) scheduleFitDPager(); }, 700);
 /* v6.1: tab drags as threshold triggers (the diary's settled
    swipe pattern). The pager no longer free-scrolls (see the
    .dpager CSS note), so a horizontal drag past ~52px switches
@@ -19038,11 +19069,12 @@ function exGridCardHTML(e, o){
     + (acts? '<div class="exacts">' + acts + '</div>': '')
     + '</figcaption></figure>';
 }
+function wireExHolder(ph){
+  const w = exGridWiring[+ph.dataset.exg]; if(!w) return;
+  const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
+}
 function wireExGrid(v){
-  v.querySelectorAll('[data-exg]').forEach(ph=>{
-    const w = exGridWiring[+ph.dataset.exg]; if(!w) return;
-    const span = ph.querySelector('.imgholder'); if(span){ span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); }
-  });
+  v.querySelectorAll('[data-exg]').forEach(wireExHolder);
 }
 let exSortMode = 'start'; /* 'start' = 開始日順 / 'end' = 終了が早い順 / 'near' = 近い順 */
 let exUserPos = null, exGeoState = 'idle'; /* idle | asking | ok | denied | off */
@@ -19286,17 +19318,33 @@ if(!grid || !items || !items.length) return;
 const job = { gen: exJobGen, grid: grid, items: items, build: build, mode: mode, root: root, idx: 0, timer: 0 };
 exGridJobs.set(grid, job);
 exJobStep(job);
+job.started = true; /* v5.73.4: the synchronous first slice is part of the render; only timer-driven slices are view-gated */
 }
 function exJobStep(job){
 if(job.gen !== exJobGen || !job.grid.isConnected){ exGridJobs.delete(job.grid); return; }
+/* v5.73.4: the fill exists only for the exhibitions view.
+   showView('ex') re-renders via renderEx on every entry, so a
+   fill abandoned by leaving the view is never resumed — stop
+   the timer chain instead of building the remaining thousands
+   of cards behind whatever the user is doing now (measured:
+   leaving at 2,000 cards still built all 7,831 in the
+   background, taxing the list the user had returned to). */
+if(job.started && typeof view !== 'undefined' && view !== 'ex'){ exGridJobs.delete(job.grid); return; }
 const t0 = performance.now();
 let html = '', n = 0;
 while(job.idx < job.items.length && n < EX_FILL_MAX){
 html += job.build(job.items[job.idx++]); n++;
 if(performance.now() - t0 >= EX_FILL_MS) break;
 }
-if(html) job.grid.insertAdjacentHTML('beforeend', html);
-wireExGrid(job.root);
+/* v5.73.4: wire only the chunk this slice inserted — the old
+   wireExGrid(job.root) re-scanned every holder in the whole
+   view on every slice (up to ~7,900 holders, ~40 slices). The
+   completion path below still wires the whole root once. */
+if(html){
+const before = job.grid.children.length;
+job.grid.insertAdjacentHTML('beforeend', html);
+for(let i = before; i < job.grid.children.length; i++) job.grid.children[i].querySelectorAll('[data-exg]').forEach(wireExHolder);
+}
 if(job.idx < job.items.length){ job.timer = setTimeout(()=> exJobStep(job), 0); return; }
 exGridJobs.delete(job.grid);
 packGridEl(job.grid, job.mode);
@@ -24638,7 +24686,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.3';
+const APP_VERSION = '5.73.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
