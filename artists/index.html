@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.0">
+<meta name="app-version" content="5.73.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23156,6 +23156,14 @@ function statusLabelFor(st, msg, at){
      the transport is the relay, not a Drive login. */
   else if(relayReady()) label = '中継で接続済み（未同期）';
   else label = 'Drive未接続（端末内に保存中）';
+  /* v5.73.1: a recorded silent-reconnect failure is its own state.
+     The user was connected before and the quiet way back failed
+     (today: Google demands an interactive step-up after account
+     switching, so the silent reissue cannot succeed) — the honest
+     label asks for one tap instead of reading like a fresh,
+     never-connected install. The failure kind stays internal and
+     is never rendered. Cleared by any successful token issue. */
+  if(st!=='syncing' && st!=='error' && silentFailAt && !getValidToken() && !relayReady() && storeGet(LS_EVER_CONNECTED)==='1'){ label = '再接続が必要です'; cls = ''; }
   return { label:label, cls:cls };
 }
 function ctxStatus(kind){
@@ -23174,6 +23182,8 @@ function appStatusInfo(){
   if(appSyncRunning || a.syncStatus==='syncing' || d.syncStatus==='syncing') return { label:'同期中…', cls:'' };
   const errs = [a, d].filter(c=>c.syncStatus==='error');
   if(errs.length) return { label:'同期エラー：'+(errs[0].syncMsg||''), cls:'err' };
+  /* v5.73.1: same reconnect-needed state as the header bar */
+  if(silentFailAt && !getValidToken() && !relayReady() && storeGet(LS_EVER_CONNECTED)==='1') return { label:'再接続が必要です', cls:'' };
   const at = Math.max(a.lastSyncAt||0, d.lastSyncAt||0);
   if(at) return { label:'同期済み（'+hhmm(new Date(at))+'）', cls:'' };
   if(getValidToken()) return { label:'接続済み（未同期）', cls:'' };
@@ -23242,13 +23252,40 @@ function scheduleSync(){
    startup and by a 30s watchdog (expiry while the app sits open),
    throttled to one try a minute, and only for users who connected
    before (LS_EVER_CONNECTED, cleared by an explicit disconnect).
-   Failure is silent by design: the red dot + tap-to-connect path is
-   exactly what it was. */
+   Failure used to be silent by design; v5.73.1 records it and the
+   header says so (「再接続が必要です」) — see below. */
 const LS_EVER_CONNECTED = 'zukan.connected';
 let silentTryAt = 0;
-function trySilentReconnect(){
+/* v5.73.1: silent failure is no longer invisible. A failed silent
+   reissue is recorded (kind + time + a per-session count). The
+   header then reads 「再接続が必要です」 instead of the plain
+   never-connected label (see statusLabelFor), and after
+   SILENT_FAIL_MAX failures in one session the 30s watchdog stops
+   opening popups — a return to the app still retries (see the
+   visibilitychange hook), and any successful token issue, silent
+   or manual, resets the count. The recorded kind is internal
+   only: raw GIS strings are never shown in the header. */
+const SILENT_FAIL_MAX = 3;
+let silentFailKind = '', silentFailAt = 0, silentFailCount = 0;
+function noteSilentFailure(err){
+  silentFailKind = (err && (err.type || err.error || err.message)) || 'unknown';
+  silentFailAt = Date.now();
+  silentFailCount++;
+  renderSyncStatus();
+}
+function noteSilentSuccess(){
+  if(silentFailAt || silentFailCount){
+    silentFailKind = ''; silentFailAt = 0; silentFailCount = 0;
+    renderSyncStatus();
+  }
+}
+function trySilentReconnect(src){
   if(storeGet(LS_EVER_CONNECTED)!=='1') return;
   if(!(window.google && google.accounts && google.accounts.oauth2)) return;
+  /* v5.73.1: the watchdog stops churning popups after repeated
+     failures this session; startup and visibility returns still
+     get their attempt (the 60s throttle below bounds them). */
+  if(src==='watchdog' && silentFailCount>=SILENT_FAIL_MAX) return;
   const exp = Math.max(+(storeGet(CFG_ARTISTS.prefix+'tokenExp')||0), +(storeGet(CFG_DESIGNERS.prefix+'tokenExp')||0));
   if(getValidToken() && Date.now() < exp - 30000) return;
   const now = Date.now();
@@ -23260,16 +23297,19 @@ function trySilentReconnect(){
       client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
       callback: function(resp){
         if(resp && resp.access_token){
+          noteSilentSuccess();
           storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
           [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeDel(p+'pendingAuth'));
           renderSyncStatus();
           queueSync(()=>runAppSync('silent', false));
+        } else {
+          noteSilentFailure(resp);
         }
       },
-      error_callback: function(){ /* stay quietly disconnected */ }
+      error_callback: function(err){ noteSilentFailure(err); }
     });
     tc.requestAccessToken({ prompt: '' });
-  }catch(e){}
+  }catch(e){ noteSilentFailure(e); }
 }
 function connectDrive(){
   const cid = getClientId();
@@ -23281,6 +23321,7 @@ function connectDrive(){
       client_id: cid, scope: DRIVE_SCOPE, ux_mode: 'popup',
       callback: function(resp){
         if(resp && resp.access_token){
+          noteSilentSuccess(); /* v5.73.1: a manual connect also clears the silent-failure state + count */
           storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
           [CFG_ARTISTS.prefix, CFG_DESIGNERS.prefix].forEach(p=>storeDel(p+'pendingAuth'));
           clearSyncLines();
@@ -23309,6 +23350,7 @@ function disconnectDrive(){
     try{ google.accounts.oauth2.revoke(tok, function(){}); }catch(e){}
   }
   storeDel(LS_EVER_CONNECTED); /* explicit disconnect stops silent reconnect */
+  silentFailKind = ''; silentFailAt = 0; silentFailCount = 0; /* v5.73.1: never-connected again — the failure state goes with it */
   clearToken();
   setCtxStatus('artists', 'disconnected'); setCtxStatus('designers', 'disconnected');
   toast('Drive との接続を解除しました');
@@ -24490,7 +24532,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.0';
+const APP_VERSION = '5.73.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -24516,6 +24558,19 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ updHiddenAt = Date.now(); return; }
   /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
   if(updHiddenAt && Date.now()-updHiddenAt>=60000 && !isEditing()) checkForUpdate();
+});
+/* v5.73.1: returning to the app retries the silent reconnect.
+   While Google demands an interactive step-up the retry fails
+   and the header keeps asking for one tap — but whenever the
+   browser session heals (or the step-up was completed in the
+   browser meanwhile), the app comes back by itself instead of
+   staying dark until a manual connect. trySilentReconnect's
+   own guards keep this inert without the ever-connected marker
+   or with a live token, and its 60s throttle bounds it to one
+   attempt per return. */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) return;
+  if(!getValidToken() && storeGet(LS_EVER_CONNECTED)==='1') trySilentReconnect('visibility');
 });
 
 /* ================= init ================= */
@@ -25255,7 +25310,7 @@ function maybeFirstRender(){
       const iv = setInterval(()=>{
         n++;
         if(getValidToken()){ clearInterval(iv); return; }
-        if(window.google && google.accounts && google.accounts.oauth2){ trySilentReconnect(); clearInterval(iv); }
+        if(window.google && google.accounts && google.accounts.oauth2){ trySilentReconnect('startup'); clearInterval(iv); }
         else if(n>16) clearInterval(iv);
       }, 500);
     }
@@ -25263,7 +25318,7 @@ function maybeFirstRender(){
   /* v2.53 watchdog: a token that dies while the app sits open is
      silently renewed the same way (throttled inside). */
   setInterval(()=>{
-    if(!appSyncRunning) trySilentReconnect();
+    if(!appSyncRunning) trySilentReconnect('watchdog');
   }, 30000);
 })();
 </script>
