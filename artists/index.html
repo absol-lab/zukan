@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.5">
+<meta name="app-version" content="5.74.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2286,6 +2286,16 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    container only records the mode now; setExMode / setExdMode
    re-pack in place on a switch. */
 .grid.exgrid, .grid.exdgrid{display:block;}
+/* v5.74.0: exhibition cards are laid out only near the viewport
+   (content-visibility). The completed exhibitions view holds
+   ~7,800 cards / ~143,000 nodes; laying the whole mass out on
+   every fill slice, pack and mode switch was the freeze (see
+   the note above exFillGrid). Each card's contain-intrinsic-size
+   is set inline from the same estimate the packer uses, so an
+   unvisited card still reserves close to its real height.
+   Browsers without content-visibility ignore this rule and
+   behave exactly as before. */
+.exgrid figure.work, .exdgrid figure.work{content-visibility:auto;}
 /* v32.17.0 (fix 2): the price table read shabby in the dense
    modes on his iPhone (2026-11-16 23:13) — prices cut off
    mid-number ("$450,31…": figure.work clips overflow and the
@@ -11458,15 +11468,17 @@ return '<div class="pcols wm-' + mode + '">' + packCols(cards, n).map(items=> '<
    (the machinery lives with renderExArtists below). Declared
    here, before packGridEl, so the flush hook inside packGridEl
    can read the map at any call time. A mode switch mid-fill
-   must finish the fill first: packGridEl stashes grid._cards
-   from the grid's current children, so packing a half-filled
-   grid would freeze the partial card set as final and the
-   fill's next innerHTML-clearing pack would drop the rest. */
+   must finish the fill first (exJobFlush drains the job through
+   the same incremental pack), so grid._cards — maintained by
+   the fill in data order — is complete before the re-pack.
+   v5.74.0: the fill packs as it goes; there is no completion
+   pack any more (see the note above exFillGrid). */
 var exGridJobs = new WeakMap();
 var exJobGen = 0;
 function packGridEl(grid, mode){
 if(!grid) return;
 if(exGridJobs.get(grid)) exJobFlush(grid);
+grid._exPack = null; /* v5.74.0: incremental pack state belongs to the structure being replaced */
 if(!grid._cards) grid._cards = Array.prototype.filter.call(grid.children, el=> el.tagName === 'FIGURE');
 const cards = grid._cards;
 const n = PCOLS_N[mode] || 2;
@@ -11487,7 +11499,11 @@ grid.innerHTML = '';
    design. */
 if(n <= 1){ cards.forEach(c=> grid.appendChild(c)); return; }
 if(!cards.length) return;
-const items = cards.map(el=> ({ h: el, e: packEst(el.textContent, mode, 30) }));
+/* v5.74.0: on exhibition grids, refresh each card's reserved
+   height for the new mode — content-visibility skips off-screen
+   cards at their contain-intrinsic-size until first layout. */
+const isExGrid = grid.classList.contains('exgrid') || grid.classList.contains('exdgrid');
+const items = cards.map(el=> { const e = packEst(el.textContent, mode, 30); if(isExGrid) el.style.containIntrinsicSize = 'auto ' + Math.round(e) + 'px'; return { h: el, e: e }; });
 const wrap = document.createElement('div');
 wrap.className = 'pcols wm-' + mode;
 packCols(items, n).forEach(colItems=>{
@@ -19297,66 +19313,95 @@ function setExRegion(r){
   try{ localStorage.setItem('zukan.exRegion', r); }catch(e){}
   if(view === 'cal') renderCal(); else if(view === 'ex') renderEx();
 }
-/* v5.73.3: the exhibitions view fills its grids incrementally.
-   His 2026-11-19 device recording: opening 展示 built all
-   ~7,900 cards in one innerHTML (measured in the harness:
-   ~143,000 DOM nodes, 8.3 MB of markup, a multi-second
-   main-thread block) and the web process was killed mid-load —
-   black screen, then the app reloaded onto the artist list.
-   The sections, the cards and their order are unchanged; the
-   fill now runs in time-boxed slices — the first slice
-   synchronously, so the view paints at once, the rest on
-   timers — and each grid is packed once, when its fill
-   completes, so the finished DOM is the one the old one-shot
-   render produced. A new render invalidates pending fills by
-   generation; packGridEl flushes a pending fill before
-   packing (see its hook), so a size-mode switch mid-fill
-   still ends with the full card set. */
+/* v5.74.0 (DESIGN CHANGE — the exhibitions freeze, third
+   report): the end state is the disease, not the feeding rate.
+   v5.73.3 sliced the build and v5.73.4 stopped the fill when
+   the view is left, but the completed view still materialised
+   all ~7,800 cards as real DOM (~143,000 elements, a
+   ~1,500,000 px tall page), and every structural step paid a
+   full layout of that mass. Measured on the live data in the
+   harness (v5.73.5 code): the 8.4 s fill was 0.98 s of script
+   but 5.32 s of layout, with single tasks of 1,558 ms and
+   2,490 ms — the second one is the layout the completion pack
+   triggered after re-parenting 5,948 cards into columns; a
+   size-mode switch on the completed view blocked for
+   3.6-5.4 s over a 0.22 s pack. Two things change:
+   (1) Cards carry content-visibility:auto (see the .exgrid
+   CSS rule) with a contain-intrinsic-size taken from the same
+   estimate the packer uses, so the browser lays out and paints
+   only the cards near the viewport; the rest reserve their
+   estimated height. The DOM, the sections, the cards and
+   their order are exactly what the old render produced.
+   (2) The fill packs AS IT GOES: the column structure is built
+   up front and each card is dealt straight into the currently
+   shortest column — the same greedy sequence packCols runs,
+   so the assignment is identical to the old batch pack — and
+   the completion pack (the 2.5 s layout) no longer exists.
+   A new render invalidates pending fills by generation;
+   packGridEl flushes a pending fill before packing (see its
+   hook), so a size-mode switch mid-fill still ends with the
+   full card set. */
+/* v5.73.3 (history): the fill runs in time-boxed slices — the
+   first slice synchronously, so the view paints at once, the
+   rest on timers. v5.73.4: slices are view-gated — leaving the
+   exhibitions view stops the fill instead of building the
+   remaining thousands of cards behind the user's back. */
 const EX_FILL_MS = 30, EX_FILL_MAX = 200;
+function exSetupPack(grid, mode){
+const n = PCOLS_N[mode] || 2;
+grid._cards = [];
+if(n <= 1){ grid._exPack = { n: 1, cols: null, colH: null }; return; }
+const wrap = document.createElement('div');
+wrap.className = 'pcols wm-' + mode;
+const cols = [], colH = [];
+for(let i = 0; i < n; i++){ const c = document.createElement('div'); c.className = 'pcol'; wrap.appendChild(c); cols.push(c); colH.push(0); }
+grid.appendChild(wrap);
+grid._exPack = { n: n, cols: cols, colH: colH };
+}
+function exPackCard(grid, fig, mode){
+const pk = grid._exPack; if(!pk) return;
+const est = packEst(fig.textContent, mode, 30);
+fig.style.containIntrinsicSize = 'auto ' + Math.round(est) + 'px';
+grid._cards.push(fig);
+if(!pk.cols){ grid.appendChild(fig); return; }
+let best = 0;
+for(let i = 1; i < pk.n; i++) if(pk.colH[i] < pk.colH[best]) best = i;
+pk.cols[best].appendChild(fig);
+pk.colH[best] += est + 12;
+}
 function exFillGrid(grid, items, build, mode, root){
 if(!grid || !items || !items.length) return;
-const job = { gen: exJobGen, grid: grid, items: items, build: build, mode: mode, root: root, idx: 0, timer: 0 };
+exSetupPack(grid, mode);
+const job = { gen: exJobGen, grid: grid, items: items, build: build, mode: mode, root: root, idx: 0, timer: 0, tmp: document.createElement('div') };
 exGridJobs.set(grid, job);
 exJobStep(job);
 job.started = true; /* v5.73.4: the synchronous first slice is part of the render; only timer-driven slices are view-gated */
 }
 function exJobStep(job){
 if(job.gen !== exJobGen || !job.grid.isConnected){ exGridJobs.delete(job.grid); return; }
-/* v5.73.4: the fill exists only for the exhibitions view.
-   showView('ex') re-renders via renderEx on every entry, so a
-   fill abandoned by leaving the view is never resumed — stop
-   the timer chain instead of building the remaining thousands
-   of cards behind whatever the user is doing now (measured:
-   leaving at 2,000 cards still built all 7,831 in the
-   background, taxing the list the user had returned to). */
 if(job.started && typeof view !== 'undefined' && view !== 'ex'){ exGridJobs.delete(job.grid); return; }
 const t0 = performance.now();
-let html = '', n = 0;
+let n = 0;
 while(job.idx < job.items.length && n < EX_FILL_MAX){
-html += job.build(job.items[job.idx++]); n++;
+job.tmp.innerHTML = job.build(job.items[job.idx++]);
+const fig = job.tmp.firstElementChild;
+if(fig){ exPackCard(job.grid, fig, job.mode); fig.querySelectorAll('[data-exg]').forEach(wireExHolder); }
+n++;
 if(performance.now() - t0 >= EX_FILL_MS) break;
-}
-/* v5.73.4: wire only the chunk this slice inserted — the old
-   wireExGrid(job.root) re-scanned every holder in the whole
-   view on every slice (up to ~7,900 holders, ~40 slices). The
-   completion path below still wires the whole root once. */
-if(html){
-const before = job.grid.children.length;
-job.grid.insertAdjacentHTML('beforeend', html);
-for(let i = before; i < job.grid.children.length; i++) job.grid.children[i].querySelectorAll('[data-exg]').forEach(wireExHolder);
 }
 if(job.idx < job.items.length){ job.timer = setTimeout(()=> exJobStep(job), 0); return; }
 exGridJobs.delete(job.grid);
-packGridEl(job.grid, job.mode);
 wireExGrid(job.root);
 }
 function exJobFlush(grid){
 const job = exGridJobs.get(grid); if(!job) return;
 if(job.timer) clearTimeout(job.timer);
-let html = '';
-while(job.idx < job.items.length) html += job.build(job.items[job.idx++]);
+while(job.idx < job.items.length){
+job.tmp.innerHTML = job.build(job.items[job.idx++]);
+const fig = job.tmp.firstElementChild;
+if(fig) exPackCard(job.grid, fig, job.mode);
+}
 exGridJobs.delete(grid);
-if(html) grid.insertAdjacentHTML('beforeend', html);
 wireExGrid(job.root);
 }
 function renderExArtists(){
@@ -24691,7 +24736,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.5';
+const APP_VERSION = '5.74.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -24702,11 +24747,24 @@ function checkForUpdate(){
         const m = t.match(/name="app-version" content="([0-9.]+)"/);
         if(!m) return;
         const latest = m[1];
-        if(latest===APP_VERSION){ try{ sessionStorage.removeItem(CONFIG.prefix+'updateTried'); }catch(e){} return; }
-        let tried = null;
-        try{ tried = sessionStorage.getItem(CONFIG.prefix+'updateTried'); }catch(e){}
-        if(tried===latest) return; /* ループ防止：同じ版への再読み込みは1回だけ */
-        try{ sessionStorage.setItem(CONFIG.prefix+'updateTried', latest); }catch(e){}
+        const tryKey = CONFIG.prefix+'updateTry';
+        if(latest===APP_VERSION){ try{ localStorage.removeItem(tryKey); }catch(e){} return; }
+        /* v5.74.0: the loop guard is now a timestamped record,
+           not a one-shot session flag. The old guard allowed
+           exactly ONE reload per version per session: if that
+           reload was served a stale copy (device cache), the
+           app booted the old build again, saw the same latest,
+           and — the one attempt already spent — never tried
+           again for the rest of the session. An iOS home-screen
+           app's session can live for days, so a device could
+           sit on an old build indefinitely. The record now
+           expires: at most one reload per version per
+           15 minutes, retried until the running version
+           actually catches up (the record clears then). */
+        let rec = null;
+        try{ rec = JSON.parse(localStorage.getItem(tryKey) || 'null'); }catch(e){}
+        if(rec && rec.v===latest && Date.now() - (rec.at||0) < 15*60*1000) return; /* ループ防止：同じ版への再読み込みは15分に1回まで */
+        try{ localStorage.setItem(tryKey, JSON.stringify({ v: latest, at: Date.now() })); }catch(e){}
         location.replace(location.pathname+'?u='+Date.now()+location.hash); /* hash（#designers等）を保持する */
       })
       .catch(()=>{});
