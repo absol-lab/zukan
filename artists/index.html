@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.73.2">
+<meta name="app-version" content="5.73.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11454,8 +11454,19 @@ return '<div class="pcols wm-' + mode + '">' + packCols(cards, n).map(items=> '<
    (setExMode / setExdMode), no view re-render, no scroll
    loss. Estimates steer the assignment only (text length at
    the column width, packEst), exactly as in packGalleryHTML. */
+/* v5.73.3: pending incremental-fill jobs for exhibition grids
+   (the machinery lives with renderExArtists below). Declared
+   here, before packGridEl, so the flush hook inside packGridEl
+   can read the map at any call time. A mode switch mid-fill
+   must finish the fill first: packGridEl stashes grid._cards
+   from the grid's current children, so packing a half-filled
+   grid would freeze the partial card set as final and the
+   fill's next innerHTML-clearing pack would drop the rest. */
+var exGridJobs = new WeakMap();
+var exJobGen = 0;
 function packGridEl(grid, mode){
 if(!grid) return;
+if(exGridJobs.get(grid)) exJobFlush(grid);
 if(!grid._cards) grid._cards = Array.prototype.filter.call(grid.children, el=> el.tagName === 'FIGURE');
 const cards = grid._cards;
 const n = PCOLS_N[mode] || 2;
@@ -19254,7 +19265,54 @@ function setExRegion(r){
   try{ localStorage.setItem('zukan.exRegion', r); }catch(e){}
   if(view === 'cal') renderCal(); else if(view === 'ex') renderEx();
 }
+/* v5.73.3: the exhibitions view fills its grids incrementally.
+   His 2026-11-19 device recording: opening 展示 built all
+   ~7,900 cards in one innerHTML (measured in the harness:
+   ~143,000 DOM nodes, 8.3 MB of markup, a multi-second
+   main-thread block) and the web process was killed mid-load —
+   black screen, then the app reloaded onto the artist list.
+   The sections, the cards and their order are unchanged; the
+   fill now runs in time-boxed slices — the first slice
+   synchronously, so the view paints at once, the rest on
+   timers — and each grid is packed once, when its fill
+   completes, so the finished DOM is the one the old one-shot
+   render produced. A new render invalidates pending fills by
+   generation; packGridEl flushes a pending fill before
+   packing (see its hook), so a size-mode switch mid-fill
+   still ends with the full card set. */
+const EX_FILL_MS = 30, EX_FILL_MAX = 200;
+function exFillGrid(grid, items, build, mode, root){
+if(!grid || !items || !items.length) return;
+const job = { gen: exJobGen, grid: grid, items: items, build: build, mode: mode, root: root, idx: 0, timer: 0 };
+exGridJobs.set(grid, job);
+exJobStep(job);
+}
+function exJobStep(job){
+if(job.gen !== exJobGen || !job.grid.isConnected){ exGridJobs.delete(job.grid); return; }
+const t0 = performance.now();
+let html = '', n = 0;
+while(job.idx < job.items.length && n < EX_FILL_MAX){
+html += job.build(job.items[job.idx++]); n++;
+if(performance.now() - t0 >= EX_FILL_MS) break;
+}
+if(html) job.grid.insertAdjacentHTML('beforeend', html);
+wireExGrid(job.root);
+if(job.idx < job.items.length){ job.timer = setTimeout(()=> exJobStep(job), 0); return; }
+exGridJobs.delete(job.grid);
+packGridEl(job.grid, job.mode);
+wireExGrid(job.root);
+}
+function exJobFlush(grid){
+const job = exGridJobs.get(grid); if(!job) return;
+if(job.timer) clearTimeout(job.timer);
+let html = '';
+while(job.idx < job.items.length) html += job.build(job.items[job.idx++]);
+exGridJobs.delete(grid);
+if(html) grid.insertAdjacentHTML('beforeend', html);
+wireExGrid(job.root);
+}
 function renderExArtists(){
+exJobGen++;
 let exs = (DB.exhibitions||[]).slice();
 if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
@@ -19299,15 +19357,19 @@ const artistBtn = (e.artist_id!=null && artistById(e.artist_id))? '<button class
 return exGridCardHTML(e, { badge: badge, venueHTML: venueHTML, dates: dates, extra: (dk!=null? '<div class="exdays">現在地から約'+(Math.round(dk*10)/10)+'km</div>': ''), artistBtn: artistBtn });
 };
 exGridWiring = [];
-if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + cur.map(item).join('') + '</div>';
-if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
+if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
+if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 v.innerHTML = html;
-wireExGrid(v); wireGalCards(v); wireListImages(v);
-packGridsIn(v, 'exgrid', SURF.ex);
+wireGalCards(v); wireListImages(v);
+const exGrids = v.querySelectorAll('.exgrid');
+let exGi = 0;
+if(cur.length) exFillGrid(exGrids[exGi++], cur, item, SURF.ex, v);
+if(up.length) exFillGrid(exGrids[exGi++], up, item, SURF.ex, v);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
 function renderExDesigners(){
+exJobGen++;
 let exs = (DB.exhibitions||[]).slice();
 if(exRegion !== 'all') exs = exs.filter(e=> exRegionOf(e) === exRegion);
 const v = $('viewEx');
@@ -19336,11 +19398,14 @@ return exGridCardHTML(e, { badge: badge, venueHTML: venueHTML, dates: dates, art
 };
 let html = head + galleryLinksHTML(exs) + '<div class="smodewrap">' + surfModebarHTML('ex', 'setExMode') + '</div>';
 exGridWiring = [];
-if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + cur.map(item).join('') + '</div>';
-if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '">' + up.map(item).join('') + '</div>';
+if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
+if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
-wireExGrid(v); wireGalCards(v); wireListImages(v);
-packGridsIn(v, 'exgrid', SURF.ex);
+wireGalCards(v); wireListImages(v);
+const exGridsD = v.querySelectorAll('.exgrid');
+let exGiD = 0;
+if(cur.length) exFillGrid(exGridsD[exGiD++], cur, item, SURF.ex, v);
+if(up.length) exFillGrid(exGridsD[exGiD++], up, item, SURF.ex, v);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
@@ -24573,7 +24638,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.73.2';
+const APP_VERSION = '5.73.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
