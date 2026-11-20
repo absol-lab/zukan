@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.75.0">
+<meta name="app-version" content="5.76.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -248,6 +248,11 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .tagchip.on{background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:600;}
 .tagmore{border:1px solid var(--line); background:none; color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12.5px; letter-spacing:.04em; min-height:48px; display:inline-flex; align-items:center;}
 #tagrow{display:block;}
+/* v5.76.0: the makers tag row gets the same override — as a
+   flex row it shrank the facet bar (and its panels) to
+   content width on the left; as a block row they take the
+   full width, exactly like the artist side. */
+#mktagrow{display:block;}
 .taggroup{margin-top:14px;}
 .taggroup:first-child{margin-top:2px;}
 .taggrouphead{font-size:12.5px; color:var(--muted); letter-spacing:.14em; margin-bottom:6px;}
@@ -271,7 +276,7 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
    below it. Buttons stay >=48px tall (the design-rule floor); the space
    saving comes from sharing one row, not from shrinking targets. */
 .facetbar{display:flex; margin-top:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
-.facetbar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 2px; font-size:11.5px; letter-spacing:0; white-space:nowrap; color:var(--muted); font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:3px;}
+.facetbar button{flex:1; background:none; border:none; border-left:1px solid var(--line); padding:9px 2px; font-size:14px; letter-spacing:0; white-space:nowrap; color:var(--muted); font-family:var(--sans); min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:3px;}
 .facetbar button:first-child{border-left:none;}
 .facetbar button.open{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
 .facetbar button .fchev{font-size:10px; color:var(--muted);}
@@ -353,6 +358,9 @@ main{display:block; max-width:720px; margin:0 auto; padding:0 14px; min-height:c
 .regseg button:first-child{border-left:none; padding:0 6px;}
 .regseg button svg{width:19px; height:19px; display:block;}
 .regseg button.on{color:var(--text); font-weight:600; box-shadow:inset 0 -3px 0 var(--accent);}
+/* v5.76.0: in the makers mode row the size seg flexes so the
+   mode bar + region seg + order button share the row width. */
+#mkmodeseg{flex:1;}
 .slimtools{display:none; gap:8px;}
 .toolbar.slim .slimtools{display:flex;}
 .slimtools button{width:48px; min-height:48px; border-radius:12px; background:var(--card); border:1px solid var(--line); color:var(--text); display:inline-flex; align-items:center; justify-content:center; position:relative; padding:0; font-family:var(--sans);}
@@ -1170,6 +1178,13 @@ h3.subhead:first-child{margin-top:8px;}
    .exdays: the warm accent colour + weight 600. No underline
    (underline means tappable in this app), no background. */
 .exgridcard .exdates{color:var(--accent); font-weight:600;}
+/* v5.76.0 (his order, 2026-11-20): exhibition card text is
+   left-aligned throughout — the venue link button centred
+   its wrapped lines, which read as a layout accident. Both
+   card families (the exhibitions view / museum .exgridcard
+   and the artist page's .exdcard). */
+.exgridcard, .exgridcard figcaption, .exdcard, .exdcard figcaption{text-align:left;}
+.exgridcard .linkbtn{text-align:left;}
 .exgridcard .exnote .exfact{color:var(--accent); font-weight:600;}
 .exgridcard .exacts{display:flex; gap:16px; margin-top:2px;}
 .exgridcard .exacts .linkbtn{font-size:12.5px; min-height:40px; padding:0; text-decoration:underline;}
@@ -1463,6 +1478,19 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .gcalbtn{display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; min-height:44px; margin:6px 0 10px; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; text-align:left;}
 .gcalbtn svg{width:18px; height:18px; flex:none;}
 .gcalbtn .gcalchev{margin-left:auto; color:var(--muted); font-weight:400;}
+.hlshow{display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; min-height:44px; margin:14px 0 4px; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; text-align:left;}
+.hlshow .hlchev{margin-left:auto; color:var(--muted); font-weight:400;}
+.hlhead{display:flex; align-items:center; gap:10px;}
+.hlhead .subhead{margin-right:auto;}
+.hlhide{flex:none; border:1px solid var(--line); background:none; color:var(--muted); border-radius:999px; padding:6px 12px; font-size:12.5px; letter-spacing:.04em; min-height:36px; margin-top:22px; display:inline-flex; align-items:center; gap:6px; font-family:inherit; cursor:pointer;}
+.hlhide .hlchev{font-size:11px;}
+/* v5.76.0 (his added spec, 2026-11-20): the 見どころ prose
+   itself is small and tight — 11.5px / line-height 1.5,
+   fixed regardless of the text-size setting (the standard
+   body text is var(--fs) = 16px at 行間 var(--lh) = 1.7).
+   Scoped to the highlights wrapper only; every other
+   .bodytext keeps the shared settings. */
+.hlbody .bodytext{font-size:11.5px; line-height:1.5;}
 .gdictwrap{margin:2px 0 10px;}
 .gdictwrap input{width:100%; box-sizing:border-box; font-size:16px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text);}
 /* v5.53.0 (his call, 2026-11-17 20:58): the dictionary rows go to
@@ -11073,6 +11101,17 @@ try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
 if(['wide','def','compact','mini','micro'].indexOf(workMode) < 0) workMode = 'def';
 function setWorkModeCore(m){ if(MODES.indexOf(m) < 0) m = 'def'; workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
 function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
+/* v5.76.0 (his order, 2026-11-20 「見どころ表示切り替え
+   できるようにして。基本は非表示で」): the 見どころ block at
+   the top of the 作品 panel is toggleable, DEFAULT HIDDEN —
+   the works are reachable immediately, the prose is one tap
+   away when he wants it. One shared device-local preference:
+   artists and designers render through the same builder, so
+   the same key covers both books. 'on' in zukan.showHighlights
+   shows the block; anything else (first run included) hides. */
+let showHighlights = false;
+try { showHighlights = localStorage.getItem('zukan.showHighlights') === 'on'; } catch(e){}
+function setShowHighlights(on){ showHighlights = !!on; try{ localStorage.setItem('zukan.showHighlights', on? 'on': 'off'); }catch(e){} renderDetail(); }
 /* v11.0: the museum shelf shares the works display mode —
    'wide' there means one large tile per row.
    v12.2: all four modes on the shelf, same control as the
@@ -15446,6 +15485,13 @@ if(!y) return '';
 /* v5.63.0: the displayed form is bcYears-compacted (BC / c.);
    the age arithmetic below keeps reading the raw string. */
 const yy = bcYears(y);
+/* v5.76.0: organisations (the makers' 財団 records) carry a
+   founding year, not a life — a years string ending in
+   年設立 displays exactly as recorded and never enters the
+   age arithmetic below. Explicit branch as insurance: today
+   the string merely fails those patterns and passes through,
+   which a future pattern change could silently break. */
+if(/年設立$/.test(y)) return yy;
 const m = y.match(/^(\d{3,4})\s*[–—-]\s*$/) || y.match(/^(\d{3,4})$/);
 if(m){
   const age = new Date().getFullYear() - parseInt(m[1], 10);
@@ -15546,10 +15592,14 @@ function renderListToTop(){
    key is removed on first read, so anyone who had set the
    old toggle lands on the new default (merged). Artists
    whose section carries another region part （アジア・その他,
-   付録） appear in the 'all' view only. The designer book's
-   sections are fields with no region part, so the control
-   is hidden there. The search path (one name-ranked list,
-   v27.2) is untouched, exactly as the merge toggle left it. */
+   付録） appear in the 'all' view only. The search path (one
+   name-ranked list, v27.2) is untouched, exactly as the
+   merge toggle left it.
+   v5.76.0: the control now serves the designer book too —
+   designer sections are fields with no region part, so their
+   class comes from the field's country head (designerRegionOf
+   / regionClassOf); the makers list carries its own segment
+   on the same terms (makerRegionOf). */
 const listRegion = {};
 function regionOn(){
   if(listRegion[DS] == null){
@@ -15568,6 +15618,35 @@ function eraPartOf(s){
   const str = String(s || '');
   const i = str.indexOf('：');
   return i >= 0? str.slice(i + 1): str;
+}
+/* v5.76.0 (his order, 2026-11-20): the region control comes
+   to the designer book too. Designer sections are fields and
+   carry no region part, so the class comes from the field's
+   leading country expression （「アメリカ、グラフィック」).
+   A move chain (ドイツ→アメリカ) counts by the countries it
+   names; an expression naming BOTH 日本 and a western
+   country （日本／アメリカ, カナダ生まれ・日本) is honestly
+   unclassifiable and stays visible under 世界 only — never
+   forced into either side. Cross-check at build time: the
+   日本 tag rides on exactly the 53 records this rule calls
+   jp-or-mixed (50 jp + 3 mixed). */
+const WEST_COUNTRIES = ['アメリカ','イギリス','イタリア','フランス','ドイツ','デンマーク','フィンランド','オランダ','スイス','オーストリア','ハンガリー','ロシア','スコットランド','ベルギー','スウェーデン','スペイン','チェコ','スロバキア','ウクライナ','アイルランド','カナダ','ブラジル','キューバ','オーストラリア'];
+function designerRegionOf(a){
+  const head = String((a && a.field) || '').split('、')[0];
+  const hasJp = head.includes('日本');
+  const hasWest = WEST_COUNTRIES.some(c => head.includes(c));
+  if(hasJp && !hasWest) return 'jp';
+  if(hasWest && !hasJp) return 'west';
+  return '';
+}
+/* The one region classifier for the shared list: artists by
+   section region part, designers by field country. '' means
+   no single region — the record appears under 世界 only,
+   the same treatment other-region artists have always had. */
+function regionClassOf(a){
+  if(DS === 'designers') return designerRegionOf(a);
+  const r = regionOfSection(a.section || '');
+  return r === '日本'? 'jp': r === '西洋'? 'west': '';
 }
 /* v5.58.0 (his call, 2026-11-18): name display is REVERSED —
    the ORIGINAL-language form is the primary name everywhere,
@@ -15646,11 +15725,11 @@ function detailNameLineHTML(a){
 }
 function syncRegionSeg(){
   const seg = $('regSeg'); if(!seg) return;
-  const show = DS === 'artists';
-  /* v5.63.1: the segment rides inside the sort row now (no
-     separate region row) — only the segment itself hides
-     for the designers book; the sort tabs stay. */
-  seg.style.display = show? '': 'none';
+  /* v5.63.1: the segment rides inside the sort row (no
+     separate region row). v5.76.0: it now shows for BOTH
+     books — designers classify by field country instead of
+     section (see designerRegionOf). */
+  seg.style.display = '';
   const r = regionOn();
   seg.querySelectorAll('button').forEach(b=>{
     const on = b.dataset.r === r;
@@ -15659,7 +15738,6 @@ function syncRegionSeg(){
   });
 }
 function setListRegion(r){
-  if(DS !== 'artists') return;
   if(r !== 'jp' && r !== 'west') r = 'all';
   if(regionOn() === r) return;
   listRegion[DS] = r;
@@ -15783,10 +15861,10 @@ html += '</div>';
    'jp' / 'west' first narrow the cast to that region, then
    group by the full section name: the pre-toggle behaviour
    restricted to one region. */
-const region = DS === 'artists'? regionOn(): 'all';
+const region = regionOn();
 const merged = region === 'all';
 const secOf = a => merged? eraPartOf(a.section || ''): (a.section || '');
-const secArr = merged? arr: arr.filter(a=> regionOfSection(a.section || '') === (region === 'jp'? '日本': '西洋'));
+const secArr = merged? arr: arr.filter(a=> regionClassOf(a) === region);
 const order = [];
 DB.sections.forEach(s=>{ const dsec = merged? eraPartOf(s): s; if(order.indexOf(dsec)<0) order.push(dsec);});
 secArr.forEach(a=>{ const s = secOf(a); if(s && order.indexOf(s)<0) order.push(s);});
@@ -15845,8 +15923,8 @@ if(!secArr.length) html += '<div class="empty">該当する項目がありませ
    birth year (oldest / newest first, unknown birth years
    last in both — the v32.13.0 rule). The region control
    narrows the cast exactly as it does for the sections. */
-const region = DS === 'artists'? regionOn(): 'all';
-const cast = region === 'all'? arr: arr.filter(a=> regionOfSection(a.section || '') === (region === 'jp'? '日本': '西洋'));
+const region = regionOn();
+const cast = region === 'all'? arr: arr.filter(a=> regionClassOf(a) === region);
 const flat = cast.slice();
 if(lmode === 'old' || lmode === 'new'){
 const sgn = lmode === 'old'? 1: -1;
@@ -16957,7 +17035,13 @@ worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで�
    themselves immediately, so only 見どころ (the relation
    field) still leads, above the series chips / shelf / grid. */
 let highlightsHTML = '';
-if(a.relation) highlightsHTML += '<h3 class="subhead">見どころ</h3>'+proseHTML(a.relation);
+/* v5.76.0: the block renders only when the shared preference
+   is on; hidden, a compact pill in the same place offers it.
+   No relation text — no toggle, no block (as before). */
+if(a.relation){
+if(showHighlights) highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3><button class="hlhide" onclick="setShowHighlights(false)">隠す<span class="hlchev">▴</span></button></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
+else highlightsHTML = '<button class="hlshow" onclick="setShowHighlights(true)">見どころを表示<span class="hlchev">▾</span></button>';
+}
 if(highlightsHTML) worksHTML = highlightsHTML + worksHTML;
 /* v30.6: the drawings panel — the same gallery as works (same
    tile shape, same viewer, same page turn), its own list. The
@@ -18981,7 +19065,7 @@ function artistExhibitionsHTML(a, exsOfA){
     if(wobj){ const gi = exdCardWiring.length; exdCardWiring.push(wobj); ph = '<div class="ph" data-exdi="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>'; }
     else ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
     const meta = [e.venue, e.city].filter(Boolean).join('／');
-    const dates = (e.start_date || '') + (e.end_date? ' – ' + e.end_date: '');
+    const dates = exPeriodLabel(e);
     let badge = '';
     if(isUp){
       if(e.start_date && e.start_date > tstr) badge = '<div class="exdbadge"><span class="calbadge future">開催予定 ・ 開始まで' + days(tstr, e.start_date) + '日</span></div>';
@@ -19259,6 +19343,30 @@ function exPeriodOf(e){
   let en = exDateBound(e && e.end_date, true);
   if(!en && s) en = exDateBound(e.start_date, true);
   return { s: s, en: en };
+}
+/* v5.76.0 (his order, 2026-11-20): the card's period line
+   reads as a period, at the granularity the record actually
+   carries — full dates as 2026年11月5日, a month as 2026年
+   11月, a year as 2026年 — never padded out to a finer
+   granularity than recorded, and anything else (year ranges
+   like 1994–95) stays exactly as recorded. Before, the raw
+   stored strings were concatenated, so a year-only record
+   showed a bare 「2026」 and full dates read as data dumps. */
+function exDatePart(s){
+  s = String(s || '').trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m) return (+m[1]) + '年' + (+m[2]) + '月' + (+m[3]) + '日';
+  m = s.match(/^(\d{4})-(\d{2})$/);
+  if(m) return (+m[1]) + '年' + (+m[2]) + '月';
+  if(/^\d{4}$/.test(s)) return s + '年';
+  return s;
+}
+function exPeriodLabel(e){
+  const s = String((e && e.start_date) || '').trim(), en = String((e && e.end_date) || '').trim();
+  if(!s && !en) return '';
+  if(!s) return exDatePart(en);
+  if(!en || en === s) return exDatePart(s);
+  return exDatePart(s) + ' – ' + exDatePart(en);
 }
 function exClassOf(e, tstr){
   const p = exPeriodOf(e);
@@ -19644,7 +19752,7 @@ const up = exs.filter(e=> exCls.get(e)==='up').sort(cmp);
 const past = exs.filter(e=> exCls.get(e)==='past').sort(cmp);
 const item = (e)=>{
 let meta = [e.venue, e.city].filter(Boolean).join('／');
-let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+let dates = exPeriodLabel(e);
 const cls = exCls.get(e), per = exPer.get(e);
 let dlabel = '';
 if(cls==='cur' && per.en) dlabel = 'あと'+days(tstr, per.en)+'日';
@@ -19697,7 +19805,7 @@ const past = exs.filter(e=> exClsD.get(e)==='past')
 .sort((a,b)=>{ const ka = exPerD.get(a).s||exPerD.get(a).en||'', kb = exPerD.get(b).s||exPerD.get(b).en||''; return ka>kb?-1:1; });
 const item = (e)=>{
 let meta = [e.venue, e.city].filter(Boolean).join('／');
-let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+let dates = exPeriodLabel(e);
 const cls = exClsD.get(e), per = exPerD.get(e);
 let dlabel = '';
 if(cls==='cur' && per.en) dlabel = 'あと'+days(tstr, per.en)+'日';
@@ -19825,7 +19933,7 @@ out.sort((a, b)=> String(a.start_date||'') < String(b.start_date||'')? -1: 1);
 return out;
 }
 function museumExItemHTML(e, i){
-const dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+const dates = exPeriodLabel(e);
 let artistBtn = '';
 if(e.artist_id != null){
 for(const kind of ['artists','designers']){
@@ -20404,7 +20512,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは888点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は221人・計563点。","肖像写真は352人。"]},{"v":null,"label":"展示情報","lines":["展示は7,868件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは891点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者130人・270冊まで収録。","著作がまだ無い18人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は356人。"]},{"v":null,"label":"展示情報","lines":["展示は7,908件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -20466,7 +20574,7 @@ function reqItemDatasets(r){
   const out = [];
   if(nm){
     for(const k of ['artists', 'designers']){
-      try{ const db = liveDB(k); if(db && db.artists.some(a=>a.name===nm)) out.push(k); }catch(e){}
+      try{ const db = liveDB(k); if(db && reqFindByName(db.artists, nm)) out.push(k); }catch(e){}
     }
   }
   return out.length? out: ['artists', 'designers'];
@@ -20760,13 +20868,37 @@ function openRequestNotifs(){
    registrations carry only the resolved name, so the other dataset's
    stored copy is peeked at BEFORE switching — no switch unless the
    person is actually there. Declined items never jump. */
+/* v5.76.0 (his report, 2026-11-20): a request typed in
+   lowercase romaji ("morris louis") resolved to that raw
+   string, and the jump searched by exact name equality only —
+   the person registered as モーリス・ルイス (name_latin
+   "Morris Louis") was never found and the tap answered
+   「この端末にはまだ届いていません」 while the record sat
+   synced on the device. Resolution now tries every name form
+   the record carries — name, name_latin, name_native,
+   aliases — under the app's search normalization (normSearch:
+   case, kana and variant folding). Exact name equality keeps
+   priority; the normalized pass runs only when it fails. One
+   resolver for every request-name lookup (jump, cross-book
+   peek, dataset attribution, panel thumbnail), so all past
+   notifications heal at once — no data backfill. */
+function reqFindByName(arr, nm){
+  if(!nm) return null;
+  const exact = arr.find(x=>x.name===nm);
+  if(exact) return exact;
+  const q = normSearch(nm);
+  if(!q) return null;
+  return arr.find(x=>{
+    const forms = [x.name, x.name_latin, x.name_native].concat(Array.isArray(x.aliases)? x.aliases: []);
+    return forms.some(f=> f && normSearch(f) === q);
+  }) || null;
+}
 function reqFindIn(kind, r){
   try{
     /* v27.18: memory reference, not a re-parse of the stored mirror */
     const arr = liveDB(kind).artists || [];
     if(r.kind==='works' && r.artist_id!=null){ const a = arr.find(x=>String(x.id)===String(r.artist_id)); if(a) return a.id; }
-    const nm = reqResolvedName(r);
-    const a = arr.find(x=>x.name===nm);
+    const a = reqFindByName(arr, reqResolvedName(r));
     return a? a.id: null;
   }catch(e){ return null; }
 }
@@ -20781,7 +20913,7 @@ function reqNotifJump(id){
     return;
   }
   if(r.kind==='works' && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(a.id); return; } }
-  const here = DB.artists.find(x=>x.name===nm);
+  const here = reqFindByName(DB.artists, nm);
   if(here){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(here.id); return; }
   const other = DS==='artists'? 'designers':'artists';
   const oid = reqFindIn(other, r);
@@ -20818,7 +20950,7 @@ function renderRequestNotifs(targetId){
     /* v32.4.0 (item 13): a person row carries the person's
        thumbnail — the standard card form in miniature (their
        representative work, or the initial tile). */
-    const pa = (r.kind==='works' && r.artist_id!=null)? artistById(r.artist_id): DB.artists.find(x=>x.name===resolved);
+    const pa = (r.kind==='works' && r.artist_id!=null)? artistById(r.artist_id): reqFindByName(DB.artists, resolved);
     const pth = pa? thumbOf(pa): null;
     const thumb = '<span class="nthumb">' + (pth? '<figure class="work"><div class="ph" data-work="'+escA(pa.id)+'">'+imgHTML(pth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(dispName||'')[0]||''))+'</span></span>') + '</span>';
     const head = '<div class="nhead"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
@@ -24960,7 +25092,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.75.0';
+const APP_VERSION = '5.76.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -26048,7 +26180,14 @@ let xMakerSelId = null, xMakerQuery = '';
 let xMakerFacetOpen = null; /* v32.5.0: starts closed, same as the artist list */
 const xMakerSel = { bunrui: new Set(), yakuwari: new Set() };
 let xMakerBuilt = false;
-function xMakerCountText(){ return (XMAKERS && XMAKERS.artists)? '全' + XMAKERS.artists.length + '名': ''; }
+/* v5.76.0: foundations （財団 section) are organisations,
+   not people — the total names the two apart instead of
+   counting organisations in 名. */
+function xMakerCountText(){
+  if(!XMAKERS || !XMAKERS.artists) return '';
+  const all = XMAKERS.artists, fnd = all.filter(m=> m.section === '財団').length;
+  return fnd? '全' + (all.length - fnd) + '名・財団' + fnd + '団体': '全' + all.length + '名';
+}
 function xMakerRolesAll(d){
   const cnt = {};
   (d.artists || []).forEach(m => (m.roles || []).forEach(r => { cnt[r] = (cnt[r] || 0) + 1; }));
@@ -26063,6 +26202,38 @@ function xMakerPass(m){
   if(xMakerSel.bunrui.size && !xMakerSel.bunrui.has(m.section)) return false;
   if(xMakerSel.yakuwari.size && !(m.roles || []).some(r => xMakerSel.yakuwari.has(r))) return false;
   return xMakerMatch(m, (xMakerQuery || '').trim().toLowerCase());
+}
+/* v5.76.0 (his order, 2026-11-20): the region control comes
+   to the makers list too — same segment, same behaviour as
+   the artist/designer books, persisted under its own key.
+   Makers sections DO carry a region part: 日本：… counts as
+   jp, 欧米：… as west; sections with another head （美術史家,
+   アジア) or no region part at all （集めて残す人 ほか) are
+   unclassifiable and appear under 世界 only — never forced
+   into a side. Counts on the live data at build time
+   (2026-11-20, 161 records incl. the 13 財団 — foundations
+   have no region part and are 世界-only): 日本 30名 / 西洋
+   （欧米）74名 / 判定不能 57名・団体. */
+let mkRegion = 'all';
+try{ const v = storeGet('zukan.region.makers'); if(v === 'jp' || v === 'west') mkRegion = v; }catch(e){}
+function makerRegionOf(m){
+  const r = regionOfSection(m.section || '');
+  return r === '日本'? 'jp': r === '欧米'? 'west': '';
+}
+function setMakerRegion(r){
+  if(r !== 'jp' && r !== 'west') r = 'all';
+  mkRegion = r;
+  try{ storeSet('zukan.region.makers', r); }catch(e){}
+  syncMakerRegionSeg();
+  renderMakersBody();
+}
+function syncMakerRegionSeg(){
+  const seg = $('mkRegSeg'); if(!seg) return;
+  seg.querySelectorAll('button').forEach(b=>{
+    const on = b.dataset.mr === mkRegion;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on? 'true': 'false');
+  });
 }
 function buildMakersView(d){
   const v = $('viewMakers'); if(!v) return;
@@ -26082,7 +26253,10 @@ function buildMakersView(d){
     + '</div></div></div>'
     + '<div class="moderow"><div class="modebar" id="mkmodeseg">'
     + MODES.map(mo => '<button data-m="' + mo + '" onclick="setMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('')
-    + '</div><button id="mkRevBtn" class="revbtn" onclick="toggleMakerRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button></div>'
+    + '</div><div class="regseg" id="mkRegSeg" role="group" aria-label="表示する地域">'
+    + '<button data-mr="all" onclick="setMakerRegion(\'all\')" aria-label="全部（西洋と日本を一緒に表示）" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.8" ry="8.5"/><path d="M3.5 12h17M5 7.2h14M5 16.8h14"/></svg></button>'
+    + '<button data-mr="jp" onclick="setMakerRegion(\'jp\')" aria-pressed="false">日本</button>'
+    + '<button data-mr="west" onclick="setMakerRegion(\'west\')" aria-pressed="false">西洋</button></div><button id="mkRevBtn" class="revbtn" onclick="toggleMakerRev()" aria-label="並び順を切り替える（古い順／新しい順）">古い順</button></div>'
     + '<div class="erarow" id="mkerarow"><span class="eraname" id="mkEraName">一覧</span><span class="erachips" id="mkEraChips">'
     + legendBtnHTML()
     + (d.sections || []).map(sec => '<button class="mksecbtn" onclick="jumpMakerSection(\'' + escA(sec) + '\')">' + esc(sec) + '</button>').join('')
@@ -26091,6 +26265,7 @@ function buildMakersView(d){
     + '<div id="mklistbody"></div>';
   v.innerHTML = h;
   xMakerBuilt = true;
+  syncMakerRegionSeg();
   syncMakerFacets();
   syncMakerModeSeg();
   syncMakerRevBtn();
@@ -26151,11 +26326,11 @@ function renderMakersBody(){
   const mkSecs = (d.sections || []).slice();
   if(mkRev) mkSecs.reverse();
   mkSecs.forEach(sec => {
-    const people = (d.artists || []).filter(m => m.section === sec && xMakerPass(m));
+    const people = (d.artists || []).filter(m => m.section === sec && xMakerPass(m) && (mkRegion === 'all' || makerRegionOf(m) === mkRegion));
     if(mkRev) people.reverse();
     if(!people.length) return;
     any = true;
-    h += '<div class="secblock" data-msec="' + escA(sec) + '"><h2 class="sechead"><span class="secname">' + esc(sec) + '</span><span class="seccount">' + people.length + '名</span></h2><div class="grid ' + state.mode + '">';
+    h += '<div class="secblock" data-msec="' + escA(sec) + '"><h2 class="sechead"><span class="secname">' + esc(sec) + '</span><span class="seccount">' + people.length + (sec === '財団'? '団体': '名') + '</span></h2><div class="grid ' + state.mode + '">';
     people.forEach(m => {
       h += '<figure class="work" onclick="openMakerDetail(' + m.id + ')">' + xMakerPlateHTML(m)
         + '<figcaption><div class="nm">' + esc(dispName(m)) + '</div>'
