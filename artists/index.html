@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.80.3">
+<meta name="app-version" content="5.81.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -948,6 +948,18 @@ button.inflrow{cursor:pointer;}
 .chestyle .tag{font-family:var(--sans); font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.08em; display:block; margin-bottom:2px;}
 .chemeta{font-family:var(--sans); font-size:12px; color:var(--muted); line-height:1.7; letter-spacing:.03em; margin-top:10px;}
 .chemeta b{color:var(--text); font-weight:600;}
+/* v5.81.0: era meta is a vertical list, one item per row
+   (his call, 2026-11-21) — never one separator-joined line. */
+.chemetarow{display:flex; gap:2px;}
+.chemetarow b{flex:none;}
+/* v5.81.0: age suffix next to years in biography prose
+   (his ask, 2026-11-21: 「2010年（28歳）」) — display-only,
+   smaller and muted so the prose stays readable. */
+.bioage{font-size:.8em; color:var(--muted); font-weight:400; letter-spacing:0;}
+/* v5.81.0: the era chip row is a STATIC in-flow row (the fixed
+   bar overlapped the chronicle heading and jittered against
+   the scroll spy on scroll-up — his report, 2026-11-21). */
+.cherabar-static{position:static; margin:14px 0 2px; border:1px solid var(--line); border-radius:10px; padding:7px 10px; background:var(--card);}
 .chefigs{margin-top:12px;}
 .chefigs figure.work{margin:0 0 16px;}
 .chefigcap{font-family:var(--serif); font-size:13.5px; line-height:1.7; margin-top:6px;}
@@ -16540,17 +16552,47 @@ function chWorkIdx(ws, title, year){
   }
   return -1;
 }
+/* v5.81.0: era-meta values that only say "not recorded" are
+   no value at all (his polishing rule, 2026-11-21): the row
+   is dropped. A parenthetical supplement after such a
+   placeholder is real information and stands on its own. */
+function cheMetaClean(v){
+  const t = String(v == null? '': v).trim();
+  if(!t) return '';
+  const m = /^レコードに(?:詳細な|個別の)?明記なし\s*(?:（(.+)）)?$/.exec(t);
+  if(m) return m[1]? m[1].trim(): '';
+  if(/^(不明|なし|未確認|未収録)$/.test(t)) return '';
+  return t;
+}
+/* v5.81.0: internal working labels (record field paths,
+   project file names, registration bookkeeping) never reach
+   the screen (his call, 2026-11-21). */
+const CHE_INTERNAL_RE = /process\.|\.md\b|図鑑レコード|レコード内部|レコードに(?:は)?ない|materials_notes|works\s*(?:に|は)(?:未登録|登録がない)|drawings\s*が|prices\s*は|メタ行|参考ページ/;
+/* v5.81.0: prose that mixes real content with an internal
+   label keeps the content: a parenthetical carrying a label
+   goes, then any clause still carrying one, then a leading
+   attribution prefix. Used for evidence lines and work
+   notes inside the era chronicle. */
+function cheCleanText(t){
+  let x = String(t == null? '': t);
+  x = x.replace(/[（(][^（）()]*?(?:process\.|図鑑レコード|レコード|\.md|key_works|materials_notes)[^（）()]*?[）)]/g, '');
+  x = x.split('、').filter(c => !/process\.|図鑑レコード|\.md\b|key_works|materials_notes/.test(c)).join('、');
+  x = x.replace(/^図鑑レコード\s*\S*\s*/, '').replace(/^[にをがのはへと、\s]+/, '');
+  return x.trim();
+}
 function chronicleHTML(a, ch, ws){
   let h = '<h3 class="subhead">年代記</h3>';
+  const ageCtx = bioAgeCtx(a); const ageSubs = [];
+  const ageT = t => bioAgeWrap(t, ageCtx, ageSubs);
   const p = ch.profile||{};
-  (p.lead||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
+  (p.lead||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(ageT(t))+'</p>'; });
   if(p.facts && p.facts.length) h += '<div class="chfacts">'+p.facts.map(f=>'<div>'+esc(f)+'</div>').join('')+'</div>';
-  if(p.note) h += '<p class="chnote2">'+pTermEsc(p.note)+'</p>';
+  if(p.note) h += '<p class="chnote2">'+pTermEsc(ageT(p.note))+'</p>';
   (ch.periods||[]).forEach(per=>{
     h += '<div class="chperiod"><div class="chhead"><span class="chno">第'+per.n+'期</span><span class="chtitle">'+esc(per.title||'')+'</span></div>'
       + (per.sub? '<div class="chsub">'+esc(per.sub)+'</div>': '')
       + '<div class="chmeta">'+esc(per.years||'')+(per.age? '｜'+esc(per.age): '')+'</div>';
-    (per.text||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
+    (per.text||[]).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(ageT(t))+'</p>'; });
     if(per.works && per.works.length){
       const thumbs = [];
       per.works.forEach(w=>{
@@ -16568,14 +16610,14 @@ function chronicleHTML(a, ch, ws){
     h += '<h3 class="subhead">早見表</h3>' + ch.quicktable.map(q=>'<div class="chqrow"><div class="chq1">'+esc(q.period)+'</div><div class="chq2">'+esc(q.years)+'｜'+esc(q.age)+'</div><div class="chq3">'+esc(q.turning)+'</div></div>').join('');
   }
   if(ch.constants && ch.constants.length){
-    h += '<h3 class="subhead">年代が変わっても、変わらなかったもの</h3>' + ch.constants.map((c,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(c.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(c.text)+'</p></div></div>').join('');
+    h += '<h3 class="subhead">年代が変わっても、変わらなかったもの</h3>' + ch.constants.map((c,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(c.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(ageT(c.text))+'</p></div></div>').join('');
   }
   if(ch.steps && ch.steps.length){
     h += '<h3 class="subhead">では、なぜ画家になれたのか</h3>';
-    if(ch.steps_intro) h += '<p class="chtext">'+pTermEsc(ch.steps_intro)+'</p>';
-    h += ch.steps.map((s,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(s.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(s.text)+'</p></div></div>').join('');
+    if(ch.steps_intro) h += '<p class="chtext">'+pTermEsc(ageT(ch.steps_intro))+'</p>';
+    h += ch.steps.map((s,i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(s.title)+'</div><p class="chtext" style="margin:0;">'+pTermEsc(ageT(s.text))+'</p></div></div>').join('');
   }
-  return h;
+  return bioAgeBack(h, ageSubs);
 }
 /* v32.6.0: chronicle ERAS — the 年代記 rebuilt on the reference
    pattern (~/workspace/art-labo/chronology-design/DESIGN.md, the
@@ -16644,12 +16686,18 @@ function chEraWorkIdx(ws, rw){
 }
 function chronicleErasHTML(a, ch, ws){
   const eras = ch.eras || [];
+  const ageCtx = bioAgeCtx(a); const ageSubs = [];
+  const ageT = t => bioAgeWrap(t, ageCtx, ageSubs);
   let h = '<div class="che">';
   h += '<div class="chekicker">'+esc(ch.kicker || 'CHRONOLOGY')+'</div>';
   h += '<h3 class="chetitle">'+esc(ch.title || '年代記')+'</h3>';
-  (ch.lead || []).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(t)+'</p>'; });
+  (ch.lead || []).forEach(t=>{ h += '<p class="chtext">'+pTermEsc(ageT(t))+'</p>'; });
   if(ch.facts && ch.facts.length) h += '<div class="chfacts">'+ch.facts.map(f=>'<div>'+esc(f)+'</div>').join('')+'</div>';
   if(ch.howto) h += '<div class="chehowto"><div class="chehowto-h">このページの読み方</div><p>'+pTermEsc(ch.howto)+'</p></div>';
+  /* v5.81.0: the era chips are a static in-flow row (tap still
+     jumps to the era). The old fixed bar overlapped the title
+     and jittered against the scroll spy on scroll-up. */
+  if(eras.length) h += '<div class="cherabar-static"><div class="cherabar-in">' + eras.map(e=>'<button class="cherachip" data-chera="'+e.era+'" onclick="chEraJump('+e.era+')"><span class="cy">'+esc(e.years || '')+'</span><span class="ct">'+esc(e.title || '')+'</span></button>').join('') + '</div></div>';
   /* the whole map before the detail: one card per era */
   h += '<div class="cheov">' + eras.map(e=>'<button class="cheovcard" onclick="chEraJump('+e.era+')"><span class="e1">ERA '+e.era+'｜'+esc(e.years || '')+'</span><span class="e2">'+esc(e.title || '')+'</span>'+(e.subtitle? '<span class="e3">'+esc(e.subtitle)+'</span>': '')+'</button>').join('') + '</div>';
   eras.forEach(e=>{
@@ -16657,15 +16705,17 @@ function chronicleErasHTML(a, ch, ws){
       + '<div class="cherahead"><span class="cherano">ERA '+e.era+'</span><span class="cherayears">'+esc(e.years || '')+'</span></div>'
       + '<div class="cheratitle">'+esc(e.title || '')+'</div>'
       + (e.subtitle? '<div class="cherasub">'+esc(e.subtitle)+'</div>': '')
-      + (e.summary? '<p class="cherasum">'+pTermEsc(e.summary)+'</p>': '')
-      + (e.painted? '<div class="cheaxis painted"><div class="cheaxis-h">何を描いていたか</div><p>'+pTermEsc(e.painted)+'</p></div>': '')
-      + (e.did? '<div class="cheaxis did"><div class="cheaxis-h">何をしていたか</div><p>'+pTermEsc(e.did)+'</p></div>': '')
+      + (e.summary? '<p class="cherasum">'+pTermEsc(ageT(e.summary))+'</p>': '')
+      + (e.painted? '<div class="cheaxis painted"><div class="cheaxis-h">何を描いていたか</div><p>'+pTermEsc(ageT(e.painted))+'</p></div>': '')
+      + (e.did? '<div class="cheaxis did"><div class="cheaxis-h">何をしていたか</div><p>'+pTermEsc(ageT(e.did))+'</p></div>': '')
       + (e.style_note? '<div class="chestyle"><span class="tag">作風メモ</span>'+esc(e.style_note)+'</div>': '');
     if(e.meta){
+      /* v5.81.0: one row per item, vertically (his call,
+         2026-11-21); items with no real value show no row. */
       const order = ['画材','モチーフ','サイズ','発表の場'];
-      const parts = order.filter(k=>e.meta[k]).map(k=>'<b>'+k+'：</b>'+esc(e.meta[k]));
-      Object.keys(e.meta).forEach(k=>{ if(order.indexOf(k)<0) parts.push('<b>'+esc(k)+'：</b>'+esc(e.meta[k])); });
-      if(parts.length) h += '<div class="chemeta">'+parts.join('｜')+'</div>';
+      const keys = order.filter(k=> k in e.meta).concat(Object.keys(e.meta).filter(k=> order.indexOf(k) < 0));
+      const mrows = keys.map(k=> [k, cheMetaClean(e.meta[k])]).filter(x=> x[1]);
+      if(mrows.length) h += '<div class="chemeta">' + mrows.map(x=> '<div class="chemetarow"><b>'+esc(x[0])+'：</b><span>'+esc(x[1])+'</span></div>').join('') + '</div>';
     }
     const rws = e.representative_works || [];
     if(rws.length){
@@ -16675,16 +16725,17 @@ function chronicleErasHTML(a, ch, ws){
         if(idx >= 0){
           const w = ws[idx];
           h += '<figure class="work"><div class="ph" data-workidx="'+idx+'">'+imgHTML(w, IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div>'
-            + '<figcaption><div class="chefigcap">'+esc(rw.caption || w.caption || '')+'</div>'
-            + (rw.why? '<div class="chefigwhy"><span class="lb">見どころ</span>'+esc(rw.why)+'</div>': '') + '</figcaption></figure>';
+            + '<figcaption><div class="chefigcap">'+esc(cheCleanText(rw.caption || w.caption || ''))+'</div>'
+            + (rw.why? '<div class="chefigwhy"><span class="lb">見どころ</span>'+esc(cheCleanText(rw.why))+'</div>': '') + '</figcaption></figure>';
         } else {
-          h += '<div class="cheunres">'+esc(rw.caption || '')+'</div>';
+          h += '<div class="cheunres">'+esc(cheCleanText(rw.caption || ''))+'</div>';
         }
       });
       h += '</div>';
-    } else if(e.representative_note){
-      h += '<div class="chenowork"><b>この時期の作品画像は未収録</b>'+esc(e.representative_note)+'</div>';
     }
+    /* v5.81.0: an era with no registered work images simply
+       shows none — no box explaining the absence (his
+       polishing rule, 2026-11-21). */
     if(e.book_title){
       const bi = (a.books || []).findIndex(b=> (b.title || '').indexOf(e.book_title) >= 0);
       if(bi >= 0){
@@ -16702,23 +16753,24 @@ function chronicleErasHTML(a, ch, ws){
     h += '<h3 class="subhead">早見表</h3>' + ch.quick_table.map(q=>'<div class="cheqrow"><div class="cheq1">'+esc(q.years || '')+'</div><div class="cheq2">'+esc(q.period || '')+'</div><div class="cheq3"><span class="lb">作風</span>'+esc(q.style || '')+'</div><div class="cheq3"><span class="lb">活動</span>'+esc(q.activity || '')+'</div></div>').join('');
   }
   if(ch.through_lines && ch.through_lines.length){
-    h += '<h3 class="subhead">貫くもの</h3>' + ch.through_lines.map((t, i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(t.title || '')+'</div><p class="chtext" style="margin:0;">'+pTermEsc(t.text || '')+'</p>'
-      + ((t.evidence && t.evidence.length)? '<div class="cheev">'+t.evidence.map(ev=>'<div>・'+esc(ev)+'</div>').join('')+'</div>': '')
+    h += '<h3 class="subhead">貫くもの</h3>' + ch.through_lines.map((t, i)=>'<div class="chconst"><span class="chcno">'+(i+1)+'</span><div><div class="chct">'+esc(t.title || '')+'</div><p class="chtext" style="margin:0;">'+pTermEsc(ageT(t.text || ''))+'</p>'
+      + ((t.evidence && t.evidence.length)? (evs => evs.length? '<div class="cheev">'+evs.map(ev=>'<div>・'+esc(ev)+'</div>').join('')+'</div>': '')(t.evidence.map(cheCleanText).filter(Boolean)): '')
       + '</div></div>').join('');
   }
   const caut = [];
   eras.forEach(e=> (e.cautions || []).forEach(c=> caut.push('第'+e.era+'期：'+c)));
   (ch.global_cautions || []).forEach(c=> caut.push(c));
+  const cautShow = caut.filter(c=> !CHE_INTERNAL_RE.test(c));
   const srcLines = [];
-  eras.forEach(e=>{ if(e.sources && e.sources.length) srcLines.push('第'+e.era+'期：'+e.sources.join('／')); });
-  if((ch.sources_all && ch.sources_all.length) || caut.length || srcLines.length){
+  eras.forEach(e=>{ const ext = (e.sources || []).filter(x=> !CHE_INTERNAL_RE.test(x)); if(ext.length) srcLines.push('第'+e.era+'期：'+ext.join('／')); });
+  if((ch.sources_all && ch.sources_all.length) || cautShow.length || srcLines.length){
     h += '<h3 class="subhead">出典と注意</h3>';
     if(ch.sources_all && ch.sources_all.length) h += '<div class="chesrc">'+ch.sources_all.map(s=> s.url? esc(s.label)+' <a href="'+escA(s.url)+'" target="_blank" rel="noopener">'+esc(s.url)+'</a>': esc(s.label)).join('<br>')+'</div>';
     if(srcLines.length) h += '<div class="chesrc" style="margin-top:6px;">'+srcLines.map(esc).join('<br>')+'</div>';
-    if(caut.length) h += caut.map(c=>'<p class="checaut">'+esc(c)+'</p>').join('');
+    if(cautShow.length) h += cautShow.map(c=>'<p class="checaut">'+esc(c)+'</p>').join('');
   }
   h += '</div>';
-  return h;
+  return bioAgeBack(h, ageSubs);
 }
 /* the resident era-chip bar. The bio panel lives inside the
    horizontal pager, whose overflow axes make position:sticky
@@ -16750,38 +16802,27 @@ function chEraTopOffset(){
 }
 function chEraJump(n){
   const el = document.getElementById('chera-' + n); if(!el) return;
-  const bar = $('cherabar');
-  const bh = (bar && !bar.classList.contains('hidden'))? bar.offsetHeight: 44;
-  const y = el.getBoundingClientRect().top + (window.scrollY || 0) - chEraTopOffset() - bh - 6;
-  window.scrollTo(0, Math.max(0, y));
-  chEraBarSync();
-  /* the bar's dock point moves as the head scrolls away; one
-     correction frame lands the heading exactly under the bar's
-     final position instead of under its pre-jump one */
-  requestAnimationFrame(()=>{
-    if(!bar || bar.classList.contains('hidden')) return;
-    const r = el.getBoundingClientRect(), bb2 = bar.getBoundingClientRect().bottom;
-    if(r.top < bb2 + 2) window.scrollBy(0, r.top - bb2 - 6);
-    chEraBarSync();
-  });
+  /* v5.81.0: one plain jump. The chip row is static now, so
+     there is no bar height to compensate and no correction
+     frame; the target is the era heading under the docked
+     head. The scroll spy updates the chips while scrolling. */
+  const y = el.getBoundingClientRect().top + (window.scrollY || 0) - chEraTopOffset() - 10;
+  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
 }
 function chEraBarSync(){
-  const bar = $('cherabar'); if(!bar) return;
-  const inner = $('cherabarIn');
-  const show = view === 'detail' && state.tab === 'bio' && !!document.querySelector('#viewDetail .chera');
-  if(!show){ if(!bar.classList.contains('hidden')) bar.classList.add('hidden'); chEraBarKey = ''; return; }
-  const key = String(state.detailId);
-  if(chEraBarKey !== key && inner){
-    const eras = [...document.querySelectorAll('#viewDetail .chera')].map(s=> ({ n: s.dataset.era, years: (s.querySelector('.cherayears') || {}).textContent || '', title: (s.querySelector('.cheratitle') || {}).textContent || '' }));
-    inner.innerHTML = eras.map(e=> '<button class="cherachip" data-chera="'+e.n+'" onclick="chEraJump('+e.n+')"><span class="cy">'+esc(e.years)+'</span><span class="ct">'+esc(e.title)+'</span></button>').join('');
-    chEraBarKey = key;
-  }
-  bar.style.top = chEraTopOffset() + 'px';
-  if(bar.classList.contains('hidden')) bar.classList.remove('hidden');
-  const probe = chEraTopOffset() + bar.offsetHeight + 10;
+  /* v5.81.0: spy only. The fixed bar is retired (kept hidden
+     forever): it overlapped the chronicle title and jittered
+     against the spy on scroll-up (his report, 2026-11-21).
+     This function now only toggles the current-era highlight
+     on the static in-flow chips — it never moves, shows or
+     hides anything, so it cannot fight the user's scroll. */
+  const bar = $('cherabar'); if(bar && !bar.classList.contains('hidden')) bar.classList.add('hidden');
+  const secs = document.querySelectorAll('#viewDetail .chera');
+  if(!secs.length) return;
+  const probe = chEraTopOffset() + 40;
   let cur = null;
-  document.querySelectorAll('#viewDetail .chera').forEach(s=>{ if(s.getBoundingClientRect().top <= probe) cur = s.dataset.era; });
-  if(inner) [...inner.querySelectorAll('.cherachip')].forEach(c=> c.classList.toggle('on', c.dataset.chera === cur));
+  secs.forEach(sec=>{ if(sec.getBoundingClientRect().top <= probe) cur = sec.dataset.era; });
+  document.querySelectorAll('#viewDetail .cherachip').forEach(c=> c.classList.toggle('on', c.dataset.chera === cur));
 }
 let chEraScrollQueued = false;
 window.addEventListener('scroll', ()=>{
@@ -16827,6 +16868,46 @@ const map = Object.create(null);
 (ws || []).forEach((w, i)=>{ const t = bioWorkTitleOf(w); if(t && !(t in map) && bioWorkHasPhoto(w)) map[t] = i; });
 return map;
 }
+/* v5.81.0: ages next to years in the biography (his ask,
+   2026-11-21: 「来歴の年の右隣にその時の年齢を書いて欲しい」).
+   Display-only — the stored text is never changed. A year in
+   the prose gets a （N歳）suffix computed from the record's own
+   years field, carried through the renderers as a private-use
+   placeholder and swapped back at the end, like the work
+   links. No suffix when the birth year is not a plain year
+   (BC, circa, unknown), for the birth year itself, or for
+   years after the death year (posthumous events). */
+function bioAgeCtx(a){
+const ys = String((a && a.years) || '').trim();
+let m = /^(\d{3,4})[–—-](\d{3,4})$/.exec(ys);
+if(m) return { b: +m[1], d: +m[2] };
+m = /^(\d{3,4})[–—-]?$/.exec(ys);
+if(m) return { b: +m[1], d: null };
+return null;
+}
+function bioAgeSpan(ctx, y){
+if(!ctx || y < ctx.b || (ctx.d != null && y > ctx.d)) return '';
+const age = y - ctx.b;
+if(age <= 0 || age > 110) return '';
+return '<span class="bioage">（' + age + '歳）</span>';
+}
+function bioAgeWrap(text, ctx, subs){
+if(!ctx || !text) return text;
+return String(text).replace(/(?<!\d)(\d{3,4})(?:[–—-](\d{2,4}))?年/g, (m0, y1, y2, off, s)=>{
+const after = s.slice(off + m0.length);
+if(after.startsWith('（') || /^\d+歳/.test(after)) return m0;
+const span = bioAgeSpan(ctx, +y1);
+if(!span) return m0;
+const n = subs.length; subs.push(span);
+return m0 + '' + n + '';
+});
+}
+function bioAgeBack(html, subs){
+if(!subs || !subs.length) return html;
+return html.replace(/\uE002(\d+)\uE003/g, (m, n)=> subs[+n] || m);
+}
+/* (the placeholder pair above is U+E002/U+E003, private-use,
+   distinct from the U+E000/U+E001 work-link pair) */
 function cvBioHTML(text, linkCtx){
 let t = String(text || '').trim();
 if(!t) return '';
@@ -16850,6 +16931,20 @@ return ''+n+'';
 if(!linkSubs.length) linkSubs = null;
 }
 const linkBack = h => linkSubs? h.replace(/(\d+)/g, (m, n)=> linkSubs[+n] || m): h;
+/* v5.81.0: age suffixes ride along as placeholders too. The
+   wrap runs AFTER linkification, so years inside a linked
+   work title are already hidden inside a link placeholder
+   and are never annotated. A row's year label keeps its
+   bare form; the suffix lands at the head of the row body,
+   which renders immediately right of the label. */
+let ageSubs = null;
+const ageCtx = linkCtx && linkCtx.age? bioAgeCtx(linkCtx.age): null;
+if(ageCtx){
+ageSubs = [];
+t = bioAgeWrap(t, ageCtx, ageSubs);
+if(!ageSubs.length) ageSubs = null;
+}
+const ageBack = h => bioAgeBack(h, ageSubs);
 const segs = t.split(/(?<=。)\s*(?=(?:1[0-9]|20)\d{2}(?:[–—\-]\d{2})?年|\d{1,3}歳)/);
 /* v27.14 (c): the lead absorbs ONE trailing particle among
    に/の/、 directly after 年 (or the （N歳）group) — bodies
@@ -16869,7 +16964,7 @@ rows[rows.length - 1].body += s;
 intro += s;
 }
 });
-if(!rows.length) return linkBack(proseHTML(t));
+if(!rows.length) return ageBack(linkBack(proseHTML(t)));
 /* v27.14 (a): stable-sort the ROW UNITS by lead year (ranges
    by start year). Age-led continuations were glued into
    their row's body at extraction, so sorting units never
@@ -16887,7 +16982,7 @@ rows.splice(i, 1);
 let h = '';
 if(intro) h += proseHTML(intro);
 h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+sentenceSpansHTML(r.body)+'</span></div>').join('') + '</div>';
-return linkBack(h);
+return ageBack(linkBack(h));
 }
 let bioStripWiring = [];
 function bioWorksStrip(a, ws){
@@ -17470,13 +17565,20 @@ pricesHTML += '<div class="small" style="margin-top:10px">落札価格は各出�
    biography — the CV setting and the works strip step aside. */
 const erasData = chronicleErasFor(a);
 const chData = chronicleFor(a);
-if(erasData) bioHTML = chronicleErasHTML(a, erasData, ws);
-else if(chData) bioHTML = chronicleHTML(a, chData, ws);
-else{
-bioHTML = sp.bio? cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws) }): '<div class="bodytext">（来歴の記載はまだありません）</div>';
+/* v5.81.0 (his call, 2026-11-21): the standard biography
+   comes FIRST; the era chronicle (五木田式) is appended
+   below it, never a replacement. The key-works block and
+   the works strip stay attached to the standard biography
+   and still step aside when a chronicle exists. */
+bioHTML = '';
+if(sp.bio) bioHTML = cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws), age: a });
+else if(!erasData && !chData) bioHTML = '<div class="bodytext">（来歴の記載はまだありません）</div>';
+if(!erasData && !chData){
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+pTermEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
+if(erasData) bioHTML += chronicleErasHTML(a, erasData, ws);
+else if(chData) bioHTML += chronicleHTML(a, chData, ws);
 /* v32.6 (item J-B) / v32.6.1: the bio tab used to open with
    the artist profile (photo + details) and the career below.
    v5.55.0 (profile compact trial): the profile moved into the
@@ -20816,7 +20918,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは892点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は356人。"]},{"v":null,"label":"展示情報","lines":["展示は7,924件。ポスターなど展示自身の画像があるのは117件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは893点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は357人。"]},{"v":null,"label":"展示情報","lines":["展示は8,012件。ポスターなど展示自身の画像があるのは135件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -25397,7 +25499,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.80.3';
+const APP_VERSION = '5.81.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
