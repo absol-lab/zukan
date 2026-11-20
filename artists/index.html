@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.81.4">
+<meta name="app-version" content="5.81.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18056,6 +18056,7 @@ return h;
 function intvExhibitionTap(){
 const w = intvExWiring; if(!w) return;
 const a = artistById(state.detailId);
+if(w.isWork && a) captureIntvReturn();
 closeIntvReader();
 if(w.isWork){ if(a) openViewer(worksOf(a), 0, a.id); }
 else if(w.venue) openMuseum(w.venue);
@@ -18111,8 +18112,46 @@ let h = esc(t);
 if(subs.length) h = h.replace(/(\d+)/g, (m, n)=> subs[+n] || m);
 return h;
 }
+/* v5.81.5: explicit viewer return state (his device
+   recording, 2026-11-21 08:40 — in Cranston's Na Kim
+   interview he tapped the now-linked 《A Room That
+   Echoes》, and closing the viewer dropped him on the
+   interview LIST: the reader was gone and his reading
+   position with it). The old flow closed the reader
+   before opening the viewer and re-derived nothing on
+   the way back, so the return silently reset. Now the
+   opener CAPTURES where he is — reader: interview idx +
+   lang + #irbody scroll offset; detail page (quote
+   links): window scroll — into viewerReturn, and
+   closeViewer consumes it exactly once to put him back
+   there. Opens that set no state (works grid, biography,
+   prices…) behave as before: the page underneath was
+   never torn down. The state survives a stale close
+   (closeViewer's generation guard returns early without
+   consuming it) and is spent by the first real close. */
+let viewerReturn = null;
+function captureIntvReturn(){
+const bd = $('irbody');
+viewerReturn = { kind: 'intv', idx: intvReader.idx, lang: intvReader.lang, scroll: bd? bd.scrollTop: 0 };
+}
+function restoreViewerReturn(){
+const r = viewerReturn; viewerReturn = null;
+if(!r) return;
+if(r.kind === 'intv'){
+const a = artistById(state.detailId); if(!a) return;
+const arr = Array.isArray(a.interviews)? a.interviews: [];
+if(!arr[r.idx]) return;
+intvReader = { idx: r.idx, lang: r.lang };
+renderIntvReader();
+const ov = $('intvreader'); if(ov) ov.classList.remove('hidden');
+const bd = $('irbody'); if(bd) bd.scrollTop = r.scroll || 0;
+} else if(r.kind === 'page'){
+if(Math.abs(window.scrollY - (r.y || 0)) > 1) window.scrollTo(0, r.y || 0);
+}
+}
 function intvWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
+captureIntvReturn();
 closeIntvReader();
 openViewer(displayWorks(a), idx, a.id);
 }
@@ -18161,6 +18200,7 @@ return h;
 }
 function quoteWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
+viewerReturn = { kind: 'page', y: window.scrollY };
 openViewer(displayWorks(a), idx, a.id);
 }
 function openIntvReader(idx){
@@ -18287,7 +18327,7 @@ let a = null;
 if(!reducedMotion()){
 try{ a = vw.animate([{ transform:'translateY(0%)' },{ transform:'translateY(100%)' }], { duration:250, easing:VT_EASE, fill:'both' }); }catch(e){}
 }
-const done = ()=>{ if(gen !== viewerGen) return; vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } };
+const done = ()=>{ if(gen !== viewerGen) return; vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } restoreViewerReturn(); };
 if(a && a.finished){ a.finished.then(done).catch(done); setTimeout(done, 340); } else { done(); }
 }
 function viewerMove(d){
@@ -25639,7 +25679,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.81.4';
+const APP_VERSION = '5.81.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
