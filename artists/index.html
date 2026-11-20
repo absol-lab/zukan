@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.81.1">
+<meta name="app-version" content="5.81.2">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -16889,7 +16889,7 @@ function bioAgeSpan(ctx, y){
 if(!ctx || y < ctx.b || (ctx.d != null && y > ctx.d)) return '';
 const age = y - ctx.b;
 if(age <= 0 || age > 110) return '';
-return '<span class="bioage">（' + age + '歳）</span>';
+return '<span class="bioage"> ' + age + '歳</span>';
 }
 function bioAgeWrap(text, ctx, subs){
 if(!ctx || !text) return text;
@@ -16934,16 +16934,16 @@ const linkBack = h => linkSubs? h.replace(/(\d+)/g, (m, n)=> linkSubs[+n] 
 /* v5.81.0: age suffixes ride along as placeholders too. The
    wrap runs AFTER linkification, so years inside a linked
    work title are already hidden inside a link placeholder
-   and are never annotated. A row's year label keeps its
-   bare form; the suffix lands at the head of the row body,
-   which renders immediately right of the label. */
+   and are never annotated.
+   v5.81.2 (his device feedback on v5.81.0, 2026-11-21):
+   in the TIMELINE form the age belongs inside the year
+   cell, right of the year, without parentheses — never at
+   the head of the row body, and mid-body years carry no
+   suffix at all (noise). The wrap therefore runs ONLY on
+   the prose fallback path (no year rows), where the suffix
+   stays next to the year, also without parentheses. */
 let ageSubs = null;
 const ageCtx = linkCtx && linkCtx.age? bioAgeCtx(linkCtx.age): null;
-if(ageCtx){
-ageSubs = [];
-t = bioAgeWrap(t, ageCtx, ageSubs);
-if(!ageSubs.length) ageSubs = null;
-}
 const ageBack = h => bioAgeBack(h, ageSubs);
 const segs = t.split(/(?<=。)\s*(?=(?:1[0-9]|20)\d{2}(?:[–—\-]\d{2})?年|\d{1,3}歳)/);
 /* v27.14 (c): the lead absorbs ONE trailing particle among
@@ -16964,7 +16964,15 @@ rows[rows.length - 1].body += s;
 intro += s;
 }
 });
-if(!rows.length) return ageBack(linkBack(proseHTML(t)));
+if(!rows.length){
+if(ageCtx){
+ageSubs = [];
+const tw = bioAgeWrap(t, ageCtx, ageSubs);
+if(!ageSubs.length) ageSubs = null;
+return ageBack(linkBack(proseHTML(tw)));
+}
+return linkBack(proseHTML(t));
+}
 /* v27.14 (a): stable-sort the ROW UNITS by lead year (ranges
    by start year). Age-led continuations were glued into
    their row's body at extraction, so sorting units never
@@ -16981,7 +16989,7 @@ rows.splice(i, 1);
 }
 let h = '';
 if(intro) h += proseHTML(intro);
-h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+'</span><span class="cvtext">'+sentenceSpansHTML(r.body)+'</span></div>').join('') + '</div>';
+h += '<div class="cvlist">' + rows.map(r=> '<div class="cvrow"><span class="cvyear">'+esc(r.y)+((ageCtx && !/歳/.test(r.y))? bioAgeSpan(ageCtx, startYear(r.y)): '')+'</span><span class="cvtext">'+sentenceSpansHTML(r.body)+'</span></div>').join('') + '</div>';
 return ageBack(linkBack(h));
 }
 let bioStripWiring = [];
@@ -16996,7 +17004,7 @@ function bioWorksStrip(a, ws){
   const birth = bm? parseInt(bm[1], 10): null;
   let h = '<h3 class="subhead">作品でたどる歩み</h3>';
   yrs.forEach(y=>{
-    const age = (birth && +y >= birth)? '（'+(+y - birth)+'歳）': '';
+    const age = (birth && +y >= birth)? ' '+(+y - birth)+'歳': '';
     h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
       + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
       + '</div></div>';
@@ -17569,16 +17577,21 @@ const chData = chronicleFor(a);
    comes FIRST; the era chronicle (五木田式) is appended
    below it, never a replacement. The key-works block and
    the works strip stay attached to the standard biography
-   and still step aside when a chronicle exists. */
+   and still step aside when a chronicle exists.
+   v5.81.2 (his revised call, 2026-11-21 07:42): where an
+   era chronicle exists, the biography view shows the
+   chronicle ONLY — the standard biography is not rendered
+   (the data itself is untouched). Artists without a
+   chronicle keep the standard biography as before. */
 bioHTML = '';
+if(erasData) bioHTML = chronicleErasHTML(a, erasData, ws);
+else if(chData) bioHTML = chronicleHTML(a, chData, ws);
+else {
 if(sp.bio) bioHTML = cvBioHTML(sp.bio, { id: a.id, map: bioWorkLinkMap(ws), age: a });
-else if(!erasData && !chData) bioHTML = '<div class="bodytext">（来歴の記載はまだありません）</div>';
-if(!erasData && !chData){
+else bioHTML = '<div class="bodytext">（来歴の記載はまだありません）</div>';
 if(a.key_works) bioHTML += '<h3 class="subhead">見るべき代表作</h3><div class="bodytext">'+pTermEsc(a.key_works)+'</div>';
 bioHTML += bioWorksStrip(a, ws);
 }
-if(erasData) bioHTML += chronicleErasHTML(a, erasData, ws);
-else if(chData) bioHTML += chronicleHTML(a, chData, ws);
 /* v32.6 (item J-B) / v32.6.1: the bio tab used to open with
    the artist profile (photo + details) and the career below.
    v5.55.0 (profile compact trial): the profile moved into the
@@ -25499,7 +25512,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.81.1';
+const APP_VERSION = '5.81.2';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
