@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.81.2">
+<meta name="app-version" content="5.81.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18036,6 +18036,62 @@ closeIntvReader();
 if(w.isWork){ if(a) openViewer(worksOf(a), 0, a.id); }
 else if(w.venue) openMuseum(w.venue);
 }
+/* v5.81.3: work titles inside the interview reader (his ask,
+   2026-11-21 07:58, with a screenshot of Cranston's interview
+   showing 《A Room That Echoes》 as plain text): a 《title》
+   in the interview text opens the work, as it already does
+   in the biography (v28.1). Same rule, one reader-local map:
+   a title links ONLY when it matches the title of one of
+   THIS artist's registered works that carries a photo
+   (bioWorkTitleOf / bioWorkHasPhoto over displayWorks, the
+   array the viewer receives; first match in display order
+   wins). Matching is exact after a light normalization
+   (full-width ASCII → half-width, whitespace collapsed),
+   applied to the lookup key only — the text itself is never
+   rewritten. Anything else — another artist's work, a book,
+   an unregistered title (《A Room That Echoes》 is itself
+   not among Cranston's registered works) — stays plain.
+   Placeholders (U+E000/U+E001) carry matches through esc(),
+   the cvBioHTML convention. The tap closes the reader
+   first, then opens the viewer — the intvExhibitionTap
+   pattern (the reader overlays the viewer, z 700 / 100).
+   The 発言 quotes render through pTermEsc, a different
+   path, and are NOT covered here. */
+function intvTitleKey(s){
+return String(s || '').replace(/[！-～]/g, c=> String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, ' ').trim();
+}
+function intvWorkLinkMap(a){
+const map = Object.create(null);
+displayWorks(a).forEach((w, i)=>{
+const t = bioWorkTitleOf(w);
+if(!t || !bioWorkHasPhoto(w)) return;
+const k = intvTitleKey(t);
+if(!(k in map)) map[k] = i;
+});
+return map;
+}
+function intvTextHTML(txt){
+const a = artistById(state.detailId);
+let t = String(txt || '');
+if(!a) return esc(t);
+const map = intvWorkLinkMap(a);
+const subs = [];
+t = t.replace(/《([^》]+)》/g, (m, inner)=>{
+const idx = map[intvTitleKey(inner)];
+if(idx == null) return m;
+const n = subs.length;
+subs.push('<button class="worklink" onclick="intvWorkTap('+idx+')">《'+esc(inner)+'》</button>');
+return ''+n+'';
+});
+let h = esc(t);
+if(subs.length) h = h.replace(/(\d+)/g, (m, n)=> subs[+n] || m);
+return h;
+}
+function intvWorkTap(idx){
+const a = artistById(state.detailId); if(!a) return;
+closeIntvReader();
+openViewer(displayWorks(a), idx, a.id);
+}
 function openIntvReader(idx){
 const a = artistById(state.detailId); if(!a) return;
 const arr = Array.isArray(a.interviews)? a.interviews: [];
@@ -18068,9 +18124,9 @@ h += '<div class="irtoggle" role="group" aria-label="本文の言語"><button cl
 if(hasJa || hasOrig){
 let txt = (intvReader.lang==='ja' && hasJa)? iv.text_ja: iv.text;
 if(!String(txt || '').trim()) txt = hasJa? iv.text_ja: iv.text;
-h += '<div class="bodytext">'+esc(txt)+'</div>';
+h += '<div class="bodytext">'+intvTextHTML(txt)+'</div>';
 } else if(iv.summary_ja){
-h += '<div class="bodytext">'+esc(iv.summary_ja)+'</div>';
+h += '<div class="bodytext">'+intvTextHTML(iv.summary_ja)+'</div>';
 }
 if(iv.note) h += '<div class="small irnote">'+esc(iv.note)+'</div>';
 if(iv.url) h += '<div class="irsrc">出典：<a href="'+escA(iv.url)+'" target="_blank" rel="noopener">'+esc(iv.source || iv.url)+'</a></div>';
@@ -25512,7 +25568,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.81.2';
+const APP_VERSION = '5.81.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
