@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.79.0">
+<meta name="app-version" content="5.79.1">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1525,7 +1525,12 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    under them. */
 .hliconbtn{position:absolute; top:8px; right:10px; z-index:2; width:36px; height:36px; flex:none; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-family:inherit;}
 .hliconbtn svg{width:19px; height:19px; display:block;}
-.hliconbtn.on{background:var(--accent); border-color:var(--accent); color:var(--bg);}
+/* v5.79.1 (his order, 2026-11-20 15:01): the accent fill
+   goes away — 「黄色くならなくていい」. Both states wear
+   the plain card ground above; the glyph alone carries
+   the state (open eye = hidden, slashed eye = shown).
+   The 'on' class still rides the hidden state in the
+   markup but no longer restyles the button. */
 /* v5.76.0 (his added spec, 2026-11-20): the 見どころ prose
    itself is small and tight — 11.5px / line-height 1.5,
    fixed regardless of the text-size setting (the standard
@@ -17187,9 +17192,10 @@ const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).la
 /* v5.79.0 (his orders, 2026-11-20 14:51): the 見どころ eye
    toggle pins to the shelf's TOP-RIGHT corner (absolute —
    out of the layout flow), and the on/off appearances swap
-   against v5.78.0: SHOWN = slashed eye on the plain ground
-   (tap hides), HIDDEN = open eye on the accent fill (tap
-   shows). The 'on' class therefore rides the HIDDEN state.
+   against v5.78.0: SHOWN = slashed eye (tap hides),
+   HIDDEN = open eye (tap shows). The 'on' class therefore
+   rides the HIDDEN state. v5.79.1: no accent fill in
+   either state — the glyph alone carries the state.
    Only when the record has 見どころ text at all; the shared
    builder gives designers the same control. The preference
    itself (zukan.showHighlights) is unchanged from v5.76.0,
@@ -25318,7 +25324,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.79.0';
+const APP_VERSION = '5.79.1';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
