@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.80.2">
+<meta name="app-version" content="5.80.3">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1112,6 +1112,13 @@ h3.subhead:first-child{margin-top:8px;}
 .irtoggle button.on{background:var(--accent); color:var(--bg); font-weight:600;}
 .irnote{white-space:pre-wrap; line-height:1.7; margin:10px 0;}
 .irsrc{font-size:13px; margin:10px 0 4px;}
+/* v5.80.3: the tied exhibition's head image in the interview reader */
+.irexhead{margin:12px 0 4px;}
+.ireximg{display:block; width:100%; padding:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg2); cursor:pointer;}
+.ireximg .imgholder{display:block; width:100%;}
+.ireximg img{display:block; width:100%; max-height:300px; object-fit:contain; background:var(--bg2);}
+.irexcap{margin-top:8px; font-size:12px; line-height:1.6; color:var(--ink80);}
+.irexsub{display:block; font-size:11px; color:var(--ink50);}
 .irsrc a{text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere;}
 /* v5.58.1: the portrait lightbox — the profile band's portrait
    opens HERE, not in the works viewer (see openPortraitBox).
@@ -10536,7 +10543,14 @@ summary_ja: String(iv.summary_ja||''),
    optional: an entry without them reads by summary + link,
    exactly as before. */
 text: String(iv.text||''),
-text_ja: String(iv.text_ja||'')
+text_ja: String(iv.text_ja||''),
+/* v5.80.3: the exhibition this interview belongs to, when the
+   data side recorded the tie (his order 2026-11-21): the id is
+   the numeric id into the same dataset's exhibitions, the title
+   the title as recorded. Both optional — an entry without them
+   normalizes and renders exactly as before. */
+exhibition_id: (iv.exhibition_id == null || iv.exhibition_id === '')? null: iv.exhibition_id,
+exhibition_title: String(iv.exhibition_title||'')
 };
 return (o.title && o.url)? o: null;
 }).filter(Boolean);
@@ -17861,6 +17875,52 @@ const a = artistById(state.detailId); if(!a) return null;
 const arr = Array.isArray(a.interviews)? a.interviews: [];
 return arr[intvReader.idx] || null;
 }
+/* v5.80.3: the exhibition head of a tied interview (his order
+   2026-11-21) — built by intvExhibitionHead and placed at the
+   very top of the reader body, under the title/meta. The image
+   is the exhibition's own poster when the record carries one
+   (e.poster / e.img, the keyWork route the exhibition cards
+   use); with no poster of its own, the artist's representative
+   work (works[0]) stands in and the caption says so — that
+   fallback is this header's rule only, on his explicit
+   instruction for this surface; the v5.68.0 exhibition-card
+   rule (own poster or the no-photo plate) is untouched. The tap
+   follows the image: a poster opens the venue page (the
+   exhibition cards' destination — the app has no exhibition
+   detail route), a work opens in the works viewer. An entry
+   with no tie, or a tie that resolves to nothing, gets no
+   block — nothing is inferred and nothing is fabricated. */
+let intvExWiring = null;
+function intvExhibitionHead(iv, a){
+if(!iv || iv.exhibition_id == null || !a) return '';
+const exs = (typeof DB !== 'undefined' && DB && Array.isArray(DB.exhibitions))? DB.exhibitions: [];
+const e = exs.find(x=> x && String(x.id) === String(iv.exhibition_id)) || null;
+const title = iv.exhibition_title || (e? (e.title || ''): '');
+if(!e && !title) return '';
+let wobj = null, isWork = false;
+if(e && e.poster) wobj = keyWork(e.poster, e.title || '');
+else if(e && e.img && e.img.url) wobj = { caption: e.title || '', img: e.img };
+if(!wobj){
+  const ws = worksOf(a);
+  if(ws.length && ws[0] && ws[0].img){ wobj = ws[0]; isWork = true; }
+}
+intvExWiring = { isWork: isWork, venue: e? (e.venue || ''): '', wobj: wobj };
+const period = e? exPeriodLabel(e): '';
+let cap = 'この展示のインタビュー：『' + esc(title) + '』'
+  + ((e && e.venue)? '　' + esc(e.venue): '') + (period? '　' + esc(period): '');
+if(isWork) cap += '<span class="irexsub">展示の画像が登録されていないため、代表作を表示しています</span>';
+let h = '<div class="irexhead">';
+if(wobj) h += '<button class="ireximg" onclick="intvExhibitionTap()" aria-label="' + escA(title) + '">' + imgHTML(wobj, IMG_SIZE.plate) + '</button>';
+h += '<div class="irexcap">' + cap + '</div></div>';
+return h;
+}
+function intvExhibitionTap(){
+const w = intvExWiring; if(!w) return;
+const a = artistById(state.detailId);
+closeIntvReader();
+if(w.isWork){ if(a) openViewer(worksOf(a), 0, a.id); }
+else if(w.venue) openMuseum(w.venue);
+}
 function openIntvReader(idx){
 const a = artistById(state.detailId); if(!a) return;
 const arr = Array.isArray(a.interviews)? a.interviews: [];
@@ -17885,6 +17945,8 @@ const hasJa = !!((iv.text_ja||'').trim()), hasOrig = !!((iv.text||'').trim());
 let h = '<div class="irtitle">'+esc(iv.title)+'</div>';
 h += '<div class="irmeta"><span class="intvkind'+(iv.type==='video'? ' vid': '')+'">'+kind+'</span>'
 +([iv.source, iv.date].filter(Boolean).length? '<span>'+[iv.source, iv.date].filter(Boolean).map(esc).join(' ・ ')+'</span>': '')+'</div>';
+const exHead = intvExhibitionHead(iv, artistById(state.detailId));
+if(exHead) h += exHead;
 if(hasJa && hasOrig){
 h += '<div class="irtoggle" role="group" aria-label="本文の言語"><button class="'+(intvReader.lang==='ja'? 'on': '')+'" onclick="intvSetLang(\'ja\')">意訳</button><button class="'+(intvReader.lang==='orig'? 'on': '')+'" onclick="intvSetLang(\'orig\')">原文</button></div>';
 }
@@ -17898,6 +17960,11 @@ h += '<div class="bodytext">'+esc(iv.summary_ja)+'</div>';
 if(iv.note) h += '<div class="small irnote">'+esc(iv.note)+'</div>';
 if(iv.url) h += '<div class="irsrc">出典：<a href="'+escA(iv.url)+'" target="_blank" rel="noopener">'+esc(iv.source || iv.url)+'</a></div>';
 body.innerHTML = h;
+/* v5.80.3: hydrate the exhibition head's image holder (the
+   reader body is filled by innerHTML, outside the detail
+   renderer's hydration pass). */
+const ih = body.querySelector('.ireximg .imgholder');
+if(ih && intvExWiring && intvExWiring.wobj){ ih._work = intvExWiring.wobj; hydrateImg(ih, intvExWiring.wobj); }
 }
 function openViewerDrawings(a, idx){
 viewerKindNext = 'drawings';
@@ -25330,7 +25397,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.80.2';
+const APP_VERSION = '5.80.3';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
