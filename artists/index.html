@@ -19220,12 +19220,59 @@ function toggleGal(){ galOpen = !galOpen; try{ storeSet('zukan.galOpen', galOpen
    resolves — never an empty plate. The official-site arrow
    keeps its corner spot above the card's tap layer. */
 let galCardWiring = [];
+/* v5.75.0 (second fix in this ship — his screenshot, 2026-11-20
+   08:49): the 開催中 section was full of ancient exhibitions
+   (サロン・ド・1781/1783/1785/1789 at the Louvre, "currently
+   running"). The old split was raw string comparison —
+   start_date <= today && (!end_date || end_date >= today) —
+   so a record whose end was never recorded counted as running
+   forever, and year-only strings compared as prefixes. The
+   data carries no status field at all (verified on the live
+   file), so classification is now derived from the period
+   alone, by one shared rule (exhibitions view, both books,
+   and the venue-card counts):
+   - Each date string names a period at its own granularity:
+     a full date is that day; YYYY-MM is that whole month;
+     YYYY is that whole year; a year range (1994–95) spans
+     its first to its last year. Bounds: start -> the period's
+     first day, end -> the period's last day.
+   - When no end is recorded, the run is taken to end with
+     the period its start names (a year-only start ends with
+     that year; a single full-date start is a one-day event).
+   - 開催中: the period includes today. 近日開催: the period
+     starts after today. Everything else — period over,
+     year-only historical entries, undated records — is
+     過去の展示, the archive section below. */
+function exDateBound(s, isEnd){
+  s = String(s == null? '': s).trim();
+  if(!s) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  let m = s.match(/^(\d{4})-(\d{2})$/);
+  if(m) return isEnd? m[1]+'-'+m[2]+'-'+String(new Date(+m[1], +m[2], 0).getDate()).padStart(2,'0'): m[1]+'-'+m[2]+'-01';
+  if(/^\d{4}$/.test(s)) return isEnd? s+'-12-31': s+'-01-01';
+  const ys = s.match(/\d{4}/g);
+  if(!ys) return '';
+  return isEnd? ys[ys.length-1]+'-12-31': ys[0]+'-01-01';
+}
+function exPeriodOf(e){
+  const s = exDateBound(e && e.start_date, false);
+  let en = exDateBound(e && e.end_date, true);
+  if(!en && s) en = exDateBound(e.start_date, true);
+  return { s: s, en: en };
+}
+function exClassOf(e, tstr){
+  const p = exPeriodOf(e);
+  if(!p.s && !p.en) return 'past';
+  if(p.en && p.en < tstr) return 'past';
+  if(p.s && p.s > tstr) return 'up';
+  return 'cur';
+}
 function galleryLinksHTML(exs){
   const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   const hIdx = buildHoldingsIndex();
   galCardWiring = [];
   const card = (g, label) => {
-    const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && (!e.end_date || e.end_date >= tstr)).length;
+    const n = (exs||[]).filter(e => (e.venue||'').indexOf(g.match) >= 0 && exClassOf(e, tstr) !== 'past').length;
     const held = holdingsFor(g.name, hIdx);
     let work = null;
     for(const e of held){ if(e.work && e.work.img){ work = e.work; break; } }
@@ -19586,22 +19633,30 @@ if(exSortMode==='near'){
 }
 html += galleryLinksHTML(exs);
 if(!exs.length){ v.innerHTML = html + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; wireGalCards(v); return;}
-const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr))).sort(cmp);
-const up = exs.filter(e=>!(cur.indexOf(e)>=0)).sort(cmp);
+/* v5.75.0: three-way split by the shared period rule
+   (exClassOf) — 開催中 / 近日開催 / 過去の展示. Day counts
+   read the normalised period bounds, never the raw strings
+   (a year-only end used to produce あとNaN日). */
+const exCls = new Map(), exPer = new Map();
+exs.forEach(e=>{ exCls.set(e, exClassOf(e, tstr)); exPer.set(e, exPeriodOf(e)); });
+const cur = exs.filter(e=> exCls.get(e)==='cur').sort(cmp);
+const up = exs.filter(e=> exCls.get(e)==='up').sort(cmp);
+const past = exs.filter(e=> exCls.get(e)==='past').sort(cmp);
 const item = (e)=>{
 let meta = [e.venue, e.city].filter(Boolean).join('／');
 let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+const cls = exCls.get(e), per = exPer.get(e);
 let dlabel = '';
-if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
-if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
+if(cls==='cur' && per.en) dlabel = 'あと'+days(tstr, per.en)+'日';
+if(cls==='up' && per.s) dlabel = '開始まで'+days(tstr, per.s)+'日';
 const dk = (effMode==='near')? exDistKm(e): null;
 /* v2.72: the days-left label becomes a status pill beside the
    title (same badge language as the calendar): red when the run
    ends within a week, blue while running, gray before it starts. */
 let badge = '';
 if(dlabel){
-  const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
-  badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
+  const endingSoon = cls==='cur' && per.en && days(tstr, per.en) <= 7;
+  badge = '<span class="calbadge '+(cls==='cur'? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
 const venueHTML = e.venue? '<div class="exvenue"><button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):'')+'</div>': (e.city? '<div class="exvenue">'+esc(e.city)+'</div>': '');
 const artistBtn = (e.artist_id!=null && artistById(e.artist_id))? '<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>': '';
@@ -19610,12 +19665,14 @@ return exGridCardHTML(e, { badge: badge, venueHTML: venueHTML, dates: dates, ext
 exGridWiring = [];
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
+if(past.length) html += '<h2 class="sechead"><span>過去の展示</span><span class="cnt">'+past.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 v.innerHTML = html;
 wireGalCards(v); wireListImages(v);
 const exGrids = v.querySelectorAll('.exgrid');
 let exGi = 0;
 if(cur.length) exFillGrid(exGrids[exGi++], cur, item, SURF.ex, v);
 if(up.length) exFillGrid(exGrids[exGi++], up, item, SURF.ex, v);
+if(past.length) exFillGrid(exGrids[exGi++], past, item, SURF.ex, v);
 }
 
 /* ---------- exhibitions （デザイナー：並び替えなし） ---------- */
@@ -19628,20 +19685,27 @@ const head = '<div class="tlhead"><h2>展示</h2></div>' + exNavHTML() + exRegio
 if(!exs.length){ v.innerHTML = head + galleryLinksHTML(exs) + '<div class="empty">' + (exRegion !== 'all'? 'この地域の展示はまだありません': '展示データはまだありません') + '</div>'; wireGalCards(v); return;}
 const today = new Date(); const tstr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 const days = (from, to)=> Math.round((new Date(to+'T00:00:00') - new Date(from+'T00:00:00'))/86400000);
-const cur = exs.filter(e=>e.status==='current' || (e.start_date<=tstr && (!e.end_date || e.end_date>=tstr)))
-.sort((a,b)=>(a.end_date||'9999')<(b.end_date||'9999')?-1:1);
-const up = exs.filter(e=>!(cur.indexOf(e)>=0))
-.sort((a,b)=>(a.start_date||'')<(b.start_date||'')?-1:1);
+/* v5.75.0: same three-way split by the shared period rule
+   (exClassOf) as the artists renderer. */
+const exClsD = new Map(), exPerD = new Map();
+exs.forEach(e=>{ exClsD.set(e, exClassOf(e, tstr)); exPerD.set(e, exPeriodOf(e)); });
+const cur = exs.filter(e=> exClsD.get(e)==='cur')
+.sort((a,b)=>((exPerD.get(a).en||'9999')<(exPerD.get(b).en||'9999')?-1:1));
+const up = exs.filter(e=> exClsD.get(e)==='up')
+.sort((a,b)=>((exPerD.get(a).s||'')<(exPerD.get(b).s||'')?-1:1));
+const past = exs.filter(e=> exClsD.get(e)==='past')
+.sort((a,b)=>{ const ka = exPerD.get(a).s||exPerD.get(a).en||'', kb = exPerD.get(b).s||exPerD.get(b).en||''; return ka>kb?-1:1; });
 const item = (e)=>{
 let meta = [e.venue, e.city].filter(Boolean).join('／');
 let dates = (e.start_date||'') + (e.end_date? ' – '+e.end_date: '');
+const cls = exClsD.get(e), per = exPerD.get(e);
 let dlabel = '';
-if(cur.indexOf(e)>=0 && e.end_date) dlabel = 'あと'+days(tstr, e.end_date)+'日';
-if(up.indexOf(e)>=0 && e.start_date) dlabel = '開始まで'+days(tstr, e.start_date)+'日';
+if(cls==='cur' && per.en) dlabel = 'あと'+days(tstr, per.en)+'日';
+if(cls==='up' && per.s) dlabel = '開始まで'+days(tstr, per.s)+'日';
 let badge = '';
 if(dlabel){
-  const endingSoon = cur.indexOf(e)>=0 && e.end_date && days(tstr, e.end_date) <= 7;
-  badge = '<span class="calbadge '+(cur.indexOf(e)>=0? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
+  const endingSoon = cls==='cur' && per.en && days(tstr, per.en) <= 7;
+  badge = '<span class="calbadge '+(cls==='cur'? (endingSoon? 'ending': ''): 'future')+'">'+esc(dlabel)+'</span>';
 }
 const venueHTML = e.venue? '<div class="exvenue"><button class="linkbtn" onclick="openMuseum(\''+escA(e.venue)+'\')">'+esc(e.venue)+'</button>'+(e.city?'／'+esc(e.city):'')+'</div>': (e.city? '<div class="exvenue">'+esc(e.city)+'</div>': '');
 const artistBtn = (e.artist_id!=null && artistById(e.artist_id))? '<button class="linkbtn" onclick="openDetail(\''+escA(e.artist_id)+'\')">図鑑で見る</button>': '';
@@ -19651,12 +19715,14 @@ let html = head + galleryLinksHTML(exs) + '<div class="smodewrap">' + surfModeba
 exGridWiring = [];
 if(cur.length) html += '<h2 class="sechead"><span>開催中</span><span class="cnt">'+cur.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 if(up.length) html += '<h2 class="sechead"><span>近日開催</span><span class="cnt">'+up.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
+if(past.length) html += '<h2 class="sechead"><span>過去の展示</span><span class="cnt">'+past.length+'件</span></h2><div class="grid exgrid ' + SURF.ex + '"></div>';
 v.innerHTML = html || (head + '<div class="empty">展示データはまだありません</div>');
 wireGalCards(v); wireListImages(v);
 const exGridsD = v.querySelectorAll('.exgrid');
 let exGiD = 0;
 if(cur.length) exFillGrid(exGridsD[exGiD++], cur, item, SURF.ex, v);
 if(up.length) exFillGrid(exGridsD[exGiD++], up, item, SURF.ex, v);
+if(past.length) exFillGrid(exGridsD[exGiD++], past, item, SURF.ex, v);
 }
 
 function renderEx(){ if(CONFIG.exsort) renderExArtists(); else renderExDesigners(); }
