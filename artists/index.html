@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.77.0">
+<meta name="app-version" content="5.78.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -995,6 +995,20 @@ button.inflrow{cursor:pointer;}
    request control exists on every detail page. */
 .profband .reqiconbtn{align-self:flex-end;}
 .profband.pfonly{justify-content:flex-end;}
+/* v5.78.0 (his ruling, 2026-11-20): the artist introduction
+   (the `intro` field — positioning / career / significance
+   prose split out of 見どころ) sits at the BOTTOM of the
+   profile band, inside the card, as a full-width row under
+   the photo/rows line. The band wraps ONLY when an intro
+   rides it (.hasintro), so intro-less pages keep the exact
+   pre-v5.78.0 layout. The text is compact — 12px / 1.55,
+   the profile rows' own scale (12px / 1.45) — and the
+   .bodytext card chrome is neutralised inside the row. */
+.profband.hasintro{flex-wrap:wrap;}
+.pfintro{flex:1 1 100%; display:flex; gap:8px; border-top:1px solid var(--line); padding-top:6px; margin-top:2px;}
+.pfintrolb{flex:none; font-size:10.5px; color:var(--muted); letter-spacing:.08em; padding-top:2px; white-space:nowrap;}
+.pfintrotxt{flex:1; min-width:0;}
+.pfintrotxt .bodytext{font-size:12px; line-height:1.55; background:none; border:none; border-radius:0; padding:0; margin:0;}
 /* v5.58.0 (his suggestion, 2026-11-18): the portrait spans the
    band's FULL height — the band's height is set by the row
    count, so a many-row artist gets a proportionally larger
@@ -1012,7 +1026,18 @@ button.inflrow{cursor:pointer;}
    stops at the cap and letterboxes inside the box (scaled by
    width, centred vertically) instead of squeezing the fact
    rows off the band. */
-.pfthumb{flex:0 1 auto; min-width:0; max-width:45%; aspect-ratio:4/5; min-height:50px; display:flex;}
+/* v5.78.0 (his device report, 2026-11-20 14:03, on David
+   Lynch's page): the thumb took the source's natural ratio
+   with NO height limit, so a tall close-up portrait (Lynch)
+   stretched the whole band with it. The thumb now caps at
+   160px high; the width still follows the ratio, the img
+   stays object-fit:contain (v5.58.1's no-crop rule stands —
+   nothing is ever cut), and the band's height becomes the
+   larger of the fact rows and the cap instead of whatever
+   the photo's proportions demand. Landscape and near-square
+   portraits render exactly as before (they never reach the
+   cap). */
+.pfthumb{flex:0 1 auto; min-width:0; max-width:45%; max-height:160px; aspect-ratio:4/5; min-height:50px; display:flex;}
 .pfthumb .bioportraitbtn{flex:1; height:100%;}
 .pfthumb .ph{display:block; width:100%; height:100%; border-radius:7px; overflow:hidden; background:var(--bg2); border:1px solid var(--line);}
 .pfthumb .imgholder{display:block; width:100%; height:100%;}
@@ -1478,12 +1503,22 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .gcalbtn{display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; min-height:44px; margin:6px 0 10px; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; text-align:left;}
 .gcalbtn svg{width:18px; height:18px; flex:none;}
 .gcalbtn .gcalchev{margin-left:auto; color:var(--muted); font-weight:400;}
-.hlshow{display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; min-height:44px; margin:14px 0 4px; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; text-align:left;}
-.hlshow .hlchev{margin-left:auto; color:var(--muted); font-weight:400;}
 .hlhead{display:flex; align-items:center; gap:10px;}
 .hlhead .subhead{margin-right:auto;}
-.hlhide{flex:none; border:1px solid var(--line); background:none; color:var(--muted); border-radius:999px; padding:6px 12px; font-size:12.5px; letter-spacing:.04em; min-height:36px; margin-top:22px; display:inline-flex; align-items:center; gap:6px; font-family:inherit; cursor:pointer;}
-.hlhide .hlchev{font-size:11px;}
+/* v5.78.0 (his order, 2026-11-20 13:55): the v5.76.0 wide
+   show/hide pill is abolished. The 見どころ toggle is now an
+   eye icon button stacked ABOVE the works count at the right
+   end of the shelf's display row (.wcountstack) — the icon
+   sits on top, the 「作品 N点」 count directly under it, one
+   shared right edge. Off: muted eye with a slash on the card
+   ground. On: the app's shared "on" language (accent fill,
+   bg-coloured glyph — the .seg button.on treatment), so the
+   state reads at a glance. The prose block itself still
+   leads the works panel when on; the toggle lives only here. */
+.wcountstack{display:inline-flex; flex-direction:column; align-items:flex-end; gap:3px;}
+.hliconbtn{width:36px; height:36px; flex:none; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-family:inherit;}
+.hliconbtn svg{width:19px; height:19px; display:block;}
+.hliconbtn.on{background:var(--accent); border-color:var(--accent); color:var(--bg);}
 /* v5.76.0 (his added spec, 2026-11-20): the 見どころ prose
    itself is small and tight — 11.5px / line-height 1.5,
    fixed regardless of the text-size setting (the standard
@@ -1491,6 +1526,52 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    Scoped to the highlights wrapper only; every other
    .bodytext keeps the shared settings. */
 .hlbody .bodytext{font-size:11.5px; line-height:1.5;}
+/* v5.78.0 (his order, 2026-11-20 13:56): the 制作過程 panel's
+   prose joins the 見どころ at the same fixed compact scale —
+   11.5px / line-height 1.5, independent of the text-size
+   setting. Scoped to the process panel container only, so
+   every other tab's .bodytext (来歴 etc.) keeps following
+   the setting. Everything prose in that panel is .bodytext
+   (the 工程 step texts, 制作環境, 画材メモ, 制作メモ, 要約,
+   the dissection axes); step headings (.proctitle), source
+   lines and captions are not .bodytext and stay untouched.
+   The shared builder gives designers the same treatment.
+   v5.78.0 hierarchy pass (his refinement, 2026-11-20 13:57,
+   on the Hokusai process tab): inside this panel the scale
+   steps DOWN in three tiers — section headings 15.5px >
+   step titles 14px > prose 11.5px. Before this the tiers
+   were inverted (h3.subhead is 13px app-wide while
+   .proctitle was 14.5px, so the step titles out-shouted the
+   sections they belong to). Scoped to the process panel
+   only: every other panel keeps the shared 13px subhead.
+   The step number chip scales with its title line. */
+.dpage[data-dtab="process"] .bodytext{font-size:11.5px; line-height:1.5;}
+.dpage[data-dtab="process"] h3.subhead{font-size:15.5px;}
+.dpage[data-dtab="process"] .proctitle{font-size:14px;}
+.dpage[data-dtab="process"] .procnum{font-size:13px; padding:2px 9px;}
+/* v5.78.0 (his order, 2026-11-20 13:58): the 来歴 panel joins
+   the same treatment as 制作過程 — prose fixed at 11.5px /
+   line-height 1.5, independent of the text-size setting, and
+   heading-grade elements one tier above the prose. The bio
+   prose wears three coats: .bodytext (the intro prose and
+   見るべき代表作), .cvtext (the year-row bodies — the bulk of
+   most biographies) and .chtext (the chronicle narrative).
+   Headings: the shared h3.subhead （見るべき代表作 /
+   作品でたどる歩み) and the chronicle period title at the
+   section tier (15.5px); the year labels (.cvyear / .bioyear)
+   and the chronicle period chip (.chno) at the label tier
+   (13px) — above the 11.5px prose, below the section heads,
+   the same thinking as the process panel's tiers. Scoped to
+   the bio panel only; 関係 / インタビュー and every other
+   tab keep the setting-linked sizes. */
+.dpage[data-dtab="bio"] .bodytext{font-size:11.5px; line-height:1.5;}
+.dpage[data-dtab="bio"] .cvtext{font-size:11.5px; line-height:1.5;}
+.dpage[data-dtab="bio"] .chtext{font-size:11.5px; line-height:1.5;}
+.dpage[data-dtab="bio"] h3.subhead{font-size:15.5px;}
+.dpage[data-dtab="bio"] .chtitle{font-size:15.5px;}
+.dpage[data-dtab="bio"] .cvyear{font-size:13px;}
+.dpage[data-dtab="bio"] .bioyear{font-size:13px;}
+.dpage[data-dtab="bio"] .chno{font-size:13px;}
 .gdictwrap{margin:2px 0 10px;}
 .gdictwrap input{width:100%; box-sizing:border-box; font-size:16px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text);}
 /* v5.53.0 (his call, 2026-11-17 20:58): the dictionary rows go to
@@ -10595,7 +10676,13 @@ name_kana: String(a.name_kana||''),
    the next device sync erases from the canonical. */
 aliases: Array.isArray(a.aliases)? a.aliases.map(String).filter(Boolean): [],
 years: String(a.years||''), field: String(a.field||''), section: String(a.section||''),
-relation: String(a.relation||''), key_works: String(a.key_works||''), notes: String(a.notes||''),
+relation: String(a.relation||''),
+/* v5.78.0: intro （紹介） — the artist-introduction prose
+   split out of relation （見どころ) on the data side; rendered
+   at the bottom of the profile band. Carried here, in
+   mergeDataInto (via normalizeData) and in saveEditor from
+   the start — the name_kana lesson. */
+intro: String(a.intro||''), key_works: String(a.key_works||''), notes: String(a.notes||''),
 tags: Array.isArray(a.tags)? a.tags.map(String): [],
 work_image: String(a.work_image||''), work_caption: String(a.work_caption||''),
 works: works,
@@ -11038,8 +11125,19 @@ function profileBandHTML(a){
      (requestWorks, kind:'works' via the outbox); only its
      home changed, from the works tab to this band. */
   const reqBtn = '<button class="reqiconbtn" onclick="requestWorks()" aria-label="'+(DS==='designers'? 'デザイナー情報をリクエスト': '作家情報をリクエスト')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4.6 19.2c.6-3.1 2.7-4.7 5.4-4.7 1.1 0 2.2.3 3 .8"/><path d="M17.9 14.8v5.6M15.1 17.6h5.6"/></svg></button>';
-  if(!hasPortrait && !rows.length) return '<div class="profband pfonly">' + reqBtn + '</div>';
-  let h = '<div class="profband">';
+  /* v5.78.0 (his ruling, 2026-11-20): the introduction row —
+     the `intro` field (positioning / career / significance,
+     split out of 見どころ on the data side) closes the band
+     as a full-width row under the photo/rows line, in the
+     compact .pfintro scale. Only when non-empty; the band
+     takes .hasintro (wrap) only then, so pages without an
+     intro render byte-identically to before. */
+  const introHTML = a.intro? '<div class="pfintro"><span class="pfintrolb">紹介</span><div class="pfintrotxt">' + proseHTML(a.intro) + '</div></div>': '';
+  if(!hasPortrait && !rows.length){
+    if(!introHTML) return '<div class="profband pfonly">' + reqBtn + '</div>';
+    return '<div class="profband pfonly hasintro">' + reqBtn + introHTML + '</div>';
+  }
+  let h = '<div class="profband' + (introHTML? ' hasintro': '') + '">';
   if(hasPortrait){
     /* v5.54.0 (his call, 2026-11-17): the portrait itself is
        tappable — it opens full-screen with the source credit
@@ -11059,8 +11157,9 @@ function profileBandHTML(a){
     h += '<div class="pfrows">' + rows.map(r => '<span class="pfk">' + r[0] + '</span><span class="pfv">' + esc(r[1]) + '</span>').join('') + '</div>';
   }
   /* v5.65.1: the request button closes the band — bottom-right
-     via the .profband .reqiconbtn rule. */
-  return h + reqBtn + '</div>';
+     via the .profband .reqiconbtn rule. v5.78.0: the intro
+     row (when present) follows it as the band's last line. */
+  return h + reqBtn + introHTML + '</div>';
 }
 /* v5.59.0: the works sort row is three mode tabs —
    [登録順] [年代別] [clock]. workSort carries the mode:
@@ -13201,7 +13300,7 @@ function detailScatterDetailHTML(){
   if(!p) return '<p class="small" style="margin-top:8px">点をタップすると、その落札の詳細が出ます。</p>';
   const j = jpyOf(p);
   return '<div class="bpdetail">'
-    + (p.img && p.img.url ? '<div class="pricecover">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>' : '')
+    + (p.img && p.img.url ? '<div class="pricecover" onclick="detailScatterOpenViewer()" style="cursor:pointer" title="タップで拡大">' + imgHTML({ img: p.img, caption: p.work }, IMG_SIZE.thumb) + '</div>' : '')
     + '<div class="pmain"><div class="pwork">' + esc(p.work) + '</div>'
     + '<div class="phouse">' + [p.house, p.year].filter(x => x !== '' && x != null).map(esc).join(' ・ ') + '</div>'
     + '<div class="pprice">' + esc(bpFmtPrice(p)) + '</div>'
@@ -13210,10 +13309,43 @@ function detailScatterDetailHTML(){
     + '</div></div>';
 }
 function detailScatterPick(i){
+  /* v5.78.0 (his order, 2026-11-20 13:59): tapping the ALREADY
+     selected point again opens that work in the viewer — the
+     first tap selects (as before), the second tap enlarges.
+     A point without a photo simply stays selected. */
+  if(i === dScatterSel){ detailScatterOpenViewer(); return; }
   dScatterSel = i;
   const w = $('dscatterWrap'), d = $('dscatterDetail');
   if(w) w.innerHTML = ptScatter(dScatterPlot, 'detailScatterPick', dScatterSel);
   if(d) d.innerHTML = detailScatterDetailHTML();
+}
+/* v5.78.0: open the selected priced work in the shared viewer.
+   When the priced photo is one of this person's registered
+   works (same image file), the viewer opens on the REAL works
+   list at that work, with its full caption. Otherwise the
+   priced work opens alone, captioned with what the price
+   record knows (title, year, house, price). No photo on the
+   record: nothing happens. */
+function detailScatterOpenViewer(){
+  const p = dScatterRecs[dScatterSel];
+  if(!p || !p.img || !(p.img.url || p.img.fileId)) return;
+  const a = artistById(state.detailId);
+  if(a){
+    const ws = displayWorks(a);
+    const pkeys = workKeysOf({ img: p.img, caption: '' });
+    let idx = pkeys.length? ws.findIndex(w => workKeysOf(w).some(k => pkeys.indexOf(k) >= 0)): -1;
+    if(idx < 0 && p.work){
+      const t = String(p.work).trim();
+      if(t) idx = ws.findIndex(w => (w.caption || '').indexOf(t) >= 0);
+    }
+    if(idx >= 0){ openViewer(ws, idx, a.id); return; }
+    const cap = [p.work, p.year? p.year + '年': '', [p.house, bpFmtPrice(p)].filter(x => x !== '' && x != null).join(' ・ ')].filter(Boolean).join('　');
+    viewerKindNext = 'prices';
+    openViewer([{ img: p.img, caption: cap }], 0, a.id);
+    return;
+  }
+  viewerKindNext = 'prices';
+  openViewer([{ img: p.img, caption: String(p.work || '') }], 0, null);
 }
 function renderBizPrice(){
   const el = $('viewBizPrice'); if(!el) return;
@@ -17045,6 +17177,16 @@ worksHTML = packGalleryHTML(wCards, workMode);
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
 const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
+/* v5.78.0 (his order, 2026-11-20 13:55): the 見どころ toggle
+   rides the shelf's count slot as an eye icon button stacked
+   ABOVE the count (.wcountstack) — on = open eye on the
+   accent fill, off = slashed eye in muted tones. Only when
+   the record has 見どころ text at all; the shared builder
+   gives designers the same control. The preference itself
+   (zukan.showHighlights) is unchanged from v5.76.0. */
+const hlEyeOn = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const hlEyeOff = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4.5 4.5l15 15"/></svg>';
+const hlCountSlot = a.relation? '<span class="wcountstack"><button class="hliconbtn'+(showHighlights?' on':'')+'" onclick="setShowHighlights('+(showHighlights?'false':'true')+')" aria-label="見どころの表示を切り替える" aria-pressed="'+(showHighlights?'true':'false')+'" title="見どころ">'+(showHighlights? hlEyeOn: hlEyeOff)+'</button><span class="small wcount">'+shelfCount+'</span></span>': '<span class="small wcount">'+shelfCount+'</span>';
 worksHTML = '<div class="worksreq shelf">' +
 /* v32.7.1: sort and display each get their OWN row again.
    v4.5 merged them into one row and v32.6.1 kept that inside
@@ -17082,7 +17224,7 @@ worksHTML = '<div class="worksreq shelf">' +
    micro, grid glyphs included — so the two switchers can
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span><span class="small wcount">'+shelfCount+'</span></div></div>' + worksHTML;
+'</span>' + hlCountSlot + '</div></div>' + worksHTML;
 /* v5.57.0: the series chip row rides at the very top of the
    works tab, above the count / sort / display shelf. */
 if(wgArr.length){
@@ -17099,11 +17241,14 @@ worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで�
    field) still leads, above the series chips / shelf / grid. */
 let highlightsHTML = '';
 /* v5.76.0: the block renders only when the shared preference
-   is on; hidden, a compact pill in the same place offers it.
-   No relation text — no toggle, no block (as before). */
-if(a.relation){
-if(showHighlights) highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3><button class="hlhide" onclick="setShowHighlights(false)">隠す<span class="hlchev">▴</span></button></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
-else highlightsHTML = '<button class="hlshow" onclick="setShowHighlights(true)">見どころを表示<span class="hlchev">▾</span></button>';
+   is on. v5.78.0 (his order, 2026-11-20 13:55): the wide
+   show/hide pill that used to sit here is abolished — the
+   toggle is the eye icon stacked above the works count in
+   the shelf (hlCountSlot). When on, the prose still leads
+   the works panel, headed by its quiet subhead only. No
+   relation text — no icon, no block (as before). */
+if(a.relation && showHighlights){
+highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
 }
 if(highlightsHTML) worksHTML = highlightsHTML + worksHTML;
 /* v30.6: the drawings panel — the same gallery as works (same
@@ -17839,7 +17984,9 @@ return workKeysOf(w).some(k=> fk.indexOf(k)>=0);
 function updateVThumbBtn(){
 const b = $('vthumb'); if(!b) return;
 /* v30.6: no thumbnail button while paging drawings */
-if(viewerKind==='drawings' || viewerKind==='proc'){ b.style.display = 'none'; return; }
+/* v5.78.0: nor for a priced work opened from the prices tab —
+   it may not be one of the registered works at all. */
+if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices'){ b.style.display = 'none'; return; }
 b.style.display = '';
 const isT = viewerIsThumb();
 b.textContent = isT? 'サムネ' : 'サムネにする';
@@ -17848,7 +17995,7 @@ b.classList.toggle('on', isT);
 function viewerSetThumb(){
 /* v30.6: the thumbnail pin applies to works only — a drawing must
    never be copied into the works list from the viewer. */
-if(viewerKind==='drawings' || viewerKind==='proc') return;
+if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices') return;
 const a = artistById(viewerArtistId); if(!a) return;
 const w = viewerWorks[viewerIdx]; if(!w) return;
 if(viewerIsThumb()){ toast('この作品がサムネです'); return; }
@@ -20365,6 +20512,11 @@ async function toggleFavWork(){
 }
 function syncVFavBtn(){
   const b = $('vfav'); if(!b) return;
+  /* v5.78.0: no work-favourite star for a priced work opened
+     from the prices tab — its caption is composed from the
+     price record and would key a favourite to nothing. */
+  b.style.display = viewerKind==='prices'? 'none': '';
+  if(viewerKind==='prices') return;
   const a = artistById(viewerArtistId); const w = viewerWorks[viewerIdx];
   const on = !!(a && w && isFavWork(DS, a.id, w.caption||''));
   b.classList.toggle('on', on); b.textContent = on? '★': '☆';
@@ -23188,6 +23340,7 @@ F('タグ（カンマ区切り）', I('ef_tags', a?(a.tags||[]).join(', '):''))+
 F('代表作ファイル名', I('ef_wimg', a?a.work_image:''))+
 F('代表作キャプション', I('ef_wcap', a?a.work_caption:''))+
 F('見どころ', '<textarea class="textin" id="ef_relation">'+esc(a?a.relation:'')+'</textarea>')+
+F('紹介（プロフィールの下部）', '<textarea class="textin" id="ef_intro">'+esc(a?a.intro:'')+'</textarea>')+
 F('見るべき代表作', '<textarea class="textin" id="ef_keyworks">'+esc(a?a.key_works:'')+'</textarea>')+
 F('本文（来歴・技法・特徴メモ）', '<textarea class="textin" id="ef_notes" style="min-height:180px;">'+esc(a?a.notes:'')+'</textarea><div class="small">「【来歴】」「【技法・メディウム】」の見出しで区切ると、詳細画面のタブに振り分けられます。</div>')+
 '<div class="setrow"><div class="setlabel">作品（works）</div><div id="ef_works"></div>'+
@@ -23246,7 +23399,7 @@ years: $('ef_years').value.trim(), field: $('ef_field').value.trim(),
 section: $('ef_section').value.trim(), layer: 'canon',
 tags: $('ef_tags').value.split(/[,、]/).map(s=>s.trim()).filter(Boolean),
 work_image: $('ef_wimg').value.trim(), work_caption: $('ef_wcap').value.trim(),
-relation: $('ef_relation').value, key_works: $('ef_keyworks').value, notes: $('ef_notes').value,
+relation: $('ef_relation').value, intro: $('ef_intro').value, key_works: $('ef_keyworks').value, notes: $('ef_notes').value,
 works: editWorks.filter(w=>w.file||w.caption||w.img),
 updated_at: now
 });
@@ -25155,7 +25308,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.77.0';
+const APP_VERSION = '5.78.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
