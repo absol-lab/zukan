@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.78.0">
+<meta name="app-version" content="5.79.0">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1413,7 +1413,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    count+request / sort / display. The v32.6.1 packing put
    sort and display on one shared row and it overflowed on
    his phone (see the worksHTML builder note). */
-.worksreq.shelf{display:block; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin:0 0 10px;}
+.worksreq.shelf{display:block; position:relative; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin:0 0 10px;}
 .wrrow{display:flex; align-items:center; justify-content:space-between; gap:10px;}
 .wrrow + .wrrow{margin-top:9px;}
 /* v27.1: the works tab's sort / display seg groups in compact
@@ -1506,17 +1506,24 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
 .hlhead{display:flex; align-items:center; gap:10px;}
 .hlhead .subhead{margin-right:auto;}
 /* v5.78.0 (his order, 2026-11-20 13:55): the v5.76.0 wide
-   show/hide pill is abolished. The 見どころ toggle is now an
-   eye icon button stacked ABOVE the works count at the right
-   end of the shelf's display row (.wcountstack) — the icon
-   sits on top, the 「作品 N点」 count directly under it, one
-   shared right edge. Off: muted eye with a slash on the card
-   ground. On: the app's shared "on" language (accent fill,
-   bg-coloured glyph — the .seg button.on treatment), so the
-   state reads at a glance. The prose block itself still
-   leads the works panel when on; the toggle lives only here. */
-.wcountstack{display:inline-flex; flex-direction:column; align-items:flex-end; gap:3px;}
-.hliconbtn{width:36px; height:36px; flex:none; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-family:inherit;}
+   show/hide pill is abolished; the 見どころ toggle became an
+   eye icon button stacked above the works count.
+   v5.79.0 (his orders, 2026-11-20 14:51/14:52): (1) the
+   on/off appearances SWAP — while the prose is SHOWN the
+   button wears the slashed eye on the plain card ground
+   (the glyph names the tap's action: hide), and while
+   HIDDEN it wears the open eye on the accent fill (the
+   shared "on" language now marks the invitation to open).
+   (2) The button leaves the count stack and pins to the
+   shelf's TOP-RIGHT corner — the shelf is position:relative
+   and the button absolute, so it takes no layout space and
+   the frame is identical with or without it; the 「作品
+   N点」 count keeps its slot at the display row's right
+   end. (3) The prose block itself no longer leads the
+   panel: it renders BELOW the shelf, directly above the
+   works grid (see the builder) — controls first, prose
+   under them. */
+.hliconbtn{position:absolute; top:8px; right:10px; z-index:2; width:36px; height:36px; flex:none; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; font-family:inherit;}
 .hliconbtn svg{width:19px; height:19px; display:block;}
 .hliconbtn.on{background:var(--accent); border-color:var(--accent); color:var(--bg);}
 /* v5.76.0 (his added spec, 2026-11-20): the 見どころ prose
@@ -17177,17 +17184,31 @@ worksHTML = packGalleryHTML(wCards, workMode);
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
 const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
-/* v5.78.0 (his order, 2026-11-20 13:55): the 見どころ toggle
-   rides the shelf's count slot as an eye icon button stacked
-   ABOVE the count (.wcountstack) — on = open eye on the
-   accent fill, off = slashed eye in muted tones. Only when
-   the record has 見どころ text at all; the shared builder
-   gives designers the same control. The preference itself
-   (zukan.showHighlights) is unchanged from v5.76.0. */
-const hlEyeOn = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const hlEyeOff = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4.5 4.5l15 15"/></svg>';
-const hlCountSlot = a.relation? '<span class="wcountstack"><button class="hliconbtn'+(showHighlights?' on':'')+'" onclick="setShowHighlights('+(showHighlights?'false':'true')+')" aria-label="見どころの表示を切り替える" aria-pressed="'+(showHighlights?'true':'false')+'" title="見どころ">'+(showHighlights? hlEyeOn: hlEyeOff)+'</button><span class="small wcount">'+shelfCount+'</span></span>': '<span class="small wcount">'+shelfCount+'</span>';
-worksHTML = '<div class="worksreq shelf">' +
+/* v5.79.0 (his orders, 2026-11-20 14:51): the 見どころ eye
+   toggle pins to the shelf's TOP-RIGHT corner (absolute —
+   out of the layout flow), and the on/off appearances swap
+   against v5.78.0: SHOWN = slashed eye on the plain ground
+   (tap hides), HIDDEN = open eye on the accent fill (tap
+   shows). The 'on' class therefore rides the HIDDEN state.
+   Only when the record has 見どころ text at all; the shared
+   builder gives designers the same control. The preference
+   itself (zukan.showHighlights) is unchanged from v5.76.0,
+   and the count keeps its own slot in the display row. */
+const hlEyeOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const hlEyeSlash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4.5 4.5l15 15"/></svg>';
+const hlBtn = a.relation? '<button class="hliconbtn'+(showHighlights?'':' on')+'" onclick="setShowHighlights('+(showHighlights?'false':'true')+')" aria-label="見どころの表示を切り替える" aria-pressed="'+(showHighlights?'true':'false')+'" title="見どころ">'+(showHighlights? hlEyeSlash: hlEyeOpen)+'</button>': '';
+const hlCountSlot = '<span class="small wcount">'+shelfCount+'</span>';
+/* The 見どころ prose (v5.79.0, his order 2026-11-20 14:52):
+   composed here so the shelf string below can weave it in
+   directly UNDER the frame — it no longer leads the panel
+   (v5.72.0–v5.78.0); the controls come first and the prose
+   sits between the frame and the works grid. Renders only
+   when the shared preference is on; off — nothing at all. */
+let highlightsHTML = '';
+if(a.relation && showHighlights){
+highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
+}
+worksHTML = '<div class="worksreq shelf">' + hlBtn +
 /* v32.7.1: sort and display each get their OWN row again.
    v4.5 merged them into one row and v32.6.1 kept that inside
    the shelf; on his phone the shared row overflowed — the
@@ -17224,7 +17245,7 @@ worksHTML = '<div class="worksreq shelf">' +
    micro, grid glyphs included — so the two switchers can
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span>' + hlCountSlot + '</div></div>' + worksHTML;
+'</span>' + hlCountSlot + '</div></div>' + highlightsHTML + worksHTML;
 /* v5.57.0: the series chip row rides at the very top of the
    works tab, above the count / sort / display shelf. */
 if(wgArr.length){
@@ -17233,24 +17254,13 @@ worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで�
 + wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
 + '</div>' + worksHTML;
 }
-/* v5.72.0: the abolished 特徴 tab's works-facing prose led the
-   作品 panel. v5.73.0 (his direction, 2026-11-19): the memo
-   (the notes remainder) leaves this panel for the 制作過程
-   tab's 制作メモ — the works panel must reach the works
-   themselves immediately, so only 見どころ (the relation
-   field) still leads, above the series chips / shelf / grid. */
-let highlightsHTML = '';
-/* v5.76.0: the block renders only when the shared preference
-   is on. v5.78.0 (his order, 2026-11-20 13:55): the wide
-   show/hide pill that used to sit here is abolished — the
-   toggle is the eye icon stacked above the works count in
-   the shelf (hlCountSlot). When on, the prose still leads
-   the works panel, headed by its quiet subhead only. No
-   relation text — no icon, no block (as before). */
-if(a.relation && showHighlights){
-highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
-}
-if(highlightsHTML) worksHTML = highlightsHTML + worksHTML;
+/* v5.72.0: the abolished 特徴 tab's works-facing prose led
+   the 作品 panel; v5.73.0 moved the memo out to 制作過程.
+   v5.79.0 (his order, 2026-11-20 14:52): the 見どころ prose
+   no longer leads the panel — it is composed with the eye
+   toggle (above) and woven into the shelf string, so it
+   renders BELOW the control frame and directly above the
+   works grid. No relation text — no icon, no block. */
 /* v30.6: the drawings panel — the same gallery as works (same
    tile shape, same viewer, same page turn), its own list. The
    tiles carry data-drawidx, NOT data-workidx: the works wiring
@@ -25308,7 +25318,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.78.0';
+const APP_VERSION = '5.79.0';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
