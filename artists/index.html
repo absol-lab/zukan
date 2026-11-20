@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.81.3">
+<meta name="app-version" content="5.81.4">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13185,6 +13185,30 @@ function renderGuide(){
   });
 })();
 
+/* v5.81.4: the same delegation for the quote work links
+   (span.worklink[data-qwl], see quoteTextHTML). The click
+   listener is CAPTURE-phase on purpose: a quote with a
+   registered source interview sits inside a <button
+   class="procquote qlink"> whose inline onclick opens the
+   interview reader during the bubble phase, so a bubble
+   listener here would run too late — capturing at
+   #viewDetail and stopping propagation keeps the event
+   from ever reaching the card, and the work link wins
+   inside its own span. Enter / Space on the focused span
+   take the same path (keydown needs no capture: the card
+   has no key handler). */
+(function(){
+  const vd = $('viewDetail'); if(!vd) return;
+  const fire = e=>{
+    const el = e.target && e.target.closest? e.target.closest('[data-qwl]'): null;
+    if(!el) return;
+    e.preventDefault(); e.stopPropagation();
+    quoteWorkTap(+el.getAttribute('data-qwl'));
+  };
+  vd.addEventListener('click', fire, true);
+  vd.addEventListener('keydown', e=>{ if(e.key === 'Enter' || e.key === ' ') fire(e); });
+})();
+
 /* v21.1: the whole-market scatter was withdrawn at his word
    («全体グラフは一旦消していいよ») — the page is the ranking
    only now; the scatter itself lives on in each person's
@@ -17667,9 +17691,9 @@ if(procObj && procObj.quotes && procObj.quotes.length){
 quotesHTML += '<h3 class="subhead">本人の言葉</h3>' + procObj.quotes.map(q=>{
 const mi = quoteIntvMatch(q, intvArr);
 const ctx = q.context? '<span class="qctx">'+esc(q.context)+'</span>': '';
-const ja = q.text_ja? '<span class="procqja">'+pTermEsc(q.text_ja)+'</span>': '';
-if(mi >= 0) return '<button class="procquote qlink" onclick="openIntvReader('+mi+')">'+ctx+pTermEsc(q.text)+ja+'<span class="qopen">出典のインタビューを開く ›</span></button>';
-return '<blockquote class="procquote">'+ctx+pTermEsc(q.text)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+ja+'</blockquote>';
+const ja = q.text_ja? '<span class="procqja">'+quoteTextHTML(q.text_ja, a)+'</span>': '';
+if(mi >= 0) return '<button class="procquote qlink" onclick="openIntvReader('+mi+')">'+ctx+quoteTextHTML(q.text, a)+ja+'<span class="qopen">出典のインタビューを開く ›</span></button>';
+return '<blockquote class="procquote">'+ctx+quoteTextHTML(q.text, a)+(q.source? ' <a href="'+escA(q.source)+'" target="_blank" rel="noopener">出典 ↗</a>': '')+ja+'</blockquote>';
 }).join('');
 }
 if(stanceObj || termsArr.length){
@@ -17684,7 +17708,7 @@ termsArr.forEach(t=>{
 quotesHTML += '<div class="stmtcard"><span class="stmtterm">'+esc(t.term)+'</span>'+(t.reading? '<span class="stmtreading">'+esc(t.reading)+'</span>': '')
 +(t.meaning? '<div class="stmtmean"><span class="sumchip">要約</span>'+pTermEsc(t.meaning)+'</div>': '')
 +(t.contrast? '<div class="stmtcontrast">対比：'+pTermEsc(t.contrast)+'</div>': '')
-+(t.quote? '<div class="stmtquote">'+pTermEsc(t.quote)+'</div>': '')
++(t.quote? '<div class="stmtquote">'+quoteTextHTML(t.quote, a)+'</div>': '')
 +(t.source? '<div class="stmtsrc"><a href="'+escA(t.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
 +'</div>';
 });
@@ -18090,6 +18114,53 @@ return h;
 function intvWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
 closeIntvReader();
+openViewer(displayWorks(a), idx, a.id);
+}
+/* v5.81.4: the v5.81.3 rule extended to the 発言 quotes (his
+   approval, 2026-11-21 08:27 — he tapped the option 「発言の
+   中の作品名も押せるようにする」; v5.81.3 had left quotes
+   out because they render through pTermEsc). Same rule, same
+   map and normalization as the reader (intvWorkLinkMap /
+   intvTitleKey over displayWorks): a 《title》 in a quote
+   (process.quotes text / text_ja, and a term's own quote
+   field) links ONLY when it exactly matches one of THIS
+   artist's registered photo-bearing works; anything else
+   stays plain. The linking must not break pTermEsc's
+   escaping, so it rides the placeholder convention: matched
+   spans are swapped for private-use placeholders BEFORE
+   pTermEsc runs (escaping / glossary linking / search
+   highlight never see the link markup, and no quote text can
+   inject HTML) and restored after. The placeholder index is
+   itself a private-use char (U+E100+n) — no ASCII digits —
+   so the search highlight can never split a placeholder.
+   The link is a <span class="worklink" data-qwl> rather
+   than a <button>: a quote whose source interview is
+   registered renders INSIDE a <button class="procquote
+   qlink">, where a nested button is invalid markup and
+   would break the card apart. The ONE delegated handler on
+   #viewDetail (beside the v29.0 glossary delegation)
+   intercepts the tap, stops it reaching the card, and opens
+   the viewer — quoteWorkTap, the intvWorkTap pattern minus
+   the reader (quotes live on the detail page itself). */
+function quoteTextHTML(txt, a){
+let t = String(txt || '');
+if(!a) return pTermEsc(t);
+const map = intvWorkLinkMap(a);
+const subs = [];
+t = t.replace(/《([^》]+)》/g, (m, inner)=>{
+const idx = map[intvTitleKey(inner)];
+if(idx == null) return m;
+if(subs.length >= 512) return m;
+const n = subs.length;
+subs.push('<span class="worklink" data-qwl="'+idx+'" role="button" tabindex="0">《'+esc(inner)+'》</span>');
+return ''+String.fromCharCode(0xE100 + n)+'';
+});
+let h = pTermEsc(t);
+if(subs.length) h = h.replace(/([-])/g, (m, c)=> subs[c.charCodeAt(0) - 0xE100] || m);
+return h;
+}
+function quoteWorkTap(idx){
+const a = artistById(state.detailId); if(!a) return;
 openViewer(displayWorks(a), idx, a.id);
 }
 function openIntvReader(idx){
@@ -25568,7 +25639,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.81.3';
+const APP_VERSION = '5.81.4';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
