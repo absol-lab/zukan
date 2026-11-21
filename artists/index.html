@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.81.5">
+<meta name="app-version" content="5.81.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12570,7 +12570,7 @@ const GUIDE_TAX = [
      G-1/G-2/T-1/T-2/M-1/M-2), seated right after 全体地図:
      map first, then what each school actually asks, then the
      procedure chapters that answer it. */
-  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['課題', 'exam-ch8'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
+  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi'], ['課題', 'exam-ch8'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8'], ['タイトル', 'guide-ch-titles']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['社会性', 'guide-ch-sociality'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['セルフプロデュース', 'guide-ch-self-produce'], ['インタビュー', 'guide-ch-interview'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
@@ -12631,6 +12631,26 @@ function guideLinkIndex(){
    underline, same as the v28.1 work links — 下線＝押せる. */
 function guideLinkHTML(t){
   const s = String(t == null? '': t);
+  /* v5.81.6: chapter-link tokens — [[chapter-id|label]] or
+     [[chapter-id#tab label|label]] — are split out first and
+     rendered as the same underlined anchors (data-gchap,
+     handled by the same delegated #gpbody click handler);
+     the text between tokens goes through the glossary-term
+     scan unchanged. The token syntax never occurs in ordinary
+     prose, so every existing chapter renders exactly as
+     before. */
+  const re = /\[\[([A-Za-z0-9\-]+)(?:#([^\]|]+))?\|([^\]]+)\]\]/g;
+  let out = '', last = 0, m;
+  while((m = re.exec(s)) !== null){
+    out += guideTermLinkHTML(s.slice(last, m.index));
+    out += '<a class="gtermlink" data-gchap="' + escA(m[1]) + '"' + (m[2]? ' data-gtab="' + escA(m[2]) + '"': '') + '>' + esc(m[3]) + '</a>';
+    last = m.index + m[0].length;
+  }
+  out += guideTermLinkHTML(s.slice(last));
+  return out;
+}
+function guideTermLinkHTML(t){
+  const s = String(t == null? '': t);
   const idx = guideLinkIndex();
   if(!idx.length) return esc(s);
   let out = '', i = 0;
@@ -12662,6 +12682,27 @@ function guideSnapshot(){
 function guideJumpTerm(term){
   guideStack.push(guideSnapshot());
   guideView = 'term'; guideTermName = term;
+  renderGuide();
+}
+/* v5.81.6: jump to another guide chapter — entered from the
+   [[...]] chapter links in guide text (v5.81.6 guideLinkHTML).
+   The optional tab names one of the chapter's section tabs by
+   its pill label (記録／傾向／対策／学校情報…); the target
+   major is looked up in GUIDE_TAX, and the usual snapshot is
+   pushed, so the back button restores the exact chapter, tab
+   and scroll the reader came from. */
+function guideJumpChapter(id, tab){
+  let mid = null;
+  GUIDE_TAX.forEach(mo=>{ if((mo.subs || []).some(su=> su[1] === id)) mid = mo.id; });
+  if(!mid) return;
+  guideStack.push(guideSnapshot());
+  guideView = 'major'; guideMajorId = mid; guideChapterId = id; guideIdx = false;
+  if(tab){
+    const c = ((typeof guideData !== 'undefined' && guideData && guideData.chapters) || []).find(x=> x.id === id);
+    const groups = guideSecGroups(c);
+    const gi = groups.findIndex(g=> g.head != null && String((c.sections[g.head] || {}).h || '').split('——')[0] === tab);
+    if(gi >= 0) guideSecSel[id] = gi;
+  }
   renderGuide();
 }
 /* v29.0: the same jump, entered from a PERSON page (ITEM 5).
@@ -13169,6 +13210,7 @@ function renderGuide(){
   body.addEventListener('click', e=>{
     const el = e.target && e.target.closest? e.target.closest('a.gtermlink'): null;
     if(el && el.getAttribute('data-gterm')) guideJumpTerm(el.getAttribute('data-gterm'));
+    else if(el && el.getAttribute('data-gchap')) guideJumpChapter(el.getAttribute('data-gchap'), el.getAttribute('data-gtab'));
   });
 })();
 
@@ -25679,7 +25721,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.81.5';
+const APP_VERSION = '5.81.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
