@@ -20291,6 +20291,7 @@ function exRegionOf(e){
   return 'world';
 }
 function exRegionSegHTML(){
+  return ''; // LAB: no Japan/West switch
   return '<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;"><span class="small">地域</span><span class="seg mini">'
   + '<button class="' + (exRegion === 'all'? 'on': '') + '" onclick="setExRegion(\'all\')">全部</button>'
   + '<button class="' + (exRegion === 'jp'? 'on': '') + '" onclick="setExRegion(\'jp\')">日本</button>'
