@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.9">
+<meta name="app-version" content="5.82.10">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -12413,6 +12413,7 @@ if(vtBusy){ const pf = vtAfterFinish; vtAfterFinish = ()=>{ if(pf) pf(); tlMapMa
 else tlMapMaybeRestore();
 }
 if(typeof chEraBarSync === 'function') chEraBarSync();
+writeDetailHash(); /* v5.82.10: keep the URL pointing at the open artist (deep links) */
 /* v32.6 (item F): EVERY surface switch re-derives the sticky
    bars' section labels once the new surface is laid out and its
    scroll position is restored — a label from the previous
@@ -18754,7 +18755,7 @@ let a = null;
 if(!reducedMotion()){
 try{ a = vw.animate([{ transform:'translateY(0%)' },{ transform:'translateY(100%)' }], { duration:250, easing:VT_EASE, fill:'both' }); }catch(e){}
 }
-const done = ()=>{ if(gen !== viewerGen) return; vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } restoreViewerReturn(); };
+const done = ()=>{ if(gen !== viewerGen) return; vw.classList.remove('open'); if(a){ try{ a.cancel(); }catch(e){} } writeDetailHash(); restoreViewerReturn(); };
 if(a && a.finished){ a.finished.then(done).catch(done); setTimeout(done, 340); } else { done(); }
 }
 function viewerMove(d){
@@ -18823,6 +18824,7 @@ toast('サムネにしました');
 }
 function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
+writeDetailHash(); /* v5.82.10: the open work rides in the URL while paging the viewer */
 updateVThumbBtn();
 { const vb = $('vback'); if(vb) vb.style.display = viewerBack? '': 'none'; }
 syncVFavBtn();
@@ -21587,7 +21589,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"ユーモア","lines":["作家のユーモアを集める「ユーモア」タブを新設。第一号はデュシャン（8件）。","書籍の中身を吸収するたびに、その作家のユーモアも省かずに集めていく。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは893点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は359人。"]},{"v":null,"label":"展示情報","lines":["展示は8,030件。ポスターなど展示自身の画像があるのは135件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"ユーモア","lines":["作家のユーモアを集める「ユーモア」タブを新設。第一号はデュシャン（8件）。","書籍の中身を吸収するたびに、その作家のユーモアも省かずに集めていく。"]},{"v":null,"label":"作品への直リンク","lines":["作家ページと作品へ直接飛べるURLに対応（#a=作家のID、&w=作品）。読み物など外の文章から、作品名を押すとその作品が開く。","第一号は『デュシャンは語る』口語ダイジェストの作品名リンク。今後、読み物を作るたびに同じ形でつなぐ。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは893点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は359人。"]},{"v":null,"label":"展示情報","lines":["展示は8,030件。ポスターなど展示自身の画像があるのは135件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -25203,6 +25205,7 @@ function refreshAfterSync(kind){
   /* v27.18: a landed sync is one of the two events that can
      open the boot gate (the other is the verified store read) */
   maybeFirstRender();
+  applyDeepLink(); /* v5.82.10: a deep link whose record only exists in the synced data resolves here */
   if(kind!==DS || isEditing()) return;
   if(view==='list') renderList();
   else if(view==='detail' && state.detailId!=null) renderDetail();
@@ -26232,8 +26235,71 @@ function teardownSwipe(st, commit){
   }, { passive:true });
 })();
 
+/* ================= deep links (v5.82.10) =================
+   URL scheme (hash-based, like the existing #designers):
+     artists/#a=<artistId>            → that artist's page
+     artists/#a=<artistId>&w=<file>   → the artist page with that
+                                        work open in the viewer
+   The work key is the work record's `file` slug — the most
+   stable identifier the data carries: present on ~97% of works,
+   unaffected by reordering (an array index is not), and unique
+   within an artist's works except a few legacy records, where
+   the first match wins. A work without a `file` cannot be
+   addressed; the link then lands on the artist page alone.
+   An unknown artist id is a soft miss: the app stays on the
+   top page, never an error. */
+let pendingDeepLink = null, deepLinkTries = 0;
+function parseDeepLink(){
+  const h = location.hash || '';
+  if(!h || h.indexOf('access_token') >= 0 || h === '#designers') return null;
+  const am = /(?:^#|&)a=([^&]+)/.exec(h); if(!am) return null;
+  const wm = /(?:^#|&)w=([^&]+)/.exec(h);
+  let w = null;
+  if(wm){ try{ w = decodeURIComponent(wm[1]); }catch(e){ w = wm[1]; } }
+  return { a: am[1], w: w };
+}
+function writeDetailHash(){
+  try{
+    let target = '';
+    if(DS === 'designers') target = '#designers';
+    else if(view === 'detail' && state.detailId != null){
+      target = '#a=' + encodeURIComponent(String(state.detailId));
+      const vw = $('viewer');
+      if(vw && vw.classList.contains('open') && viewerKind === 'works' && viewerArtistId != null && String(viewerArtistId) === String(state.detailId)){
+        const w = viewerWorks[viewerIdx];
+        if(w && w.file) target += '&w=' + encodeURIComponent(String(w.file));
+      }
+    }
+    if((location.hash || '') !== target) history.replaceState(null, '', location.pathname + location.search + target);
+  }catch(e){ /* hash sync is cosmetic; never break navigation */ }
+}
+function applyDeepLink(){
+  if(!pendingDeepLink || !firstRendered) return;
+  if(DS !== 'artists'){ pendingDeepLink = null; return; }
+  if(view !== 'list'){ pendingDeepLink = null; return; } /* the reader already went somewhere: never yank them */
+  const a = artistById(pendingDeepLink.a);
+  if(!a){
+    /* the record may still be landing (datapack / Drive sync
+       call back in via refreshAfterSync); after a few misses
+       give up and stay on the top page. */
+    if(++deepLinkTries >= 8) pendingDeepLink = null;
+    return;
+  }
+  const dl = pendingDeepLink; pendingDeepLink = null;
+  openDetail(a.id);
+  if(dl.w){
+    const ws = displayWorks(a);
+    const idx = ws.findIndex(w => w && String(w.file || '') === String(dl.w));
+    if(idx >= 0) openViewer(ws, idx, a.id);
+  }
+}
+window.addEventListener('hashchange', ()=>{
+  const dl = parseDeepLink();
+  if(dl){ pendingDeepLink = dl; deepLinkTries = 0; applyDeepLink(); }
+});
+
 /* ================= self update ================= */
-const APP_VERSION = '5.82.9';
+const APP_VERSION = '5.82.10';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -26955,6 +27021,7 @@ function maybeFirstRender(){
   updateHeader(); updatePill();
   renderList(); renderSyncStatus(); renderAbout();
   detectNewPeople('artists'); detectNewPeople('designers');
+  applyDeepLink(); /* v5.82.10: cold-load deep link resolves at the first render */
 }
 
 (async function init(){
@@ -26963,6 +27030,7 @@ function maybeFirstRender(){
      the boot gate allows the first render (DESIGN C1/C2). */
   if(window.__veilHold) window.__veilHold();
   DS = startDS; bindCtx();
+  pendingDeepLink = parseDeepLink(); /* v5.82.10 */
   /* v27.18 (Phase 2): IndexedDB opens FIRST now — the small
      critical keys (v27.6) and the dataset mirrors both live
      there — then both datasets load from it, migration
