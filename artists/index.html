@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.6">
+<meta name="app-version" content="5.82.7">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18625,7 +18625,7 @@ function viewerCaptionHTML(){
 const capEl = $('vcap'); if(!capEl) return;
 const w = viewerWorks[viewerIdx]; const cap = (w && w.caption) || '';
 const a = artistById(viewerArtistId);
-if(!a || cap.indexOf('《') < 0){ capEl.textContent = cap; return; }
+if(!a || (cap.indexOf('《') < 0 && cap.indexOf('『') < 0)){ capEl.textContent = cap; return; }
 const map = intvWorkLinkMap(a);
 const dw = displayWorks(a);
 /* the registered titles often carry a trailing （English） gloss
@@ -18641,14 +18641,20 @@ const k = intvTitleKey(core);
 if(!(k in map)) map[k] = i;
 });
 const subs = [];
-const t = cap.replace(/《([^》]+)》/g, (m, inner)=>{
+const linkify = (open, close)=> (m, inner)=>{
 const idx = map[intvTitleKey(inner)];
 if(idx == null) return m;
 if(viewerKind === 'works' && dw[idx] === w) return m;
 const n = subs.length;
-subs.push('<button class="worklink" onclick="viewerCapWorkTap('+idx+')">《'+esc(inner)+'》</button>');
+subs.push('<button class="worklink" onclick="viewerCapWorkTap('+idx+')">'+open+esc(inner)+close+'</button>');
 return '\uE000'+n+'\uE001';
-});
+};
+let t = cap.replace(/《([^》]+)》/g, linkify('《', '》'));
+/* v5.82.7: 『title』 citations link too — process captions often
+   quote the finished work in 『』 (his Cranston examples,
+   2026-11-25: 制作途中の『ラグの上の赤ん坊』). Same exact-match
+   rule against registered photo-bearing works. */
+t = t.replace(/『([^』]+)』/g, linkify('『', '』'));
 let h = esc(t);
 if(subs.length) h = h.replace(/\uE000(\d+)\uE001/g, (m, n)=> subs[+n] || m);
 capEl.innerHTML = h;
@@ -21501,6 +21507,15 @@ function reqResolvedName(r){
   if(r.resolved_name) return r.resolved_name;
   const m = /(.+?)として登録/.exec(r.note||'');
   if(m) return m[1];
+  /* v5.82.7: the writers' other note form — 「<名前>を登録（…）」
+     at the head of the note. Without this, requests he sent as
+     a handle or a memo (「yutoarai0119」「あらいむすぶおと
+     insta」) displayed that raw text as the person's name even
+     though the note itself records who was registered (his
+     report, 2026-11-25). Anchored + short + no sentence
+     punctuation, so prose mentions never misfire. */
+  const m2 = /^(.{1,24}?)を登録/.exec(r.note||'');
+  if(m2 && m2[1].indexOf('。') < 0 && m2[1].indexOf('、') < 0) return m2[1];
   return r.name;
 }
 function reqDoneItems(){
@@ -21508,8 +21523,22 @@ function reqDoneItems(){
      the writers stamp resolved_at in mixed ISO forms (+09:00 /
      Z / +00:00) and a lexicographic sort let the +09:00 rows
      masquerade as up-to-9-hours newer than they are. */
-  return reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
+  const items = reqAllItems().filter(r => !r._local && (r.status==='registered' || r.status==='declined'))
     .sort((a, b) => (Date.parse(b.resolved_at||'')||0) - (Date.parse(a.resolved_at||'')||0));
+  /* v5.82.7: collapse duplicate registration rows — two raw
+     requests (a handle + a reading memo) resolved into the SAME
+     person at the SAME instant are one registration, so the
+     panel shows one row under the proper name (his ask,
+     2026-11-25: the weird raw ones need not display). Works
+     updates and declined rows are never collapsed. */
+  const seenReg = new Set();
+  return items.filter(r => {
+    if(r.status !== 'registered' || r.kind === 'works') return true;
+    const key = reqResolvedName(r) + '|' + (Date.parse(r.resolved_at||'')||0);
+    if(seenReg.has(key)) return false;
+    seenReg.add(key);
+    return true;
+  });
 }
 /* v2.82: the door lives in the top header, left of the 年表
    button (his corrected placement — NOT beside the updates). It
@@ -26059,7 +26088,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.6';
+const APP_VERSION = '5.82.7';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
