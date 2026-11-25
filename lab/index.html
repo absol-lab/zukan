@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.3">
+<meta name="app-version" content="5.82.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1160,6 +1160,11 @@ h3.subhead:first-child{margin-top:8px;}
    user's own placement). .on = this work IS the thumbnail. */
 #vthumb{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); right:12px; z-index:6; min-height:40px; padding:8px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:.04em;}
 #vthumb.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+/* v5.82.4: the viewer's 前へ戻る pill — shown only when this viewer
+   was opened from another viewer (a work name tapped in a caption);
+   tapping it returns to the previous photo/work. His standing rule:
+   every page that can navigate onward carries a back button. */
+#vback{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); left:12px; z-index:6; min-height:40px; padding:8px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--text); font-family:var(--sans); font-size:13.5px; font-weight:600; letter-spacing:.04em;}
 #viewer.open{display:flex;}
 #viewer .vimg{flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none; perspective:1300px;}
 /* v27.8: page turn — the current work sits on .vpage (hinged at its
@@ -1205,7 +1210,7 @@ h3.subhead:first-child{margin-top:8px;}
 #viewer .vimg .noimg{color:var(--muted); font-family:var(--serif); letter-spacing:.2em;}
 /* v2.45: long captions scroll inside their own capped band — they used
    to grow the column until the caption text ran over the button row. */
-#viewer .vcap{flex:none; max-height:24vh; overflow-y:auto; color:var(--text); font-size:14px; padding:10px 16px; line-height:1.6; font-family:var(--serif);}
+#viewer .vcap{flex:none; max-height:24vh; overflow-y:auto; color:var(--text); font-size:14px; padding:10px 16px; line-height:1.6; font-family:var(--serif); white-space:pre-wrap;}
 #viewer .vdeep{flex:none; text-align:center; color:var(--muted); font-size:11px; letter-spacing:.05em; padding:0 16px 6px; font-family:var(--sans);}
 #viewer .vbar{flex:none; display:flex; justify-content:space-between; align-items:center; padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
 #viewer .vbar button{background:none; border:1px solid var(--lineStrong); color:var(--text); padding:8px 18px; font-size:15px; border-radius:999px; min-height:48px;}
@@ -2692,6 +2697,7 @@ try{var r=localStorage.getItem('zlab.settings');if(r){var z=JSON.parse(r);var h=
 </div>
 
 <div id="viewer">
+  <button id="vback" onclick="viewerGoBack()" style="display:none">‹ 前へ戻る</button>
   <button id="vthumb" onclick="viewerSetThumb()">サムネにする</button>
   <div id="vhires" hidden>超高画質</div>
   <div class="vimg" id="vimg"></div>
@@ -10917,15 +10923,51 @@ function workSortYearOf(w){
    to the first 、/。), capped at 30 chars. Measured on the
    live data at build time: 9,657 work/drawing captions across
    artists + designers, 1,594 hit the fallback. */
+/* v5.82.5 (his call, 2026-11-25, from the Bacon works grid):
+   the card's title drops its trailing foreign-language gloss —
+   《教皇イノケンティウス10世の肖像による習作（Study after
+   Velázquez's Portrait of Pope Innocent X）》 shows on the card
+   as 《教皇イノケンティウス10世の肖像による習作》 + the year.
+   A trailing bracket group is a gloss only when it holds Latin
+   letters and NO Japanese characters; a Japanese subtitle in
+   brackets （ウィリアム・ブレイクのライフマスクによる） is part
+   of the title and stays. Nested brackets are matched by depth.
+   A title that is itself foreign (《Three Studies of Lucian
+   Freud》) has no gloss group and is shown whole. Display only —
+   the viewer still shows the full caption, gloss included. */
+function cardTitleCore(inner){
+  let t = String(inner || '').trim();
+  for(;;){
+    const close = t.charAt(t.length - 1);
+    if(close !== '）' && close !== ')') break;
+    /* both bracket widths count together: stored titles
+       sometimes mix them (（Study … (after …)) ). */
+    let depth = 0, start = -1;
+    for(let i = t.length - 1; i >= 0; i--){
+      const c = t.charAt(i);
+      if(c === '）' || c === ')') depth++;
+      else if(c === '（' || c === '('){ if(depth === 1){ start = i; break; } depth--; }
+    }
+    if(start < 0) break;
+    const grp = t.slice(start + 1, t.length - 1);
+    if(!/[A-Za-zÀ-ÿ]/.test(grp) || /[぀-ヿ一-鿿]/.test(grp)) break;
+    const rest = t.slice(0, start).trim();
+    if(!rest) break;
+    t = rest;
+  }
+  return t;
+}
 function cardCapText(cap){
   const s = String(cap == null? '': cap).trim();
   if(!s) return '';
   const m = /^([《『])([^》』]+)[》』]/.exec(s);
   if(m){
+    const closeB = m[1] === '《'? '》': '』';
+    const title = m[1] + cardTitleCore(m[2]) + closeB;
     const seg = (s.slice(m[0].length).split(/[、。]/)[0] || '').trim();
     const segBare = seg.replace(/[（(][^（）()]*[）)]\s*$/, '').trim();
-    if(seg && (/\d{4}/.test(seg) || segBare.indexOf('制作年不詳') === 0)) return m[0] + segBare;
-    return m[0];
+    if(seg && (/\d{4}/.test(seg) || segBare.indexOf('制作年不詳') === 0)) return title + segBare;
+    return title;
   }
   const seg = (s.split(/[、。]/)[0] || '').trim();
   return seg.length > 30? seg.slice(0, 30) + '…': seg;
@@ -12126,6 +12168,8 @@ function trOne(core){
   if(out !== undefined) return out;
   const nm = I18N_NAMES[core];
   if(nm !== undefined) return nm;
+  const dt = I18N_DATA[core];
+  if(dt !== undefined) return dt;
   if(core[0] === '／' || core[0] === '・'){ const rest = trOne(core.slice(1)); if(rest !== null && rest !== core.slice(1)) return core[0] + rest; }
   for(const pair of I18N_PAT){
     const mm = core.match(pair[0]);
@@ -12189,10 +12233,15 @@ function trWalk(root){
   }
 }
 let trGuard = false;
+let I18N_DATA = {};
+function trLoadData(){
+  fetch('en-dict.json', { cache:'no-cache' }).then(r=> r.ok? r.json(): null).then(j=>{ if(j && typeof j === 'object'){ I18N_DATA = j; try{ trWalk(document.body); }catch(e){} } }).catch(()=>{});
+}
 function trStart(){
   if(LANG !== 'en' || !document.body) return;
   document.documentElement.lang = 'en';
   trWalk(document.body);
+  trLoadData();
   const mo = new MutationObserver(muts=>{
     if(trGuard) return;
     trGuard = true;
@@ -17695,14 +17744,19 @@ const exhibitionsHTML = artistExhibitionsHTML(a, exsOfA);
 /* v32.7.1: the photos gallery alone — it now leads the merged
    制作過程 panel (under a 制作風景 heading) instead of living
    on its own tab; the old count bar and empty state go with
-   the tab. */
+   the tab.
+   v5.82.4 (his call, 2026-11-25, from the Bacon screenshot):
+   the grid cards carry NO caption text — the long captions
+   made the photo grid unreadable. A card is the photo only;
+   the caption (and the 制作中の作品 line) shows in the viewer
+   when the photo is opened (openViewerProc). */
 let procGalleryHTML = '';
 if(pps.length){
 const pCards = [];
 pps.forEach((p,i)=>{
 const wobj = keyWork(p.img, p.caption||'');
 const wi = p.work? ws.findIndex(w => (w.caption||'').includes('《'+p.work+'》')): -1;
-pCards.push({ h: '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(p.caption||'')+'</div>'+(p.work? (wi>=0? '<button class="procworklink" data-procwork="'+wi+'">制作中の作品：《'+esc(p.work)+'》</button>': '<div class="sub">制作中の作品：《'+esc(p.work)+'》</div>'): '')+'</figcaption></figure>', e: packEst(p.caption, workMode, p.work? 26: 10) });
+pCards.push({ h: '<figure class="work" data-pi="'+i+'"><div class="ph" data-procidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div></figure>', e: packEst('', workMode) });
 });
 procGalleryHTML = packGalleryHTML(pCards, workMode);
 }
@@ -17889,12 +17943,16 @@ let processHTML = '';
    itself, in this order — 制作の工程 (the dossier's numbered
    steps, FIRST; absent when the record has no steps, never
    invented) → 制作風景 (the process photos) → 制作環境 →
+   v5.82.4 (his call, 2026-11-25): 制作風景 moves ABOVE
+   制作の工程 — the photos lead the panel now. New order:
+   制作風景 → 制作の工程 → 制作環境 → (unchanged below).
    画材メモ (the dossier's materials notes with the notes'
    技法・メディウム split integrated under the same heading —
    one section, not two) → 制作メモ (the notes remainder,
    moved out of the 作品 panel). What remains of the dossier
    (summary, the dissection axes, what is not public, the
    sources) follows in its existing relative order. */
+if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
 if(procObj && procObj.steps && procObj.steps.length){
 processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s, i)=>
 '<div class="procstep"><div class="procstep-h"><span class="procnum">'+(i+1)+'</span><span class="proctitle">'+esc(s.title||'')+'</span></div>'
@@ -17902,7 +17960,6 @@ processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s
 +(s.source? '<div class="procsrc"><a href="'+escA(s.source)+'" target="_blank" rel="noopener">出典 ↗</a></div>': '')
 +'</div>').join('');
 }
-if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
 if(procObj && procObj.environment) processHTML += '<h3 class="subhead">制作環境</h3><div class="bodytext">'+pTermEsc(procObj.environment)+'</div>';
 if(sp.tech || (procObj && procObj.materials_notes)){
 processHTML += '<h3 class="subhead">画材メモ</h3>';
@@ -18384,6 +18441,11 @@ return h;
    (closeViewer's generation guard returns early without
    consuming it) and is spent by the first real close. */
 let viewerReturn = null;
+/* v5.82.4: one-step viewer-to-viewer return (material photo ->
+   the work it references -> back to the photo). Separate from
+   viewerReturn: 閉じる always closes fully and clears this;
+   only the ‹ 前へ戻る pill consumes it. */
+let viewerBack = null;
 function captureIntvReturn(){
 const bd = $('irbody');
 viewerReturn = { kind: 'intv', idx: intvReader.idx, lang: intvReader.lang, scroll: bd? bd.scrollTop: 0 };
@@ -18508,7 +18570,7 @@ openViewer(drawingsOf(a), idx, a.id);
 }
 function openViewerProc(a, idx){
 viewerKindNext = 'proc';
-openViewer(processPhotosOf(a).map(p => keyWork(p.img, p.caption || '')), idx, a.id);
+openViewer(processPhotosOf(a).map(p => keyWork(p.img, (p.caption || '') + (p.work? ((p.caption? '\n': '') + '制作中の作品：《' + p.work + '》'): ''))), idx, a.id);
 }
 /* v5.58.1 (DESIGN CHANGE — his device video, 2026-11-18
    01:55): the profile portrait NO LONGER opens in the works
@@ -18550,6 +18612,58 @@ const ov = $('portraitbox'); if(ov) ov.classList.add('hidden');
 const stage = $('pbstage'); if(stage) stage.innerHTML = '';
 const cap = $('pbcap'); if(cap) cap.textContent = '';
 }
+/* v5.82.4 (his call, 2026-11-25, from the viewer screenshot):
+   work titles inside the viewer's caption are tappable — a
+   《title》 that exactly matches one of THIS artist's registered
+   photo-bearing works (the intvWorkLinkMap rule, same as the
+   interview reader and the quotes) opens that work in the
+   viewer, so a process photo and the work it fed can be read
+   against each other. Unregistered titles stay plain text.
+   The caption is built through the placeholder convention, so
+   no caption text can inject markup. */
+function viewerCaptionHTML(){
+const capEl = $('vcap'); if(!capEl) return;
+const w = viewerWorks[viewerIdx]; const cap = (w && w.caption) || '';
+const a = artistById(viewerArtistId);
+if(!a || cap.indexOf('《') < 0){ capEl.textContent = cap; return; }
+const map = intvWorkLinkMap(a);
+const dw = displayWorks(a);
+/* the registered titles often carry a trailing （English） gloss
+   (《ヘンリエッタ・モラエスの肖像（Portrait of Henrietta Moraes）》)
+   while captions cite the short form — register the stripped
+   core title as an alias too, when it is unambiguous. */
+dw.forEach((w, i)=>{
+if(!bioWorkHasPhoto(w)) return;
+const t = bioWorkTitleOf(w); if(!t) return;
+const core = t.replace(/[（(][^（）()]*[）)]\s*$/, '').trim();
+if(!core || core === t) return;
+const k = intvTitleKey(core);
+if(!(k in map)) map[k] = i;
+});
+const subs = [];
+const t = cap.replace(/《([^》]+)》/g, (m, inner)=>{
+const idx = map[intvTitleKey(inner)];
+if(idx == null) return m;
+if(viewerKind === 'works' && dw[idx] === w) return m;
+const n = subs.length;
+subs.push('<button class="worklink" onclick="viewerCapWorkTap('+idx+')">《'+esc(inner)+'》</button>');
+return '\uE000'+n+'\uE001';
+});
+let h = esc(t);
+if(subs.length) h = h.replace(/\uE000(\d+)\uE001/g, (m, n)=> subs[+n] || m);
+capEl.innerHTML = h;
+}
+function viewerCapWorkTap(idx){
+const a = artistById(viewerArtistId); if(!a) return;
+viewerBack = { works: viewerWorks, idx: viewerIdx, kind: viewerKind, artistId: viewerArtistId };
+openViewer(displayWorks(a), idx, a.id);
+}
+function viewerGoBack(){
+const b = viewerBack; if(!b) return;
+viewerBack = null;
+viewerKindNext = b.kind;
+openViewer(b.works, b.idx, b.artistId);
+}
 function openViewer(ws, idx, artistId){
 viewerKind = viewerKindNext || 'works'; viewerKindNext = null;
 viewerWorks = ws; viewerIdx = idx||0; viewerArtistId = (artistId!=null)? artistId: null;
@@ -18565,6 +18679,7 @@ try{ viewerAnim = vw.animate([{ transform:'translateY(100%)' },{ transform:'tran
 function closeViewer(){
 const vw = $('viewer');
 if(!vw.classList.contains('open')) return;
+viewerBack = null;
 viewerKind = 'works';
 vDeepNoteSave();
 vTurnReset();
@@ -18651,6 +18766,7 @@ toast('サムネにしました');
 function renderViewer(){
 const w = viewerWorks[viewerIdx]; if(!w) return;
 updateVThumbBtn();
+{ const vb = $('vback'); if(vb) vb.style.display = viewerBack? '': 'none'; }
 syncVFavBtn();
 { const hb = $('vhires'); if(hb) hb.hidden = !w.hires; }
 const seq = ++viewerSeq;
@@ -18667,7 +18783,7 @@ vDeepReset(w);
 const box = $('vimg'); box.innerHTML = '<div class="vunder" id="vunder"></div><div class="vcast" id="vcast"></div><div class="vpage" id="vpage"><div class="vstage" id="vstage"></div><div class="vshade" id="vshade"></div><div class="vflex" id="vflex"></div></div>';
 const stage = box.querySelector('.vstage');
 vResetZoom();
-$('vcap').textContent = w.caption || '';
+viewerCaptionHTML();
 $('vcount').textContent = (viewerIdx+1)+' / '+viewerWorks.length;
 renderViewerVideo(w);
 preloadNeighbours();
@@ -19253,6 +19369,13 @@ if(!pageTurnOn || vTurn.animating || reducedMotion()) return;
 const dx = t.clientX - g.sx, dy = t.clientY - g.sy;
 if(!vTurn.active){
 if(Math.abs(dx) < 14 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+/* v5.82.6: in a viewer reached through a caption work-link
+   (viewerBack set), a rightward drag must NOT engage the
+   page turn toward the previous work — the release verdict
+   sends him back to the photo he came from instead (his
+   order, 2026-11-25: 「右にフリックしたら次のページに行くん
+   じゃなくて前へもどる」). Leftward turns stay untouched. */
+if(dx > 0 && viewerBack) return;
 if(!vTurnSetup(dx < 0? 1: -1)) return;
 vTurn.active = true; vTurn.samples = [{ x: t.clientX, t: Date.now() }];
 }
@@ -19825,6 +19948,9 @@ function vClampPan(){
        release so no second verdict can double-move */
     if(vTurn.active){ vTurnRelease(); return; }
     if(vTurn.animating) return;
+    /* v5.82.6: right flick in a link-jumped viewer goes back
+       to the source photo/work (same as the ‹ 前へ戻る pill) */
+    if(viewerBack && dx > 48 && Math.abs(dx) > Math.abs(dy)*1.2){ viewerGoBack(); return; }
     if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
     if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
   });
@@ -25935,7 +26061,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.3';
+const APP_VERSION = '5.82.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */

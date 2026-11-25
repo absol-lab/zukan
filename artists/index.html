@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.5">
+<meta name="app-version" content="5.82.6">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -19369,6 +19369,13 @@ if(!pageTurnOn || vTurn.animating || reducedMotion()) return;
 const dx = t.clientX - g.sx, dy = t.clientY - g.sy;
 if(!vTurn.active){
 if(Math.abs(dx) < 14 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+/* v5.82.6: in a viewer reached through a caption work-link
+   (viewerBack set), a rightward drag must NOT engage the
+   page turn toward the previous work — the release verdict
+   sends him back to the photo he came from instead (his
+   order, 2026-11-25: 「右にフリックしたら次のページに行くん
+   じゃなくて前へもどる」). Leftward turns stay untouched. */
+if(dx > 0 && viewerBack) return;
 if(!vTurnSetup(dx < 0? 1: -1)) return;
 vTurn.active = true; vTurn.samples = [{ x: t.clientX, t: Date.now() }];
 }
@@ -19941,6 +19948,9 @@ function vClampPan(){
        release so no second verdict can double-move */
     if(vTurn.active){ vTurnRelease(); return; }
     if(vTurn.animating) return;
+    /* v5.82.6: right flick in a link-jumped viewer goes back
+       to the source photo/work (same as the ‹ 前へ戻る pill) */
+    if(viewerBack && dx > 48 && Math.abs(dx) > Math.abs(dy)*1.2){ viewerGoBack(); return; }
     if(dy > 80 && Math.abs(dy) > Math.abs(dx)*1.2){ closeViewer(); return; }
     if(Math.abs(dx) > 48) viewerMove(dx<0? 1: -1);
   });
@@ -26049,7 +26059,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.5';
+const APP_VERSION = '5.82.6';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
