@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.4">
+<meta name="app-version" content="5.82.5">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -10923,15 +10923,51 @@ function workSortYearOf(w){
    to the first 、/。), capped at 30 chars. Measured on the
    live data at build time: 9,657 work/drawing captions across
    artists + designers, 1,594 hit the fallback. */
+/* v5.82.5 (his call, 2026-11-25, from the Bacon works grid):
+   the card's title drops its trailing foreign-language gloss —
+   《教皇イノケンティウス10世の肖像による習作（Study after
+   Velázquez's Portrait of Pope Innocent X）》 shows on the card
+   as 《教皇イノケンティウス10世の肖像による習作》 + the year.
+   A trailing bracket group is a gloss only when it holds Latin
+   letters and NO Japanese characters; a Japanese subtitle in
+   brackets （ウィリアム・ブレイクのライフマスクによる） is part
+   of the title and stays. Nested brackets are matched by depth.
+   A title that is itself foreign (《Three Studies of Lucian
+   Freud》) has no gloss group and is shown whole. Display only —
+   the viewer still shows the full caption, gloss included. */
+function cardTitleCore(inner){
+  let t = String(inner || '').trim();
+  for(;;){
+    const close = t.charAt(t.length - 1);
+    if(close !== '）' && close !== ')') break;
+    /* both bracket widths count together: stored titles
+       sometimes mix them (（Study … (after …)) ). */
+    let depth = 0, start = -1;
+    for(let i = t.length - 1; i >= 0; i--){
+      const c = t.charAt(i);
+      if(c === '）' || c === ')') depth++;
+      else if(c === '（' || c === '('){ if(depth === 1){ start = i; break; } depth--; }
+    }
+    if(start < 0) break;
+    const grp = t.slice(start + 1, t.length - 1);
+    if(!/[A-Za-zÀ-ÿ]/.test(grp) || /[぀-ヿ一-鿿]/.test(grp)) break;
+    const rest = t.slice(0, start).trim();
+    if(!rest) break;
+    t = rest;
+  }
+  return t;
+}
 function cardCapText(cap){
   const s = String(cap == null? '': cap).trim();
   if(!s) return '';
   const m = /^([《『])([^》』]+)[》』]/.exec(s);
   if(m){
+    const closeB = m[1] === '《'? '》': '』';
+    const title = m[1] + cardTitleCore(m[2]) + closeB;
     const seg = (s.slice(m[0].length).split(/[、。]/)[0] || '').trim();
     const segBare = seg.replace(/[（(][^（）()]*[）)]\s*$/, '').trim();
-    if(seg && (/\d{4}/.test(seg) || segBare.indexOf('制作年不詳') === 0)) return m[0] + segBare;
-    return m[0];
+    if(seg && (/\d{4}/.test(seg) || segBare.indexOf('制作年不詳') === 0)) return title + segBare;
+    return title;
   }
   const seg = (s.split(/[、。]/)[0] || '').trim();
   return seg.length > 30? seg.slice(0, 30) + '…': seg;
@@ -26013,7 +26049,7 @@ function teardownSwipe(st, commit){
 })();
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.4';
+const APP_VERSION = '5.82.5';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
