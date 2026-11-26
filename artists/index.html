@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.39">
+<meta name="app-version" content="5.82.40">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2446,6 +2446,21 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    they are correct where a note exists. */
 .humorgroup{margin:0 0 20px;}
 #viewHumor .humortxt{font-size:14px; line-height:1.65;}
+/* v5.82.40: the ユーモア tab's centre is a collection of actual
+   utterances (his call, 2026-11-26: 「実際の人の発言とかそういうの
+   まとめて欲しい」). The line itself is the hero — serif, large,
+   readable — with the original wording under it and the speaker +
+   scene small beneath. 伝聞 items carry a small chip rather than
+   being silently presented as certain. */
+.quotecard{margin:8px 0; padding:14px 14px 12px; background:var(--bg2); border-radius:10px;}
+.quoteq{font-family:var(--serif); font-size:17.5px; line-height:1.65; color:var(--text);}
+.quoteorig{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:7px; font-style:italic;}
+.quotemeta{margin-top:9px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px;}
+.quotewho{font-size:13.5px; font-weight:600; color:var(--text);}
+button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-family:inherit; text-align:left;}
+.quoteden{font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:1px 7px;}
+.quotescene{font-size:12px; line-height:1.55; color:var(--muted); margin-top:5px;}
+.quotemore{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:14px 0 4px; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 /* v5.82.33: 人間的魅力 reading layer — cross-reference rows in the
    セルフプロデュース tab where the integrated sections sat, and
    the ロールモデル cards. Reading prose itself reuses the guide's
@@ -22849,7 +22864,7 @@ function charmChapterNavHTML(ch, tabKey, skip){
 }
 const CHARM_SECTIONS = [
   { key:'humor', label:'ユーモア',
-    hasData: ()=> (DS==='artists' && DB)? rosterBase().some(a=>Array.isArray(a.humor) && a.humor.length): false,
+    hasData: ()=> CHARM_QUOTES.length > 0,
     render: renderCharmHumor },
   { key:'aura', label:'オーラを稼ぐ', hasData: ()=> true, render: renderCharmAura },
   { key:'sociality', label:'社会性', hasData: ()=> true, render: renderCharmSociality },
@@ -22858,38 +22873,33 @@ const CHARM_SECTIONS = [
   { key:'lie', label:'嘘のうまさ', hasData: ()=> true, render: renderCharmLie }
 ];
 function setCharmTab(k){ charmTab = k; renderHumor(); window.scrollTo(0, 0); }
+function charmQuoteCardHTML(q){
+  const who = q.aid
+    ? '<button class="quotewho" onclick="openHumorArtist(\'' + q.aid + '\')">' + esc(q.who) + ' ›</button>'
+    : '<span class="quotewho">' + esc(q.who) + '</span>';
+  return '<div class="quotecard">'
+    + '<div class="quoteq">「' + esc(q.q) + '」</div>'
+    + (q.orig? '<div class="quoteorig">' + esc(q.orig) + '</div>': '')
+    + '<div class="quotemeta">' + who + (q.den? '<span class="quoteden">伝聞</span>': '') + '</div>'
+    + (q.scene? '<div class="quotescene">' + esc(q.scene) + '</div>': '')
+    + '</div>';
+}
 function renderCharmHumor(){
-  /* v5.82.35: same ensure pattern as charmLoadingHTML — on a
-     first-tap path (☺︎ before any detail/guide visit) the reading
-     section's chapters have not been fetched yet; guideEnsure's
-     landing repaints this view (the v5.82.33 hook), so the
-     section arrives instead of silently staying absent. */
+  /* v5.82.40: the tab's centre is now the quotes collection
+     (CHARM_QUOTES) — actual lines by actual people, quote-led
+     cards. The artist-group layout is gone from this page:
+     Duchamp is excluded entirely (his call), and Bacon's path
+     runs through his quote cards' speaker link to his artist
+     page ユーモア tab, plus the closing row below. The reading
+     section 「切れ味とユーモア」 stays but no longer leads —
+     it sits under the collection. */
   if(!guideData && !guideError) guideEnsure();
-  const list = (DS==='artists' && DB)? rosterBase().filter(a=>Array.isArray(a.humor) && a.humor.length): [];
-  const wiring = [];
-  let html = '';
-  /* reading layer first: セルフプロデュース 二「切れ味とユーモア」
-     (moved here from the guide chapter; the セルフプロデュース tab
-     carries a cross-reference row in its place). */
+  let html = CHARM_QUOTES.map(charmQuoteCardHTML).join('');
+  html += '<button class="quotemore" onclick="openHumorArtist(\'76\')">フランシス・ベーコンのユーモアをもっと見る<span class="charmxrefgo">作家ページのユーモアタブ ›</span></button>';
   const sp = charmChapterById('guide-ch-self-produce');
   const hsec = charmSecByHead(sp, '切れ味とユーモア');
-  if(hsec){ bizFigStore = []; html += charmSecHTML(hsec); }
-  if(list.length && hsec) html += '<h3 class="subhead">作家のユーモア</h3>';
-  list.forEach(a=>{
-    /* v5.82.35: the header image is the artist's portrait (the
-       profile band's keyWork(a.portrait) construction), not the
-       first work's thumbnail. No portrait registered → the shared
-       no-photo mark (v5.49.0), never a work posing as the artist. */
-    const pw = a.portrait? keyWork(a.portrait, a.name || ''): null;
-    if(pw) wiring.push(pw);
-    const ph = pw? '<div class="charmph"><span class="ph" data-portrait="1">'+imgHTML(pw, IMG_SIZE.thumb)+'</span></div>'
-      : '<div class="charmph">'+noPhotoHTML()+'</div>';
-    html += '<div class="humorgroup">'
-      + '<button class="charmhead" onclick="openHumorArtist(\''+escA(a.id)+'\')">'+ph+'<span class="charmmeta"><span class="charmname">'+esc(dispName(a))+'</span>'+(a.years? '<span class="charmyears">'+esc(yearsDisplay(a))+'</span>': '')+'</span><span class="inflgo">›</span></button>'
-      + a.humor.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('')
-      + '</div>';
-  });
-  return { html, wiring };
+  if(hsec){ bizFigStore = []; html += '<h3 class="subhead">読み物</h3>' + charmSecHTML(hsec); }
+  return { html, wiring: [] };
 }
 function renderCharmAura(){
   const sp = charmChapterById('guide-ch-self-produce');
@@ -23086,6 +23096,82 @@ function modelSheetTouchMove(e){
    recorded ones: 演じることは嘘ではない (kept chapters 人間としての地
    / 顔つきと威厳）, 自分を安くしない, and the 加害の線. Drafted
    2026-11-26 for his review. */
+/* v5.82.40: the ユーモア tab's core dataset — actual utterances by
+   actual people, collected as quotes (his call, 2026-11-26:
+   「ユーモアのページ、イメージと違う。実際の人の発言とかそういうの
+   まとめて欲しい」). Speakers are NOT limited to encyclopedia
+   artists; this is one cross-person collection. Wording verified
+   against ~/workspace/social-labo/humour-research.md (2026-11-26
+   research, Wikiquote / Quote Investigator / Beatles Interviews
+   Database cross-checked); items whose attribution rests on
+   hearsay carry den:true and render with a 伝聞 chip. Bacon's
+   lines come from the Sylvester interviews — the two research-
+   verified ones plus quote-form conversions of his registered
+   humour items (anecdote-form items stay on his artist page).
+   Duchamp is excluded from this page entirely (his call,
+   2026-11-26: 「デュシャンのユーモアいらない」) — his artist-page
+   ユーモア tab and canonical humor data are untouched. */
+const CHARM_QUOTES = [
+  /* ---- ビートルズ：記者会見の返し（1964年 JFK空港ほか、Beatles Interviews Database） ---- */
+  { q:'僕らは狂った連中が好きなんだ。健全なことだよ', orig:'We like lunatics. It’s healthy.', who:'ジョン・レノン', scene:'記者「あなた方の巻き起こす狂騒に、少しは困惑していますか？」への返し。1964年、JFK空港の記者会見' },
+  { q:'英語じゃない。リバプール訛りだよ', orig:'It’s not English. It’s Liverpudlian, you see.', who:'ジョージ・ハリスン', scene:'記者「それはイギリスのアクセントですか？」への返し。1964年、JFK空港' },
+  { q:'アイルランドの首都だよ', orig:'It’s the capital of Ireland.', who:'リンゴ・スター', scene:'記者「リバプールというのは…」への即答。1964年、JFK空港' },
+  { q:'こっちは「デトロイトを追い出せ」キャンペーンを始めるよ', orig:'We’re bringing out a Stamp Out Detroit campaign.', who:'ポール・マッカートニー', scene:'記者「デトロイトでは『ビートルズを追い出せ』のステッカーが配られています」への返し。1964年、JFK空港' },
+  { q:'その医者、目が見えてないんだろ', orig:'He must be blind.', who:'ジョン・レノン', scene:'精神科医が「ビートルズはイギリス版エルヴィス・プレスリーの集まりだ」と評したことへの返し。1964年、JFK空港' },
+  { q:'ダメ。まず金が必要だ', orig:'No, we need money first.', who:'ジョン・レノン', scene:'記者会見で「何か歌って！」と言われて。1964年、JFK空港' },
+  { q:'半クラウンくらいかな', orig:'About half a crown.', who:'ジョン・レノン', scene:'記者「この国からいくら持ち出すつもりですか？」への返し。半クラウンは当時の少額硬貨。1964年、JFK空港' },
+  { q:'全員だよ。——僕は禿げてる。——耳も聞こえないし、口も利けない', orig:'All of us. — I’m bald. — And deaf and dumb, too.', who:'リンゴ・スター／ポール・マッカートニー／ジョン・レノン', scene:'記者「そのかつらの下は、皆さん禿げているのでは？」への三連の返し。1964年、JFK空港' },
+  { q:'手っ取り早く稼ぐ方法、くらいかな。それは良い手本だと思うけど', orig:'Only how to make money quickly, which is a good example, I think.', who:'ジョン・レノン', scene:'「手本になっているとしたら？」と重ねて聞かれて。1964年、モントリオールの記者会見' },
+  { q:'安い席の方は拍手を。それ以外の方々は、宝石をカチャカチャ鳴らしていただければ', orig:'The people in the cheaper seats clap your hands. And the rest of you, if you’d just rattle your jewellery.', who:'ジョン・レノン', scene:'1963年、ロイヤル・バラエティ・パフォーマンス（王室御前公演）。最後の曲の前の言葉' },
+  { q:'自分の頭が膨らみ始めたと感じたら、リンゴを見れば、僕らがスーパーマンじゃないことくらいよく分かる', orig:'When I feel my head start to swell, I look at Ringo and know perfectly well we’re not Superman.', who:'ジョン・レノン', scene:'人気への自意識について、当時のインタビューから' },
+  { q:'彼は泥棒じゃない。それに、トラベリング・ウィルベリーズのオーディションを受けに来たのでも、断じてない', orig:'He wasn’t a burglar, and he certainly wasn’t auditioning for the Traveling Wilburys.', who:'ジョージ・ハリスン', scene:'1999年、自宅に侵入した男に刺され重傷を負った直後、警察に犯人について聞かれて' },
+  { q:'なんでこういうことはローリング・ストーンズには起きないんだ？', orig:'Why doesn’t this kind of thing happen to The Rolling Stones?', who:'ジョージ・ハリスン', scene:'同じ襲撃事件の後。友人エリック・アイドルの自伝に記録された発言', den:true },
+  /* ---- フランシス・ベーコン（シルヴェスターとの対談） ---- */
+  { q:'破壊的な批判こそ、特に他の芸術家によるものは、間違いなく最も役に立つ批判だと思う', orig:'I think that destructive criticism, especially by other artists, is certainly the most helpful criticism.', who:'フランシス・ベーコン', scene:'シルヴェスター「破壊的な批判から得たものはありますか？」への答え。『インタビュー』第2回', aid:76 },
+  { q:'舗道の犬の糞を見ていて、ふと悟った。あれだ——人生とはこういうものだ、と', orig:'I remember looking at dog-shit on the pavement and suddenly I realised, there it is – this is what life is like.', who:'フランシス・ベーコン', scene:'1975年、シルヴェスターとの対談', aid:76 },
+  { q:'自分の暮らしは「金箔の貧窮」だ', orig:'a gilded squalor', who:'フランシス・ベーコン', scene:'自分の暮らしぶりを呼んだ言葉。贅沢な場所に住むのは嫌いだが、行ってサービスを楽しむのは好きだ、と。シルヴェスターとの対談', aid:76 },
+  { q:'楽しんだよ', orig:'', who:'フランシス・ベーコン', scene:'1930年代にあまり絵を描かなかった理由を聞かれて。シルヴェスターとの対談', aid:76 },
+  { q:'十分ありうる。でも彼女はそれを不道徳だと思ってやらないだろう', orig:'', who:'フランシス・ベーコン', scene:'絵具を投げる作業を掃除婦に頼めるかと聞かれて。シルヴェスターとの対談', aid:76 },
+  { q:'幸福な社会を誰が覚えているか。何百年か後、人々が思うのはその社会が何を残したかだ', orig:'', who:'フランシス・ベーコン', scene:'シルヴェスターとの対談', aid:76 },
+  { q:'休暇が嫌いだ', orig:'', who:'フランシス・ベーコン', scene:'休みなど誰も必要ない、と。シルヴェスターとの対談', aid:76 },
+  { q:'埃は永遠に残る唯一のもののように思える', orig:'', who:'フランシス・ベーコン', scene:'床の埃を絵具の上に置く描き方について。シルヴェスターとの対談', aid:76 },
+  /* ---- オスカー・ワイルド（戯曲の台詞として原典確認済み） ---- */
+  { q:'私は誘惑以外のすべてに抵抗できる', orig:'I can resist everything except temptation.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』（1892）、ダーリントン卿の台詞' },
+  { q:'人を善人と悪人に分けるのは馬鹿げている。人には、魅力的な人と退屈な人しかいない', orig:'It is absurd to divide people into good and bad. People are either charming or tedious.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』第1幕' },
+  { q:'人生はあまりに重要なものだから、それについて真面目に語ることなど決してできない', orig:'Life is far too important a thing ever to talk seriously about it.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』第1幕' },
+  { q:'我々はみな泥溝の中にいる。だがその中の何人かは、星を見上げている', orig:'We are all in the gutter, but some of us are looking at the stars.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』' },
+  { q:'あらゆるものの値段を知っていて、あらゆるものの価値を知らない男だ', orig:'A man who knows the price of everything and the value of nothing.', who:'オスカー・ワイルド', scene:'「冷笑家（シニック）とは何か？」への定義。『ウィンダミア夫人の扇』' },
+  { q:'経験とは、誰もが自分の失敗につける名前のことだ', orig:'Experience is the name every one gives to their mistakes.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』' },
+  { q:'この世で噂されることより悪いことが一つだけある。噂されないことだ', orig:'There is only one thing in the world worse than being talked about, and that is not being talked about.', who:'オスカー・ワイルド', scene:'『ドリアン・グレイの肖像』（1890）' },
+  /* ---- ジャン・コクトー ---- */
+  { q:'ルーヴルは死体安置所のようなものだ。友人たちの身元を確認しに行く場所である', orig:'The Louvre is like the morgue; one goes there to identify one’s friends.', who:'ジャン・コクトー', scene:'『Le Secret Professionnel』（1922）' },
+  { q:'私は、常に真実を語る嘘である', orig:'I am a lie who always speaks the truth.', who:'ジャン・コクトー', scene:'アフォリズム' },
+  { q:'運を信じなければならない。でなければ、嫌いな奴らの成功をどう説明できる？', orig:'We must believe in luck. For how else can we explain the success of those we don’t like?', who:'ジャン・コクトー', scene:'コクトーへの帰属が広く流布する警句。一次資料の特定は弱い', den:true },
+  /* ---- サルバドール・ダリ ---- */
+  { q:'私と狂人の唯一の違いは、私が狂っていないということだ', orig:'The only difference between me and a madman is that I am not mad.', who:'サルバドール・ダリ', scene:'1934年のアメリカ訪問時、複数の新聞が同時期に報道' },
+  { q:'私はドラッグをやらない。私自身がドラッグだ', orig:'I do not take drugs. I am drugs.', who:'サルバドール・ダリ', scene:'1982年、マドリードでのインタビュー' },
+  { q:'毎朝目覚めるたびに、私は至上の喜びを味わう。サルバドール・ダリであるという喜びを', orig:'Every morning upon awakening, I experience a supreme pleasure: that of being Salvador Dalí.', who:'サルバドール・ダリ', scene:'Smithsonian誌の引用として伝わる', den:true },
+  /* ---- モハメド・アリ ---- */
+  { q:'蝶のように舞い、蜂のように刺す', orig:'Float like a butterfly, sting like a bee.', who:'モハメド・アリ', scene:'1964年、ソニー・リストン戦の前。自分のスタイルの自己定義' },
+  { q:'俺は意地が悪すぎて、薬まで病気にする', orig:'I’m so mean, I make medicine sick.', who:'モハメド・アリ', scene:'自己宣伝の韻文から' },
+  { q:'俺ほど偉大だと、謙虚でいるのは難しい', orig:'It’s hard to be humble when you’re as great as I am.', who:'モハメド・アリ', scene:'' },
+  { q:'夢の中で俺を倒したとしても、目を覚まして謝った方がいい', orig:'If you even dream of beating me you’d better wake up and apologize.', who:'モハメド・アリ', scene:'' },
+  { q:'良い答えが思いつかない時、沈黙は金だ', orig:'Silence is golden when you can’t think of a good answer.', who:'モハメド・アリ', scene:'' },
+  /* ---- ドロシー・パーカー ---- */
+  { q:'園芸は連れて行けるが、考えさせることはできない', orig:'You can lead a horticulture, but you can’t make her think.', who:'ドロシー・パーカー', scene:'単語を使った文章を作るゲームで「horticulture」を出題された時の即答。「馬を水辺に連れては行けるが、水は飲ませられない」の諺のもじり。伝記経由の記録', den:true },
+  { q:'古いドグマに新しい芸は教えられない', orig:'You can’t teach an old dogma new tricks.', who:'ドロシー・パーカー', scene:'「古い犬に新しい芸は教えられない」のもじり。帰属は死後の編纂による' },
+  /* ---- グルーチョ・マルクス ---- */
+  { q:'私を会員として受け入れてくれるようなクラブには、入りたくない', orig:'I don’t want to belong to any club that will accept me as a member.', who:'グルーチョ・マルクス', scene:'クラブへの辞退の手紙に由来するとされる。文面の細部には諸説ある', den:true },
+  { q:'あなたの本を手に取った瞬間から置く瞬間まで、私は笑いで痙攣し続けました。いつか読むつもりです', orig:'From the moment I picked up your book until I laid it down, I was convulsed with laughter. Some day I intend reading it.', who:'グルーチョ・マルクス', scene:'書評として帰属される一文', den:true },
+  /* ---- ウィンストン・チャーチル ---- */
+  { q:'ベッシー、君は醜い。しかも不愉快なほど醜い。だが私は明日には醒める。君は明日も不愉快なほど醜いままだろう', orig:'Bessie, my dear, you are ugly, and what’s more, you are disgustingly ugly. But tomorrow I shall be sober and you will still be disgustingly ugly.', who:'ウィンストン・チャーチル', scene:'ベッシー・ブラドック議員に「あなたは酔っている」と言われて。1946年。護衛の証言で確認されるが、「明日は醒める」型自体は古いジョークの型でもある', den:true },
+  /* ---- マーク・トウェイン（原典テキストで照合済み） ---- */
+  { q:'人間は、顔を赤らめる唯一の動物である。いや、赤らめる必要がある唯一の動物である', orig:'Man is the only animal that blushes. Or needs to.', who:'マーク・トウェイン', scene:'『赤道に沿って』（1897）の格言' },
+  { q:'怒ったら4つ数えろ。激しく怒ったら、罵れ', orig:'When angry, count four; when very angry, swear.', who:'マーク・トウェイン', scene:'『水たまり頭ウィルソン』（1894）の格言' },
+  /* ---- ビートたけし ---- */
+  { q:'自分しか持ってない個性とか、誰にでも特別な才能があるんだとか、あれウソだよね。ない奴はないもん', orig:'', who:'ビートたけし', scene:'TBS『サワコの朝』（2013）' },
+  { q:'引退はお客が決めることで、お客さんが「たけしもう見たくない」ってなれば自然に視聴率もなくなるでしょ。そしたら辞めていく', orig:'', who:'ビートたけし', scene:'TBS『サワコの朝』（2013）' }
+];
 const CHARM_LIE = [
   { h:'なぜ下手か', paras:[
     '嘘が下手なのは、嘘の内容が悪いのではない。反応が先に出るからだ。驚き、罪悪感、訂正したさが、言葉より先に顔と声に出る。漏れているのは嘘そのものではなく、「今、嘘をついている」という自分の反応の方だ。',
@@ -27396,7 +27482,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.39';
+const APP_VERSION = '5.82.40';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
