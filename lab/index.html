@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.18">
+<meta name="app-version" content="5.82.19">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -16708,8 +16708,8 @@ function detailHome(){
    carries its session frame at the stack's bottom and no
    detailOrigin; the primary back button returns to the
    university page, like ‹ 前へ does via restorePanelOrigin. */
-if(!detailOrigin && detailStack.length && detailStack[0] && detailStack[0].panel === 'schools'){
-const f = detailStack[0]; detailStack = []; restoreSchoolsSession(f); return;
+if(!detailOrigin && detailStack.length && detailStack[0] && (detailStack[0].panel === 'schools' || detailStack[0].panel === 'heldlist')){
+const f = detailStack[0]; restorePanelOrigin(f); return;
 }
 const o = detailOrigin; detailOrigin = null; detailStack = [];
 if(o && o.view && o.view !== 'detail' && o.view !== 'list'){
@@ -16728,6 +16728,18 @@ showView('list');
    panel remembered must survive the detour. */
 function restorePanelOrigin(f){
 if(f.panel === 'schools'){ detailStack = []; restoreSchoolsSession(f); return; }
+if(f.panel === 'heldlist'){
+/* v5.82.19: reopen the holding list exactly where he left
+   it — the panel re-renders synchronously, then the saved
+   scroll goes back on (and once more after the view slide
+   settles, in case the transition overwrote it). */
+detailStack = [];
+if(f.ds && f.ds !== DS) switchDataset(f.ds);
+showView('settings');
+openSettingsPanel('heldlist');
+if(f.scroll){ window.scrollTo(0, f.scroll); setTimeout(()=>{ if(view==='settings' && settingsPanel==='heldlist') window.scrollTo(0, f.scroll); }, 380); }
+return;
+}
 detailStack = [];
 if(f.ds && f.ds !== DS) switchDataset(f.ds);
 bellTab = f.bellTab || 'notifs';
@@ -17557,7 +17569,7 @@ function openHeldWork(i){ openViewer(heldViewerWorks, i, state.detailId); }
 function renderHeldDetail(a){
 const reps = heldRepWorks(a);
 heldViewerWorks = reps;
-let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button></div>'
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && (detailStack[0].panel === 'schools' || detailStack[0].panel === 'heldlist')))? '‹ 戻る': '‹ 一覧へ戻る')+'</button></div>'
 + '<h2 class="dname">'+esc(dispName(a))+'</h2>'
 + ((kanaName(a) || subName(a))? '<div class="dlatinrow">'+detailNameLineHTML(a)+'</div>': '')
 + (a.years? '<div class="heldyears">'+esc(yearsDisplay(a))+'</div>': '')
@@ -17685,7 +17697,7 @@ if(state.tab==='relations' && !relCount && !inflArr.length && !inflGiven.length)
 if(state.tab==='evaluation' && !(a.evaluation && String(a.evaluation).trim())) state.tab = 'works'; /* v5.82.8: no 評価 text, no 評価 tab */
 const humorArr = humorItemsOf(a);
 if(state.tab==='humor' && !humorArr.length) state.tab = 'works'; /* v5.82.9: no ユーモア items, no ユーモア tab */
-let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && detailStack[0].panel === 'schools'))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
+let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && (detailStack[0].panel === 'schools' || detailStack[0].panel === 'heldlist')))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
 '<h2 class="dname">'+esc(dispName(a))+(isMustSeeArtist(DS, a)? mustSeeChipHTML(): '')+'</h2>'+
@@ -21538,12 +21550,25 @@ function heldArtistsList(){
   return src.filter(isHeld).slice().sort((x, y)=> ((y.works||[]).length - (x.works||[]).length) || String(x.name||'').localeCompare(String(y.name||''), 'ja'));
 }
 function openHeldArtist(kind, id){
-  /* leave the settings panel cleanly, then take the normal
-     cross jump (which arms the usual detail origin). */
+  /* v5.82.19: the detour is a panel origin (the reqnotif /
+     schools pattern) — the frame sits at the bottom of the
+     detail stack and BACK reopens the holding list where he
+     left it, scroll included. Before, the panel was simply
+     closed and the detail's origin recorded as the raw
+     settings view, so BACK dropped him on the settings top,
+     one level too far (his 2026-11-26 recording: 「戻りすぎ」). */
+  pendingPanelOrigin = { panel: 'heldlist', ds: DS, scroll: window.scrollY || 0 };
   settingsPanel = null;
   const p = $('settingspanel'); if(p) p.style.display = 'none';
   const m = $('settingsmain'); if(m) m.style.display = '';
   openCrossDetail(kind, id);
+  if(view !== 'detail'){
+    /* the record is not on this device — openDetail refused;
+       put the list back rather than stranding the reader */
+    pendingPanelOrigin = null;
+    showView('settings');
+    openSettingsPanel('heldlist');
+  }
 }
 function hiddenPeopleList(){
   const m = hiddenLoad().people;
@@ -26390,6 +26415,12 @@ function backTarget(forSwipe){
      (the price table, the timeline, a chapter …), agreeing
      with the detail's own back button (detailHome); the museum
      page likewise returns to the detail it was opened from. */
+  /* v5.82.19: a detail entered from the holding list has a
+     panel frame at the bottom of its stack, not a view origin —
+     there is no view-level back target (the settings-panel rule
+     above, applied to the detour). The pill (detailHome) and
+     ‹ 前へ (detailBack) own this return. */
+  if(view==='detail' && !detailOrigin && detailStack.length && detailStack[0] && detailStack[0].panel === 'heldlist') return null;
   if(view==='detail' && detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') return detailOrigin.view;
   if(view==='museum' && museumOrigin && museumOrigin.view === 'detail') return 'detail';
   if(view==='museum') return 'ex';
@@ -26678,7 +26709,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.18';
+const APP_VERSION = '5.82.19';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
