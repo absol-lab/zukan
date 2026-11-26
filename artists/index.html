@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.37">
+<meta name="app-version" content="5.82.38">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11447,10 +11447,10 @@ function workSortMode(){
   return m === 'decades'? 'decades': 'reg';
 }
 function workSortDir(){ return state.workSortDir === 'desc'? 'desc': 'asc'; }
-function setWorkSort(mode){ if(mode !== 'reg' && mode !== 'decades') return; state.workSort = mode; renderDetail(); }
+function setWorkSort(mode){ if(mode !== 'reg' && mode !== 'decades') return; state.workSort = mode; refreshWorksPanel(); }
 function toggleWorkClock(){
 state.workSortDir = workSortDir() === 'desc'? 'asc': 'desc';
-renderDetail();
+refreshWorksPanel();
 /* v32.13.2: the order toggle jumps to the top (the list's
    renderListToTop rule) — mode switches （登録順 / 年代別）
    do not jump. */
@@ -11460,7 +11460,7 @@ window.scrollTo(0, 0);
    artist for the detail session (renderDetail resets it when
    the person changes). null = すべて. */
 let workSeries = { forId: null, key: null };
-function setWorkSeries(key){ workSeries = { forId: String(state.detailId), key: key || null }; renderDetail(); }
+function setWorkSeries(key){ workSeries = { forId: String(state.detailId), key: key || null }; refreshWorksPanel(); }
 /* v4.3: display modes for the detail works grid (his ask: the
    works list gets the same ワイド/標準/小/ミニ stops as the
    artist list). Device-local, shared across datasets. */
@@ -11483,7 +11483,7 @@ function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
    shows the block; anything else (first run included) hides. */
 let showHighlights = false;
 try { showHighlights = localStorage.getItem('zukan.showHighlights') === 'on'; } catch(e){}
-function setShowHighlights(on){ showHighlights = !!on; try{ localStorage.setItem('zukan.showHighlights', on? 'on': 'off'); }catch(e){} renderDetail(); }
+function setShowHighlights(on){ showHighlights = !!on; try{ localStorage.setItem('zukan.showHighlights', on? 'on': 'off'); }catch(e){} refreshWorksPanel(); }
 /* v11.0: the museum shelf shares the works display mode —
    'wide' there means one large tile per row.
    v12.2: all four modes on the shelf, same control as the
@@ -17744,6 +17744,203 @@ if(r2.height > 0 && r2.bottom > -50 && r2.top < vh2 + 50){ if(imgObserver) imgOb
 });
 }));
 }
+/* v5.82.38: the works panel's HTML builder, lifted out of
+   renderDetail so sort / series / highlights changes can
+   rebuild ONLY this panel (see refreshWorksPanel). */
+function workSeriesKeyOf(a){
+  const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
+  if(workSeries.forId !== String(a.id)) workSeries = { forId: String(a.id), key: null };
+  return wgArr.some(g=> g.key === workSeries.key)? workSeries.key: null;
+}
+function buildWorksPanelHTML(a, ws){
+let worksHTML = '';
+/* v5.57.0: series / group filter — an artist carrying
+   work_groups gets a chip row at the top of the works tab
+   （すべて + one chip per group; the row is prepended after
+   the shelf assembly below). The selection is kept per artist
+   for the detail session and resets when the detail moves to
+   another person. While a group is selected the tab shows a
+   FLAT grid of the matching works: the 代表作 shelf and the
+   decade groups are suspended (they describe the whole
+   catalogue, not a slice of it). Cards keep their full-list
+   index for image hydration; the viewer, however, pages the
+   FILTERED set in grid order while a filter is active
+   (v5.58.0 fix — see the data-workidx wiring below). */
+const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
+const seriesKey = workSeriesKeyOf(a);
+if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
+else{
+const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(ct)+'</div></figcaption></figure>', e: packEst(ct, workMode) }; };
+/* v5.41.0: 30+ works → 代表作 shelf + decade-grouped archive;
+   below the threshold the tab renders exactly as before —
+   one packed gallery, no shelf, no headers.
+   v5.59.0 (his call, 2026-11-18): the tab's default is the
+   FLAT grid again (the app's original form) — for 30+, the
+   shelf rides on top of one flat grid of all works. The
+   decade-grouped presentation is the 年代別 mode; the clock
+   modes are the flat chronological sorts. The shelf rides
+   in 登録順 only. */
+if(seriesKey){
+const fCards = [];
+ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
+worksHTML = packGalleryHTML(fCards, workMode);
+}
+else if(workSortMode() === 'decades'){
+worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws, workSortDir()));
+}
+else if(ws.length >= WORKS_GROUP_MIN){
+const idxOf = new Map();
+ws.forEach((w, i)=>{ if(!idxOf.has(w)) idxOf.set(w, i); });
+const reps = representativeWorks(a).filter(w=> idxOf.has(w));
+const wCards = [];
+ws.forEach((w, i)=>{ wCards.push(mkCard(w, i)); });
+worksHTML = '<h3 class="subhead">代表作</h3>' + packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode)
++ '<h3 class="subhead">全作品</h3>' + packGalleryHTML(wCards, workMode);
+}
+else{
+const wCards = [];
+ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
+worksHTML = packGalleryHTML(wCards, workMode);
+}
+}
+/* v2.63: works-request bar — rides the registration-request file
+   with kind:'works' (see requestWorks). Shown whether or not the
+   person already has works: "too few" is the user's call to make. */
+const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
+/* v5.79.0 (his orders, 2026-11-20 14:51): the 見どころ eye
+   toggle pins to the shelf's TOP-RIGHT corner (absolute —
+   out of the layout flow), and the on/off appearances swap
+   against v5.78.0: SHOWN = slashed eye (tap hides),
+   HIDDEN = open eye (tap shows). The 'on' class therefore
+   rides the HIDDEN state. v5.79.1: no accent fill in
+   either state — the glyph alone carries the state.
+   Only when the record has 見どころ text at all; the shared
+   builder gives designers the same control. The preference
+   itself (zukan.showHighlights) is unchanged from v5.76.0,
+   and the count keeps its own slot in the display row. */
+const hlEyeOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const hlEyeSlash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4.5 4.5l15 15"/></svg>';
+const hlBtn = a.relation? '<button class="hliconbtn'+(showHighlights?'':' on')+'" onclick="setShowHighlights('+(showHighlights?'false':'true')+')" aria-label="見どころの表示を切り替える" aria-pressed="'+(showHighlights?'true':'false')+'" title="見どころ">'+(showHighlights? hlEyeSlash: hlEyeOpen)+'</button>': '';
+const hlCountSlot = '<span class="small wcount">'+shelfCount+'</span>';
+/* The 見どころ prose (v5.79.0, his order 2026-11-20 14:52):
+   composed here so the shelf string below can weave it in
+   directly UNDER the frame — it no longer leads the panel
+   (v5.72.0–v5.78.0); the controls come first and the prose
+   sits between the frame and the works grid. Renders only
+   when the shared preference is on; off — nothing at all. */
+let highlightsHTML = '';
+if(a.relation && showHighlights){
+highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
+}
+worksHTML = '<div class="worksreq shelf">' + hlBtn +
+/* v32.7.1: sort and display each get their OWN row again.
+   v4.5 merged them into one row and v32.6.1 kept that inside
+   the shelf; on his phone the shared row overflowed — the
+   sort chip 「新しい順」 was cut to 「新」 and the display
+   buttons ran off the right edge (his 2026-11-16 device
+   verdict: 「さっきの2列に戻して」). The shelf was three
+   rows then: count / sort / display.
+   v32.9.0: the request control leaves the count row (the big
+   text pill goes) and becomes a pill-outlined icon button —
+   same requestWorks flow, person+plus glyph (his
+   2026-11-16 call).
+   v5.59.1 (his call, 2026-11-18, on the 荒井良二 page): the
+   count loses its own row too — TWO rows now. Row 1: the
+   sort seg + the request icon at its right end. Row 2: the
+   display seg + the count at its right end, directly under
+   the request icon — one shared right edge, no dead space
+   beside the count, one row shorter overall. With a series
+   filter active the count slot carries the filtered count
+   line (「label：N点」) — the same text that used to ride
+   above the filtered grid as .wseriescnt.
+   v5.65.1 (his order, 2026-11-18): the request icon LEAVES
+   the shelf — it now sits at the bottom-right of the profile
+   band (profileBandHTML), reachable from every tab. Row 1 is
+   the sort seg alone; row 2 is unchanged (display seg + the
+   count at its right end). */
+'<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
+'<button class="'+(workSortMode()==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
+'<button class="'+(workSortMode()==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
+'<button class="clkbtn" onclick="toggleWorkClock()" aria-label="昇順／降順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(workSortDir()==='desc'? '▼': '▲')+'</span></button>' +
+'</span></div>' +
+'<div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
+/* v32.6.0 (item 2): the works mode seg is generated from the
+   SAME MODES array as the list side — five stops including
+   micro, grid glyphs included — so the two switchers can
+   never drift apart again. */
+MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
+'</span>' + hlCountSlot + '</div></div>' + highlightsHTML + worksHTML;
+/* v5.57.0: the series chip row rides at the very top of the
+   works tab, above the count / sort / display shelf. */
+if(wgArr.length){
+worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで絞る">'
++ '<button class="'+(seriesKey? '': 'on')+'" onclick="setWorkSeries(null)">すべて</button>'
++ wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
++ '</div>' + worksHTML;
+}
+return worksHTML;
+}
+function wireWorkTiles(scope, a, ws, seriesKey){
+scope.querySelectorAll('[data-workidx]').forEach(ph=>{
+const w = ws[+ph.dataset.workidx]; ph._work = w;
+const fig = ph.closest('figure');
+if(fig) fig.addEventListener('click', ()=>{
+/* v5.58.0 (bug fix, his device report 2026-11-18): with a
+   series filter active the viewer must page the FILTERED
+   set, in grid order. v5.57.0 kept each filtered card's
+   full-list index and opened the viewer over the full ws —
+   the tapped work itself was right, but sliding moved
+   through the full list, so the next slide was an unrelated
+   work. Scoped to the works tab page: the 来歴 tab's
+   chronicle figures carry data-workidx too and keep the
+   full-list behaviour. */
+if(seriesKey && ph.closest('[data-dtab="works"]')){
+const fw = ws.filter(x=> x && x.series === seriesKey);
+const fi = fw.indexOf(ws[+ph.dataset.workidx]);
+openViewer(fw, fi < 0? 0: fi, a.id);
+} else openViewer(ws, +ph.dataset.workidx, a.id);
+});
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+/* v27.9 (§6.4-1 of the return-jump diagnosis): a tile that is
+   ALREADY inside the viewport hydrates DIRECTLY, here and now —
+   it no longer waits for the IntersectionObserver's async
+   delivery plus the scheduler queue behind every other armed
+   tile (on a cold cache that chain outlasted a ~1s detail visit
+   on the real device: ten black placeholders, zero images).
+   Offscreen tiles keep the observer path exactly as before.
+   While the detail is still hidden (openDetail renders before
+   showView) the rect is empty and everything takes the observer
+   path — the double-rAF pass below then promotes whatever is
+   visible the moment the slide brings the view in. */
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
+}
+
+/* v5.82.38 (his recording, 2026-11-26 22:13): tapping the
+   sort row made the whole artist page ghost — every tap ran
+   a FULL renderDetail (profile band, all tab panels and the
+   101-tile grid rebuilt in one innerHTML swap), and on his
+   iPhone the old layer kept painting through the new one
+   during that swap, the same paint-through family as the
+   v32.5/v32.6 slide notes. Sort, series and highlights
+   changes now rebuild ONLY the works panel: the band, the
+   tabs and the rest of the page never leave the screen, and
+   the swap is one panel instead of the whole page. The size
+   seg keeps the full render — the drawings panel shares
+   workMode and must rebuild with it. */
+function refreshWorksPanel(){
+  const a = artistById(state.detailId);
+  const v = $('viewDetail');
+  const panel = (a && v)? v.querySelector('[data-dtab="works"]'): null;
+  if(!a || !panel || view !== 'detail'){ renderDetail(); return; }
+  const ws = displayWorks(a);
+  panel.innerHTML = collectBtnHTML(a, 'works') + buildWorksPanelHTML(a, ws);
+  wireWorkTiles(panel, a, ws, workSeriesKeyOf(a));
+}
+
 function renderDetail(){
 relsEnsure();
 const a = artistById(state.detailId); if(!a){ showView('list'); return;}
@@ -17861,133 +18058,9 @@ profileBandHTML(a)+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '</div>';
-let worksHTML = '', bioHTML = '';
+let bioHTML = '';
 bioStripWiring = [];
-/* v5.57.0: series / group filter — an artist carrying
-   work_groups gets a chip row at the top of the works tab
-   （すべて + one chip per group; the row is prepended after
-   the shelf assembly below). The selection is kept per artist
-   for the detail session and resets when the detail moves to
-   another person. While a group is selected the tab shows a
-   FLAT grid of the matching works: the 代表作 shelf and the
-   decade groups are suspended (they describe the whole
-   catalogue, not a slice of it). Cards keep their full-list
-   index for image hydration; the viewer, however, pages the
-   FILTERED set in grid order while a filter is active
-   (v5.58.0 fix — see the data-workidx wiring below). */
-const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
-if(workSeries.forId !== String(a.id)) workSeries = { forId: String(a.id), key: null };
-const seriesKey = wgArr.some(g=> g.key === workSeries.key)? workSeries.key: null;
-if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
-else{
-const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(ct)+'</div></figcaption></figure>', e: packEst(ct, workMode) }; };
-/* v5.41.0: 30+ works → 代表作 shelf + decade-grouped archive;
-   below the threshold the tab renders exactly as before —
-   one packed gallery, no shelf, no headers.
-   v5.59.0 (his call, 2026-11-18): the tab's default is the
-   FLAT grid again (the app's original form) — for 30+, the
-   shelf rides on top of one flat grid of all works. The
-   decade-grouped presentation is the 年代別 mode; the clock
-   modes are the flat chronological sorts. The shelf rides
-   in 登録順 only. */
-if(seriesKey){
-const fCards = [];
-ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
-worksHTML = packGalleryHTML(fCards, workMode);
-}
-else if(workSortMode() === 'decades'){
-worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws, workSortDir()));
-}
-else if(ws.length >= WORKS_GROUP_MIN){
-const idxOf = new Map();
-ws.forEach((w, i)=>{ if(!idxOf.has(w)) idxOf.set(w, i); });
-const reps = representativeWorks(a).filter(w=> idxOf.has(w));
-const wCards = [];
-ws.forEach((w, i)=>{ wCards.push(mkCard(w, i)); });
-worksHTML = '<h3 class="subhead">代表作</h3>' + packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode)
-+ '<h3 class="subhead">全作品</h3>' + packGalleryHTML(wCards, workMode);
-}
-else{
-const wCards = [];
-ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
-worksHTML = packGalleryHTML(wCards, workMode);
-}
-}
-/* v2.63: works-request bar — rides the registration-request file
-   with kind:'works' (see requestWorks). Shown whether or not the
-   person already has works: "too few" is the user's call to make. */
-const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
-/* v5.79.0 (his orders, 2026-11-20 14:51): the 見どころ eye
-   toggle pins to the shelf's TOP-RIGHT corner (absolute —
-   out of the layout flow), and the on/off appearances swap
-   against v5.78.0: SHOWN = slashed eye (tap hides),
-   HIDDEN = open eye (tap shows). The 'on' class therefore
-   rides the HIDDEN state. v5.79.1: no accent fill in
-   either state — the glyph alone carries the state.
-   Only when the record has 見どころ text at all; the shared
-   builder gives designers the same control. The preference
-   itself (zukan.showHighlights) is unchanged from v5.76.0,
-   and the count keeps its own slot in the display row. */
-const hlEyeOpen = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
-const hlEyeSlash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4.5 4.5l15 15"/></svg>';
-const hlBtn = a.relation? '<button class="hliconbtn'+(showHighlights?'':' on')+'" onclick="setShowHighlights('+(showHighlights?'false':'true')+')" aria-label="見どころの表示を切り替える" aria-pressed="'+(showHighlights?'true':'false')+'" title="見どころ">'+(showHighlights? hlEyeSlash: hlEyeOpen)+'</button>': '';
-const hlCountSlot = '<span class="small wcount">'+shelfCount+'</span>';
-/* The 見どころ prose (v5.79.0, his order 2026-11-20 14:52):
-   composed here so the shelf string below can weave it in
-   directly UNDER the frame — it no longer leads the panel
-   (v5.72.0–v5.78.0); the controls come first and the prose
-   sits between the frame and the works grid. Renders only
-   when the shared preference is on; off — nothing at all. */
-let highlightsHTML = '';
-if(a.relation && showHighlights){
-highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
-}
-worksHTML = '<div class="worksreq shelf">' + hlBtn +
-/* v32.7.1: sort and display each get their OWN row again.
-   v4.5 merged them into one row and v32.6.1 kept that inside
-   the shelf; on his phone the shared row overflowed — the
-   sort chip 「新しい順」 was cut to 「新」 and the display
-   buttons ran off the right edge (his 2026-11-16 device
-   verdict: 「さっきの2列に戻して」). The shelf was three
-   rows then: count / sort / display.
-   v32.9.0: the request control leaves the count row (the big
-   text pill goes) and becomes a pill-outlined icon button —
-   same requestWorks flow, person+plus glyph (his
-   2026-11-16 call).
-   v5.59.1 (his call, 2026-11-18, on the 荒井良二 page): the
-   count loses its own row too — TWO rows now. Row 1: the
-   sort seg + the request icon at its right end. Row 2: the
-   display seg + the count at its right end, directly under
-   the request icon — one shared right edge, no dead space
-   beside the count, one row shorter overall. With a series
-   filter active the count slot carries the filtered count
-   line (「label：N点」) — the same text that used to ride
-   above the filtered grid as .wseriescnt.
-   v5.65.1 (his order, 2026-11-18): the request icon LEAVES
-   the shelf — it now sits at the bottom-right of the profile
-   band (profileBandHTML), reachable from every tab. Row 1 is
-   the sort seg alone; row 2 is unchanged (display seg + the
-   count at its right end). */
-'<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
-'<button class="'+(workSortMode()==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
-'<button class="'+(workSortMode()==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
-'<button class="clkbtn" onclick="toggleWorkClock()" aria-label="昇順／降順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(workSortDir()==='desc'? '▼': '▲')+'</span></button>' +
-'</span></div>' +
-'<div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
-/* v32.6.0 (item 2): the works mode seg is generated from the
-   SAME MODES array as the list side — five stops including
-   micro, grid glyphs included — so the two switchers can
-   never drift apart again. */
-MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span>' + hlCountSlot + '</div></div>' + highlightsHTML + worksHTML;
-/* v5.57.0: the series chip row rides at the very top of the
-   works tab, above the count / sort / display shelf. */
-if(wgArr.length){
-worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで絞る">'
-+ '<button class="'+(seriesKey? '': 'on')+'" onclick="setWorkSeries(null)">すべて</button>'
-+ wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
-+ '</div>' + worksHTML;
-}
+const worksHTML = buildWorksPanelHTML(a, ws);
 /* v5.72.0: the abolished 特徴 tab's works-facing prose led
    the 作品 panel; v5.73.0 moved the memo out to 制作過程.
    v5.79.0 (his order, 2026-11-20 14:52): the 見どころ prose
@@ -18459,42 +18532,7 @@ v.querySelectorAll('.pricecover').forEach(cv=>{
 const p = pricesDesc[+cv.dataset.pidx]; if(!p) return;
 const span = cv.querySelector('.imgholder'); if(span){ const wobj = { img: p.img, caption: p.work }; span._work = wobj; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj); }
 });
-v.querySelectorAll('[data-workidx]').forEach(ph=>{
-const w = ws[+ph.dataset.workidx]; ph._work = w;
-const fig = ph.closest('figure');
-if(fig) fig.addEventListener('click', ()=>{
-/* v5.58.0 (bug fix, his device report 2026-11-18): with a
-   series filter active the viewer must page the FILTERED
-   set, in grid order. v5.57.0 kept each filtered card's
-   full-list index and opened the viewer over the full ws —
-   the tapped work itself was right, but sliding moved
-   through the full list, so the next slide was an unrelated
-   work. Scoped to the works tab page: the 来歴 tab's
-   chronicle figures carry data-workidx too and keep the
-   full-list behaviour. */
-if(seriesKey && ph.closest('[data-dtab="works"]')){
-const fw = ws.filter(x=> x && x.series === seriesKey);
-const fi = fw.indexOf(ws[+ph.dataset.workidx]);
-openViewer(fw, fi < 0? 0: fi, a.id);
-} else openViewer(ws, +ph.dataset.workidx, a.id);
-});
-const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
-/* v27.9 (§6.4-1 of the return-jump diagnosis): a tile that is
-   ALREADY inside the viewport hydrates DIRECTLY, here and now —
-   it no longer waits for the IntersectionObserver's async
-   delivery plus the scheduler queue behind every other armed
-   tile (on a cold cache that chain outlasted a ~1s detail visit
-   on the real device: ten black placeholders, zero images).
-   Offscreen tiles keep the observer path exactly as before.
-   While the detail is still hidden (openDetail renders before
-   showView) the rect is empty and everything takes the observer
-   path — the double-rAF pass below then promotes whatever is
-   visible the moment the slide brings the view in. */
-const sr = span.getBoundingClientRect();
-if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
-else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
-}
-});
+wireWorkTiles(v, a, ws, workSeriesKeyOf(a));
 /* v30.6: the drawings tiles — same wiring shape as works, but
    the click opens the viewer over the DRAWINGS list (kind
    'drawings'), never the works list. */
@@ -27200,7 +27238,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.37';
+const APP_VERSION = '5.82.38';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
