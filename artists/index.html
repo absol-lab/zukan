@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.31">
+<meta name="app-version" content="5.82.32">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2424,7 +2424,16 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    (his screenshot call, 2026-11-26: a ☺︎ smiley). Artists book
    only; updateHeader hides it on the designers dataset, whose
    records carry no humor field. */
-#navHumor{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); flex:none; font-size:19px; line-height:1;}
+/* v5.82.32: the smiley is an inline SVG, not the ☺︎ text glyph.
+   Flex centering centers the glyph's em box, but the ink inside
+   that box sits wherever the platform font's metrics put it —
+   on his iPhone visibly low and left inside the circle (his
+   2026-11-26 screenshot: 「枠の中のニコちゃんマークの位置が
+   ずれててきもい」). The SVG face is drawn symmetric about the
+   viewBox center, so the ink is centered in every engine — the
+   same construction as the hub's dot grid beside it. */
+#navHumor{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); flex:none;}
+#navHumor svg{width:17px; height:17px; display:block;}
 /* v5.82.15: the cross-artist ユーモア page — one group per artist,
    then their humour cards in the artist tab's own rendering. */
 /* v5.82.31: the group header is its OWN full-width row (portrait
@@ -2720,7 +2729,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
-    <button class="txtbtn" id="navHumor" onclick="openHumor()" aria-label="人間的魅力">☺︎</button>
+    <button class="txtbtn" id="navHumor" onclick="openHumor()" aria-label="人間的魅力"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.6"/><circle cx="8.7" cy="10.2" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.3" cy="10.2" r="1.4" fill="currentColor" stroke="none"/><path d="M8.2 14.2Q12 17.4 15.8 14.2"/></svg></button>
     <button class="txtbtn" id="navHub" onclick="openHub()" aria-label="メニュー（通知・アートビジネス・制作ガイド・年表・系譜・作家の言葉）"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="1.9"/><circle cx="12" cy="5" r="1.9"/><circle cx="19" cy="5" r="1.9"/><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/><circle cx="5" cy="19" r="1.9"/><circle cx="12" cy="19" r="1.9"/><circle cx="19" cy="19" r="1.9"/></svg><span class="nbadge" id="hubBadge" style="display:none"></span></button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
@@ -26889,7 +26898,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.31';
+const APP_VERSION = '5.82.32';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
