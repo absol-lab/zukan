@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.27">
+<meta name="app-version" content="5.82.28">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18730,10 +18730,17 @@ return XDIG_PROMISE;
 }
 function digestFor(artistId, bookIndex){
 if(!XDIG || !XDIG.digests) return null;
-const d = XDIG.digests[String(artistId)];
-if(!d) return null;
-if(typeof bookIndex === 'number' && typeof d.book_index === 'number' && d.book_index !== bookIndex) return null;
-return d;
+const v = XDIG.digests[String(artistId)];
+if(!v) return null;
+/* v5.82.28: one artist, several digests — digests[artistId] is
+   either the single digest object (the original shape, still
+   read as before) or an ARRAY of digest objects, each carrying
+   its own book_index. The books tab already passes the book's
+   original index, so each book opens its own digest and no
+   later entry can clobber an earlier one. */
+const list = Array.isArray(v)? v: [v];
+if(typeof bookIndex !== 'number') return list[0] || null;
+return list.find(d=> d && d.book_index === bookIndex) || null;
 }
 /* Digest text carries [[w:<file>|<label>]] work tokens (the
    exact-match list curated data-side, the Space pass's 15 works)
@@ -26827,7 +26834,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.27';
+const APP_VERSION = '5.82.28';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
