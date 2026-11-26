@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.24">
+<meta name="app-version" content="5.82.25">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2258,12 +2258,16 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 .removereq{margin:36px 0 6px; text-align:center;}
 .removereq-btn{background:none; border:none; color:var(--muted); font-size:12.5px; font-family:var(--sans); text-decoration:underline; text-underline-offset:3px; cursor:pointer; padding:12px 16px; min-height:44px;}
 .removereq-filed{display:inline-block; color:var(--muted); font-size:12.5px; padding:12px 16px;}
-/* v5.82.22: the per-tab collect request — a calm pill button at
-   the end of each tab page; the filed state is the same pill in
-   muted outline, reading 回収中. */
-.collectreq{margin:10px 0 16px; text-align:center;}
-.collectbtn{background:none; border:1px solid var(--line); border-radius:999px; color:var(--text); font-size:13.5px; font-family:var(--sans); cursor:pointer; padding:11px 24px; min-height:44px;}
-.collectreq-filed{display:inline-block; color:var(--muted); font-size:12.5px; border:1px solid var(--line); border-radius:999px; padding:11px 24px;}
+/* v5.82.22: the per-tab collect request. v5.82.24: moved to the
+   top of each tab. v5.82.25 (his order): compact icon-only button,
+   right-aligned — the same 36x33 pill chrome as the header hub,
+   carrying the app's magnifier glyph (the slimSearch one); the
+   filed state is a small muted chip reading 回収中. */
+.collectreq{margin:8px 0 10px; text-align:right;}
+.collecticonbtn{display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); cursor:pointer;}
+.collecticonbtn svg{width:17px; height:17px; display:block;}
+.collectreq-filed{display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:11.5px; border:1px solid var(--line); background:var(--bg2); border-radius:999px; padding:7px 11px;}
+.collectreq-filed svg{width:13px; height:13px; display:block;}
 @media (prefers-reduced-motion: reduce){
   #confirmdlg .cd-sheet{animation:none;}
 }
@@ -26113,16 +26117,23 @@ function requestWorks(){
    their own button: inside the merged インタビュー panel, the
    interview cards and the 本人の言葉 block each carry one.
    Filed state renders as 回収中 and blocks double-filing; the
-   completion rides the standard notification panel. */
+   completion rides the standard notification panel.
+   v5.82.25: the button is a compact icon (magnifier) in a
+   right-aligned row at the panel head — no text label. */
 const COLLECT_LABELS = { works:'作品', drawings:'ドローイング', process:'制作', relations:'関係', interviews:'インタビュー', quotes:'本人の言葉', exhibitions:'展示', prices:'価格', evaluation:'評価', humor:'ユーモア', bio:'来歴', books:'書籍' };
 function collectReqItemFor(a, section){
   if(!a) return null;
   return reqAllItems().find(r=> r.kind==='collect' && String(r.artist_id)===String(a.id) && r.dataset===DS && r.section===section && (r._local || r.status==='pending')) || null;
 }
+/* v5.82.25: the button is icon-only — the magnifier glyph the app
+   already uses for search (slimSearch), in the header hub's pill
+   chrome. The name lives in aria-label / title. */
+const COLLECT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg>';
+const COLLECT_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5L19.5 7"/></svg>';
 function collectBtnHTML(a, section){
   const label = COLLECT_LABELS[section] || section;
-  if(collectReqItemFor(a, section)) return '<div class="collectreq" id="collectreq-'+section+'"><span class="collectreq-filed">'+label+'は回収中</span></div>';
-  return '<div class="collectreq" id="collectreq-'+section+'"><button type="button" class="collectbtn" onclick="requestCollect(\''+section+'\')">'+label+'の回収リクエスト</button></div>';
+  if(collectReqItemFor(a, section)) return '<div class="collectreq" id="collectreq-'+section+'"><span class="collectreq-filed">'+COLLECT_CHECK+'回収中</span></div>';
+  return '<div class="collectreq" id="collectreq-'+section+'"><button type="button" class="collecticonbtn" onclick="requestCollect(\''+section+'\')" aria-label="'+label+'の回収リクエスト" title="回収リクエスト">'+COLLECT_ICON+'</button></div>';
 }
 function collectReqSyncUI(a, section){
   const el = $('collectreq-'+section); if(el && a) el.outerHTML = collectBtnHTML(a, section);
@@ -26766,7 +26777,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.24';
+const APP_VERSION = '5.82.25';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
