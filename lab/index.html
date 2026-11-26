@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.28">
+<meta name="app-version" content="5.82.29">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -20453,13 +20453,17 @@ function artistExhibitionsHTML(a, exsOfA){
        (his report, 2026-11-19: on Yu Nishimura's page every
        exhibition card showed the same painting). A record with
        no poster of its own gets the no-photo plate — never
-       another image in its place. */
+       another image in its place.
+       v5.82.29: the plate itself is retired (his call,
+       2026-11-26) — a record with no poster of its own renders
+       as a TEXT-ONLY card, no empty plate where the photo
+       would sit. Still never another image in its place. */
     let wobj = null;
     if(e.poster) wobj = keyWork(e.poster, e.title || '');
     else if(e.img && e.img.url) wobj = { caption: e.title || '', img: e.img };
     let ph;
     if(wobj){ const gi = exdCardWiring.length; exdCardWiring.push(wobj); ph = '<div class="ph" data-exdi="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>'; }
-    else ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
+    else ph = '';
     const meta = [e.venue, e.city].filter(Boolean).join('／');
     const dates = exPeriodLabel(e);
     let badge = '';
@@ -20537,14 +20541,15 @@ function exGridCardHTML(e, o){
   /* v5.68.0: the exhibition's OWN poster only — the v32.8.0
      representative-work fallback is retired here too (the
      exhibitions view and museum pages share this renderer).
-     No poster on the record = the no-photo plate. */
+     v5.82.29: no poster on the record = a TEXT-ONLY card
+     (his call, 2026-11-26 — no empty plate). */
   let ph;
   if(e.poster || (e.img && e.img.url)){
     const wobj = e.poster? keyWork(e.poster, e.title || ''): { caption: e.title || '', img: e.img };
     const gi = exGridWiring.length; exGridWiring.push(wobj);
     ph = '<div class="ph" data-exg="' + gi + '">' + imgHTML(wobj, IMG_SIZE.thumb) + '</div>';
   } else {
-    ph = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
+    ph = '';
   }
   let acts = '';
   if(e.url) acts += '<a href="' + escA(e.url) + '" target="_blank" rel="noopener">公式ページ</a>';
@@ -26834,7 +26839,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.28';
+const APP_VERSION = '5.82.29';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
