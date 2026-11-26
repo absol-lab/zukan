@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.17">
+<meta name="app-version" content="5.82.18">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -321,6 +321,10 @@ html[lang="en"] .sortrow .seg button{font-size:11.5px; padding:5px 10px;} html[l
    page's star (see toggleFavCard) — no store of its own. */
 .cardfav{position:absolute; top:2px; right:2px; z-index:4; width:32px; height:32px; min-width:32px; min-height:32px; padding:0; border:none; border-radius:50%; background:rgba(26,20,12,.45); color:#f3ecdc; font-size:16px; line-height:32px; text-align:center; cursor:pointer; font-family:var(--sans);}
 .cardfav.on{color:#e3a93c;}
+/* v5.82.18: the shelf checkbox — same seat as .cardfav, a
+   rounded square; accent-filled with a dark tick when on. */
+.cardcheck{position:absolute; top:2px; right:2px; z-index:4; width:32px; height:32px; min-width:32px; min-height:32px; padding:0; border:1.5px solid rgba(243,236,220,.75); border-radius:9px; background:rgba(26,20,12,.45); color:transparent; font-size:17px; line-height:29px; text-align:center; cursor:pointer; font-family:var(--sans);}
+.cardcheck.on{background:var(--accent); border-color:var(--accent); color:#1a140c;}
 /* v30.13: the 必見 (must-see) mark — a small pill chip in the
    tagchip family (border + 999px radius, accent colour), sized
    to ride inside a card name line, a detail title, a guide
@@ -14744,7 +14748,7 @@ function modeIcon(m){
    v32.16.0: ex/bp are grid cards now too — their switches swap
    grid classes in place like all the others, and the <html>
    data attributes are retired. */
-const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', exd:'def', sch:'def', univ:'def', held:'def' };
+const SURF = { gal:'def', gen:'def', ex:'def', bp:'def', biz:'def', exd:'def', sch:'def', univ:'def', held:'def', heldw:'def' };
 /* v32.17.1: the price strip's scroll position, kept across
    re-renders so the detail round-trip returns to the same
    place in the ranking (renderBizPrice rebuilds the strip on
@@ -14768,6 +14772,12 @@ function setGenMode(m){ if(MODES.indexOf(m) < 0) return; SURF.gen = m; storeSet(
    (settings → 保留リスト), same in-place class swap as gen. */
 function setHeldMode(m){ if(MODES.indexOf(m) < 0) return; SURF.held = m; storeSet('zukan.smode.held', m);
   const g = $('heldgrid'); if(g) g.className = 'grid ' + m; syncSurfBar('held'); }
+/* v5.82.18: the held artist page's works switcher — the pack
+   gallery re-renders at the chosen mode (his ask: the page
+   where you view the works should resize too). */
+function setHeldWMode(m){ if(MODES.indexOf(m) < 0) return; SURF.heldw = m; storeSet('zukan.smode.heldw', m);
+  const a = (state.detailId!=null)? artistById(state.detailId): null;
+  if(a && DS==='artists' && isHeld(a)) renderHeldDetail(a); syncSurfBar('heldw'); }
 /* v5.48.0: the 藝大・美大 surfaces' own switchers — professor
    cards (zukan.smode.sch) and university cards (zukan.smode.
    univ). The schools view's frames are render functions, so a
@@ -17553,8 +17563,8 @@ let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" o
 + (a.years? '<div class="heldyears">'+esc(yearsDisplay(a))+'</div>': '')
 + '</div>';
 if(reps.length){
-const cards = reps.map((w, i)=> ({ h: '<figure class="work" onclick="openHeldWork('+i+')"><div class="ph" data-heldidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(cardCapText(w.caption))+'</div></figcaption></figure>', e: packEst(cardCapText(w.caption), 'wide') }));
-html += packGalleryHTML(cards, 'wide');
+const cards = reps.map((w, i)=> ({ h: '<figure class="work" onclick="openHeldWork('+i+')"><div class="ph" data-heldidx="'+i+'">'+imgHTML(w, IMG_SIZE.plate)+'</div><figcaption><div class="sub">'+esc(cardCapText(w.caption))+'</div></figcaption></figure>', e: packEst(cardCapText(w.caption), SURF.heldw) }));
+html += '<div class="smodewrap">' + surfModebarHTML('heldw', 'setHeldWMode') + '</div>' + packGalleryHTML(cards, SURF.heldw);
 }
 html += '<p class="heldnote">この作家は現在、図鑑の一覧には表示されていません</p>';
 const v = $('viewDetail'); v.innerHTML = html;
@@ -21474,6 +21484,50 @@ async function hiddenSave(m){
 }
 function hiddenKey(kind, id){ return kind+':'+id; }
 function isHiddenPerson(a){ if(!a) return false; const e = hiddenLoad().people[hiddenKey(DS, a.id)]; return !!(e && e.hidden); }
+/* v5.82.18: shelf checkboxes — the people he wants BACK on
+   the roster. Persisted on-device so the selection survives
+   leaving the panel; the restore itself rides the request
+   outbox (kind 'unhold'), the same confirmed path as a
+   deregistration request, and is applied to the data by Muse. */
+let HELDCHECK = null;
+function heldCheckLoad(){
+  if(HELDCHECK) return HELDCHECK;
+  try{ const arr = JSON.parse(storeGet('zukan.heldcheck') || '[]'); HELDCHECK = new Set((Array.isArray(arr)? arr: []).map(String)); }
+  catch(e){ HELDCHECK = new Set(); }
+  return HELDCHECK;
+}
+function heldCheckSave(){ try{ storeSet('zukan.heldcheck', JSON.stringify(Array.from(heldCheckLoad()))); }catch(e){} }
+function toggleHeldCheck(ev, id){
+  if(ev) ev.stopPropagation();
+  const s = heldCheckLoad();
+  if(s.has(String(id))) s.delete(String(id)); else s.add(String(id));
+  heldCheckSave();
+  const btn = ev && ev.currentTarget;
+  if(btn){ const on = s.has(String(id)); btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on? 'true': 'false'); }
+  heldRestoreBtnSync();
+}
+function heldRestoreBtnSync(){
+  const b = $('heldrestorebtn'); if(!b) return;
+  b.textContent = 'チェックした人をまとめて戻す（'+heldCheckLoad().size+'名）';
+}
+function unholdReqItemFor(a){
+  if(!a) return null;
+  return reqAllItems().find(r=> r.kind==='unhold' && String(r.artist_id)===String(a.id) && r.dataset==='artists' && (r._local || r.status==='pending')) || null;
+}
+async function heldRestoreChecked(){
+  const checked = heldCheckLoad();
+  const list = heldArtistsList().filter(a=> checked.has(String(a.id)) && !unholdReqItemFor(a));
+  if(!list.length){ toast(checked.size? 'チェックした人は全員すでに申請中です': 'チェックが入っていません'); return; }
+  const ok = await confirmDialog({ title: list.length+'名を通常の一覧に戻しますか', body: '申請として送られます。処理されると作家一覧に再び表示されます。', okLabel: '戻す', cancelLabel: 'キャンセル', danger: false });
+  if(!ok) return;
+  const ob = reqOutbox();
+  list.forEach(a=> ob.push({ id: 'rq'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36), kind: 'unhold', artist_id: a.id, name: a.name, dataset: 'artists', requested_at: new Date().toISOString(), status: 'pending' }));
+  try{ reqSaveOutbox(ob); }catch(e){ toast('申請を保存できませんでした'); return; }
+  flushArtistRequests();
+  list.forEach(a=> checked.delete(String(a.id))); heldCheckSave();
+  renderSettingsPanel();
+  toast((getValidToken() || relayReady())? list.length+'名の復帰を申請しました': '送信待ちに保存しました（接続時に送られます）', 3600);
+}
 /* v5.82.16: the holding layer as a reviewable list — every
    artists-book record flagged held, heaviest records first.
    Temporary: this shelf exists so he can look the 359 over
@@ -26622,7 +26676,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.17';
+const APP_VERSION = '5.82.18';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -27270,12 +27324,19 @@ function renderSettingsPanel(){
        left cleanly; the card's own fav button keeps its normal
        behaviour. Remove this branch with the deletion. */
     const list = heldArtistsList();
-    let inner = '<div class="note">削除前の確認用に一時的に置いたリストです。保留中（通常の一覧や検索には出ていない）の作家を、作品の多い順に並べています。カードを押すとその人のページが開きます。残したい人がいたら教えてください。</div>';
+    let inner = '<div class="note">削除前の確認用に一時的に置いたリストです。保留中（通常の一覧や検索には出ていない）の作家を、作品の多い順に並べています。残したい人はカードのチェックを入れて、一番下のボタンでまとめて戻せます。カードを押すとその人のページが開きます。</div>';
     if(list.length){
       inner += surfModebarHTML('held', 'setHeldMode');
       inner += '<div class="grid '+SURF.held+'" id="heldgrid">';
-      list.forEach(a=>{ inner += personCardHTML(a, 'artists').replace('openCrossDetail(', 'openHeldArtist('); });
+      list.forEach(a=>{
+        let h = personCardHTML(a, 'artists').replace('openCrossDetail(', 'openHeldArtist(');
+        const on = heldCheckLoad().has(String(a.id));
+        h = h.replace(/<button class="cardfav[^"]*" onclick="toggleFavCard\(event,'artists','([^']*)'\)"[^>]*>[^<]*<\/button>/,
+          '<button class="cardcheck'+(on?' on':'')+'" onclick="toggleHeldCheck(event,\'$1\')" aria-label="戻す対象に選ぶ" aria-pressed="'+(on?'true':'false')+'">✓</button>');
+        inner += h;
+      });
       inner += '</div>';
+      inner += '<button class="blockbtn" id="heldrestorebtn" onclick="heldRestoreChecked()">チェックした人をまとめて戻す（'+heldCheckLoad().size+'名）</button>';
     } else inner += '<div class="empty">保留中の作家はいません</div>';
     p.innerHTML = panelShell('保留リスト', inner);
     wireListImages(p);
