@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.34">
+<meta name="app-version" content="5.82.35">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2450,9 +2450,9 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    セルフプロデュース tab where the integrated sections sat, and
    the ロールモデル cards. Reading prose itself reuses the guide's
    bodytext/subhead styles, unchanged. */
-.charmxref{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:16px 0; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
+.charmxref{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:16px 0; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 .charmxrefgo{font-family:var(--sans); font-size:12.5px; color:var(--muted); flex:none;}
-.modelcard{margin:8px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+.modelcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .modelname{font-family:var(--serif); font-size:16.5px; font-weight:600; line-height:1.4;}
 .modelwho{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.55;}
 .modelpts{margin:6px 0 0; padding:0; list-style:none;}
@@ -2460,6 +2460,14 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .modelpts li::before{content:'・'; position:absolute; left:0; color:var(--muted);}
 .charmhead{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px 12px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px;}
 .charmph{flex:none; width:64px; height:64px; border-radius:9px; overflow:hidden; background:var(--bg2); display:flex; align-items:center; justify-content:center; position:relative;}
+/* v5.82.35: the group header's image is the artist's PORTRAIT —
+   the profile band's own construction ([data-portrait] wrapper +
+   keyWork(a.portrait)), so a portrait that cannot load settles
+   the profile's way (plain placeholder), and an artist with no
+   portrait registered gets the shared no-photo mark, never a
+   work thumbnail posing as the artist (his 2026-11-26 verdict:
+   《泉》 beside Duchamp's name was crude). */
+.charmph .ph{display:block; width:100%; height:100%;}
 .charmph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
 .charmph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .charmph .noimg{font-family:var(--serif); font-size:10px; color:var(--ink35); letter-spacing:.15em; padding:4px; text-align:center; line-height:1.6;}
@@ -22750,6 +22758,12 @@ const CHARM_SECTIONS = [
 ];
 function setCharmTab(k){ charmTab = k; renderHumor(); window.scrollTo(0, 0); }
 function renderCharmHumor(){
+  /* v5.82.35: same ensure pattern as charmLoadingHTML — on a
+     first-tap path (☺︎ before any detail/guide visit) the reading
+     section's chapters have not been fetched yet; guideEnsure's
+     landing repaints this view (the v5.82.33 hook), so the
+     section arrives instead of silently staying absent. */
+  if(!guideData && !guideError) guideEnsure();
   const list = (DS==='artists' && DB)? rosterBase().filter(a=>Array.isArray(a.humor) && a.humor.length): [];
   const wiring = [];
   let html = '';
@@ -22761,10 +22775,14 @@ function renderCharmHumor(){
   if(hsec){ bizFigStore = []; html += charmSecHTML(hsec); }
   if(list.length && hsec) html += '<h3 class="subhead">作家のユーモア</h3>';
   list.forEach(a=>{
-    const th = thumbOf(a);
-    if(th) wiring.push(th);
-    const ph = th? '<div class="charmph">'+imgHTML(th, 256)+'</div>'
-      : '<div class="charmph"><span class="noimg"><span class="ini">'+esc((Array.from(dispName(a)||'')[0]||''))+'</span>図版なし</span></div>';
+    /* v5.82.35: the header image is the artist's portrait (the
+       profile band's keyWork(a.portrait) construction), not the
+       first work's thumbnail. No portrait registered → the shared
+       no-photo mark (v5.49.0), never a work posing as the artist. */
+    const pw = a.portrait? keyWork(a.portrait, a.name || ''): null;
+    if(pw) wiring.push(pw);
+    const ph = pw? '<div class="charmph"><span class="ph" data-portrait="1">'+imgHTML(pw, IMG_SIZE.thumb)+'</span></div>'
+      : '<div class="charmph">'+noPhotoHTML()+'</div>';
     html += '<div class="humorgroup">'
       + '<button class="charmhead" onclick="openHumorArtist(\''+escA(a.id)+'\')">'+ph+'<span class="charmmeta"><span class="charmname">'+esc(dispName(a))+'</span>'+(a.years? '<span class="charmyears">'+esc(yearsDisplay(a))+'</span>': '')+'</span><span class="inflgo">›</span></button>'
       + a.humor.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('')
@@ -22893,14 +22911,34 @@ function renderHumor(){
     return;
   }
   if(!secs.some(s=>s.key===charmTab)) charmTab = secs[0].key;
-  html += '<div class="bizpills" style="margin-top:10px">' + secs.map(s=> '<button class="'+(charmTab===s.key? 'on': '')+'" onclick="setCharmTab(\''+s.key+'\')">'+s.label+'</button>').join('') + '</div>';
+  /* v5.82.35: the tab bar is the artist page's own .dtabs — compact
+     pills that hug their labels (padding 5px 12px, min-height 32px,
+     12.5px), NOT the .bizpills chunky ovals (9px 16px, 48px,
+     13.5px) the v5.82.31 build borrowed (his verdicts, 2026-11-26:
+     「野暮い」「文字の周りの余白が多すぎる」「ピルタブスクロール
+     できない」). The .bizpills row could not scroll at all: its
+     touch-action is pan-y and the segment-drag system (SEG_SEL)
+     captures horizontal drags on it. .dtabs is the app's working
+     native scroller — touch-action pan-x pan-y, excluded from both
+     the segment drags and the swipe-back arming by name — so the
+     row scrolls sideways with the same right-edge fade (.more,
+     wired by wireDTabs) as the artist page's tab bar. */
+  html += '<div class="dtabs">' + secs.map(s=> '<button class="'+(charmTab===s.key? 'on': '')+'" onclick="setCharmTab(\''+s.key+'\')">'+s.label+'</button>').join('') + '</div>';
   const sec = secs.find(s=>s.key===charmTab);
   const out = sec.render();
   html += out.html;
   v.innerHTML = html;
-  /* the era view's wiring pattern: pair each imgholder with its
-     work so the observer can hydrate it on approach. */
-  v.querySelectorAll('.imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* the era view's wiring pattern: pair each header portrait
+     holder with its work so the observer can hydrate it on
+     approach. Scoped to .charmph so the reading layer's guide
+     figures (wired by wireBizFigs below) never enter the pairing. */
+  v.querySelectorAll('.charmph .imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* the tab bar's fade + the dtabHighlight treatment: if the
+     selected pill sits off the right edge, slide the row so it
+     shows (a cross-reference jump can land on a late tab). */
+  wireDTabs(v);
+  const cb = v.querySelector('.dtabs');
+  if(cb){ const on = cb.querySelector('button.on'); if(on){ const br = cb.getBoundingClientRect(), r = on.getBoundingClientRect(); if(r.left < br.left + 2 || r.right > br.right - 2) cb.scrollLeft = Math.max(0, cb.scrollLeft + (r.left - br.left) - 12); } }
   /* v5.82.33: the reading tabs carry guide figures — wire their
      tap-to-enlarge the same way the guide and biz views do. */
   wireBizFigs(v);
@@ -27111,7 +27149,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.34';
+const APP_VERSION = '5.82.35';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
