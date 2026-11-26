@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.38">
+<meta name="app-version" content="5.82.47">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2446,6 +2446,41 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    they are correct where a note exists. */
 .humorgroup{margin:0 0 20px;}
 #viewHumor .humortxt{font-size:14px; line-height:1.65;}
+/* v5.82.40: the ユーモア tab's centre is a collection of actual
+   utterances (his call, 2026-11-26: 「実際の人の発言とかそういうの
+   まとめて欲しい」). The line itself is the hero — serif, large,
+   readable — with the original wording under it and the speaker +
+   scene small beneath. 伝聞 items carry a small chip rather than
+   being silently presented as certain. */
+.quotecard{margin:8px 0; padding:14px 14px 12px; background:var(--bg2); border-radius:10px;}
+.quoteq{font-family:var(--serif); font-size:17.5px; line-height:1.65; color:var(--text);}
+.quoteorig{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:7px; font-style:italic;}
+.quotemeta{margin-top:9px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px;}
+.quotewho{font-size:13.5px; font-weight:600; color:var(--text);}
+button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-family:inherit; text-align:left;}
+.quoteden{font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:1px 7px;}
+.stockcard{margin:8px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+.stockhead{display:flex; align-items:flex-start; gap:8px;}
+.stockname{font-family:var(--serif); font-size:15.5px; line-height:1.5; color:var(--text); flex:1;}
+.stocktxt{margin-top:6px; font-size:13.5px; line-height:1.75; color:var(--text);}
+.vchip{flex:none; font-size:10.5px; border:1px solid var(--line); border-radius:999px; padding:1px 7px; color:var(--muted); margin-top:3px; white-space:nowrap;}
+.vchip.v-fact{color:var(--gold, #c9a227); border-color:var(--gold, #c9a227);}
+.vchip.v-myth{color:#c0564a; border-color:#c0564a;}
+.drillgroup{font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:.12em; color:var(--gold, #c9a227); margin:18px 4px 2px;}
+.quotescene{font-size:12px; line-height:1.55; color:var(--muted); margin-top:5px;}
+/* v5.82.42: ウィット tab — the benign-violation figure and the
+   decomposed-type cards. Same panel language as the quote cards. */
+.witfig{margin:10px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+.witfigrow{display:flex; align-items:center; gap:8px; padding:5px 0;}
+.witbox{flex:1; text-align:center; font-family:var(--serif); font-size:15px; padding:8px 4px; border:1px solid var(--line); border-radius:8px;}
+.witbox.hot{border-color:var(--gold, #c9a227); color:var(--text);}
+.witop{font-size:14px; color:var(--muted); flex:none;}
+.witfigcap{font-size:12px; color:var(--muted); line-height:1.55; margin-top:6px;}
+.witcard{margin:8px 0; padding:11px 13px; background:var(--bg2); border-radius:10px;}
+.witname{font-family:var(--serif); font-size:15.5px; color:var(--text);}
+.witline{font-size:13px; line-height:1.6; color:var(--muted); margin-top:4px;}
+.witex{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:5px;}
+.quotemore{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:14px 0 4px; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 /* v5.82.33: 人間的魅力 reading layer — cross-reference rows in the
    セルフプロデュース tab where the integrated sections sat, and
    the ロールモデル cards. Reading prose itself reuses the guide's
@@ -2462,6 +2497,28 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .modelpts{margin:6px 0 0; padding:0; list-style:none;}
 .modelpts li{font-size:14px; line-height:1.65; padding-left:15px; position:relative; margin-top:5px;}
 .modelpts li::before{content:'・'; position:absolute; left:0; color:var(--muted);}
+/* v5.82.39: ロールモデル — the artist list's own card system
+   (figure.work cards in a .grid with the .modebar size switch),
+   not stacked text panels: one best photo per model, name +
+   who/role + a one-line hook on the card, and the full
+   commentary in a bottom sheet on the termsheet pattern
+   (#modelsheet: photo on top, text below; backdrop tap, the
+   閉じる button and a downward swipe on the scrolled-to-top
+   body dismiss it; the grid and its scroll stay untouched
+   behind). The hook hides at the small sizes, the same way
+   .sub already hides on compact artist cards. */
+.modelhook{font-size:11.5px; color:var(--sub); line-height:1.5; margin-top:3px;}
+.grid.compact .modelhook,.grid.mini .modelhook,.grid.micro .modelhook{display:none;}
+#modelsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45); overscroll-behavior:contain;}
+#modelsheet.hidden{display:none;}
+#modelsheet .tscard{animation:modelSheetUp .26s ease-out;}
+@keyframes modelSheetUp{from{transform:translateY(34px); opacity:.35;} to{transform:translateY(0); opacity:1;}}
+@media (prefers-reduced-motion: reduce){ #modelsheet .tscard{animation:none;} }
+#modelSheetBody{overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch;}
+#modelsheet .tsclose{flex:none;}
+.modelsheetph{margin:-18px -18px 14px; background:var(--bg2); aspect-ratio:16/10; overflow:hidden;}
+.modelsheetph .imgholder{display:block; width:100%; height:100%;}
+.modelsheetph img{width:100%; height:100%; object-fit:cover; display:block;}
 .charmhead{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px 12px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px;}
 .charmph{flex:none; width:64px; height:64px; border-radius:9px; overflow:hidden; background:var(--bg2); display:flex; align-items:center; justify-content:center; position:relative;}
 /* v5.82.35: the group header's image is the artist's PORTRAIT —
@@ -2825,6 +2882,7 @@ try{var r=localStorage.getItem('zlab.settings');if(r){var z=JSON.parse(r);var h=
 <div id="legendsheet" class="hidden" role="dialog" aria-label="分野マークの凡例" onclick="if(event.target===this) closeSymLegend()"><div class="legendpop"><div class="legendttl">分野マークの凡例</div><div id="legendbody"></div></div></div>
 <div id="cherabar" class="cherabar hidden" role="navigation" aria-label="年代記の時代"><div class="cherabar-in" id="cherabarIn"></div></div>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
+<div id="modelsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeModelSheet()"><div class="tscard" ontouchstart="modelSheetTouchStart(event)" ontouchmove="modelSheetTouchMove(event)"><div id="modelSheetBody"></div><button class="tsclose" onclick="closeModelSheet()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
 <div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div class="tlm-tabs"><button type="button" class="tlm-tab on" id="tlmtabList" onclick="tlMapSetTab('list')">その年の動き <span class="small" id="tlmtabListN"></span></button><button type="button" class="tlm-tab" id="tlmtabDetail" onclick="tlMapSetTab('detail')">詳細：芸術家 <span class="small" id="tlmtabDetailN"></span></button></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
@@ -11277,6 +11335,35 @@ h += packGalleryHTML(dg.groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
 });
 return h;
 }
+/* v5.82.47 (his recording, 2026-11-27): the works viewer
+   pages the GRID's display order — in 年代別 that is the
+   decade groups flattened top to bottom, in 登録順 the
+   (possibly reversed) display list. Every works-viewer
+   entry point resolves its target work through these, so
+   the counter and the paging always match what the grid
+   showed. (Before, the viewer paged displayWorks order —
+   the flat data order — so in 年代別 a 1985 work opened as
+   101/101 and 次 jumped to 1953.) */
+function worksViewerList(a){
+  const ws = displayWorks(a);
+  if(workSortMode() !== 'decades' || ws.length < 2) return ws;
+  const dg = decadeGroupsOf(ws, workSortDir());
+  const out = [];
+  dg.keys.forEach(k=> dg.groups.get(k).forEach(ix=> out.push(ws[ix])));
+  return out;
+}
+function openWorksViewer(a, work){
+  if(!a) return;
+  const vl = worksViewerList(a);
+  let ix = work? vl.indexOf(work): 0;
+  if(ix < 0) ix = 0;
+  openViewer(vl, ix, a.id);
+}
+function openWorksViewerAt(aid, dispIdx){
+  const a = artistById(aid); if(!a) return;
+  openWorksViewer(a, displayWorks(a)[dispIdx]);
+}
+
 /* v30.6: the artist's drawings （ドローイング) — a list SEPARATE
    from works, in registration order (no sort controls; the order
    is the curated one, like works' 登録順）. */
@@ -12254,7 +12341,7 @@ let detailOrigin = null;
    MutationObserver keeps later renders translated. Content data (artist
    prose, guide chapters, quotes) is not machine-translated — only the
    interface and its vocabulary. ===== */
-const I18N_EN = {"その他": "Other", "保留リスト": "Holding list", "お金の価値": "Value of money", "作家": "Artists", "デザイナー": "Designers", "立役者": "Makers", "展示": "Exhibitions", "年表": "Timeline", "系譜": "Lineage", "通知": "Notifications", "更新履歴": "Update history", "更新予定": "Coming updates", "検索": "Search", "閉じる": "Close", "戻る": "Back", "‹ 戻る": "‹ Back", "‹ 一覧へ戻る": "‹ Back to list", "‹ 作家へ戻る": "‹ Back to artist", "‹ 展示へ戻る": "‹ Back to exhibition", "‹ 章の一覧へ戻る": "‹ Back to chapters", "‹ 目次へ戻る": "‹ Back to contents", "‹ 読んでいた場所へ戻る": "‹ Back to where you were reading", "‹ 辞典へ戻る": "‹ Back to glossary", "‹ 藝大・美大へ戻る": "‹ Back to art universities", "読み込み中…": "Loading…", "読み込んでいます…": "Loading…", "検索結果": "Search results", "お気に入り": "Favorites", "お気に入りだけ表示": "Favorites only", "お気に入りに追加しました": "Added to favorites", "お気に入りを保存できませんでした": "Couldn't save favorites", "登録": "Register", "未登録": "Not registered", "削除する": "Delete", "追加": "Add", "変更": "Change", "保存": "Save", "入力": "Input", "選択": "Select", "確認": "Confirm", "送信": "Send", "開く": "Open", "表示": "Show", "非表示": "Hide", "拡大": "Enlarge", "図はタップで拡大できます": "Tap a figure to enlarge it", "絵はタップで拡大できます": "Tap the image to enlarge it", "表はタップで拡大できます": "Tap the table to enlarge it", "図の拡大表示": "Figure viewer", "名前・分野・タグ・本文から検索": "Search names, fields, tags and text", "検索をクリア": "Clear search", "検索を開く": "Open search", "タグ絞り込みを開く": "Open tag filters", "表示する地域": "Region", "全部（西洋と日本を一緒に表示）": "All (West and Japan together)", "日本": "Japan", "西洋": "West", "地域": "Region", "Google Drive 同期": "Google Drive sync", "作家・デザイナーの登録依頼": "Request an artist / designer", "テーマカラー": "Theme color", "文字設定": "Text settings", "フォントスタイル": "Font style", "行間": "Line spacing", "サウンド": "Sound", "データ": "Data", "位置情報": "Location", "中継（Apps Script）": "Relay (Apps Script)", "このアプリについて": "About this app", "画像診断（不具合調査用）": "Image diagnostics (for troubleshooting)", "ストレージ診断（不具合調査用）": "Storage diagnostics (for troubleshooting)", "言語": "Language", "オン": "On", "オフ": "Off", "設定済み": "Set", "未設定": "Not set", "未接続": "Not connected", "接続": "Connect", "Drive に接続": "Connect to Drive", "今すぐ同期": "Sync now", "接続を解除": "Disconnect", "保存して接続テスト": "Save and test connection", "中継を解除": "Remove relay", "位置情報をオンにする": "Turn location on", "位置情報をオフにする": "Turn location off", "位置はまだ取得していません": "No location fetched yet", "診断を開始": "Start diagnostics", "再計測": "Measure again", "この名前で登録を依頼する": "Request registration under this name", "依頼の履歴": "Request history", "登録依頼": "Registration request", "通知と更新履歴": "Notifications and update history", "大きさ": "Size", "小": "Small", "標準": "Standard", "大": "Large", "特大": "Extra large", "本文の行間": "Body line spacing", "ページを捲る音": "Page-turn sound", "音量": "Volume", "登録順": "By registration", "年代別": "By era", "新しい順": "Newest first", "古い順": "Oldest first", "名前順": "By name", "全": "All", "分類": "Class", "分野": "Field", "時代": "Period", "地域別": "By region", "並び替え": "Sort", "絞り込み": "Filter", "クリア": "Clear", "条件をリセット": "Reset filters", "該当する作家はいません": "No artists match", "該当する作品はありません": "No works match", "この条件のアルバムはありません": "No albums match these filters", "作品": "Works", "素描": "Drawings", "ドローイング": "Drawing", "本": "Books", "展示・年表": "Exhibitions & timeline", "来歴": "Biography", "関係": "Relations", "価格": "Prices", "評価": "Reception", "ユーモア": "Humour", "人間的魅力": "Human charm", "オーラを稼ぐ": "Earning an aura", "セルフプロデュース": "Self-production", "ロールモデル": "Role models", "嘘のうまさ": "Lying well", "発言": "Quotes", "インタビュー": "Interviews", "制作過程": "Process", "何を描いたか": "What is painted", "絵作り": "Composition", "どう描いたか": "How it is painted", "見どころ": "Highlights", "プロフィール": "Profile", "代表作": "Signature work", "所蔵": "Collection", "画材": "Materials", "技法": "Technique", "画材メモ": "Materials notes", "制作メモ": "Process notes", "制作の工程": "Steps", "制作風景": "In the studio", "制作環境": "Studio environment", "肖像": "Portrait", "写真なし": "No photo", "画像なし": "No image", "詳しく": "Details", "もっと見る": "See more", "原文": "Original", "意訳": "Paraphrase", "言葉": "Words", "作家の言葉": "Artists' words", "用語辞典": "Glossary", "単語を検索": "Search a term", "用語は準備中です": "No glossary entry yet", "本文は準備中です": "No text yet", "開催中": "Now showing", "開催予定": "Upcoming", "終了": "Ended", "開催中・これから": "Now & upcoming", "開始まで": "until start", "近い順": "Nearest first", "開始日順": "By start date", "会期": "Dates", "会場": "Venue", "入場": "Admission", "無料": "Free", "有料": "Paid", "前へ": "Previous", "次へ": "Next", "一覧": "List", "詳細": "Details", "拡大表示": "Viewer", "点をタップすると、その落札の詳細が出ます。": "Tap a point to see that sale's details.", "制作ガイド": "Production Guide", "アートビジネス": "Art Business", "目次": "Contents", "章": "Chapter", "用語": "Terms", "価格表": "Price table", "社会性": "Social skills", "心が沈むとき": "When you're down", "困りごと帖": "Troubleshooting notes", "データで読む": "Reading the data", "発言集": "Collected quotes", "藝大・美大": "Geidai & art universities", "学校情報": "School info", "記録": "Record", "傾向": "Trends", "対策": "Strategy", "課題": "Assignments", "油彩": "Oil painting", "デッサン": "Drawing", "当日": "Exam day", "全体地図": "Overview", "教授": "Professors", "大学": "Universities", "この端末にはまだ届いていません": "Not on this device yet", "同期": "Sync", "同期しました": "Synced", "失敗": "Failed", "完了": "Done", "エラー": "Error", "成功": "Success", "処理中": "Working…", "送信中": "Sending…", "保存しました": "Saved", "削除しました": "Deleted", "コピーしました": "Copied", "リンク": "Link", "共有": "Share", "印刷": "Print", "ダウンロード": "Download", "アップロード": "Upload", "再試行": "Retry", "キャンセル": "Cancel", "決定": "OK", "はい": "Yes", "いいえ": "No", "あとで": "Later", "今すぐ": "Now", "今日": "Today", "明日": "Tomorrow", "昨日": "Yesterday", "戦後〜現代の正典（欧米）": "Postwar–Contemporary Canon (West)", "日本の正典：古典〜現代": "Japanese Canon: Classical–Contemporary", "美術史の正典：古典〜近代": "Art-History Canon: Classical–Modern", "現代": "Contemporary", "正典": "Canon", "現代日本": "Contemporary Japan", "日本の戦後": "Postwar Japan", "戦後日本": "Postwar Japan", "ドイツ戦後": "Postwar Germany", "日本の正典": "Japanese Canon", "戦後": "Postwar", "近代": "Modern", "古典": "Classical", "江戸": "Edo", "ルネサンス": "Renaissance", "バロック": "Baroque", "印象派": "Impressionism", "キュビスム": "Cubism", "シュルレアリスム": "Surrealism", "シュプレマティスム": "Suprematism", "構成主義": "Constructivism", "ポップアート": "Pop Art", "ミニマリズム": "Minimalism", "モダニズム": "Modernism", "バウハウス": "Bauhaus", "アール・ヌーヴォー": "Art Nouveau", "アール・デコ": "Art Deco", "デ・ステイル": "De Stijl", "ポストモダン": "Postmodern", "メンフィス": "Memphis", "アーツ・アンド・クラフツ": "Arts and Crafts", "民藝": "Mingei (folk craft)", "具体": "Gutai", "具体美術協会": "Gutai Art Association", "もの派": "Mono-ha", "九州派": "Kyushu-ha", "琳派": "Rinpa", "ハイレッド・センター": "Hi-Red Center", "ネオ・ジオ": "Neo-Geo", "スーパーフラット": "Superflat", "アール・ブリュット": "Art Brut", "アクション・ペインティング": "Action Painting", "カラーフィールド": "Color Field", "社会彫刻": "Social Sculpture", "空間主義": "Spatialism", "ランドアート": "Land Art", "コンセプチュアル": "Conceptual", "コンセプチュアル・アート": "Conceptual Art", "モノクローム": "Monochrome", "浮世絵": "Ukiyo-e", "日本画": "Nihonga", "中国現代美術": "Contemporary Chinese Art", "モダニズムの転回点": "Turning Points of Modernism", "ネガティブ彫刻・空間の系譜": "Negative Sculpture & Space", "地・ネガ・マスの系譜": "Ground, Negative, Mass", "キャンバスへの翻訳モデル": "Canvas Translation Models", "制度・場のモデル": "Institutions & Sites", "市場・成功の事例": "Market & Success Cases", "言葉の側：理論・批評・現場の声": "Words: Theory, Criticism, Voices", "人格・仮面のモデル": "Persona & Mask Models", "世界観の参照": "Worldview References", "影響源": "Influences", "試験対策": "Exam Prep", "独学で成功した画家たち": "Self-Taught Painters Who Made It", "参照群": "Reference group", "成功例": "Success cases", "アメリカ": "United States", "フランス": "France", "イギリス": "United Kingdom", "ドイツ": "Germany", "イタリア": "Italy", "スペイン": "Spain", "オランダ": "Netherlands", "ベルギー": "Belgium", "オーストリア": "Austria", "チェコ": "Czechia", "ロシア": "Russia", "アイルランド": "Ireland", "デンマーク": "Denmark", "スコットランド": "Scotland", "ポーランド": "Poland", "スイス": "Switzerland", "ブラジル": "Brazil", "キューバ": "Cuba", "カナダ": "Canada", "フィンランド": "Finland", "オーストラリア": "Australia", "スウェーデン": "Sweden", "ハンガリー": "Hungary", "中国": "China", "韓国": "Korea", "メキシコ": "Mexico", "アルゼンチン": "Argentina", "南アフリカ": "South Africa", "イスラエル": "Israel", "ノルウェー": "Norway", "ポルトガル": "Portugal", "ギリシャ": "Greece", "ルーマニア": "Romania", "ブルガリア": "Bulgaria", "エチオピア": "Ethiopia", "タイ": "Thailand", "ソ連": "USSR", "北欧": "Northern Europe", "パリ": "Paris", "ロンドン": "London", "ニューヨーク": "New York", "ライプツィヒ": "Leipzig", "福岡": "Fukuoka", "東北": "Tohoku", "絵画": "Painting", "彫刻": "Sculpture", "平面": "Flat work", "立体": "Three-dimensional", "映像・写真": "Video & Photography", "映像": "Video", "写真": "Photography", "版画": "Printmaking", "水彩": "Watercolor", "パステル": "Pastel", "木炭": "Charcoal", "アクリル": "Acrylic", "紙": "Paper", "金属": "Metal", "ガラス": "Glass", "陶": "Ceramics", "陶器": "Ceramics", "漆": "Lacquer", "木": "Wood", "木彫": "Wood carving", "鉄": "Iron", "石": "Stone", "布": "Cloth", "綿布": "Cotton cloth", "蝋": "Wax", "釘": "Nails", "鉛": "Lead", "火": "Fire", "土": "Earth", "水": "Water", "金": "Gold", "金地": "Gold ground", "白亜地": "Chalk ground", "大理石粉": "Marble powder", "自作絵の具": "Handmade paint", "工業素材": "Industrial materials", "コンクリート": "Concrete", "スチール": "Steel", "鋼管": "Steel pipe", "プラスチック": "Plastic", "ナイロン": "Nylon", "ラテックス": "Latex", "ジュート": "Jute", "韓紙": "Hanji paper", "モスリン": "Muslin", "紬": "Tsumugi silk", "織物": "Textile", "テキスタイル": "Textile", "刺繍": "Embroidery", "鋳造": "Casting", "スフマート": "Sfumato", "グレーズ": "Glaze", "薄塗り": "Thin painting", "厚塗り": "Thick painting (impasto)", "平塗り": "Flat painting", "滲み": "Bleed", "染み": "Stain", "ステイニング": "Staining", "ぼかし": "Blur / softening", "ブラー": "Blur", "拭う": "Wiping", "拭き取り": "Wiping off", "消去": "Erasure", "描画・消去": "Drawing & Erasure", "切断": "Cutting", "切る": "Cutting", "削る": "Shaving / carving away", "引き算": "Subtraction", "積層": "Layering", "転写": "Transfer", "スプレー": "Spray", "エアブラシ": "Airbrush", "筆触": "Brushwork", "筆致": "Brushwork", "速い筆": "Fast brushwork", "ジェスチャー": "Gesture", "ドリッピング": "Dripping", "流す": "Pouring", "引きずり": "Dragging", "手で塗る": "Hand-applied", "素手": "Bare hands", "指で描く": "Finger painting", "ライブペインティング": "Live painting", "デコラージュ": "Décollage", "レディメイド": "Readymade", "コラージュ": "Collage", "レリーフ": "Relief", "マルチメディア": "Multimedia", "アニメーション": "Animation", "アニメ": "Anime", "インスタレーション": "Installation", "インスタレーション・パフォーマンス": "Installation & Performance", "工房制": "Workshop system", "支持体": "Support", "最小素材": "Minimal materials", "古いキャンバス": "Old canvas", "ガラスビーズ": "Glass beads", "ビーズ": "Beads", "籐": "Rattan", "スチールパイプ": "Steel pipe", "オイルスティック": "Oil stick", "フラッシェ": "Flashe", "絵画技法": "Painting technique", "古典技法": "Classical technique", "コンピュータ絵画": "Computer painting", "半立体": "Semi-relief", "静物": "Still life", "自画像": "Self-portrait", "風景": "Landscape", "抽象": "Abstract", "抽象絵画": "Abstract painting", "具象": "Figurative", "歴史画": "History painting", "物語": "Narrative", "神話": "Myth", "夢": "Dream", "身体": "Body", "肉体": "Flesh", "光": "Light", "影": "Shadow", "黒": "Black", "白": "White", "黄色": "Yellow", "青": "Blue", "色彩": "Color", "色面": "Color field", "平面性": "Flatness", "平面性の強い絵画": "Strongly flat painting", "図と地": "Figure and Ground", "地と図": "Ground and Figure", "地": "Ground", "ネガ": "Negative", "ネガティブ彫刻": "Negative sculpture", "ネガティブスペース": "Negative space", "虚空": "Void", "空洞": "Cavity", "穴": "Hole", "余白": "Blank space / Margin", "グリッド": "Grid", "マス目": "Grid", "マス": "Mass / Grid", "量塊": "Mass", "量": "Volume", "空間": "Space", "時間": "Time", "記憶": "Memory", "反復": "Repetition", "引用": "Quotation", "構造": "Structure", "概念": "Concept", "記号": "Sign", "理論": "Theory", "方法": "Method", "素材": "Material", "物質": "Matter", "物質感": "Material presence", "静けさ": "Stillness", "静謐": "Serenity", "不穏": "Unease", "透明": "Transparency", "投影": "Projection", "解像度の配分": "Resolution allocation", "グラフィカル": "Graphical", "幾何学": "Geometry", "幾何": "Geometry", "イラストレーション": "Illustration", "日常": "Everyday life", "都市": "City", "市場": "Market", "書体": "Typeface", "端末フォント": "Device font", "明朝": "Mincho", "ゴシック": "Gothic", "丸ゴシック": "Rounded Gothic", "サンセリフ": "Sans-serif", "欧文書体": "Latin typeface", "新聞書体": "Newspaper typeface", "実験書体": "Experimental typeface", "書体実験": "Type experiments", "Transport書体": "Transport typeface", "領域": "Domain", "分野マークの凡例": "Field-symbol legend", "立体の技法": "3D techniques", "素材・支持体": "Materials & Supports", "都市・地域": "City / Region", "国・地域": "Country / Region", "領域：": "Domain:", "時代：": "Period:", "期：": "Period:", "出典：": "Source:", "生年": "Born", "存命": "Living", "紀元前": "BC", "世紀": "century", "年": "year", "月": "month", "日": "day", "歳": "years old", "名": "people", "件": "items", "点": "works", "あと": "left", "まもなく終了": "Ending soon", "これから": "Upcoming", "見送り": "Passed", "依頼中": "Requested", "財団": "Foundations", "団体": "Organizations", "作家図鑑": "Artist Encyclopedia", "デザイナー図鑑": "Designer Encyclopedia", "立役者図鑑": "Maker Encyclopedia", "辞典": "Glossary", "年代記": "Chronicle", "表紙": "Cover", "図版": "Plate", "サイズ": "Size", "図鑑で見る": "View in the encyclopedia", "JSON を書き出す": "Export JSON", "全データを削除": "Delete all data", "トークンを取得できませんでした": "Couldn't get a token", "読み込めませんでした。": "Couldn't load it.", "章が見つかりません": "Chapter not found", "この年は、どの場所も表立っては動いていません。": "Nothing visibly moved anywhere this year.", "操作パネルを隠す": "Hide control panel", "操作パネルを隠す／出す": "Show / hide control panel", "ワイド": "Wide", "コンパクト": "Compact", "ミニ": "Mini", "マイクロ": "Micro", "古い順／新しい順を切り替える": "Toggle oldest / newest", "小画面": "Small screen", "巨大画面": "Huge canvas", "画面": "Screen", "画面分割": "Split screen", "匿名": "Anonymous", "社会": "Society", "アート": "Art", "デザイン": "Design", "ファッション": "Fashion", "音楽": "Music", "文学": "Literature", "スイス・スタイル": "Swiss Style", "五輪": "Olympics", "東京五輪": "Tokyo Olympics", "コンピュータ": "Computer", "万能人": "Universal man", "早見表": "Quick reference", "時代 ▾": "Period ▾", "更新": "Update", "すべて": "All", "カレンダーを閉じる": "Close calendar", "カレンダーを表示する": "Show calendar", "作品をお気に入り": "Favorite this work", "肖像写真": "Portrait photo", "インタビュー本文": "Interview text", "年代記の時代": "Chronicle periods", "レイヤー": "Layers", "入れ子": "Nesting", "エッジ": "Edge", "線": "Line", "タイル": "Tiles", "スケール": "Scale", "開口": "Aperture", "スリット": "Slit", "壁": "Wall", "物体": "Object", "景色": "Scenery", "図案": "Design / Pattern", "ポーズ": "Pose", "思想": "Thought", "無": "Nothingness", "代替装置": "Alternative apparatus", "コレクティヴ": "Collective", "私塾": "Private school", "共同制作": "Collaboration", "参加型": "Participatory", "他者": "Others", "境界": "Boundary", "現象": "Phenomenon", "環境": "Environment", "痕跡": "Traces", "フェミニズム": "Feminism", "粉": "Powder", "若手": "Young artists", "実験": "Experiment", "現行の若手": "Current young artists", "シルエット": "Silhouette", "可読性": "Legibility", "量産": "Mass production", "浮遊": "Floating", "標準化": "Standardization", "パターン": "Pattern", "制度": "System", "非対称": "Asymmetry", "民主化": "Democratization", "デジタル": "Digital", "解放": "Liberation", "編集": "Editing", "道具": "Tools", "教育": "Education", "プロダクト": "Product", "ランプ": "Lamp", "舞台": "Stage", "ウニッコ": "Unikko", "シェル": "Shell", "宿根草": "Perennials", "照明": "Lighting", "起源": "Origin", "制約": "Constraints", "システム": "System", "歪み": "Distortion", "カモフラージュ": "Camouflage", "別人格": "Alter ego", "人格設計": "Persona design", "光と闇": "Light and darkness", "室内": "Interior", "近代絵画の起点": "Start of modern painting", "近代絵画の父": "Father of modern painting", "連作": "Series", "宣言": "Declaration", "還元": "Reduction", "四角": "Square", "ゼロ地点": "Zero point", "絵画の向こう側": "Beyond painting", "行為": "Act", "没入": "Immersion", "複製": "Replication", "人格": "Persona", "指示書": "Instruction sheet", "写真と絵画": "Photography and painting", "枠": "Frame", "プール": "Pool", "堆積": "Accumulation", "歴史": "History", "巨大": "Huge", "演技": "Performance", "日付": "Date", "アクション": "Action", "地平線": "Horizon", "粒子": "Grain", "スナップ": "Snapshot", "網": "Net", "女性像": "Female figure", "肉": "Flesh", "模写": "Copying", "表面": "Surface", "逆転": "Inversion", "具象の解体": "Deconstruction of figuration", "私性": "The personal", "ベーコンの系譜": "Bacon's lineage", "崩れ": "Collapse", "歴史像": "Historical image", "柔らかい輪郭": "Soft contours", "無筆触": "No visible brushwork", "緻密": "Dense / meticulous", "絵の具の塊": "Lumps of paint", "想像の場面": "Imagined scenes", "素材の混入": "Mixed materials", "ターナー賞": "Turner Prize", "落書き的": "Doodle-like", "身体の幾何学": "Geometry of the body", "集団像": "Group portrait", "色の感情": "Emotion of color", "溶解": "Dissolution", "自己増殖": "Self-propagation", "層": "Layers", "写真性": "Photographic quality", "平たい": "Flat", "遅咲き": "Late bloomer", "ヴードゥー": "Voodoo", "顔の再構成": "Reconstructed faces", "古典引用": "Classical quotation", "抽象と具象の間": "Between abstraction and figuration", "水の絵の具感": "Watery paint feel", "映画的": "Cinematic", "ファイルを選んで取り込む": "Choose a file to import", "名前（例：アンゼルムキーファー）": "Name (e.g. Anselm Kiefer)", "シークレットを貼り付け": "Paste the secret", "設定済み（変更するときだけ入力）": "Set (enter only to change)", "前期": "First half", "後期": "Second half", "上旬": "Early", "中旬": "Mid", "下旬": "Late", "3大学・教授94名": "3 universities · 94 professors", "メニュー（通知・アートビジネス・制作ガイド・年表・系譜・作家の言葉）": "Menu (Notifications, Art Business, Production Guide, Timeline, Lineage, Artists' Words)", "Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）": "Drive sync status (green = connected / red = not connected or error)", "読み込めませんでした": "Couldn't load it", "端末ストレージ推定: 取得不可": "Device storage estimate: unavailable", "中継の URL": "Relay URL", "シークレット": "Secret", "あなたの Google アカウントの中で動く小さな中継スクリプト経由で同期します。設定すると、この端末では Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末の中にだけ保存されます。": "Sync runs through a small relay script in your own Google account. Once set, this device needs no Google sign-in and stays connected even when the app is closed. The URL is prefilled — you only paste the secret. The secret is stored only on this device.", "シークレットは保存済みです。欄は空で表示されます（中身は見えません）。空のまま保存すると、今のシークレットがそのまま使われます。": "The secret is saved. The field shows empty (its content is never displayed). Saving it empty keeps the current secret.", "設定済みです。接続テストで中継の応答を確認できます。": "Set. Use the connection test to check the relay's response.", "未設定です。": "Not set.", "Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。": "Syncs both encyclopedias with artists.json and designers.json in Drive. Everything works on-device even when not connected.", "現在は中継（Apps Script）経由で接続しています。": "Currently connected via the relay (Apps Script).", "雑誌やネットで見つけた作家・デザイナーの名前を送ると、Muse が素性を調べて図鑑に登録します。スペルが分からなければカタカナのままで大丈夫です。登録まで数十分かかることがあります。": "Send the name of an artist or designer you found in a magazine or online, and Muse will research and register them. Katakana is fine if you don't know the spelling. Registration can take a few dozen minutes.", "画像が表示されない不具合の調査用です。読み込み経路を1つずつ実測します（固まる経路があると最大1分ほどかかります）。終わったら結果をそのままスクリーンショットで送ってください。": "For investigating image display problems. Each load path is measured one by one (a stuck path can take up to a minute). When it finishes, send a screenshot of the results as-is.", "作家の説明文・年表・クイズなどの本文に適用されます。": "Applies to body text such as artist descriptions, timelines and quizzes.", "作品ビューワーでページを捲る時に、薄い紙がめくれる音が鳴ります。設定はその場で保存されます。音量を決めると、確認のため一度だけ音が鳴ります。": "A thin paper-turn sound plays when you turn pages in the work viewer. Settings save immediately. Setting the volume plays the sound once so you can check it.", "Webフォントはネット接続時に読み込まれます。一覧を開くとプレビューが順に読み込まれます。オフラインでは端末の明朝／ゴシックで表示されます（壊れはしません）。": "Web fonts load when you're online. Opening the list loads previews one by one. Offline, text shows in the device's Mincho / Gothic (nothing breaks).", "展示の「近い順」で、現在地から近い会場を探すためにだけ使います。オンの間は、許可は最初の一度だけで、取得した位置はこの端末の中に保存されて、次回からは聞かれません。オフにすると、取得も使用も一切しません。": "Used only for the exhibitions' 'nearest first' order, to find venues near you. While on, permission is asked once; the fetched position is stored on this device and not asked again. When off, nothing is fetched or used.", "前回の取得：": "Last fetched: ", "位置情報がオフのため、開始日順で表示しています（その他でオンにできます）。": "Location is off, so exhibitions are ordered by start date (you can turn it on in Other).", "展示の画像が登録されていないため、代表作を表示しています": "No image is registered for this exhibition, so a signature work is shown", "点をタップすると、その落札の詳細が出ます": "Tap a point to see that sale's details", "Drive未接続（端末内に保存中）": "Drive not connected (saving on this device)", "タップで接続": "Tap to connect", "技法・素材": "Techniques", "テーマ・概念": "Themes & Concepts", "運動・様式": "Movements & Styles", "国": "Country", "行為・その他": "Performance & Other", "生没年": "Life", "出身": "From", "作品集": "Portfolio", "ドローイングはまだありません": "No drawings yet", "作品集のデータはまだありません": "No portfolio data yet", "登録解除を申請する": "Request removal", "作家情報をリクエスト": "Request artist info", "見どころの表示を切り替える": "Toggle highlights", "タグの分類": "Tag categories", "世界地図を大きく開く": "Open the world map", "アジア": "Asia", "アジア・その他": "Asia & Other", "古典〜近代": "Classical–Modern", "地・ネガ・マス": "Ground · Negative · Mass", "ウェンジ": "Wenge", "チーク": "Teak", "スモークウォールナット": "Smoked Walnut", "杉": "Japanese Cedar", "檜": "Japanese Cypress", "プレビュー": "Preview", "ガイド": "Guide", "名前・読み・タグで検索": "Search by name, reading or tag", "狭い": "Narrow", "広い": "Wide", "とても広い": "Very wide", "表示言語": "Display language", "画像診断": "Image diagnostics", "ストレージ診断": "Storage diagnostics", "まだ依頼はありません": "No requests yet", "Drive未接続のため、依頼は端末内に「送信待ち」として保存され、接続した時に送られます。": "Drive isn't connected, so requests are saved on this device as “waiting to send” and sent when you connect.", "ZIP（data.json＋img/）または JSON を選ぶと、同じ項目・同じ作品は自動でマージされます。": "Choose a ZIP (data.json + img/) or a JSON file — identical entries and works are merged automatically.", "保存領域の実測です。v27.6 から、お気に入り・評価・既読・送信待ちの依頼などの小さな重要データは IndexedDB に保存されます（localStorage の容量不足でお気に入りが保存できなくなる問題の対策）。": "Measures the storage area. Since v27.6, small but important data — favorites, ratings, read marks and queued requests — lives in IndexedDB (so favorites can't fail to save when localStorage runs out of room).", "タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。": "Tap to toggle. With several selected, artists matching any one of them appear.", "生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。": "Filters by birth period. Only the tapped period stays in the list; tap again to clear it.", "年表の年と連動。地名を押すと、その場所だけが光ります。": "Linked to the timeline's years. Tap a place name to light up that place only.", "美術史年表": "Art History Timeline", "クイズ": "Quiz", "世界史": "World History", "日本史": "Japanese History", "背景を読む": "Read the background", "詳しく見る ›": "See details ›", "作者不詳": "Artist unknown", "先史の美術": "Prehistoric Art", "古代オリエント（メソポタミア）": "Ancient Near East (Mesopotamia)", "古代エジプト": "Ancient Egypt", "古代ギリシャ（古典期まで）": "Ancient Greece (to the Classical period)", "ヘレニズム": "Hellenistic", "古代ローマ": "Ancient Rome", "ビザンティン": "Byzantine", "イスラム美術": "Islamic Art", "ロマネスク": "Romanesque", "国際ゴシック": "International Gothic", "初期ルネサンス": "Early Renaissance", "北方ルネサンス": "Northern Renaissance", "盛期ルネサンス": "High Renaissance", "ヴェネツィア派と色彩": "Venetian School & Color", "マニエリスム": "Mannerism", "オランダ絵画の黄金時代": "Dutch Golden Age", "ロココ": "Rococo", "新古典主義": "Neoclassicism", "ロマン主義": "Romanticism", "写実主義": "Realism", "近代彫刻の誕生": "The Birth of Modern Sculpture", "新印象派（点描）": "Neo-Impressionism (Pointillism)", "ポスト印象派": "Post-Impressionism", "象徴主義とアール・ヌーヴォー": "Symbolism & Art Nouveau", "フォーヴィスム（野獣派）": "Fauvism", "キュビスム（立体派）": "Cubism", "未来派": "Futurism", "抽象の誕生": "The Birth of Abstraction", "ドイツ表現主義": "German Expressionism", "ロシア前衛（シュプレマティスムと構成主義）": "Russian Avant-Garde (Suprematism & Constructivism)", "ダダ": "Dada", "エコール・ド・パリ": "School of Paris", "戦前期の20世紀美術（多様化する表現）": "Prewar 20th-Century Art (Diversifying Expression)", "アンフォルメルとアール・ブリュット（ヨーロッパの戦後）": "Art Informel & Art Brut (Postwar Europe)", "抽象表現主義（戦後アメリカ美術の誕生）": "Abstract Expressionism (Birth of Postwar American Art)", "フォンタナの「空間概念」": "Fontana's “Spatial Concept”", "ジョーンズとネオ・ダダ": "Johns & Neo-Dada", "イヴ・クラインと三木富雄": "Yves Klein & Tomio Miki", "フルクサスと映像の美術": "Fluxus & Video Art", "ミニマル・アート": "Minimal Art", "アルテ・ポーヴェラ": "Arte Povera", "コンセプチュアル・アート（概念芸術）": "Conceptual Art", "ランド・アート（アースワーク）": "Land Art (Earthworks)", "フェミニスト・アート": "Feminist Art", "ピクチャーズ世代（写真と引用）": "The Pictures Generation (Photography & Appropriation)", "ニュー・ペインティングと新表現主義": "New Painting & Neo-Expressionism", "シミュレーションとクーンズ": "Simulation & Koons", "グローバル化する美術": "Art in Globalization", "リレーショナル・アートと参加の美術": "Relational Art & Participation", "2000年代（ビエンナーレと市場の時代）": "The 2000s (Age of Biennales & the Market)", "ポスト・インターネットとSNSの美術": "Post-Internet & Social-Media Art", "現代（2020年代）": "Contemporary (2020s)", "切り替えるとアプリを再読み込みします。": "The app reloads when you switch.", "彫刻家の素描": "Sculptors' Drawings", "写真ベース": "Photo-based", "パフォーマンス": "Performance", "エンコスティック": "Encaustic", "アレブレボケ": "Are-bure-boke", "枡目描き": "Masume Grid Drawing", "バンドン": "Bandung", "独学": "Self-taught", "装飾": "Decoration", "不在": "Absence", "知覚": "Perception", "奇想": "Fantastical Invention", "ユーモア": "Humor", "美人画": "Bijin-ga", "参加": "Participation", "場": "Site", "仮面": "Mask", "ネガと空間": "Negative & Space", "キャンバスへの翻訳": "Canvas Translation", "世界観": "Worldview", "すべて ▾": "All ▾", "必見": "Must-see", "近世": "Early Modern", "生年不詳": "Birth year unknown", "芸術家": "Artist", "該当する項目がありません": "No items match", "分野で絞る": "Filter by field", "見る": "View", "時代で選ぶ": "Choose by period", "世界地図": "World map", "その年の動き": "That Year's Movements", "批評": "Criticism", "使い方": "How to Use", "サムネにする": "Set as Thumbnail", "超高画質": "Ultra-high Resolution", "‹ 前": "‹ Prev", "次 ›": "Next ›", "やめる": "Cancel", "元に戻す": "Undo", "← 戻る": "← Back", "制作プロセス": "Production Process", "技法・材料": "Techniques", "内省": "Reflection", "美大": "Art Universities", "カレンダー": "Calendar", "地と支持体": "Ground & Support", "下地づくり": "Preparing the Ground", "油彩の工程": "The Oil-Painting Process", "仕上げと保存": "Finishing & Preservation", "タイトルの付け方": "Naming Works", "タイトル": "Title", "逆算ロードマップ": "The Backward Roadmap", "逆算": "Backward Planning", "フェーズ": "Phase", "期間": "Period", "主な仕事": "Main Work", "やめること": "What to Stop", "フェーズ総覧": "Phase Overview", "やめることリスト": "The Stop-Doing List", "土台工事": "Foundation Work", "共通テスト守備": "Common Test Defense", "本番と切替": "The Real Thing & the Switch", "私大実技本番": "Private-School Practicals", "一次と発表": "First Stage & Results", "二次と決着": "Second Stage & Settlement", "＋ 作品を追加": "＋ Add a Work", "画像・題名・年・素材・ステイトメントを登録する": "Register image, title, year, materials and a statement", "自分の作品を小さな展示として置く場所。作品とステイトメントを登録しておくと、チャットで批評ジジイ（Muse）が批評し、その文章をここへ貼って残せる。": "A place to set your own works as a small exhibition. Register a work and its statement, and the Critic (Muse) will critique it in chat — paste the text here to keep it.", "作品価格早見表": "Work Prices: Quick Reference", "価格がわかる作品の一覧": "Works with Known Prices", "基礎": "Basics", "仕組み": "How It Works", "懐と生活": "Money & Life", "爆発の瞬間": "The Moment of Explosion", "巨匠": "Masters", "うまくやる方法": "How to Do It Well", "所属": "Affiliation", "世界の美大": "Art Universities of the World", "アーティストプロデュース": "Producing the Artist", "傾向と未来": "Trends & the Future", "日本と世界": "Japan & the World", "まだ価格データが届いていません。": "No price data has arrived yet.", "言葉で探す": "Search by word", "東京藝術大学": "Tokyo University of the Arts", "多摩美術大学": "Tama Art University", "武蔵野美術大学": "Musashino Art University", "上野・取手": "Ueno · Toride", "八王子": "Hachioji", "鷹の台（小平）": "Takanodai (Kodaira)", "大学情報": "University Info", "何を学ぶか": "What You Study", "出願の全体像": "Applying: The Whole Picture", "入学金": "Entrance Fee", "アートビジネスの章「世界の美大」へ（海外の美大）": "To the Art Business chapter “Art Universities of the World” (overseas schools)", "教授の名前・大学・大学情報で探す": "Search professors, universities, info", "表示の大きさ": "Display Size", "絵画の系譜": "Lineage of Painting", "展示カレンダー": "Exhibition Calendar", "今月": "This Month", "初日": "Opening Day", "最終日": "Closing Day", "初日・最終日をチップで見る": "View first / last days as chips", "全部": "All", "海外": "Overseas", "「終」は最終日": "“終” marks the final day", "表現主義": "Expressionism", "新表現主義": "Neo-Expressionism", "象徴主義": "Symbolism", "ナビ派": "Les Nabis", "円山派": "Maruyama School", "ポストミニマリズム": "Post-Minimalism", "オプ・アート": "Op Art", "もの派以後": "After Mono-ha", "フルクサス": "Fluxus", "ハイパーリアリズム": "Hyperrealism", "アウトサイダー": "Outsider", "抽象表現主義への橋": "Bridge to Abstract Expressionism", "ネオ・ダダ": "Neo-Dada", "項目を編集": "Edit Item", "名前 *": "Name *", "欧文名": "Name (Latin alphabet)", "母国語表記": "Native-language Name", "分類（section）": "Section", "タグ（カンマ区切り）": "Tags (comma-separated)", "代表作ファイル名": "Signature Work File Name", "代表作キャプション": "Signature Work Caption", "紹介（プロフィールの下部）": "Introduction (bottom of profile)", "本文（来歴・技法・特徴メモ）": "Body (history / technique / notes)", "作品（works）": "Works", "画像ファイル差し替え": "Replace Image File", "画像ファイル差し替え：": "Replace image file:", "削除": "Delete", "作品を追加": "Add a Work", "保存する": "Save", "この項目を削除": "Delete This Item", "この作品はお気に入りにできません": "This work can't be favorited", "没年": "Year of Death", "見るべき代表作": "Signature Works to See", "作品でたどる歩み": "The Path, Through Works", "影響を与えた作家": "Artists They Influenced", "比較される作家": "Often Compared With", "問いと作家": "Questions & Artists", "戦争と暴力": "War & Violence", "災害と喪失": "Disaster & Loss", "環境と気候": "Environment & Climate", "身体と病": "Body & Illness", "貧困と労働": "Poverty & Labor", "差別と排除": "Discrimination & Exclusion", "メディアと監視": "Media & Surveillance", "老いと死": "Aging & Death", "ジェンダー": "Gender", "AIと芸術": "AI & Art", "時事": "News", "トップ": "Top", "相関": "Correlations", "相関を読む": "Reading the Correlations", "相関をくわしく ›": "More on correlations ›", "答えを見る": "Show Answer", "‹ 年表へ戻る": "‹ Back to Timeline", "年齢": "Age", "享年": "Age at death", "出生地": "Birthplace", "拠点": "Based in", "紹介": "Introduction", "会期を月で見る": "See exhibitions by month", "ニュースと相関": "News & correlations", "終了が早い順": "Ending soonest", "ギャラリー・美術館": "Galleries & Museums", "過去の展示": "Past exhibitions", "記事": "Article", "本人の言葉": "In their own words", "購入ページ": "Purchase page", "出典のインタビューを開く ›": "Open the source interview ›", "タップで再同期": "Tap to re-sync", "同期済み": "Synced", "グラスゴー": "Glasgow", "東京": "Tokyo", "大阪": "Osaka", "京都": "Kyoto", "名古屋": "Nagoya", "横浜": "Yokohama", "神戸": "Kobe", "札幌": "Sapporo", "仙台": "Sendai", "広島": "Hiroshima", "岡山": "Okayama", "金沢": "Kanazawa", "長野": "Nagano", "松本": "Matsumoto", "直島": "Naoshima", "豊島": "Teshima", "犬島": "Inujima", "小豆島": "Shodoshima", "尾道": "Onomichi", "倉敷": "Kurashiki", "奈良": "Nara", "滋賀": "Shiga", "岐阜": "Gifu", "静岡": "Shizuoka", "浜松": "Hamamatsu", "新潟": "Niigata", "富山": "Toyama", "福井": "Fukui", "山梨": "Yamanashi", "群馬": "Gunma", "栃木": "Tochigi", "茨城": "Ibaraki", "千葉": "Chiba", "埼玉": "Saitama", "神奈川": "Kanagawa", "愛知": "Aichi", "三重": "Mie", "和歌山": "Wakayama", "鳥取": "Tottori", "島根": "Shimane", "山口": "Yamaguchi", "徳島": "Tokushima", "香川": "Kagawa", "愛媛": "Ehime", "高知": "Kochi", "佐賀": "Saga", "長崎": "Nagasaki", "熊本": "Kumamoto", "大分": "Oita", "宮崎": "Miyazaki", "鹿児島": "Kagoshima", "沖縄": "Okinawa", "北海道": "Hokkaido", "青森": "Aomori", "岩手": "Iwate", "宮城": "Miyagi", "秋田": "Akita", "山形": "Yamagata", "福島": "Fukushima", "上野": "Ueno", "谷中": "Yanaka", "大手町": "Otemachi", "有楽町": "Yurakucho", "日本橋": "Nihonbashi", "役割": "Role", "公式ページ": "Official page", "公式": "Official", "まもなく終了する展覧会": "Exhibitions ending soon", "全落札の分布（年 × 価格）": "All sales (year × price)", "最高落札額（通貨別）": "Top sale by currency", "概算": "approx.", "影響を受けた作家": "Influenced by", "年代で見る作風と活動": "Style & activity by decade", "出典": "Source", "購入ページ ↗": "Purchase page ↗", "出典 ↗": "Source ↗", "形成期": "Formative period", "戦後批評": "Postwar Criticism", "中世": "Medieval", "先史〜中世": "Prehistoric–Medieval", "インテリア": "Interior", "店舗": "Shops", "エディトリアル": "Editorial", "ブック": "Book", "グラフィック": "Graphic", "タイポグラフィ": "Typography", "工業": "Industry", "銀座": "Ginza", "南青山": "Minami-Aoyama", "天王洲": "Tennozu", "六本木": "Roppongi", "恵比寿": "Ebisu", "代官山": "Daikanyama", "中目黒": "Nakameguro", "清澄白河": "Kiyosumi-Shirakawa", "両国": "Ryogoku", "浅草": "Asakusa", "池袋": "Ikebukuro", "新宿": "Shinjuku", "渋谷": "Shibuya", "原宿": "Harajuku", "表参道": "Omotesando", "広尾": "Hiroo", "目黒": "Meguro", "品川": "Shinagawa", "世田谷": "Setagaya", "練馬": "Nerima", "千代田": "Chiyoda", "文京": "Bunkyo", "台東": "Taito", "墨田": "Sumida", "江東": "Koto", "青山": "Aoyama", "神田": "Kanda", "京橋": "Kyobashi", "赤坂": "Akasaka", "麻布十番": "Azabujuban", "白金": "Shirokane", "自由が丘": "Jiyugaoka", "吉祥寺": "Kichijoji", "下北沢": "Shimokitazawa", "高円寺": "Koenji", "中野": "Nakano", "三鷹": "Mitaka", "鎌倉": "Kamakura", "逗子": "Zushi", "葉山": "Hayama", "小田原": "Odawara", "箱根": "Hakone", "熱海": "Atami", "軽井沢": "Karuizawa", "諏訪": "Suwa", "安曇野": "Azumino", "個展": "Solo exhibition", "グループ展": "Group exhibition", "二人展": "Two-person exhibition", "企画展": "Special exhibition", "常設展": "Permanent exhibition", "コレクション展": "Collection exhibition", "回顧展": "Retrospective", "巡回展": "Traveling exhibition", "近日開催": "Opening soon", "取手から近い収蔵先": "Collections near Toride", "まだ配信がありません。": "No deliveries yet.", "次回の収穫で、社会とアートの時事が届きます。": "The next harvest brings news on society and art.", "社会の問いに対して、図鑑の作家たちは作品でどう答えてきたか。ニュースを追うためではなく、自分の判断の材料を増やすための棚。": "How have the encyclopedia’s artists answered society’s questions through their work? A shelf for sharpening your own judgment, not for chasing the news.", "クイズデータはまだありません": "No quiz data yet", "抽象表現主義": "Abstract Expressionism", "命名": "Naming", "普及": "Outreach", "画商": "Dealer", "美術史": "Art history", "美術教育": "Art education", "美術史家": "Art historians", "欧米": "Europe & America", "現代の批評とキュレーション": "Contemporary criticism & curation", "画商と市場": "Dealers & the market", "キュレーターの時代": "The age of curators", "物語を作った人": "The storytellers", "批評とキュレーション": "Criticism & curation", "集めて残す人": "People who collect & preserve", "言葉を運ぶ人": "People who carry words", "育てる人": "People who nurture", "ロゴ": "Logo", "ブランディング": "Branding", "家具": "Furniture", "建築": "Architecture", "空間演出": "Spatial design", "ランドスケープ": "Landscape", "庭園": "Gardens", "サイン": "Signage", "モーション": "Motion", "広告": "Advertising", "ポスター": "Poster", "アイコン": "Icon", "ピクトグラム": "Pictogram", "タイトルデザイン": "Title design", "タイプデザイン": "Type design", "インフォグラフィックス": "Infographics", "クリエイティブコーディング": "Creative coding", "ジェネラティブ": "Generative", "デザイン思考": "Design thinking", "認知科学": "Cognitive science", "工業デザイン": "Industrial design", "情報デザイン": "Information design", "演劇": "Theater", "舞台美術": "Stage design", "キュレーション": "Curation", "コレクター": "Collector", "キュレーター": "Curator", "グアッシュ": "Gouache", "鉛筆": "Pencil", "キャンバス": "Canvas", "インク": "Ink", "テンペラ": "Tempera", "パネル": "Panel", "麻布": "Linen", "岩絵具": "Mineral pigments", "木炭紙": "Charcoal paper", "画用紙": "Drawing paper", "盛岡": "Morioka", "前橋": "Maebashi", "甲府": "Kofu", "津": "Tsu", "大津": "Otsu", "松江": "Matsue", "松山": "Matsuyama", "高松": "Takamatsu", "那覇": "Naha", "郡山": "Koriyama", "いわき": "Iwaki", "宇都宮": "Utsunomiya", "川越": "Kawagoe", "藤沢": "Fujisawa", "相模原": "Sagamihara", "横須賀": "Yokosuka", "平塚": "Hiratsuka", "茅ヶ崎": "Chigasaki", "厚木": "Atsugi", "府中": "Fuchu", "調布": "Chofu", "小平": "Kodaira", "国分寺": "Kokubunji", "国立": "Kunitachi", "多摩": "Tama", "立川": "Tachikawa", "武蔵野": "Musashino", "青梅": "Ome", "昭島": "Akishima", "小金井": "Koganei", "豊田": "Toyota", "岡崎": "Okazaki", "一宮": "Ichinomiya", "豊橋": "Toyohashi", "春日井": "Kasugai", "安城": "Anjo", "四日市": "Yokkaichi", "伊勢": "Ise", "鈴鹿": "Suzuka", "彦根": "Hikone", "草津": "Kusatsu", "近江八幡": "Omihachiman", "宇治": "Uji", "亀岡": "Kameoka", "舞鶴": "Maizuru", "福知山": "Fukuchiyama", "堺": "Sakai", "岸和田": "Kishiwada", "豊中": "Toyonaka", "吹田": "Suita", "高槻": "Takatsuki", "枚方": "Hirakata", "茨木": "Ibaraki (Osaka)", "八尾": "Yao", "寝屋川": "Neyagawa", "東大阪": "Higashiosaka", "姫路": "Himeji", "尼崎": "Amagasaki", "明石": "Akashi", "西宮": "Nishinomiya", "芦屋": "Ashiya", "伊丹": "Itami", "加古川": "Kakogawa", "宝塚": "Takarazuka", "川西": "Kawanishi", "三田": "Sanda", "奈良市": "Nara", "橿原": "Kashihara", "生駒": "Ikoma", "津山": "Tsuyama", "玉野": "Tamano", "総社": "Soja", "福山": "Fukuyama", "呉": "Kure", "東広島": "Higashihiroshima", "廿日市": "Hatsukaichi", "岩国": "Iwakuni", "下関": "Shimonoseki", "宇部": "Ube", "防府": "Hofu", "下松": "Kudamatsu", "周南": "Shunan", "萩": "Hagi", "北九州": "Kitakyushu", "久留米": "Kurume", "大牟田": "Omuta", "飯塚": "Iizuka", "佐世保": "Sasebo", "諫早": "Isahaya", "大村": "Omura", "別府": "Beppu", "中津": "Nakatsu", "日田": "Hita", "都城": "Miyakonojo", "延岡": "Nobeoka", "日向": "Hyuga", "出水": "Izumi", "薩摩川内": "Satsumasendai", "霧島": "Kirishima", "鹿屋": "Kanoya", "指宿": "Ibusuki", "沖縄市": "Okinawa", "浦添": "Urasoe", "宜野湾": "Ginowan", "石垣": "Ishigaki", "宮古島": "Miyakojima", "ロサンゼルス": "Los Angeles", "ベルリン": "Berlin", "ウィーン": "Vienna", "ヴェネツィア": "Venice", "ミュンヘン": "Munich", "サンパウロ": "São Paulo", "ソウル": "Seoul", "ワシントンD.C.": "Washington, D.C.", "ワシントン": "Washington", "シカゴ": "Chicago", "香港": "Hong Kong", "ワルシャワ": "Warsaw", "サンフランシスコ": "San Francisco", "ミラノ": "Milan", "アムステルダム": "Amsterdam", "マドリード": "Madrid", "上海": "Shanghai", "ブリュッセル": "Brussels", "ダラス": "Dallas", "モスクワ": "Moscow", "コペンハーゲン": "Copenhagen", "チューリッヒ": "Zurich", "ソフィア": "Sofia", "カッセル": "Kassel", "ローマ": "Rome", "水戸": "Mito", "デュッセルドルフ": "Düsseldorf", "バーゼル": "Basel", "エディンバラ": "Edinburgh", "ミネアポリス": "Minneapolis", "マイアミ": "Miami", "バルセロナ": "Barcelona", "ナポリ": "Naples", "トリノ": "Turin", "ケルン": "Cologne", "アントワープ": "Antwerp", "フィラデルフィア": "Philadelphia", "キャンベラ": "Canberra", "ローリー": "Raleigh", "パンタン": "Pantin", "サン・モリッツ": "St. Moritz", "フィルミニー": "Firminy", "シュヴェービッシュ・ハル": "Schwäbisch Hall", "タンパ": "Tampa", "ベルン": "Bern", "フォートローダーデール": "Fort Lauderdale", "クノッケ＝ヘイスト": "Knokke-Heist", "ヒューストン": "Houston", "ボストン": "Boston", "シアトル": "Seattle", "デンバー": "Denver", "アトランタ": "Atlanta", "ラスベガス": "Las Vegas", "サンディエゴ": "San Diego", "ポートランド": "Portland", "クリーブランド": "Cleveland", "ピッツバーグ": "Pittsburgh", "ボルチモア": "Baltimore", "セントルイス": "St. Louis", "ニューオーリンズ": "New Orleans", "オースティン": "Austin", "フェニックス": "Phoenix", "バンクーバー": "Vancouver", "トロント": "Toronto", "モントリオール": "Montreal", "メキシコシティ": "Mexico City", "ブエノスアイレス": "Buenos Aires", "サンティアゴ": "Santiago", "リマ": "Lima", "ハバナ": "Havana", "マンチェスター": "Manchester", "ダブリン": "Dublin", "ロッテルダム": "Rotterdam", "ハーグ": "The Hague", "ユトレヒト": "Utrecht", "ヘント": "Ghent", "ブリュージュ": "Bruges", "リヨン": "Lyon", "マルセイユ": "Marseille", "ニース": "Nice", "ボルドー": "Bordeaux", "ナント": "Nantes", "ストラスブール": "Strasbourg", "リール": "Lille", "ハンブルク": "Hamburg", "フランクフルト": "Frankfurt", "シュトゥットガルト": "Stuttgart", "ドレスデン": "Dresden", "ハノーファー": "Hanover", "ブレーメン": "Bremen", "フライブルク": "Freiburg", "バレンシア": "Valencia", "セビリア": "Seville", "ビルバオ": "Bilbao", "グラナダ": "Granada", "リスボン": "Lisbon", "ポルト": "Porto", "フィレンツェ": "Florence", "ボローニャ": "Bologna", "ジェノヴァ": "Genoa", "パレルモ": "Palermo", "アテネ": "Athens", "ザルツブルク": "Salzburg", "グラーツ": "Graz", "ジュネーヴ": "Geneva", "ローザンヌ": "Lausanne", "ルガーノ": "Lugano", "オスロ": "Oslo", "ストックホルム": "Stockholm", "ヨーテボリ": "Gothenburg", "ヘルシンキ": "Helsinki", "レイキャヴィーク": "Reykjavik", "クラクフ": "Krakow", "プラハ": "Prague", "ブダペスト": "Budapest", "ブカレスト": "Bucharest", "ザグレブ": "Zagreb", "リュブリャナ": "Ljubljana", "ベオグラード": "Belgrade", "サンクトペテルブルク": "St. Petersburg", "キーウ": "Kyiv", "イスタンブール": "Istanbul", "テルアビブ": "Tel Aviv", "エルサレム": "Jerusalem", "ドバイ": "Dubai", "ドーハ": "Doha", "テヘラン": "Tehran", "ムンバイ": "Mumbai", "デリー": "Delhi", "バンガロール": "Bangalore", "コルカタ": "Kolkata", "バンコク": "Bangkok", "ハノイ": "Hanoi", "ホーチミン": "Ho Chi Minh City", "ジャカルタ": "Jakarta", "シンガポール": "Singapore", "クアラルンプール": "Kuala Lumpur", "マニラ": "Manila", "釜山": "Busan", "北京": "Beijing", "広州": "Guangzhou", "深圳": "Shenzhen", "成都": "Chengdu", "西安": "Xi'an", "南京": "Nanjing", "杭州": "Hangzhou", "武漢": "Wuhan", "台北": "Taipei", "高雄": "Kaohsiung", "シドニー": "Sydney", "メルボルン": "Melbourne", "ブリスベン": "Brisbane", "パース": "Perth", "アデレード": "Adelaide", "オークランド": "Auckland", "ウェリントン": "Wellington", "ケープタウン": "Cape Town", "ヨハネスブルグ": "Johannesburg", "カイロ": "Cairo", "ラゴス": "Lagos", "ナイロビ": "Nairobi", "マサチューセッツ": "Massachusetts", "ペンシルベニア": "Pennsylvania", "オハイオ": "Ohio", "ミシガン": "Michigan", "イリノイ": "Illinois", "テキサス": "Texas", "カリフォルニア": "California", "フロリダ": "Florida", "ジョージア": "Georgia", "ノースカロライナ": "North Carolina", "サウスカロライナ": "South Carolina", "ニュージャージー": "New Jersey", "バージニア": "Virginia", "メリーランド": "Maryland", "コネチカット": "Connecticut", "ケンタッキー": "Kentucky", "テネシー": "Tennessee", "アラバマ": "Alabama", "ミシシッピ": "Mississippi", "ルイジアナ": "Louisiana", "オクラホマ": "Oklahoma", "カンザス": "Kansas", "ネブラスカ": "Nebraska", "モンタナ": "Montana", "コロラド": "Colorado", "ニューメキシコ": "New Mexico", "アリゾナ": "Arizona", "ユタ": "Utah", "ネバダ": "Nevada", "アイダホ": "Idaho", "オレゴン": "Oregon", "アラスカ": "Alaska", "ハワイ": "Hawaii", "ミネソタ": "Minnesota", "アイオワ": "Iowa", "ミズーリ": "Missouri", "ウィスコンシン": "Wisconsin", "インディアナ": "Indiana", "メーン": "Maine", "メイン": "Maine", "バーモント": "Vermont", "デラウェア": "Delaware", "アーカンソー": "Arkansas", "ワイオミング": "Wyoming", "サウスダコタ": "South Dakota", "ノースダコタ": "North Dakota", "ロードアイランド": "Rhode Island", "ニューハンプシャー": "New Hampshire", "ウェストバージニア": "West Virginia", "探している人が見つからない場合は": "If you can't find who you're looking for", "名前を送ると Muse が調べて図鑑に登録します（カタカナのままでOK）": "Send a name and Muse will research it and register it in the encyclopedia (katakana is fine)"};
+const I18N_EN = {"その他": "Other", "保留リスト": "Holding list", "お金の価値": "Value of money", "作家": "Artists", "デザイナー": "Designers", "立役者": "Makers", "展示": "Exhibitions", "年表": "Timeline", "系譜": "Lineage", "通知": "Notifications", "更新履歴": "Update history", "更新予定": "Coming updates", "検索": "Search", "閉じる": "Close", "戻る": "Back", "‹ 戻る": "‹ Back", "‹ 一覧へ戻る": "‹ Back to list", "‹ 作家へ戻る": "‹ Back to artist", "‹ 展示へ戻る": "‹ Back to exhibition", "‹ 章の一覧へ戻る": "‹ Back to chapters", "‹ 目次へ戻る": "‹ Back to contents", "‹ 読んでいた場所へ戻る": "‹ Back to where you were reading", "‹ 辞典へ戻る": "‹ Back to glossary", "‹ 藝大・美大へ戻る": "‹ Back to art universities", "読み込み中…": "Loading…", "読み込んでいます…": "Loading…", "検索結果": "Search results", "お気に入り": "Favorites", "お気に入りだけ表示": "Favorites only", "お気に入りに追加しました": "Added to favorites", "お気に入りを保存できませんでした": "Couldn't save favorites", "登録": "Register", "未登録": "Not registered", "削除する": "Delete", "追加": "Add", "変更": "Change", "保存": "Save", "入力": "Input", "選択": "Select", "確認": "Confirm", "送信": "Send", "開く": "Open", "表示": "Show", "非表示": "Hide", "拡大": "Enlarge", "図はタップで拡大できます": "Tap a figure to enlarge it", "絵はタップで拡大できます": "Tap the image to enlarge it", "表はタップで拡大できます": "Tap the table to enlarge it", "図の拡大表示": "Figure viewer", "名前・分野・タグ・本文から検索": "Search names, fields, tags and text", "検索をクリア": "Clear search", "検索を開く": "Open search", "タグ絞り込みを開く": "Open tag filters", "表示する地域": "Region", "全部（西洋と日本を一緒に表示）": "All (West and Japan together)", "日本": "Japan", "西洋": "West", "地域": "Region", "Google Drive 同期": "Google Drive sync", "作家・デザイナーの登録依頼": "Request an artist / designer", "テーマカラー": "Theme color", "文字設定": "Text settings", "フォントスタイル": "Font style", "行間": "Line spacing", "サウンド": "Sound", "データ": "Data", "位置情報": "Location", "中継（Apps Script）": "Relay (Apps Script)", "このアプリについて": "About this app", "画像診断（不具合調査用）": "Image diagnostics (for troubleshooting)", "ストレージ診断（不具合調査用）": "Storage diagnostics (for troubleshooting)", "言語": "Language", "オン": "On", "オフ": "Off", "設定済み": "Set", "未設定": "Not set", "未接続": "Not connected", "接続": "Connect", "Drive に接続": "Connect to Drive", "今すぐ同期": "Sync now", "接続を解除": "Disconnect", "保存して接続テスト": "Save and test connection", "中継を解除": "Remove relay", "位置情報をオンにする": "Turn location on", "位置情報をオフにする": "Turn location off", "位置はまだ取得していません": "No location fetched yet", "診断を開始": "Start diagnostics", "再計測": "Measure again", "この名前で登録を依頼する": "Request registration under this name", "依頼の履歴": "Request history", "登録依頼": "Registration request", "通知と更新履歴": "Notifications and update history", "大きさ": "Size", "小": "Small", "標準": "Standard", "大": "Large", "特大": "Extra large", "本文の行間": "Body line spacing", "ページを捲る音": "Page-turn sound", "音量": "Volume", "登録順": "By registration", "年代別": "By era", "新しい順": "Newest first", "古い順": "Oldest first", "名前順": "By name", "全": "All", "分類": "Class", "分野": "Field", "時代": "Period", "地域別": "By region", "並び替え": "Sort", "絞り込み": "Filter", "クリア": "Clear", "条件をリセット": "Reset filters", "該当する作家はいません": "No artists match", "該当する作品はありません": "No works match", "この条件のアルバムはありません": "No albums match these filters", "作品": "Works", "素描": "Drawings", "ドローイング": "Drawing", "本": "Books", "展示・年表": "Exhibitions & timeline", "来歴": "Biography", "関係": "Relations", "価格": "Prices", "評価": "Reception", "ユーモア": "Humour", "人間的魅力": "Human charm", "オーラを稼ぐ": "Earning an aura", "セルフプロデュース": "Self-production", "ロールモデル": "Role models", "嘘のうまさ": "Lying well", "キャラクター": "Character", "変えられない資本": "Unchangeable capital", "ウィット": "Wit", "教養": "Common ground", "発言": "Quotes", "インタビュー": "Interviews", "制作過程": "Process", "何を描いたか": "What is painted", "絵作り": "Composition", "どう描いたか": "How it is painted", "見どころ": "Highlights", "プロフィール": "Profile", "代表作": "Signature work", "所蔵": "Collection", "画材": "Materials", "技法": "Technique", "画材メモ": "Materials notes", "制作メモ": "Process notes", "制作の工程": "Steps", "制作風景": "In the studio", "制作環境": "Studio environment", "肖像": "Portrait", "写真なし": "No photo", "画像なし": "No image", "詳しく": "Details", "もっと見る": "See more", "原文": "Original", "意訳": "Paraphrase", "言葉": "Words", "作家の言葉": "Artists' words", "用語辞典": "Glossary", "単語を検索": "Search a term", "用語は準備中です": "No glossary entry yet", "本文は準備中です": "No text yet", "開催中": "Now showing", "開催予定": "Upcoming", "終了": "Ended", "開催中・これから": "Now & upcoming", "開始まで": "until start", "近い順": "Nearest first", "開始日順": "By start date", "会期": "Dates", "会場": "Venue", "入場": "Admission", "無料": "Free", "有料": "Paid", "前へ": "Previous", "次へ": "Next", "一覧": "List", "詳細": "Details", "拡大表示": "Viewer", "点をタップすると、その落札の詳細が出ます。": "Tap a point to see that sale's details.", "制作ガイド": "Production Guide", "アートビジネス": "Art Business", "目次": "Contents", "章": "Chapter", "用語": "Terms", "価格表": "Price table", "社会性": "Social skills", "心が沈むとき": "When you're down", "困りごと帖": "Troubleshooting notes", "データで読む": "Reading the data", "発言集": "Collected quotes", "藝大・美大": "Geidai & art universities", "学校情報": "School info", "記録": "Record", "傾向": "Trends", "対策": "Strategy", "課題": "Assignments", "油彩": "Oil painting", "デッサン": "Drawing", "当日": "Exam day", "全体地図": "Overview", "教授": "Professors", "大学": "Universities", "この端末にはまだ届いていません": "Not on this device yet", "同期": "Sync", "同期しました": "Synced", "失敗": "Failed", "完了": "Done", "エラー": "Error", "成功": "Success", "処理中": "Working…", "送信中": "Sending…", "保存しました": "Saved", "削除しました": "Deleted", "コピーしました": "Copied", "リンク": "Link", "共有": "Share", "印刷": "Print", "ダウンロード": "Download", "アップロード": "Upload", "再試行": "Retry", "キャンセル": "Cancel", "決定": "OK", "はい": "Yes", "いいえ": "No", "あとで": "Later", "今すぐ": "Now", "今日": "Today", "明日": "Tomorrow", "昨日": "Yesterday", "戦後〜現代の正典（欧米）": "Postwar–Contemporary Canon (West)", "日本の正典：古典〜現代": "Japanese Canon: Classical–Contemporary", "美術史の正典：古典〜近代": "Art-History Canon: Classical–Modern", "現代": "Contemporary", "正典": "Canon", "現代日本": "Contemporary Japan", "日本の戦後": "Postwar Japan", "戦後日本": "Postwar Japan", "ドイツ戦後": "Postwar Germany", "日本の正典": "Japanese Canon", "戦後": "Postwar", "近代": "Modern", "古典": "Classical", "江戸": "Edo", "ルネサンス": "Renaissance", "バロック": "Baroque", "印象派": "Impressionism", "キュビスム": "Cubism", "シュルレアリスム": "Surrealism", "シュプレマティスム": "Suprematism", "構成主義": "Constructivism", "ポップアート": "Pop Art", "ミニマリズム": "Minimalism", "モダニズム": "Modernism", "バウハウス": "Bauhaus", "アール・ヌーヴォー": "Art Nouveau", "アール・デコ": "Art Deco", "デ・ステイル": "De Stijl", "ポストモダン": "Postmodern", "メンフィス": "Memphis", "アーツ・アンド・クラフツ": "Arts and Crafts", "民藝": "Mingei (folk craft)", "具体": "Gutai", "具体美術協会": "Gutai Art Association", "もの派": "Mono-ha", "九州派": "Kyushu-ha", "琳派": "Rinpa", "ハイレッド・センター": "Hi-Red Center", "ネオ・ジオ": "Neo-Geo", "スーパーフラット": "Superflat", "アール・ブリュット": "Art Brut", "アクション・ペインティング": "Action Painting", "カラーフィールド": "Color Field", "社会彫刻": "Social Sculpture", "空間主義": "Spatialism", "ランドアート": "Land Art", "コンセプチュアル": "Conceptual", "コンセプチュアル・アート": "Conceptual Art", "モノクローム": "Monochrome", "浮世絵": "Ukiyo-e", "日本画": "Nihonga", "中国現代美術": "Contemporary Chinese Art", "モダニズムの転回点": "Turning Points of Modernism", "ネガティブ彫刻・空間の系譜": "Negative Sculpture & Space", "地・ネガ・マスの系譜": "Ground, Negative, Mass", "キャンバスへの翻訳モデル": "Canvas Translation Models", "制度・場のモデル": "Institutions & Sites", "市場・成功の事例": "Market & Success Cases", "言葉の側：理論・批評・現場の声": "Words: Theory, Criticism, Voices", "人格・仮面のモデル": "Persona & Mask Models", "世界観の参照": "Worldview References", "影響源": "Influences", "試験対策": "Exam Prep", "独学で成功した画家たち": "Self-Taught Painters Who Made It", "参照群": "Reference group", "成功例": "Success cases", "アメリカ": "United States", "フランス": "France", "イギリス": "United Kingdom", "ドイツ": "Germany", "イタリア": "Italy", "スペイン": "Spain", "オランダ": "Netherlands", "ベルギー": "Belgium", "オーストリア": "Austria", "チェコ": "Czechia", "ロシア": "Russia", "アイルランド": "Ireland", "デンマーク": "Denmark", "スコットランド": "Scotland", "ポーランド": "Poland", "スイス": "Switzerland", "ブラジル": "Brazil", "キューバ": "Cuba", "カナダ": "Canada", "フィンランド": "Finland", "オーストラリア": "Australia", "スウェーデン": "Sweden", "ハンガリー": "Hungary", "中国": "China", "韓国": "Korea", "メキシコ": "Mexico", "アルゼンチン": "Argentina", "南アフリカ": "South Africa", "イスラエル": "Israel", "ノルウェー": "Norway", "ポルトガル": "Portugal", "ギリシャ": "Greece", "ルーマニア": "Romania", "ブルガリア": "Bulgaria", "エチオピア": "Ethiopia", "タイ": "Thailand", "ソ連": "USSR", "北欧": "Northern Europe", "パリ": "Paris", "ロンドン": "London", "ニューヨーク": "New York", "ライプツィヒ": "Leipzig", "福岡": "Fukuoka", "東北": "Tohoku", "絵画": "Painting", "彫刻": "Sculpture", "平面": "Flat work", "立体": "Three-dimensional", "映像・写真": "Video & Photography", "映像": "Video", "写真": "Photography", "版画": "Printmaking", "水彩": "Watercolor", "パステル": "Pastel", "木炭": "Charcoal", "アクリル": "Acrylic", "紙": "Paper", "金属": "Metal", "ガラス": "Glass", "陶": "Ceramics", "陶器": "Ceramics", "漆": "Lacquer", "木": "Wood", "木彫": "Wood carving", "鉄": "Iron", "石": "Stone", "布": "Cloth", "綿布": "Cotton cloth", "蝋": "Wax", "釘": "Nails", "鉛": "Lead", "火": "Fire", "土": "Earth", "水": "Water", "金": "Gold", "金地": "Gold ground", "白亜地": "Chalk ground", "大理石粉": "Marble powder", "自作絵の具": "Handmade paint", "工業素材": "Industrial materials", "コンクリート": "Concrete", "スチール": "Steel", "鋼管": "Steel pipe", "プラスチック": "Plastic", "ナイロン": "Nylon", "ラテックス": "Latex", "ジュート": "Jute", "韓紙": "Hanji paper", "モスリン": "Muslin", "紬": "Tsumugi silk", "織物": "Textile", "テキスタイル": "Textile", "刺繍": "Embroidery", "鋳造": "Casting", "スフマート": "Sfumato", "グレーズ": "Glaze", "薄塗り": "Thin painting", "厚塗り": "Thick painting (impasto)", "平塗り": "Flat painting", "滲み": "Bleed", "染み": "Stain", "ステイニング": "Staining", "ぼかし": "Blur / softening", "ブラー": "Blur", "拭う": "Wiping", "拭き取り": "Wiping off", "消去": "Erasure", "描画・消去": "Drawing & Erasure", "切断": "Cutting", "切る": "Cutting", "削る": "Shaving / carving away", "引き算": "Subtraction", "積層": "Layering", "転写": "Transfer", "スプレー": "Spray", "エアブラシ": "Airbrush", "筆触": "Brushwork", "筆致": "Brushwork", "速い筆": "Fast brushwork", "ジェスチャー": "Gesture", "ドリッピング": "Dripping", "流す": "Pouring", "引きずり": "Dragging", "手で塗る": "Hand-applied", "素手": "Bare hands", "指で描く": "Finger painting", "ライブペインティング": "Live painting", "デコラージュ": "Décollage", "レディメイド": "Readymade", "コラージュ": "Collage", "レリーフ": "Relief", "マルチメディア": "Multimedia", "アニメーション": "Animation", "アニメ": "Anime", "インスタレーション": "Installation", "インスタレーション・パフォーマンス": "Installation & Performance", "工房制": "Workshop system", "支持体": "Support", "最小素材": "Minimal materials", "古いキャンバス": "Old canvas", "ガラスビーズ": "Glass beads", "ビーズ": "Beads", "籐": "Rattan", "スチールパイプ": "Steel pipe", "オイルスティック": "Oil stick", "フラッシェ": "Flashe", "絵画技法": "Painting technique", "古典技法": "Classical technique", "コンピュータ絵画": "Computer painting", "半立体": "Semi-relief", "静物": "Still life", "自画像": "Self-portrait", "風景": "Landscape", "抽象": "Abstract", "抽象絵画": "Abstract painting", "具象": "Figurative", "歴史画": "History painting", "物語": "Narrative", "神話": "Myth", "夢": "Dream", "身体": "Body", "肉体": "Flesh", "光": "Light", "影": "Shadow", "黒": "Black", "白": "White", "黄色": "Yellow", "青": "Blue", "色彩": "Color", "色面": "Color field", "平面性": "Flatness", "平面性の強い絵画": "Strongly flat painting", "図と地": "Figure and Ground", "地と図": "Ground and Figure", "地": "Ground", "ネガ": "Negative", "ネガティブ彫刻": "Negative sculpture", "ネガティブスペース": "Negative space", "虚空": "Void", "空洞": "Cavity", "穴": "Hole", "余白": "Blank space / Margin", "グリッド": "Grid", "マス目": "Grid", "マス": "Mass / Grid", "量塊": "Mass", "量": "Volume", "空間": "Space", "時間": "Time", "記憶": "Memory", "反復": "Repetition", "引用": "Quotation", "構造": "Structure", "概念": "Concept", "記号": "Sign", "理論": "Theory", "方法": "Method", "素材": "Material", "物質": "Matter", "物質感": "Material presence", "静けさ": "Stillness", "静謐": "Serenity", "不穏": "Unease", "透明": "Transparency", "投影": "Projection", "解像度の配分": "Resolution allocation", "グラフィカル": "Graphical", "幾何学": "Geometry", "幾何": "Geometry", "イラストレーション": "Illustration", "日常": "Everyday life", "都市": "City", "市場": "Market", "書体": "Typeface", "端末フォント": "Device font", "明朝": "Mincho", "ゴシック": "Gothic", "丸ゴシック": "Rounded Gothic", "サンセリフ": "Sans-serif", "欧文書体": "Latin typeface", "新聞書体": "Newspaper typeface", "実験書体": "Experimental typeface", "書体実験": "Type experiments", "Transport書体": "Transport typeface", "領域": "Domain", "分野マークの凡例": "Field-symbol legend", "立体の技法": "3D techniques", "素材・支持体": "Materials & Supports", "都市・地域": "City / Region", "国・地域": "Country / Region", "領域：": "Domain:", "時代：": "Period:", "期：": "Period:", "出典：": "Source:", "生年": "Born", "存命": "Living", "紀元前": "BC", "世紀": "century", "年": "year", "月": "month", "日": "day", "歳": "years old", "名": "people", "件": "items", "点": "works", "あと": "left", "まもなく終了": "Ending soon", "これから": "Upcoming", "見送り": "Passed", "依頼中": "Requested", "財団": "Foundations", "団体": "Organizations", "作家図鑑": "Artist Encyclopedia", "デザイナー図鑑": "Designer Encyclopedia", "立役者図鑑": "Maker Encyclopedia", "辞典": "Glossary", "年代記": "Chronicle", "表紙": "Cover", "図版": "Plate", "サイズ": "Size", "図鑑で見る": "View in the encyclopedia", "JSON を書き出す": "Export JSON", "全データを削除": "Delete all data", "トークンを取得できませんでした": "Couldn't get a token", "読み込めませんでした。": "Couldn't load it.", "章が見つかりません": "Chapter not found", "この年は、どの場所も表立っては動いていません。": "Nothing visibly moved anywhere this year.", "操作パネルを隠す": "Hide control panel", "操作パネルを隠す／出す": "Show / hide control panel", "ワイド": "Wide", "コンパクト": "Compact", "ミニ": "Mini", "マイクロ": "Micro", "古い順／新しい順を切り替える": "Toggle oldest / newest", "小画面": "Small screen", "巨大画面": "Huge canvas", "画面": "Screen", "画面分割": "Split screen", "匿名": "Anonymous", "社会": "Society", "アート": "Art", "デザイン": "Design", "ファッション": "Fashion", "音楽": "Music", "文学": "Literature", "スイス・スタイル": "Swiss Style", "五輪": "Olympics", "東京五輪": "Tokyo Olympics", "コンピュータ": "Computer", "万能人": "Universal man", "早見表": "Quick reference", "時代 ▾": "Period ▾", "更新": "Update", "すべて": "All", "カレンダーを閉じる": "Close calendar", "カレンダーを表示する": "Show calendar", "作品をお気に入り": "Favorite this work", "肖像写真": "Portrait photo", "インタビュー本文": "Interview text", "年代記の時代": "Chronicle periods", "レイヤー": "Layers", "入れ子": "Nesting", "エッジ": "Edge", "線": "Line", "タイル": "Tiles", "スケール": "Scale", "開口": "Aperture", "スリット": "Slit", "壁": "Wall", "物体": "Object", "景色": "Scenery", "図案": "Design / Pattern", "ポーズ": "Pose", "思想": "Thought", "無": "Nothingness", "代替装置": "Alternative apparatus", "コレクティヴ": "Collective", "私塾": "Private school", "共同制作": "Collaboration", "参加型": "Participatory", "他者": "Others", "境界": "Boundary", "現象": "Phenomenon", "環境": "Environment", "痕跡": "Traces", "フェミニズム": "Feminism", "粉": "Powder", "若手": "Young artists", "実験": "Experiment", "現行の若手": "Current young artists", "シルエット": "Silhouette", "可読性": "Legibility", "量産": "Mass production", "浮遊": "Floating", "標準化": "Standardization", "パターン": "Pattern", "制度": "System", "非対称": "Asymmetry", "民主化": "Democratization", "デジタル": "Digital", "解放": "Liberation", "編集": "Editing", "道具": "Tools", "教育": "Education", "プロダクト": "Product", "ランプ": "Lamp", "舞台": "Stage", "ウニッコ": "Unikko", "シェル": "Shell", "宿根草": "Perennials", "照明": "Lighting", "起源": "Origin", "制約": "Constraints", "システム": "System", "歪み": "Distortion", "カモフラージュ": "Camouflage", "別人格": "Alter ego", "人格設計": "Persona design", "光と闇": "Light and darkness", "室内": "Interior", "近代絵画の起点": "Start of modern painting", "近代絵画の父": "Father of modern painting", "連作": "Series", "宣言": "Declaration", "還元": "Reduction", "四角": "Square", "ゼロ地点": "Zero point", "絵画の向こう側": "Beyond painting", "行為": "Act", "没入": "Immersion", "複製": "Replication", "人格": "Persona", "指示書": "Instruction sheet", "写真と絵画": "Photography and painting", "枠": "Frame", "プール": "Pool", "堆積": "Accumulation", "歴史": "History", "巨大": "Huge", "演技": "Performance", "日付": "Date", "アクション": "Action", "地平線": "Horizon", "粒子": "Grain", "スナップ": "Snapshot", "網": "Net", "女性像": "Female figure", "肉": "Flesh", "模写": "Copying", "表面": "Surface", "逆転": "Inversion", "具象の解体": "Deconstruction of figuration", "私性": "The personal", "ベーコンの系譜": "Bacon's lineage", "崩れ": "Collapse", "歴史像": "Historical image", "柔らかい輪郭": "Soft contours", "無筆触": "No visible brushwork", "緻密": "Dense / meticulous", "絵の具の塊": "Lumps of paint", "想像の場面": "Imagined scenes", "素材の混入": "Mixed materials", "ターナー賞": "Turner Prize", "落書き的": "Doodle-like", "身体の幾何学": "Geometry of the body", "集団像": "Group portrait", "色の感情": "Emotion of color", "溶解": "Dissolution", "自己増殖": "Self-propagation", "層": "Layers", "写真性": "Photographic quality", "平たい": "Flat", "遅咲き": "Late bloomer", "ヴードゥー": "Voodoo", "顔の再構成": "Reconstructed faces", "古典引用": "Classical quotation", "抽象と具象の間": "Between abstraction and figuration", "水の絵の具感": "Watery paint feel", "映画的": "Cinematic", "ファイルを選んで取り込む": "Choose a file to import", "名前（例：アンゼルムキーファー）": "Name (e.g. Anselm Kiefer)", "シークレットを貼り付け": "Paste the secret", "設定済み（変更するときだけ入力）": "Set (enter only to change)", "前期": "First half", "後期": "Second half", "上旬": "Early", "中旬": "Mid", "下旬": "Late", "3大学・教授94名": "3 universities · 94 professors", "メニュー（通知・アートビジネス・制作ガイド・年表・系譜・作家の言葉）": "Menu (Notifications, Art Business, Production Guide, Timeline, Lineage, Artists' Words)", "Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）": "Drive sync status (green = connected / red = not connected or error)", "読み込めませんでした": "Couldn't load it", "端末ストレージ推定: 取得不可": "Device storage estimate: unavailable", "中継の URL": "Relay URL", "シークレット": "Secret", "あなたの Google アカウントの中で動く小さな中継スクリプト経由で同期します。設定すると、この端末では Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末の中にだけ保存されます。": "Sync runs through a small relay script in your own Google account. Once set, this device needs no Google sign-in and stays connected even when the app is closed. The URL is prefilled — you only paste the secret. The secret is stored only on this device.", "シークレットは保存済みです。欄は空で表示されます（中身は見えません）。空のまま保存すると、今のシークレットがそのまま使われます。": "The secret is saved. The field shows empty (its content is never displayed). Saving it empty keeps the current secret.", "設定済みです。接続テストで中継の応答を確認できます。": "Set. Use the connection test to check the relay's response.", "未設定です。": "Not set.", "Drive 内の「artists.json」「designers.json」と両図鑑を同期します。未接続でも端末内で全機能が使えます。": "Syncs both encyclopedias with artists.json and designers.json in Drive. Everything works on-device even when not connected.", "現在は中継（Apps Script）経由で接続しています。": "Currently connected via the relay (Apps Script).", "雑誌やネットで見つけた作家・デザイナーの名前を送ると、Muse が素性を調べて図鑑に登録します。スペルが分からなければカタカナのままで大丈夫です。登録まで数十分かかることがあります。": "Send the name of an artist or designer you found in a magazine or online, and Muse will research and register them. Katakana is fine if you don't know the spelling. Registration can take a few dozen minutes.", "画像が表示されない不具合の調査用です。読み込み経路を1つずつ実測します（固まる経路があると最大1分ほどかかります）。終わったら結果をそのままスクリーンショットで送ってください。": "For investigating image display problems. Each load path is measured one by one (a stuck path can take up to a minute). When it finishes, send a screenshot of the results as-is.", "作家の説明文・年表・クイズなどの本文に適用されます。": "Applies to body text such as artist descriptions, timelines and quizzes.", "作品ビューワーでページを捲る時に、薄い紙がめくれる音が鳴ります。設定はその場で保存されます。音量を決めると、確認のため一度だけ音が鳴ります。": "A thin paper-turn sound plays when you turn pages in the work viewer. Settings save immediately. Setting the volume plays the sound once so you can check it.", "Webフォントはネット接続時に読み込まれます。一覧を開くとプレビューが順に読み込まれます。オフラインでは端末の明朝／ゴシックで表示されます（壊れはしません）。": "Web fonts load when you're online. Opening the list loads previews one by one. Offline, text shows in the device's Mincho / Gothic (nothing breaks).", "展示の「近い順」で、現在地から近い会場を探すためにだけ使います。オンの間は、許可は最初の一度だけで、取得した位置はこの端末の中に保存されて、次回からは聞かれません。オフにすると、取得も使用も一切しません。": "Used only for the exhibitions' 'nearest first' order, to find venues near you. While on, permission is asked once; the fetched position is stored on this device and not asked again. When off, nothing is fetched or used.", "前回の取得：": "Last fetched: ", "位置情報がオフのため、開始日順で表示しています（その他でオンにできます）。": "Location is off, so exhibitions are ordered by start date (you can turn it on in Other).", "展示の画像が登録されていないため、代表作を表示しています": "No image is registered for this exhibition, so a signature work is shown", "点をタップすると、その落札の詳細が出ます": "Tap a point to see that sale's details", "Drive未接続（端末内に保存中）": "Drive not connected (saving on this device)", "タップで接続": "Tap to connect", "技法・素材": "Techniques", "テーマ・概念": "Themes & Concepts", "運動・様式": "Movements & Styles", "国": "Country", "行為・その他": "Performance & Other", "生没年": "Life", "出身": "From", "作品集": "Portfolio", "ドローイングはまだありません": "No drawings yet", "作品集のデータはまだありません": "No portfolio data yet", "登録解除を申請する": "Request removal", "作家情報をリクエスト": "Request artist info", "見どころの表示を切り替える": "Toggle highlights", "タグの分類": "Tag categories", "世界地図を大きく開く": "Open the world map", "アジア": "Asia", "アジア・その他": "Asia & Other", "古典〜近代": "Classical–Modern", "地・ネガ・マス": "Ground · Negative · Mass", "ウェンジ": "Wenge", "チーク": "Teak", "スモークウォールナット": "Smoked Walnut", "杉": "Japanese Cedar", "檜": "Japanese Cypress", "プレビュー": "Preview", "ガイド": "Guide", "名前・読み・タグで検索": "Search by name, reading or tag", "狭い": "Narrow", "広い": "Wide", "とても広い": "Very wide", "表示言語": "Display language", "画像診断": "Image diagnostics", "ストレージ診断": "Storage diagnostics", "まだ依頼はありません": "No requests yet", "Drive未接続のため、依頼は端末内に「送信待ち」として保存され、接続した時に送られます。": "Drive isn't connected, so requests are saved on this device as “waiting to send” and sent when you connect.", "ZIP（data.json＋img/）または JSON を選ぶと、同じ項目・同じ作品は自動でマージされます。": "Choose a ZIP (data.json + img/) or a JSON file — identical entries and works are merged automatically.", "保存領域の実測です。v27.6 から、お気に入り・評価・既読・送信待ちの依頼などの小さな重要データは IndexedDB に保存されます（localStorage の容量不足でお気に入りが保存できなくなる問題の対策）。": "Measures the storage area. Since v27.6, small but important data — favorites, ratings, read marks and queued requests — lives in IndexedDB (so favorites can't fail to save when localStorage runs out of room).", "タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。": "Tap to toggle. With several selected, artists matching any one of them appear.", "生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。": "Filters by birth period. Only the tapped period stays in the list; tap again to clear it.", "年表の年と連動。地名を押すと、その場所だけが光ります。": "Linked to the timeline's years. Tap a place name to light up that place only.", "美術史年表": "Art History Timeline", "クイズ": "Quiz", "世界史": "World History", "日本史": "Japanese History", "背景を読む": "Read the background", "詳しく見る ›": "See details ›", "作者不詳": "Artist unknown", "先史の美術": "Prehistoric Art", "古代オリエント（メソポタミア）": "Ancient Near East (Mesopotamia)", "古代エジプト": "Ancient Egypt", "古代ギリシャ（古典期まで）": "Ancient Greece (to the Classical period)", "ヘレニズム": "Hellenistic", "古代ローマ": "Ancient Rome", "ビザンティン": "Byzantine", "イスラム美術": "Islamic Art", "ロマネスク": "Romanesque", "国際ゴシック": "International Gothic", "初期ルネサンス": "Early Renaissance", "北方ルネサンス": "Northern Renaissance", "盛期ルネサンス": "High Renaissance", "ヴェネツィア派と色彩": "Venetian School & Color", "マニエリスム": "Mannerism", "オランダ絵画の黄金時代": "Dutch Golden Age", "ロココ": "Rococo", "新古典主義": "Neoclassicism", "ロマン主義": "Romanticism", "写実主義": "Realism", "近代彫刻の誕生": "The Birth of Modern Sculpture", "新印象派（点描）": "Neo-Impressionism (Pointillism)", "ポスト印象派": "Post-Impressionism", "象徴主義とアール・ヌーヴォー": "Symbolism & Art Nouveau", "フォーヴィスム（野獣派）": "Fauvism", "キュビスム（立体派）": "Cubism", "未来派": "Futurism", "抽象の誕生": "The Birth of Abstraction", "ドイツ表現主義": "German Expressionism", "ロシア前衛（シュプレマティスムと構成主義）": "Russian Avant-Garde (Suprematism & Constructivism)", "ダダ": "Dada", "エコール・ド・パリ": "School of Paris", "戦前期の20世紀美術（多様化する表現）": "Prewar 20th-Century Art (Diversifying Expression)", "アンフォルメルとアール・ブリュット（ヨーロッパの戦後）": "Art Informel & Art Brut (Postwar Europe)", "抽象表現主義（戦後アメリカ美術の誕生）": "Abstract Expressionism (Birth of Postwar American Art)", "フォンタナの「空間概念」": "Fontana's “Spatial Concept”", "ジョーンズとネオ・ダダ": "Johns & Neo-Dada", "イヴ・クラインと三木富雄": "Yves Klein & Tomio Miki", "フルクサスと映像の美術": "Fluxus & Video Art", "ミニマル・アート": "Minimal Art", "アルテ・ポーヴェラ": "Arte Povera", "コンセプチュアル・アート（概念芸術）": "Conceptual Art", "ランド・アート（アースワーク）": "Land Art (Earthworks)", "フェミニスト・アート": "Feminist Art", "ピクチャーズ世代（写真と引用）": "The Pictures Generation (Photography & Appropriation)", "ニュー・ペインティングと新表現主義": "New Painting & Neo-Expressionism", "シミュレーションとクーンズ": "Simulation & Koons", "グローバル化する美術": "Art in Globalization", "リレーショナル・アートと参加の美術": "Relational Art & Participation", "2000年代（ビエンナーレと市場の時代）": "The 2000s (Age of Biennales & the Market)", "ポスト・インターネットとSNSの美術": "Post-Internet & Social-Media Art", "現代（2020年代）": "Contemporary (2020s)", "切り替えるとアプリを再読み込みします。": "The app reloads when you switch.", "彫刻家の素描": "Sculptors' Drawings", "写真ベース": "Photo-based", "パフォーマンス": "Performance", "エンコスティック": "Encaustic", "アレブレボケ": "Are-bure-boke", "枡目描き": "Masume Grid Drawing", "バンドン": "Bandung", "独学": "Self-taught", "装飾": "Decoration", "不在": "Absence", "知覚": "Perception", "奇想": "Fantastical Invention", "ユーモア": "Humor", "美人画": "Bijin-ga", "参加": "Participation", "場": "Site", "仮面": "Mask", "ネガと空間": "Negative & Space", "キャンバスへの翻訳": "Canvas Translation", "世界観": "Worldview", "すべて ▾": "All ▾", "必見": "Must-see", "近世": "Early Modern", "生年不詳": "Birth year unknown", "芸術家": "Artist", "該当する項目がありません": "No items match", "分野で絞る": "Filter by field", "見る": "View", "時代で選ぶ": "Choose by period", "世界地図": "World map", "その年の動き": "That Year's Movements", "批評": "Criticism", "使い方": "How to Use", "サムネにする": "Set as Thumbnail", "超高画質": "Ultra-high Resolution", "‹ 前": "‹ Prev", "次 ›": "Next ›", "やめる": "Cancel", "元に戻す": "Undo", "← 戻る": "← Back", "制作プロセス": "Production Process", "技法・材料": "Techniques", "内省": "Reflection", "美大": "Art Universities", "カレンダー": "Calendar", "地と支持体": "Ground & Support", "下地づくり": "Preparing the Ground", "油彩の工程": "The Oil-Painting Process", "仕上げと保存": "Finishing & Preservation", "タイトルの付け方": "Naming Works", "タイトル": "Title", "逆算ロードマップ": "The Backward Roadmap", "逆算": "Backward Planning", "フェーズ": "Phase", "期間": "Period", "主な仕事": "Main Work", "やめること": "What to Stop", "フェーズ総覧": "Phase Overview", "やめることリスト": "The Stop-Doing List", "土台工事": "Foundation Work", "共通テスト守備": "Common Test Defense", "本番と切替": "The Real Thing & the Switch", "私大実技本番": "Private-School Practicals", "一次と発表": "First Stage & Results", "二次と決着": "Second Stage & Settlement", "＋ 作品を追加": "＋ Add a Work", "画像・題名・年・素材・ステイトメントを登録する": "Register image, title, year, materials and a statement", "自分の作品を小さな展示として置く場所。作品とステイトメントを登録しておくと、チャットで批評ジジイ（Muse）が批評し、その文章をここへ貼って残せる。": "A place to set your own works as a small exhibition. Register a work and its statement, and the Critic (Muse) will critique it in chat — paste the text here to keep it.", "作品価格早見表": "Work Prices: Quick Reference", "価格がわかる作品の一覧": "Works with Known Prices", "基礎": "Basics", "仕組み": "How It Works", "懐と生活": "Money & Life", "爆発の瞬間": "The Moment of Explosion", "巨匠": "Masters", "うまくやる方法": "How to Do It Well", "所属": "Affiliation", "世界の美大": "Art Universities of the World", "アーティストプロデュース": "Producing the Artist", "傾向と未来": "Trends & the Future", "日本と世界": "Japan & the World", "まだ価格データが届いていません。": "No price data has arrived yet.", "言葉で探す": "Search by word", "東京藝術大学": "Tokyo University of the Arts", "多摩美術大学": "Tama Art University", "武蔵野美術大学": "Musashino Art University", "上野・取手": "Ueno · Toride", "八王子": "Hachioji", "鷹の台（小平）": "Takanodai (Kodaira)", "大学情報": "University Info", "何を学ぶか": "What You Study", "出願の全体像": "Applying: The Whole Picture", "入学金": "Entrance Fee", "アートビジネスの章「世界の美大」へ（海外の美大）": "To the Art Business chapter “Art Universities of the World” (overseas schools)", "教授の名前・大学・大学情報で探す": "Search professors, universities, info", "表示の大きさ": "Display Size", "絵画の系譜": "Lineage of Painting", "展示カレンダー": "Exhibition Calendar", "今月": "This Month", "初日": "Opening Day", "最終日": "Closing Day", "初日・最終日をチップで見る": "View first / last days as chips", "全部": "All", "海外": "Overseas", "「終」は最終日": "“終” marks the final day", "表現主義": "Expressionism", "新表現主義": "Neo-Expressionism", "象徴主義": "Symbolism", "ナビ派": "Les Nabis", "円山派": "Maruyama School", "ポストミニマリズム": "Post-Minimalism", "オプ・アート": "Op Art", "もの派以後": "After Mono-ha", "フルクサス": "Fluxus", "ハイパーリアリズム": "Hyperrealism", "アウトサイダー": "Outsider", "抽象表現主義への橋": "Bridge to Abstract Expressionism", "ネオ・ダダ": "Neo-Dada", "項目を編集": "Edit Item", "名前 *": "Name *", "欧文名": "Name (Latin alphabet)", "母国語表記": "Native-language Name", "分類（section）": "Section", "タグ（カンマ区切り）": "Tags (comma-separated)", "代表作ファイル名": "Signature Work File Name", "代表作キャプション": "Signature Work Caption", "紹介（プロフィールの下部）": "Introduction (bottom of profile)", "本文（来歴・技法・特徴メモ）": "Body (history / technique / notes)", "作品（works）": "Works", "画像ファイル差し替え": "Replace Image File", "画像ファイル差し替え：": "Replace image file:", "削除": "Delete", "作品を追加": "Add a Work", "保存する": "Save", "この項目を削除": "Delete This Item", "この作品はお気に入りにできません": "This work can't be favorited", "没年": "Year of Death", "見るべき代表作": "Signature Works to See", "作品でたどる歩み": "The Path, Through Works", "影響を与えた作家": "Artists They Influenced", "比較される作家": "Often Compared With", "問いと作家": "Questions & Artists", "戦争と暴力": "War & Violence", "災害と喪失": "Disaster & Loss", "環境と気候": "Environment & Climate", "身体と病": "Body & Illness", "貧困と労働": "Poverty & Labor", "差別と排除": "Discrimination & Exclusion", "メディアと監視": "Media & Surveillance", "老いと死": "Aging & Death", "ジェンダー": "Gender", "AIと芸術": "AI & Art", "時事": "News", "トップ": "Top", "相関": "Correlations", "相関を読む": "Reading the Correlations", "相関をくわしく ›": "More on correlations ›", "答えを見る": "Show Answer", "‹ 年表へ戻る": "‹ Back to Timeline", "年齢": "Age", "享年": "Age at death", "出生地": "Birthplace", "拠点": "Based in", "紹介": "Introduction", "会期を月で見る": "See exhibitions by month", "ニュースと相関": "News & correlations", "終了が早い順": "Ending soonest", "ギャラリー・美術館": "Galleries & Museums", "過去の展示": "Past exhibitions", "記事": "Article", "本人の言葉": "In their own words", "購入ページ": "Purchase page", "出典のインタビューを開く ›": "Open the source interview ›", "タップで再同期": "Tap to re-sync", "同期済み": "Synced", "グラスゴー": "Glasgow", "東京": "Tokyo", "大阪": "Osaka", "京都": "Kyoto", "名古屋": "Nagoya", "横浜": "Yokohama", "神戸": "Kobe", "札幌": "Sapporo", "仙台": "Sendai", "広島": "Hiroshima", "岡山": "Okayama", "金沢": "Kanazawa", "長野": "Nagano", "松本": "Matsumoto", "直島": "Naoshima", "豊島": "Teshima", "犬島": "Inujima", "小豆島": "Shodoshima", "尾道": "Onomichi", "倉敷": "Kurashiki", "奈良": "Nara", "滋賀": "Shiga", "岐阜": "Gifu", "静岡": "Shizuoka", "浜松": "Hamamatsu", "新潟": "Niigata", "富山": "Toyama", "福井": "Fukui", "山梨": "Yamanashi", "群馬": "Gunma", "栃木": "Tochigi", "茨城": "Ibaraki", "千葉": "Chiba", "埼玉": "Saitama", "神奈川": "Kanagawa", "愛知": "Aichi", "三重": "Mie", "和歌山": "Wakayama", "鳥取": "Tottori", "島根": "Shimane", "山口": "Yamaguchi", "徳島": "Tokushima", "香川": "Kagawa", "愛媛": "Ehime", "高知": "Kochi", "佐賀": "Saga", "長崎": "Nagasaki", "熊本": "Kumamoto", "大分": "Oita", "宮崎": "Miyazaki", "鹿児島": "Kagoshima", "沖縄": "Okinawa", "北海道": "Hokkaido", "青森": "Aomori", "岩手": "Iwate", "宮城": "Miyagi", "秋田": "Akita", "山形": "Yamagata", "福島": "Fukushima", "上野": "Ueno", "谷中": "Yanaka", "大手町": "Otemachi", "有楽町": "Yurakucho", "日本橋": "Nihonbashi", "役割": "Role", "公式ページ": "Official page", "公式": "Official", "まもなく終了する展覧会": "Exhibitions ending soon", "全落札の分布（年 × 価格）": "All sales (year × price)", "最高落札額（通貨別）": "Top sale by currency", "概算": "approx.", "影響を受けた作家": "Influenced by", "年代で見る作風と活動": "Style & activity by decade", "出典": "Source", "購入ページ ↗": "Purchase page ↗", "出典 ↗": "Source ↗", "形成期": "Formative period", "戦後批評": "Postwar Criticism", "中世": "Medieval", "先史〜中世": "Prehistoric–Medieval", "インテリア": "Interior", "店舗": "Shops", "エディトリアル": "Editorial", "ブック": "Book", "グラフィック": "Graphic", "タイポグラフィ": "Typography", "工業": "Industry", "銀座": "Ginza", "南青山": "Minami-Aoyama", "天王洲": "Tennozu", "六本木": "Roppongi", "恵比寿": "Ebisu", "代官山": "Daikanyama", "中目黒": "Nakameguro", "清澄白河": "Kiyosumi-Shirakawa", "両国": "Ryogoku", "浅草": "Asakusa", "池袋": "Ikebukuro", "新宿": "Shinjuku", "渋谷": "Shibuya", "原宿": "Harajuku", "表参道": "Omotesando", "広尾": "Hiroo", "目黒": "Meguro", "品川": "Shinagawa", "世田谷": "Setagaya", "練馬": "Nerima", "千代田": "Chiyoda", "文京": "Bunkyo", "台東": "Taito", "墨田": "Sumida", "江東": "Koto", "青山": "Aoyama", "神田": "Kanda", "京橋": "Kyobashi", "赤坂": "Akasaka", "麻布十番": "Azabujuban", "白金": "Shirokane", "自由が丘": "Jiyugaoka", "吉祥寺": "Kichijoji", "下北沢": "Shimokitazawa", "高円寺": "Koenji", "中野": "Nakano", "三鷹": "Mitaka", "鎌倉": "Kamakura", "逗子": "Zushi", "葉山": "Hayama", "小田原": "Odawara", "箱根": "Hakone", "熱海": "Atami", "軽井沢": "Karuizawa", "諏訪": "Suwa", "安曇野": "Azumino", "個展": "Solo exhibition", "グループ展": "Group exhibition", "二人展": "Two-person exhibition", "企画展": "Special exhibition", "常設展": "Permanent exhibition", "コレクション展": "Collection exhibition", "回顧展": "Retrospective", "巡回展": "Traveling exhibition", "近日開催": "Opening soon", "取手から近い収蔵先": "Collections near Toride", "まだ配信がありません。": "No deliveries yet.", "次回の収穫で、社会とアートの時事が届きます。": "The next harvest brings news on society and art.", "社会の問いに対して、図鑑の作家たちは作品でどう答えてきたか。ニュースを追うためではなく、自分の判断の材料を増やすための棚。": "How have the encyclopedia’s artists answered society’s questions through their work? A shelf for sharpening your own judgment, not for chasing the news.", "クイズデータはまだありません": "No quiz data yet", "抽象表現主義": "Abstract Expressionism", "命名": "Naming", "普及": "Outreach", "画商": "Dealer", "美術史": "Art history", "美術教育": "Art education", "美術史家": "Art historians", "欧米": "Europe & America", "現代の批評とキュレーション": "Contemporary criticism & curation", "画商と市場": "Dealers & the market", "キュレーターの時代": "The age of curators", "物語を作った人": "The storytellers", "批評とキュレーション": "Criticism & curation", "集めて残す人": "People who collect & preserve", "言葉を運ぶ人": "People who carry words", "育てる人": "People who nurture", "ロゴ": "Logo", "ブランディング": "Branding", "家具": "Furniture", "建築": "Architecture", "空間演出": "Spatial design", "ランドスケープ": "Landscape", "庭園": "Gardens", "サイン": "Signage", "モーション": "Motion", "広告": "Advertising", "ポスター": "Poster", "アイコン": "Icon", "ピクトグラム": "Pictogram", "タイトルデザイン": "Title design", "タイプデザイン": "Type design", "インフォグラフィックス": "Infographics", "クリエイティブコーディング": "Creative coding", "ジェネラティブ": "Generative", "デザイン思考": "Design thinking", "認知科学": "Cognitive science", "工業デザイン": "Industrial design", "情報デザイン": "Information design", "演劇": "Theater", "舞台美術": "Stage design", "キュレーション": "Curation", "コレクター": "Collector", "キュレーター": "Curator", "グアッシュ": "Gouache", "鉛筆": "Pencil", "キャンバス": "Canvas", "インク": "Ink", "テンペラ": "Tempera", "パネル": "Panel", "麻布": "Linen", "岩絵具": "Mineral pigments", "木炭紙": "Charcoal paper", "画用紙": "Drawing paper", "盛岡": "Morioka", "前橋": "Maebashi", "甲府": "Kofu", "津": "Tsu", "大津": "Otsu", "松江": "Matsue", "松山": "Matsuyama", "高松": "Takamatsu", "那覇": "Naha", "郡山": "Koriyama", "いわき": "Iwaki", "宇都宮": "Utsunomiya", "川越": "Kawagoe", "藤沢": "Fujisawa", "相模原": "Sagamihara", "横須賀": "Yokosuka", "平塚": "Hiratsuka", "茅ヶ崎": "Chigasaki", "厚木": "Atsugi", "府中": "Fuchu", "調布": "Chofu", "小平": "Kodaira", "国分寺": "Kokubunji", "国立": "Kunitachi", "多摩": "Tama", "立川": "Tachikawa", "武蔵野": "Musashino", "青梅": "Ome", "昭島": "Akishima", "小金井": "Koganei", "豊田": "Toyota", "岡崎": "Okazaki", "一宮": "Ichinomiya", "豊橋": "Toyohashi", "春日井": "Kasugai", "安城": "Anjo", "四日市": "Yokkaichi", "伊勢": "Ise", "鈴鹿": "Suzuka", "彦根": "Hikone", "草津": "Kusatsu", "近江八幡": "Omihachiman", "宇治": "Uji", "亀岡": "Kameoka", "舞鶴": "Maizuru", "福知山": "Fukuchiyama", "堺": "Sakai", "岸和田": "Kishiwada", "豊中": "Toyonaka", "吹田": "Suita", "高槻": "Takatsuki", "枚方": "Hirakata", "茨木": "Ibaraki (Osaka)", "八尾": "Yao", "寝屋川": "Neyagawa", "東大阪": "Higashiosaka", "姫路": "Himeji", "尼崎": "Amagasaki", "明石": "Akashi", "西宮": "Nishinomiya", "芦屋": "Ashiya", "伊丹": "Itami", "加古川": "Kakogawa", "宝塚": "Takarazuka", "川西": "Kawanishi", "三田": "Sanda", "奈良市": "Nara", "橿原": "Kashihara", "生駒": "Ikoma", "津山": "Tsuyama", "玉野": "Tamano", "総社": "Soja", "福山": "Fukuyama", "呉": "Kure", "東広島": "Higashihiroshima", "廿日市": "Hatsukaichi", "岩国": "Iwakuni", "下関": "Shimonoseki", "宇部": "Ube", "防府": "Hofu", "下松": "Kudamatsu", "周南": "Shunan", "萩": "Hagi", "北九州": "Kitakyushu", "久留米": "Kurume", "大牟田": "Omuta", "飯塚": "Iizuka", "佐世保": "Sasebo", "諫早": "Isahaya", "大村": "Omura", "別府": "Beppu", "中津": "Nakatsu", "日田": "Hita", "都城": "Miyakonojo", "延岡": "Nobeoka", "日向": "Hyuga", "出水": "Izumi", "薩摩川内": "Satsumasendai", "霧島": "Kirishima", "鹿屋": "Kanoya", "指宿": "Ibusuki", "沖縄市": "Okinawa", "浦添": "Urasoe", "宜野湾": "Ginowan", "石垣": "Ishigaki", "宮古島": "Miyakojima", "ロサンゼルス": "Los Angeles", "ベルリン": "Berlin", "ウィーン": "Vienna", "ヴェネツィア": "Venice", "ミュンヘン": "Munich", "サンパウロ": "São Paulo", "ソウル": "Seoul", "ワシントンD.C.": "Washington, D.C.", "ワシントン": "Washington", "シカゴ": "Chicago", "香港": "Hong Kong", "ワルシャワ": "Warsaw", "サンフランシスコ": "San Francisco", "ミラノ": "Milan", "アムステルダム": "Amsterdam", "マドリード": "Madrid", "上海": "Shanghai", "ブリュッセル": "Brussels", "ダラス": "Dallas", "モスクワ": "Moscow", "コペンハーゲン": "Copenhagen", "チューリッヒ": "Zurich", "ソフィア": "Sofia", "カッセル": "Kassel", "ローマ": "Rome", "水戸": "Mito", "デュッセルドルフ": "Düsseldorf", "バーゼル": "Basel", "エディンバラ": "Edinburgh", "ミネアポリス": "Minneapolis", "マイアミ": "Miami", "バルセロナ": "Barcelona", "ナポリ": "Naples", "トリノ": "Turin", "ケルン": "Cologne", "アントワープ": "Antwerp", "フィラデルフィア": "Philadelphia", "キャンベラ": "Canberra", "ローリー": "Raleigh", "パンタン": "Pantin", "サン・モリッツ": "St. Moritz", "フィルミニー": "Firminy", "シュヴェービッシュ・ハル": "Schwäbisch Hall", "タンパ": "Tampa", "ベルン": "Bern", "フォートローダーデール": "Fort Lauderdale", "クノッケ＝ヘイスト": "Knokke-Heist", "ヒューストン": "Houston", "ボストン": "Boston", "シアトル": "Seattle", "デンバー": "Denver", "アトランタ": "Atlanta", "ラスベガス": "Las Vegas", "サンディエゴ": "San Diego", "ポートランド": "Portland", "クリーブランド": "Cleveland", "ピッツバーグ": "Pittsburgh", "ボルチモア": "Baltimore", "セントルイス": "St. Louis", "ニューオーリンズ": "New Orleans", "オースティン": "Austin", "フェニックス": "Phoenix", "バンクーバー": "Vancouver", "トロント": "Toronto", "モントリオール": "Montreal", "メキシコシティ": "Mexico City", "ブエノスアイレス": "Buenos Aires", "サンティアゴ": "Santiago", "リマ": "Lima", "ハバナ": "Havana", "マンチェスター": "Manchester", "ダブリン": "Dublin", "ロッテルダム": "Rotterdam", "ハーグ": "The Hague", "ユトレヒト": "Utrecht", "ヘント": "Ghent", "ブリュージュ": "Bruges", "リヨン": "Lyon", "マルセイユ": "Marseille", "ニース": "Nice", "ボルドー": "Bordeaux", "ナント": "Nantes", "ストラスブール": "Strasbourg", "リール": "Lille", "ハンブルク": "Hamburg", "フランクフルト": "Frankfurt", "シュトゥットガルト": "Stuttgart", "ドレスデン": "Dresden", "ハノーファー": "Hanover", "ブレーメン": "Bremen", "フライブルク": "Freiburg", "バレンシア": "Valencia", "セビリア": "Seville", "ビルバオ": "Bilbao", "グラナダ": "Granada", "リスボン": "Lisbon", "ポルト": "Porto", "フィレンツェ": "Florence", "ボローニャ": "Bologna", "ジェノヴァ": "Genoa", "パレルモ": "Palermo", "アテネ": "Athens", "ザルツブルク": "Salzburg", "グラーツ": "Graz", "ジュネーヴ": "Geneva", "ローザンヌ": "Lausanne", "ルガーノ": "Lugano", "オスロ": "Oslo", "ストックホルム": "Stockholm", "ヨーテボリ": "Gothenburg", "ヘルシンキ": "Helsinki", "レイキャヴィーク": "Reykjavik", "クラクフ": "Krakow", "プラハ": "Prague", "ブダペスト": "Budapest", "ブカレスト": "Bucharest", "ザグレブ": "Zagreb", "リュブリャナ": "Ljubljana", "ベオグラード": "Belgrade", "サンクトペテルブルク": "St. Petersburg", "キーウ": "Kyiv", "イスタンブール": "Istanbul", "テルアビブ": "Tel Aviv", "エルサレム": "Jerusalem", "ドバイ": "Dubai", "ドーハ": "Doha", "テヘラン": "Tehran", "ムンバイ": "Mumbai", "デリー": "Delhi", "バンガロール": "Bangalore", "コルカタ": "Kolkata", "バンコク": "Bangkok", "ハノイ": "Hanoi", "ホーチミン": "Ho Chi Minh City", "ジャカルタ": "Jakarta", "シンガポール": "Singapore", "クアラルンプール": "Kuala Lumpur", "マニラ": "Manila", "釜山": "Busan", "北京": "Beijing", "広州": "Guangzhou", "深圳": "Shenzhen", "成都": "Chengdu", "西安": "Xi'an", "南京": "Nanjing", "杭州": "Hangzhou", "武漢": "Wuhan", "台北": "Taipei", "高雄": "Kaohsiung", "シドニー": "Sydney", "メルボルン": "Melbourne", "ブリスベン": "Brisbane", "パース": "Perth", "アデレード": "Adelaide", "オークランド": "Auckland", "ウェリントン": "Wellington", "ケープタウン": "Cape Town", "ヨハネスブルグ": "Johannesburg", "カイロ": "Cairo", "ラゴス": "Lagos", "ナイロビ": "Nairobi", "マサチューセッツ": "Massachusetts", "ペンシルベニア": "Pennsylvania", "オハイオ": "Ohio", "ミシガン": "Michigan", "イリノイ": "Illinois", "テキサス": "Texas", "カリフォルニア": "California", "フロリダ": "Florida", "ジョージア": "Georgia", "ノースカロライナ": "North Carolina", "サウスカロライナ": "South Carolina", "ニュージャージー": "New Jersey", "バージニア": "Virginia", "メリーランド": "Maryland", "コネチカット": "Connecticut", "ケンタッキー": "Kentucky", "テネシー": "Tennessee", "アラバマ": "Alabama", "ミシシッピ": "Mississippi", "ルイジアナ": "Louisiana", "オクラホマ": "Oklahoma", "カンザス": "Kansas", "ネブラスカ": "Nebraska", "モンタナ": "Montana", "コロラド": "Colorado", "ニューメキシコ": "New Mexico", "アリゾナ": "Arizona", "ユタ": "Utah", "ネバダ": "Nevada", "アイダホ": "Idaho", "オレゴン": "Oregon", "アラスカ": "Alaska", "ハワイ": "Hawaii", "ミネソタ": "Minnesota", "アイオワ": "Iowa", "ミズーリ": "Missouri", "ウィスコンシン": "Wisconsin", "インディアナ": "Indiana", "メーン": "Maine", "メイン": "Maine", "バーモント": "Vermont", "デラウェア": "Delaware", "アーカンソー": "Arkansas", "ワイオミング": "Wyoming", "サウスダコタ": "South Dakota", "ノースダコタ": "North Dakota", "ロードアイランド": "Rhode Island", "ニューハンプシャー": "New Hampshire", "ウェストバージニア": "West Virginia", "探している人が見つからない場合は": "If you can't find who you're looking for", "名前を送ると Muse が調べて図鑑に登録します（カタカナのままでOK）": "Send a name and Muse will research it and register it in the encyclopedia (katakana is fine)"};
 const I18N_NAMES = {"中園孔二": "Koji Nakazono", "ホルヘ・オテイサ": "Jorge Oteiza", "アニッシュ・カプーア": "Anish Kapoor", "マイケル・ハイザー": "Michael Heizer", "関根伸夫": "Nobuo Sekine", "ジェームズ・タレル": "James Turrell", "安藤忠雄": "Tadao Ando", "アンリ・マティス": "Henri Matisse", "ミルトン・エイヴリー": "Milton Avery", "アレックス・カッツ": "Alex Katz", "ケリー・ジェームズ・マーシャル": "Kerry James Marshall", "ローラ・オーウェンズ": "Laura Owens", "町田久美": "Kumi Machida", "石田徹也": "Tetsuya Ishida", "猪熊弦一郎": "Genichiro Inokuma", "モーリス・ドニ": "Maurice Denis", "アンドリュー・クランストン": "Andrew Cranston", "ジョアン・ミロ": "Joan Miró", "葛飾北斎": "Katsushika Hokusai", "パウル・クレー": "Paul Klee", "ゾフィー・トイバー＝アルプ": "Sophie Taeuber-Arp", "Василий Кандинский": "Wassily Kandinsky", "ワシリー・カンディンスキー": "Wassily Kandinsky", "元永定正": "Sadamasa Motonaga", "ジョナス・ウッド": "Jonas Wood", "今井俊介": "Shunsuke Imai", "ノーマ・バー": "Noma Bar", "נומה בר": "Noma Bar", "ブルース・ナウマン": "Bruce Nauman", "レイチェル・ホワイトリード": "Rachel Whiteread", "クミ・ヤマシタ": "Kumi Yamashita", "ヴィルス": "Vhils", "ゴードン・マッタ＝クラーク": "Gordon Matta-Clark", "M.C.エッシャー": "M. C. Escher", "アド・ラインハート": "Ad Reinhardt", "セバスチャン・トリュシェ": "Sébastien Truchet", "手塚愛子": "Aiko Tezuka", "梅津庸一とパープルーム": "Yoichi Umetsu", "キュンチョメ": "Kyun-Chome", "インガ・ヴォイチク": "Inga Wójcik", "サイ・トゥオンブリー": "Cy Twombly", "リュック・タイマンス": "Luc Tuymans", "アリス・ニール": "Alice Neel", "フィリップ・ガストン": "Philip Guston", "アルベルト・ジャコメッティ": "Alberto Giacometti", "ダミアン・ハースト": "Damien Hirst", "サルバドール・ダリ": "Salvador Dalí", "刘勃麟": "Liu Bolin", "劉勃麟": "Liu Bolin", "レオナルド・ダ・ヴィンチ": "Leonardo da Vinci", "ミケランジェロ・ブオナローティ": "Michelangelo Buonarroti", "レンブラント・ファン・レイン": "Rembrandt van Rijn", "ヨハネス・フェルメール": "Johannes Vermeer", "エドゥアール・マネ": "Édouard Manet", "クロード・モネ": "Claude Monet", "ポール・セザンヌ": "Paul Cézanne", "フィンセント・ファン・ゴッホ": "Vincent van Gogh", "パブロ・ピカソ": "Pablo Picasso", "マルセル・デュシャン": "Marcel Duchamp", "ピート・モンドリアン": "Piet Mondrian", "カジミール・マレーヴィチ": "Kazimir Malevich", "Казимир Малевич": "Kazimir Malevich", "ルーチョ・フォンタナ": "Lucio Fontana", "イヴ・クライン": "Yves Klein", "ジャクソン・ポロック": "Jackson Pollock", "マーク・ロスコ": "Mark Rothko", "アンディ・ウォーホル": "Andy Warhol", "ヨーゼフ・ボイス": "Joseph Beuys", "ドナルド・ジャッド": "Donald Judd", "ソル・ルウィット": "Sol LeWitt", "ゲルハルト・リヒター": "Gerhard Richter", "フランシス・ベーコン": "Francis Bacon", "デイヴィッド・ホックニー": "David Hockney", "アンゼルム・キーファー": "Anselm Kiefer", "シンディ・シャーマン": "Cindy Sherman", "俵屋宗達": "Tawaraya Sōtatsu", "伊藤若冲": "Itō Jakuchū", "이우환": "Lee Ufan", "李禹煥": "Lee Ufan", "高松次郎": "Jirō Takamatsu", "河原温": "On Kawara", "白髪一雄": "Kazuo Shiraga", "杉本博司": "Hiroshi Sugimoto", "森山大道": "Daidō Moriyama", "草間彌生": "Yayoi Kusama", "村上隆": "Takashi Murakami", "奈良美智": "Yoshitomo Nara", "岡崎乾二郎": "Okazaki Kenjiro", "ポル・タブレ": "Pol Taburet", "ジョージ・コンド": "George Condo", "ミヒャエル・ボレマンス": "Michaël Borremans", "セシリー・ブラウン": "Cecily Brown", "マルレーネ・デュマス": "Marlene Dumas", "ピーター・ドイグ": "Peter Doig", "ネオ・ラウホ": "Neo Rauch", "ジェニー・サヴィル": "Jenny Saville", "グレン・ブラウン": "Glenn Brown", "ジョン・カリン": "John Currin", "アルバート・オーレン": "Albert Oehlen", "ゲオルグ・バゼリッツ": "Georg Baselitz", "トレイシー・エミン": "Tracey Emin", "エイドリアン・ゲニー": "Adrian Ghenie", "アグネス・マーティン": "Agnes Martin", "ジャン・デュビュッフェ": "Jean Dubuffet", "ニコラス・パーティ": "Nicolas Party", "エイヴリー・シンガー": "Avery Singer", "マーク・ブラッドフォード": "Mark Bradford", "ヘンリー・テイラー": "Henry Taylor", "アンジ・スミス": "Anj Smith", "ダナ・シュッツ": "Dana Schutz", "ローズ・ワイリー": "Rose Wylie", "クリス・オフィリー": "Chris Ofili", "エリザベス・ペイトン": "Elizabeth Peyton", "キャサリン・バーンハート": "Katherine Bernhardt", "ロバート・ナヴァ": "Robert Nava", "ロイ・ホロウェル": "Loie Hollowell", "ヴィルヘルム・サスナル": "Wilhelm Sasnal", "クレア・タブレ": "Claire Tabouret", "ジャデ・ファドジュティミ": "Jadé Fadojutimi", "クリスティーナ・クォールズ": "Christina Quarles", "テスファエ・ウルゲッサ": "Tesfaye Urgessa", "クリスティーヌ・サファ": "Christine Safa", "ローレン・クイン": "Lauren Quin", "レイ・クライン": "Rae Klein", "ヴァルダ・カイヴァーノ": "Varda Caivano", "アンディ・デンツラー": "Andy Denzler", "バーナビー・ファーナス": "Barnaby Furnas", "アナ・メンディエータ": "Ana Mendieta", "ドー・ホー・サー": "Do Ho Suh", "マウリツィオ・カテラン": "Maurizio Cattelan", "ミリアム・カーン": "Miriam Cahn", "ウーゴ・ロンディノーネ": "Ugo Rondinone", "ウドムサック・クリサナミス": "Udomsak Krisanamis", "エリカ・ヴェルズッティ": "Erika Verzutti", "平子雄一": "Yuichi Hirako", "加藤泉": "Izumi Kato", "水戸部七絵": "Nanae Mitobe", "井田幸昌": "Yukimasa Ida", "松山智一": "Tomokazu Matsuyama", "工藤麻紀子": "Makiko Kudo", "長井朋子": "Tomoko Nagai", "菊畑茂久馬": "Mokuma Kikuhata", "小瀬村真美": "Mami Kosemura", "五木田智央": "Tomoo Gokita", "杉戸洋": "Hiroshi Sugito", "今津景": "Kei Imazu", "ロッカクアヤコ": "Ayako Rokkaku", "須田悦弘": "Yoshihiro Suda", "鴨治晃次": "Koji Kamoji", "那須佐和子": "Sawako Nasu", "ピーター・ハリー": "Peter Halley", "ウルス・フィッシャー": "Urs Fischer", "ギュンター・ユッカー": "Günther Uecker", "フィリップ・パレーノ": "Philippe Parreno", "トニー・アウスラー": "Tony Oursler", "アリシア・クワデ": "Alicja Kwade", "ジルケ・オットー＝クナップ": "Silke Otto-Knapp", "アブラハム・デイヴィッド・クリスチャン": "Abraham David Christian", "ブリー・ルエイ": "Brie Ruais", "ウィリアム・モンク": "William Monk", "グレゴール・シュナイダー": "Gregor Schneider", "ザック・プレコップ": "Zak Prekop", "榎倉康二": "Koji Enokura", "ダニエル・ビュラン": "Daniel Buren", "ソフィー・ヴァラン": "Sophie Varin", "菅木志雄": "Kishio Suga", "中西夏之": "Natsuyuki Nakanishi", "リー・キット": "Lee Kit", "李傑 Lee Kit": "Lee Kit", "五月女哲平": "Teppei Sotome", "笹本晃": "Aki Sasamoto", "千葉正也": "Masaya Chiba", "竹村京": "Kei Takemura", "山田康平": "Kohei Yamada", "丸山直文": "Naofumi Maruyama", "東山詩織": "Shiori Higashiyama", "森万里子": "Mariko Mori", "坂本夏子": "Natsuko Sakamoto", "加納光於": "Mitsuo Kano", "小林正人": "Masato Kobayashi", "毛利悠子": "Yuko Mohri", "松本竣介": "Shunsuke Matsumoto", "梅田哲也": "Tetsuya Umeda", "青木野枝": "Noe Aoki", "三嶋りつ惠": "Ritsue Mishima", "束芋": "Tabaimo", "アーシル・ゴーキー": "Arshile Gorky", "エゴン・シーレ": "Egon Schiele", "エドヴァルド・ムンク": "Edvard Munch", "ルシアン・フロイド": "Lucian Freud", "アントニ・タピエス": "Antoni Tàpies", "マックス・エルンスト": "Max Ernst", "エドガー・ドガ": "Edgar Degas", "ピエール・ボナール": "Pierre Bonnard", "アンリ・ド・トゥールーズ＝ロートレック": "Henri de Toulouse-Lautrec", "フェルディナント・ホドラー": "Ferdinand Hodler", "R.B.キタイ": "R. B. Kitaj", "アーヌルフ・ライナー": "Arnulf Rainer", "エリザベス・ブラッカダー": "Elizabeth Blackadder", "ブレット・ホワイトリー": "Brett Whiteley", "リチャード・アヴェドン": "Richard Avedon", "ブルース・コナー": "Bruce Conner", "歌川国芳": "Utagawa Kuniyoshi", "河鍋暁斎": "Kawanabe Kyōsai", "熊谷守一": "Kumagai Morikazu", "渓斎英泉": "Keisai Eisen", "ダニエル・リヒター": "Daniel Richter", "デイヴィッド・リンチ": "David Lynch", "ジュリー・メレツ": "Julie Mehretu", "ジェニファー・パッカー": "Jennifer Packer", "パム・エヴリン": "Pam Evelyn", "リー・ヘイディ": "Li Hei Di", "ジャスティン・カギアット": "Justin Caguiat", "マヤ・ルジニッチ": "Maja Ruznic", "ゾフィー・フォン・ヘラーマン": "Sophie von Hellermann", "サーシャ・ゴードン": "Sasha Gordon", "メリケ・カラ": "Melike Kara", "リーリー・キンメル": "Leelee Kimmel", "ホマール・ギリアムス": "Gommaar Gilliams", "ホープ・ギャングロフ": "Hope Gangloff", "リチャード・オルドリッチ": "Richard Aldrich", "マット・ボリンジャー": "Matt Bollinger", "ダッシュ・スノウ": "Dash Snow", "リチャード・ハンブルトン": "Richard Hambleton", "山口晃": "Akira Yamaguchi", "アブデルカデル・ベンシャマ": "Abdelkader Benchamma", "円山応挙": "Maruyama Ōkyo", "川俣正": "Tadashi Kawamata", "ジョージア・オキーフ": "Georgia O'Keeffe", "J.M.W.ターナー": "Joseph Mallord William Turner", "志賀理江子": "Lieko Shiga", "ガブリエル・オロスコ": "Gabriel Orozco", "河口龍夫": "Tatsuo Kawaguchi", "田中功起": "Koki Tanaka", "ツェン・ファンジー": "Zeng Fanzhi", "曾梵志": "Zeng Fanzhi", "ジュリー・カーティス": "Julie Curtiss", "クリスティーナ・イグレシアス": "Cristina Iglesias", "エルムグリーン＆ドラッグセット": "Elmgreen & Dragset", "トーマス・ルフ": "Thomas Ruff", "ローラン・グラッソ": "Laurent Grasso", "イブラヒム・マハマ": "Ibrahim Mahama", "東恩納裕一": "Yuichi Higashionna", "メアリー・ウェザーフォード": "Mary Weatherford", "ヨーゼフ・アルバース": "Josef Albers", "アレクサンダー・カルダー": "Alexander Calder", "野口勇": "Isamu Noguchi", "イサム・ノグチ": "Isamu Noguchi", "バーバラ・ヘップワース": "Barbara Hepworth", "ルイーズ・ブルジョワ": "Louise Bourgeois", "ウィレム・デ・クーニング": "Willem de Kooning", "ヘレン・フランケンサーラー": "Helen Frankenthaler", "ジョアン・ミッチェル": "Joan Mitchell", "サム・ギリアム": "Sam Gilliam", "エヴァ・ヘス": "Eva Hesse", "ダン・フレイヴィン": "Dan Flavin", "ブリジット・ライリー": "Bridget Riley", "ピエール・スーラージュ": "Pierre Soulages", "朴栖甫": "Park Seo-Bo", "박서보": "Park Seo-Bo", "フェリックス・ゴンザレス＝トレス": "Felix Gonzalez-Torres", "イザ・ゲンツケン": "Isa Genzken", "ピピロッティ・リスト": "Pipilotti Rist", "ウィリアム・ケントリッジ": "William Kentridge", "カタリーナ・グロッセ": "Katharina Grosse", "アンドレアス・グルスキー": "Andreas Gursky", "サラ・ジー": "Sarah Sze", "エテル・アドナン": "Etel Adnan", "モナ・ハトゥム": "Mona Hatoum", "ベルナール・フリッツ": "Bernard Frize", "荒木経惟": "Nobuyoshi Araki", "畠山直哉": "Naoya Hatakeyama", "野口里佳": "Rika Noguchi", "内藤礼": "Rei Naito", "村瀬恭子": "Kyoko Murase", "名和晃平": "Kohei Nawa", "宮島達男": "Tatsuo Miyajima", "森村泰昌": "Yasumasa Morimura", "戸谷成雄": "Shigeo Toya", "米田知子": "Tomoko Yoneda", "イケムラレイコ": "Leiko Ikemura", "藤本由紀夫": "Yukio Fujimoto", "ホンマタカシ": "Takashi Homma", "松江泰治": "Taiji Matsue", "蜷川実花": "Mika Ninagawa", "川島秀明": "Hideaki Kawashima", "近藤亜樹": "Aki Kondo", "コンスタンティン・ブランクーシ": "Constantin Brâncuși", "백남준": "Nam June Paik", "ナム・ジュン・パイク": "Nam June Paik", "佐伯俊男": "Toshio Saeki", "松浦美桜香": "Mioka Matsuura", "友沢こたお": "Kotao Tomozawa", "鈴木晴絵": "Harue Suzuki", "齋藤大": "Dai Saito", "髙橋侑子": "Yuriko Takahashi", "竹下麻衣": "Mai Takeshita", "會見明也": "Akiya Aimi", "南谷理加": "Rika Minamitani", "横手太紀": "Taiki Yokote", "岡路貴理": "Killi Okaji", "中村奈津希": "Natsuki Nakamura", "ジョージ・ルーイ": "George Rouy", "エル・グレコ": "El Greco", "Doménikos Theotokópoulos": "El Greco", "アルフォンス・ミュシャ": "Alfons Mucha", "Alfons Maria Mucha": "Alfons Mucha", "ルネ・マグリット": "René Magritte", "René François Ghislain Magritte": "René Magritte", "ジョルジョ・デ・キリコ": "Giorgio de Chirico", "Christo Vladimirov Javacheff / Jeanne-Claude Denat de Guillebon": "Christo and Jeanne-Claude", "クリスト＆ジャンヌ＝クロード": "Christo and Jeanne-Claude", "ジュリアン・シュナーベル": "Julian Schnabel", "フランチェスコ・クレメンテ": "Francesco Clemente", "マシュー・バーニー": "Matthew Barney", "シアスター・ゲイツ": "Theaster Gates", "ロン・ミュエク": "Ron Mueck", "オラファー・エリアソン": "Olafur Eliasson", "クリスチャン・ボルタンスキー": "Christian Boltanski", "アイ・ウェイウェイ": "Ai Weiwei", "艾未未": "Ai Weiwei", "ビル・ヴィオラ": "Bill Viola", "岸田劉生": "Ryusei Kishida", "藤田嗣治": "Tsuguharu Foujita", "下村観山": "Kanzan Shimomura", "塩田千春": "Chiharu Shiota", "会田誠": "Makoto Aida", "大竹伸朗": "Shinro Ohtake", "工藤哲巳": "Tetsumi Kudo", "篠原有司男": "Ushio Shinohara", "舟越桂": "Katsura Funakoshi", "ジャン＝ミシェル・バスキア": "Jean-Michel Basquiat", "Francisco José de Goya y Lucientes": "Francisco Goya", "フランシスコ・デ・ゴヤ": "Francisco Goya", "ラウル・デュフィ": "Raoul Dufy", "メアリー・カサット": "Mary Cassatt", "邱曉飛": "Qiu Xiaofei", "チュウ・シャオフェイ": "Qiu Xiaofei", "テッド・ガール": "Ted Gahl", "アレクサンダー・ヴァルヴァリゼ": "Alexander Varvaridze", "ジグマー・ポルケ": "Sigmar Polke", "ロバート・ラウシェンバーグ": "Robert Rauschenberg", "ジャスパー・ジョーンズ": "Jasper Johns", "ロイ・リキテンシュタイン": "Roy Lichtenstein", "リチャード・セラ": "Richard Serra", "ロバート・スミスソン": "Robert Smithson", "ジェフ・クーンズ": "Jeff Koons", "エド・ルシェ": "Ed Ruscha", "クレス・オルデンバーグ": "Claes Oldenburg", "リチャード・ハミルトン": "Richard Hamilton", "カール・アンドレ": "Carl Andre", "ジョゼフ・コスース": "Joseph Kosuth", "ハンス・ハーケ": "Hans Haacke", "マルセル・ブローターズ": "Marcel Broodthaers", "ヤニス・クネリス": "Jannis Kounellis", "ミケランジェロ・ピストレット": "Michelangelo Pistoletto", "マルティン・キッペンベルガー": "Martin Kippenberger", "フィッシュリ＆ヴァイス": "Fischli & Weiss", "マイク・ケリー": "Mike Kelley", "松本陽子": "Yoko Matsumoto", "アンリ・カルティエ＝ブレッソン": "Henri Cartier-Bresson", "後藤瑞穂": "Mizuho Goto", "真田将太朗": "Shotaro Sanada", "山中雪乃": "Yukino Yamanaka", "海老原イェニ": "Yennie Ebihara", "弓月": "Yuzuki", "春日佳歩": "Kaho Kasuga", "吉浦眞琴": "Makoto Yoshiura", "菅野歩美": "Ayumi Kanno", "石井海音": "Amane Ishii", "大澤巴瑠": "Hal Osawa", "岡田佑里奈": "Yurina Okada", "後藤夢乃": "Yumeno Goto", "森ゆらら": "Yulala Mori", "ミンヒ・キム": "Minhee Kim", "ナカバヤシアリサ": "Arisa Nakabayashi", "藤瀬朱里": "Akari Fujise", "武信朱璃": "Akari Takenobu", "フローラ・ユフノヴィッチ": "Flora Yukhnovich", "アンナ・ウェイアント": "Anna Weyant", "クヅァナイ＝ヴァイオレット・フワミ": "Kudzanai-Violet Hwami", "ルイス・フラティーノ": "Louis Fratino", "イッシー・ウッド": "Issy Wood", "ベルント＆ヒラ・ベッヒャー": "Bernd & Hilla Becher", "ジェフ・ウォール": "Jeff Wall", "ヴォルフガング・ティルマンス": "Wolfgang Tillmans", "カラ・ウォーカー": "Kara Walker", "デイヴィッド・ハモンズ": "David Hammons", "バーバラ・クルーガー": "Barbara Kruger", "ジェニー・ホルツァー": "Jenny Holzer", "キース・ヘリング": "Keith Haring", "マリーナ・アブラモヴィッチ": "Marina Abramović", "オノ・ヨーコ": "Yoko Ono", "蔡國強": "Cai Guo-Qiang", "徐冰": "Xu Bing", "ジョルジュ・ブラック": "Georges Braque", "アンソニー・マッコール": "Anthony McCall", "アピチャッポン・ウィーラセタクン": "Apichatpong Weerasethakul", "อภิชาติพงศ์ วีระเศรษฐกุล": "Apichatpong Weerasethakul", "クエイ兄弟": "Brothers Quay", "Stephen Quay / Timothy Quay": "Brothers Quay", "チャック・ジョーンズ": "Chuck Jones", "ドン・ハーツフェルト": "Don Hertzfeldt", "エミール・コール": "Émile Cohl", "エミール・レイノー": "Émile Reynaud", "フライシャー兄弟": "Max Fleischer & Dave Fleischer", "ハルーン・ファロッキ": "Harun Farocki", "宮崎駿": "Hayao Miyazaki", "庵野秀明": "Hideaki Anno", "ヒト・シュタイエル": "Hito Steyerl", "高畑勲": "Isao Takahata", "ヤン・シュヴァンクマイエル": "Jan Švankmajer", "イジー・トルンカ": "Jiří Trnka", "ジョナス・メカス": "Jonas Mekas", "大友克洋": "Katsuhiro Otomo", "川本喜八郎": "Kihachiro Kawamoto", "ヴワディスワフ・スタレヴィチ": "Ladislas Starevich", "Władysław Starewicz": "Ladislas Starevich", "レン・ライ": "Len Lye", "ロッテ・ライニガー": "Lotte Reiniger", "新海誠": "Makoto Shinkai", "押井守": "Mamoru Oshii", "湯浅政明": "Masaaki Yuasa", "ミヒャエル・デュドク・ドゥ・ヴィット": "Michaël Dudok de Wit", "ミシェル・オスロ": "Michel Ocelot", "ニック・パーク": "Nick Park", "大藤信郎": "Noburo Ofuji", "ノーマン・マクラレン": "Norman McLaren", "手塚治虫": "Osamu Tezuka", "今敏": "Satoshi Kon", "スタン・ブラッケージ": "Stan Brakhage", "スティーヴ・マックイーン": "Steve McQueen", "シルヴァン・ショメ": "Sylvain Chomet", "飯村隆彦": "Takahiko Iimura", "テックス・エイヴリー": "Tex Avery", "松本俊夫": "Toshio Matsumoto", "ウォルト・ディズニー": "Walt Disney", "ウィンザー・マッケイ": "Winsor McCay", "富野由悠季": "Yoshiyuki Tomino", "ユーリ・ノルシュテイン": "Yuri Norstein", "Юрий Норштейн": "Yuri Norstein", "三輪瑛士": "Eiji Miwa", "鈴木春信": "Suzuki Harunobu", "喜多川歌麿": "Kitagawa Utamaro", "東洲斎写楽": "Tōshūsai Sharaku", "歌川広重": "Utagawa Hiroshige", "アルブレヒト・デューラー": "Albrecht Dürer", "ジョヴァンニ・バッティスタ・ピラネージ": "Giovanni Battista Piranesi", "ジェームズ・マクニール・ホイッスラー": "James McNeill Whistler", "ポール・ゴーガン": "Paul Gauguin", "ケーテ・コルヴィッツ": "Käthe Kollwitz", "エルンスト・ルートヴィヒ・キルヒナー": "Ernst Ludwig Kirchner", "マルク・シャガール": "Marc Chagall", "棟方志功": "Munakata Shikō", "川瀬巴水": "Kawase Hasui", "吉田博": "Yoshida Hiroshi", "浜口陽三": "Hamaguchi Yōzō", "駒井哲郎": "Komai Tetsurō", "池田満寿夫": "Ikeda Masuo", "キキ・スミス": "Kiki Smith", "チャック・クローズ": "Chuck Close", "ジム・ダイン": "Jim Dine", "エミール・ノルデ": "Emil Nolde", "オディロン・ルドン": "Odilon Redon", "フェリックス・ヴァロットン": "Félix Vallotton", "菱川師宣": "Hishikawa Moronobu", "月岡芳年": "Tsukioka Yoshitoshi", "小林清親": "Kobayashi Kiyochika", "歌川国貞": "Utagawa Kunisada", "恩地孝四郎": "Onchi Kōshirō", "長谷川潔": "Hasegawa Kiyoshi", "川上澄生": "Kawakami Sumio", "清宮質文": "Seimiya Naobumi", "瑛九": "Ei-Q", "小野忠重": "Ono Tadashige", "萩原英雄": "Hagiwara Hideo", "菅井汲": "Sugai Kumi", "浜田知明": "Hamada Chimei", "伊東深水": "Ito Shinsui", "土屋光逸": "Tsuchiya Koitsu", "吉田遠志": "Yoshida Toshi", "木村利三郎": "Kimura Risaburo", "ピーター・ソール": "Peter Saul", "ロベルト・マッタ": "Roberto Matta", "ピーテル・ブリューゲル": "Pieter Bruegel the Elder", "ヤン・ファン・エイク": "Jan van Eyck", "ニコラ・プッサン": "Nicolas Poussin", "カスパー・ダーヴィト・フリードリヒ": "Caspar David Friedrich", "ウィリアム・ホガース": "William Hogarth", "ジョン・コンスタブル": "John Constable", "エドワード・ホッパー": "Edward Hopper", "ロバート・マザウェル": "Robert Motherwell", "リチャード・ディーベンコーン": "Richard Diebenkorn", "エドワード・キーンホルツ": "Edward Kienholz", "エドゥアール・ヴュイヤール": "Édouard Vuillard", "ジャン・フォートリエ": "Jean Fautrier", "ロベール・ドローネー": "Robert Delaunay", "オスカー・ココシュカ": "Oskar Kokoschka", "アンジェイ・ヴルブレフスキ": "Andrzej Wróblewski", "勝川春章": "Katsukawa Shunshō", "司馬江漢": "Shiba Kōkan", "エドワード・マイブリッジ": "Eadweard Muybridge", "アウグスト・ストリンドベリ": "August Strindberg", "ウィニフレッド・ニコルソン": "Winifred Nicholson", "キャシー・ウィルクス": "Cathy Wilkes", "アンドレ・ブッツァー": "André Butzer", "Alessandro di Mariano Filipepi": "Sandro Botticelli", "サンドロ・ボッティチェリ": "Sandro Botticelli", "Tiziano Vecellio": "Titian", "ティツィアーノ": "Titian", "ディエゴ・ベラスケス": "Diego Velázquez", "Diego Rodríguez de Silva y Velázquez": "Diego Velázquez", "ピエロ・デッラ・フランチェスカ": "Piero della Francesca", "ベン・ニコルソン": "Ben Nicholson", "Blinky Palermo (Peter Heisterkamp)": "Blinky Palermo", "ブリンキー・パレルモ": "Blinky Palermo", "ポリュクレイトス": "Polykleitos", "プラクシテレス": "Praxiteles", "デュッチョ": "Duccio di Buoninsegna", "シモーネ・マルティーニ": "Simone Martini", "リンブール兄弟": "The Limbourg Brothers (Herman, Paul, and Jean de Limbourg)", "運慶": "Unkei", "ポンペイの壁画": "Pompeii wall painting (incl. Villa of the Mysteries)", "ファイユームの肖像": "Fayum mummy portraits", "ネバアムンの墓の壁画": "Tomb-chapel of Nebamun paintings", "アルタミラ洞窟": "Cave of Altamira (Cueva de Altamira)", "クルト・シュヴィッタース": "Kurt Schwitters", "バーネット・ニューマン": "Barnett Newman", "ルカ・デッラ・ロッビア": "Luca della Robbia", "シャルル＝フランソワ・ドービニー": "Charles-François Daubigny", "ジャンボローニャ": "Giambologna", "Giambologna (Jean Boulogne)": "Giambologna", "ジュディ・シカゴ": "Judy Chicago", "Judy Chicago (Judith Sylvia Cohen)": "Judy Chicago", "トム・ウェッセルマン": "Tom Wesselmann", "リクリット・ティラヴァニヤ": "Rirkrit Tiravanija", "フランシスコ・デ・スルバラン": "Francisco de Zurbarán", "カラヴァッジョ": "Michelangelo Merisi da Caravaggio", "ピエール＝オーギュスト・ルノワール": "Pierre-Auguste Renoir", "ギュスターヴ・クールベ": "Gustave Courbet", "岡本太郎": "Taro Okamoto", "吉原治良": "Jiro Yoshihara", "田中敦子": "Atsuko Tanaka", "赤瀬川原平": "Genpei Akasegawa", "赤瀬川克彦": "Genpei Akasegawa", "雪舟": "Sesshu Toyo", "雪舟等楊": "Sesshu Toyo", "長谷川等伯": "Hasegawa Tohaku", "狩野永徳": "Kano Eitoku", "三木富雄": "Tomio Miki", "ラファエロ・サンティ": "Raffaello Sanzio", "マザッチョ": "Masaccio", "ドナテッロ": "Donatello", "ジャン・ロレンツォ・ベルニーニ": "Gian Lorenzo Bernini", "ピーテル・パウル・ルーベンス": "Peter Paul Rubens", "ジャック＝ルイ・ダヴィッド": "Jacques-Louis David", "ジャン＝オーギュスト＝ドミニク・アングル": "Jean-Auguste-Dominique Ingres", "ウジェーヌ・ドラクロワ": "Eugène Delacroix", "ジョルジュ・スーラ": "Georges Seurat", "尾形光琳": "Ogata Kōrin", "グスタフ・クリムト": "Gustav Klimt", "アントワーヌ・ヴァトー": "Antoine Watteau", "ジャン＝フランソワ・ミレー": "Jean-François Millet", "ポール・シニャック": "Paul Signac", "ジョルジョーネ": "Giorgione", "Giorgio Barbarelli da Castelfranco": "Giorgione", "ジャン＝オノレ・フラゴナール": "Jean-Honoré Fragonard", "ギュスターヴ・モロー": "Gustave Moreau", "Jheronimus van Aken": "Hieronymus Bosch", "ヒエロニムス・ボス": "Hieronymus Bosch", "長沢芦雪": "Nagasawa Rosetsu", "黒田清輝": "Kuroda Seiki", "マン・レイ": "Man Ray", "ヘンリー・ムーア": "Henry Moore", "マックス・ベックマン": "Max Beckmann", "オットー・ディクス": "Otto Dix", "フリーダ・カーロ": "Frida Kahlo", "ディエゴ・リベラ": "Diego Rivera", "ライオネル・ファイニンガー": "Lyonel Feininger", "イヴ・タンギー": "Yves Tanguy", "Александр Родченко": "Alexander Rodchenko", "アレクサンドル・ロトチェンコ": "Alexander Rodchenko", "Эль Лисицкий": "El Lissitzky", "エル・リシツキー": "El Lissitzky", "オーギュスト・ロダン": "Auguste Rodin", "アメデオ・モディリアーニ": "Amedeo Modigliani", "ウラジーミル・タトリン": "Vladimir Tatlin", "Владимир Татлин": "Vladimir Tatlin", "ウンベルト・ボッチョーニ": "Umberto Boccioni", "フェルナン・レジェ": "Fernand Léger", "フランツ・マルク": "Franz Marc", "Francesco Mazzola": "Parmigianino", "パルミジャニーノ": "Parmigianino", "フィリッポ・ブルネレスキ": "Filippo Brunelleschi", "狩野芳崖": "Kano Hogai", "曽我蕭白": "Soga Shohaku", "本阿弥光悦": "Hon'ami Koetsu", "高橋由一": "Takahashi Yuichi", "オリガ・ロザノワ": "Olga Rozanova", "リュボーフィ・ポポワ": "Lyubov Popova", "アレクセイ・フォン・ヤウレンスキー": "Alexej von Jawlensky", "アウグスト・マッケ": "August Macke", "ロヴィス・コリント": "Lovis Corinth", "ジェームズ・アンソール": "James Ensor", "パウラ・モーダーズーン＝ベッカー": "Paula Modersohn-Becker", "シャイム・スーティン": "Chaim Soutine", "ジョット": "Giotto di Bondone", "チマブーエ": "Cimabue", "横尾忠則": "Tadanori Yokoo", "Grotte de Lascaux": "Lascaux Cave", "ラスコー洞窟": "Lascaux Cave", "ホレス・ピピン": "Horace Pippin", "ショーヴェ洞窟": "Chauvet-Pont d'Arc Cave", "Grotte Chauvet-Pont d'Arc": "Chauvet-Pont d'Arc Cave", "ペシュ・メルル洞窟": "Pech Merle Cave", "Grotte du Pech Merle": "Pech Merle Cave", "Grotte de Font-de-Gaume": "Font-de-Gaume Cave", "フォン・ド・ゴーム洞窟": "Font-de-Gaume Cave", "ニオー洞窟": "Niaux Cave", "Grotte de Niaux": "Niaux Cave", "コスケール洞窟": "Cosquer Cave", "Grotte Cosquer": "Cosquer Cave", "クエバ・デ・ラス・マノス": "Cueva de las Manos", "Cueva de las Manos, Río Pinturas": "Cueva de las Manos", "フィディアス": "Phidias", "Φειδίας": "Phidias", "Λύσιππος": "Lysippos", "リュシッポス": "Lysippos", "ニコラ・ピサーノ": "Nicola Pisano", "ジョヴァンニ・ピサーノ": "Giovanni Pisano", "クラウス・スリューテル": "Claus Sluter", "ギスレベルトゥス": "Gislebertus", "大野翔万": "Shoma Ohno", "エイドリアン・バーグ": "Adrian Berg", "ウッフェ・イソロット": "Uffe Isolotto", "安藤正子": "Masako Ando", "フカミエリ": "Eri Fukami", "小畑多丘": "Taku Obata", "櫃田伸也": "Nobuya Hitsuda", "芦見ダフィネ": "Daphne Ashimi", "幸繁尽司": "Jinji Koshige", "池田倫佳": "Rinka Ikeda", "上野璃仁": "Rihito Ueno", "近藤春菜": "Haruna Kondo", "西村秀太": "Shuta Nishimura", "張佳明": "Jiaming Zhang", "平塚橙太郎": "Totaro Hiratsuka", "丸山彩花": "Ayaka Maruyama", "クリストファー・カルヴァー": "Christopher Culver", "ダムタイプ": "Dumb Type", "ジェシー・ホーガン": "Jesse Hogan", "高畠依子": "Yoriko Takabatake", "西村雄輔": "Yusuke Nishimura", "薄久保香": "Kaoru Usukubo", "ミヒャエル・シュナイダー": "Michael W. Schneider", "三井田盛一郎": "Seiichiro Miida", "中村政人": "Masato Nakamura", "岩間賢": "Satoshi Iwama", "齋藤芽生": "Meo Saito", "秋本貴透": "Takayuki Akimoto", "吉田晋之介": "Shinnosuke Yoshida", "上田智之": "Tomoyuki Ueda", "スクリプカリウ落合安奈": "Ana Scripcariu-Ochiai", "ヒルマ・アフ・クリント": "Hilma af Klint", "石田尚志": "Takashi Ishida", "菊地武彦": "Takehiko Kikuchi", "栗原一成": "Issei Kurihara", "小泉俊己": "Toshimi Koizumi", "髙柳恵里": "Eri Takayanagi", "吉澤美香": "Mika Yoshizawa", "日野之彦": "Korehiko Hino", "雨宮庸介": "Yosuke Amemiya", "金田実生": "Mio Kaneda", "諏訪未知": "Michi Suwa", "松浦寿夫": "Hisao Matsuura", "友政麻理子": "Mariko Tomomasa", "出津京子": "Kyoko Idetsu", "川角岳大": "Gakudai Kawasumi", "足立智美": "Tomomi Adachi", "地主麻衣子": "Maiko Jinushi", "山田淳吉": "Junkichi Yamada", "渡辺泰子": "Yasuko Watanabe", "小林晴夫": "Haruo Kobayashi", "高橋大輔": "Daisuke Takahashi", "水上愛美": "Emi Mizukami", "布施琳太郎": "Rintaro Fuse", "坂本龍幸": "Tatsuyuki Sakamoto", "原裕子": "Yuko Hara", "川添彩": "Aya Kawazoe", "奥秋由美": "Yumi Okuaki", "原陽子": "Yoko Hara", "楊いくみ": "Ikumi Yang", "白帆ひろみ": "Hiromi Shiraho", "園田将久": "Masahisa Sonoda", "豊田涼介": "Ryosuke Toyoda", "元城宏保": "Hiroyasu Motoki", "矢野憩啓": "Yasutaka Yano", "並木咲": "Saki Namiki", "中津川莉音": "Rion Nakatsugawa", "東本伊代": "Iyo Higashimoto", "諏訪敦": "Atsushi Suwa", "樺山祐和": "Sachikazu Kabayama", "小林孝亘": "Takanobu Kobayashi", "水上泰財": "Taizai Mizukami", "吉川民仁": "Tamihito Yoshikawa", "小林耕平": "Kohei Kobayashi", "関根直子": "Naoko Sekine", "袴田京太朗": "Kyotaro Hakamata", "小尾修": "Osamu Obi", "松河直美": "Naomi Matsukawa", "長島有里枝": "Yurie Nagashima", "津上みゆき": "Miyuki Tsugami", "上田暁子": "Akiko Ueda", "榎倉冴香": "Saeka Enokura", "大川心平": "Shinpei Okawa", "大谷たらふ": "Tarafu Otani", "神村恵": "Megumi Kamimura", "衣川明子": "Akiko Kinugawa", "高石晃": "Akira Takaishi", "竹内一": "TAKEUCHI Hajime", "徳永陶子": "TOKUNAGA Toko", "松井えり菜": "Erina Matsui", "松尾勘太": "Kanta Matsuo", "槙原泰介": "Taisuke Makihara", "森千裕": "Chihiro Mori", "山田優アントニ": "Yu Anthony Yamada", "野間祥子": "Sachiko Noma", "町田結香": "Yuka Machida", "サーニャ・カンタロフスキー": "Sanya Kantarovsky", "マンマ・アンデション": "Mamma Andersson", "フランク・ドリー": "Frank Dorrey", "タラ・マダニ": "Tala Madani", "キャサリン・ブラッドフォード": "Katherine Bradford", "ミレーナ・ドラギチェヴィッチ": "Milena Dragicevic", "ロバート・ボシシオ": "Robert Bosisio", "ピーター・シアー": "Peter Shear", "アントニオ・オバ": "Antonio Obá", "マグダレーナ・シェフチーク": "Magdaléna Ševčík", "佐藤翠": "Midori Sato", "川内理香子": "Rikako Kawauchi", "マーク・レッキー": "Mark Leckey", "マーク・マンダース": "Mark Manders", "テリー・エカサラ": "Terry Ekasala", "エマ・ローズ・シュワルツ": "Emma Rose Schwartz", "José Dávila": "Jose Davila", "ホセ・ダビラ": "Jose Davila", "大友昇平": "Shohei Otomo", "荒井良二": "Ryoji Arai", "グレン・マーティン・テイラー": "Glen Martin Taylor", "アニタ・リム": "Anita Lim", "ハンネローレ・ヴァンデポエル": "Hannelore Vandepoel", "劉海名": "Kaina Liu", "エマ・ガスパール": "Ema Gaspar", "ルカ・スパツィアーニ＝ブース": "Luka Spaziani-Booth", "後藤蓮誠": "Rensei Goto", "メアリー・ラムズデン": "Mary Ramsden", "ピエール・アレシンスキー": "Pierre Alechinsky", "エヴァ・ヘレーネ・パーデ": "Eva Helene Pade", "フォード・マドックス・ブラウン": "Ford Madox Brown", "アンヘル・オテロ": "Angel Otero", "デニス・ワース＝ミラー": "Denis Wirth-Miller", "モシェ・タミール": "Moshe Tamir", "ユリアーネ・フンデルトマルク": "Juliane Hundertmark", "エンリケ・レイヴァ": "Enrique Leyva", "ビリー・チルダッシュ": "Billy Childish", "アンドラ・ウルスツァ": "Andra Ursuța", "Kertész Andor": "André Kertész", "アンドレ・ケルテス": "André Kertész", "キャメロン・ジェイミー": "Cameron Jamie", "チャールズ・エイヴリー": "Charles Avery", "クロエ・ピーネ": "Chloe Piene", "クリスティアナ・ソウルー": "Christiana Soulou", "デイヴィッド・シュリグリー": "David Shrigley", "ダイアン・アーバス": "Diane Arbus", "エルネスト・カイヴァーノ": "Ernesto Caivano", "グレッグ・ウィリアムズ": "Greg Williams", "ヘルムート・ニュートン": "Helmut Newton", "濱谷浩": "Hiroshi Hamaya", "インカ・エッセンハイ": "Inka Essenhigh", "アーヴィング・ペン": "Irving Penn", "J・H・エングストローム": "J.H. Engström", "ジャミアン・ジュリアーノ＝ヴィラーニ": "Jamian Juliano-Villani", "篠山紀信": "Kishin Shinoyama", "ルイジ・ギッリ": "Luigi Ghirri", "ルイジ・セラフィーニ": "Luigi Serafini", "マルセル・ザマ": "Marcel Dzama", "マリーナ・ラインガンツ": "Marina Rheingantz", "マルティーヌ・フランク": "Martine Franck", "メアリー・エレン・ソルト": "Mary Ellen Solt", "マシュー・リッチー": "Matthew Ritchie", "ミハエラ・ノロック": "Mihaela Noroc", "ナン・ゴールディン": "Nan Goldin", "ニック・ナイト": "Nick Knight", "ニルバル・ギュレス": "Nilbar Güres", "保木伸也": "Nobuya Hoki", "ピア・フリース": "Pia Fries", "レイモンド・ペティボン": "Raymond Pettibon", "ルドルフ・スティンゲル": "Rudolf Stingel", "トッド・マクレラン": "Todd McLellan", "ヴィヴィアン・サッセン": "Viviane Sassen", "W・ユージン・スミス": "W. Eugene Smith", "ヴァルター・プファイファー": "Walter Pfeiffer", "ワーデル・ミラン": "Wardell Milan", "西村有": "Yu Nishimura", "オスカー・シュレンマー": "Oskar Schlemmer", "ジャン＝バティスト・モンディーノ": "Jean-Baptiste Mondino", "ニコラ・ド・スタール": "Nicolas de Staël", "笑達": "Syotatsu", "ジョイ・グレゴリー": "Joy Gregory", "モーリス・ルイス": "Morris Louis", "ブライス・マーデン": "Brice Marden", "ディアナ・チェプレアヌ": "Diana Cepleanu", "エルナ・ローゼンシュタイン": "Erna Rosenstein", "鈴木詠士": "Age Suzuki", "ポール・ランド": "Paul Rand", "ヨゼフ・ミューラー＝ブロックマン": "Josef Müller-Brockmann", "ソール・バス": "Saul Bass", "原研哉": "Kenya Hara", "福田繁雄": "Shigeo Fukuda", "田中一光": "Ikko Tanaka", "ディーター・ラムス": "Dieter Rams", "フィリップ・スタルク": "Philippe Starck", "深澤直人": "Naoto Fukasawa", "チャールズ＆レイ・イームズ": "Charles & Ray Eames", "マッシモ・ヴィネリ": "Massimo Vignelli", "オトル・アイヒャー": "Otl Aicher", "亀倉雄策": "Yusaku Kamekura", "ミルトン・グレイザー": "Milton Glaser", "ヤン・チヒョルト": "Jan Tschichold", "アドリアン・フルティガー": "Adrian Frutiger", "パウラ・シェア": "Paula Scher", "アレクセイ・ブロドヴィッチ": "Alexey Brodovitch", "ハーブ・ルバーリン": "Herb Lubalin", "杉浦康平": "Kohei Sugiura", "ネヴィル・ブロディ": "Neville Brody", "A.M.カッサンドル": "A. M. Cassandre", "永井一正": "Kazumasa Nagai", "佐藤卓": "Taku Satoh", "レイモンド・ローウィ": "Raymond Loewy", "ブルーノ・ムナーリ": "Bruno Munari", "ジョナサン・アイブ": "Jonathan Ive", "アルヴァ・アアルト": "Alvar Aalto", "ハンス・J・ウェグナー": "Hans J. Wegner", "柳宗理": "Sori Yanagi", "倉俣史朗": "Shiro Kuramata", "エットレ・ソットサス": "Ettore Sottsass", "フレデリック・キースラー": "Frederick Kiesler", "リナ・ボ・バルディ": "Lina Bo Bardi", "アドルフ・アッピア": "Adolphe Appia", "ロバート・ウィルソン": "Robert Wilson", "朝倉摂": "Setsu Asakura", "ロベルト・ブル・マルクス": "Roberto Burle Marx", "重森三玲": "Mirei Shigemori", "ランス・ワイマン": "Lance Wyman", "オットー・ノイラート": "Otto Neurath", "エドワード・タフテ": "Edward Tufte", "スーザン・ケア": "Susan Kare", "ドン・ノーマン": "Don Norman", "ジョン・ホイットニー": "John Whitney", "カイル・クーパー": "Kyle Cooper", "ジェフリー・ゼルドマン": "Jeffrey Zeldman", "ココ・シャネル": "Coco Chanel", "三宅一生": "Issey Miyake", "川久保玲": "Rei Kawakubo", "山本耀司": "Yohji Yamamoto", "アンニ・アルバース": "Anni Albers", "皆川明": "Akira Minagawa", "芹沢銈介": "Keisuke Serizawa", "イヴァン・チャーマイエフ＆トム・ガイスマー": "Ivan Chermayeff & Tom Geismar", "アラン・フレッチャー": "Alan Fletcher", "ウォルター・ランドー": "Walter Landor", "リンドン・リーダー": "Lindon Leader", "ロブ・ジャノフ": "Rob Janoff", "マイケル・ビールート": "Michael Bierut", "シュテファン・ザグマイスター": "Stefan Sagmeister", "ウォーリー・オリンス": "Wally Olins", "レスター・ビール": "Lester Beall", "アントン・スタンコフスキー": "Anton Stankowski", "ペーター・ベーレンス": "Peter Behrens", "ヘルマン・ツァップ": "Hermann Zapf", "マシュー・カーター": "Matthew Carter", "エリック・ギル": "Eric Gill", "スタンリー・モリスン": "Stanley Morison", "マックス・ミーディンガー": "Max Miedinger", "ウィム・クロウエル": "Wim Crouwel", "エリック・シュピーカーマン": "Erik Spiekermann", "ズザナ・リチコ": "Zuzana Licko", "エドワード・ジョンストン": "Edward Johnston", "ジャンバティスタ・ボドーニ": "Giambattista Bodoni", "小林章": "Akira Kobayashi", "ジョージ・ロイス": "George Lois", "シーピー・ピネレス": "Cipe Pineles", "アレクサンダー・リーバーマン": "Alexander Liberman", "ブラッドベリ・トンプソン": "Bradbury Thompson", "デイヴィッド・カーソン": "David Carson", "ティボール・カルマン": "Tibor Kalman", "イルマ・ボーム": "Irma Boom", "堀内誠一": "Seiichi Horiuchi", "和田誠": "Makoto Wada", "宇野亞喜良": "Akira Uno", "早川良雄": "Yoshio Hayakawa", "石岡瑛子": "Eiko Ishioka", "仲條正義": "Masayoshi Nakajo", "葛西薫": "Kaoru Kasai", "勝井三雄": "Mitsuo Katsui", "五十嵐威暢": "Takenobu Igarashi", "アルミン・ホフマン": "Armin Hofmann", "松永真": "Shin Matsunaga", "駒形克己": "Katsumi Komagata", "水野学": "Manabu Mizuno", "奥村靫正": "Yukimasa Okumura", "中村至男": "Norio Nakamura", "立花ハジメ": "Hajime Tachibana", "佐藤オオキ": "Oki Sato", "マーク・ニューソン": "Marc Newson", "ヘンリー・ドレイファス": "Henry Dreyfuss", "榮久庵憲司": "Kenji Ekuan", "ハンス・グーゲロット": "Hans Gugelot", "ヤコブ・イェンセン": "Jacob Jensen", "ジェームズ・ダイソン": "James Dyson", "ハルトムート・エスリンガー": "Hartmut Esslinger", "アキッレ・カスティリオーニ": "Achille Castiglioni", "リヒャルト・ザッパー": "Richard Sapper", "ジャスパー・モリソン": "Jasper Morrison", "ジョルジェット・ジウジアーロ": "Giorgetto Giugiaro", "ジオ・ポンティ": "Gio Ponti", "フィン・ユール": "Finn Juhl", "アルネ・ヤコブセン": "Arne Jacobsen", "ポール・ケアホルム": "Poul Kjærholm", "ヴェルナー・パントン": "Verner Panton", "エーロ・サーリネン": "Eero Saarinen", "ジョージ・ネルソン": "George Nelson", "ジャン・プルーヴェ": "Jean Prouvé", "シャルロット・ペリアン": "Charlotte Perriand", "マルセル・ブロイヤー": "Marcel Breuer", "ヘリット・リートフェルト": "Gerrit Rietveld", "杉本貴志": "Takashi Sugimoto", "片山正通": "Masamichi Katayama", "エルシー・ド・ウルフ": "Elsie de Wolfe", "テレンス・コンラン": "Terence Conran", "イルゼ・クロフォード": "Ilse Crawford", "ドロシー・ドレイパー": "Dorothy Draper", "カルロ・スカルパ": "Carlo Scarpa", "フランコ・アルビーニ": "Franco Albini", "ラルフ・アッペルバウム": "Ralph Appelbaum", "ガエ・アウレンティ": "Gae Aulenti", "エドワード・ゴードン・クレイグ": "Edward Gordon Craig", "ヨゼフ・スヴォボダ": "Josef Svoboda", "千田是也": "Koreya Senda", "妹尾河童": "Kappa Senoh", "エス・デヴリン": "Es Devlin", "フレデリック・ロー・オルムステッド": "Frederick Law Olmsted", "アンドレ・ル・ノートル": "André Le Nôtre", "ローレンス・ハルプリン": "Lawrence Halprin", "ピート・アウドルフ": "Piet Oudolf", "ピーター・ウォーカー": "Peter Walker", "中根金作": "Kinsaku Nakane", "太田幸夫": "Yukio Ota", "ゲルト・アルンツ": "Gerd Arntz", "マーガレット・カルバート＆ジョック・キニア": "Margaret Calvert & Jock Kinneir", "ロジャー・クック＆ドン・シャノスキー": "Roger Cook & Don Shanosky", "勝見勝": "Masaru Katsumi", "山下芳郎": "Yoshiro Yamashita", "ウィリアム・プレイフェア": "William Playfair", "フローレンス・ナイチンゲール": "Florence Nightingale", "シャルル・ジョゼフ・ミナール": "Charles Joseph Minard", "ジョン・スノウ": "John Snow", "ジャック・ベルタン": "Jacques Bertin", "リチャード・ソール・ワーマン": "Richard Saul Wurman", "ナイジェル・ホームズ": "Nigel Holmes", "デイヴィッド・マッカンドレス": "David McCandless", "ビル・モグリッジ": "Bill Moggridge", "デイヴィッド・ケリー": "David Kelley", "アラン・ケイ": "Alan Kay", "ダグラス・エンゲルバート": "Douglas Engelbart", "ジェフ・ラスキン": "Jef Raskin", "ヤコブ・ニールセン": "Jakob Nielsen", "モーリス・ビンダー": "Maurice Binder", "パブロ・フェロ": "Pablo Ferro", "オスカー・フィッシンガー": "Oskar Fischinger", "ダン・ペリ": "Dan Perri", "中村勇吾": "Yugo Nakamura", "イーサン・マルコット": "Ethan Marcotte", "ヒルマン・カーティス": "Hillman Curtis", "ジョシュア・デイヴィス": "Joshua Davis", "ベン・フライ＆ケイシー・リース": "Ben Fry & Casey Reas", "クリスチャン・ディオール": "Christian Dior", "イヴ・サンローラン": "Yves Saint Laurent", "クリストバル・バレンシアガ": "Cristóbal Balenciaga", "マドレーヌ・ヴィオネ": "Madeleine Vionnet", "ポール・ポワレ": "Paul Poiret", "エルザ・スキャパレッリ": "Elsa Schiaparelli", "マリー・クヮント": "Mary Quant", "ヴィヴィアン・ウエストウッド": "Vivienne Westwood", "マルタン・マルジェラ": "Martin Margiela", "アレキサンダー・マックイーン": "Alexander McQueen", "ミウッチャ・プラダ": "Miuccia Prada", "森英恵": "Hanae Mori", "ウィリアム・モリス": "William Morris", "ソニア・ドローネ": "Sonia Delaunay", "ルシアン・デイ": "Lucienne Day", "マイヤ・イソラ": "Maija Isola", "ワルワーラ・ステパーノワ": "Varvara Stepanova", "志村ふくみ": "Fukumi Shimura", "柚木沙弥郎": "Samiro Yunoki", "ボーエ・モーエンセン": "Børge Mogensen", "コーア・クリント": "Kaare Klint", "ナナ・ディッツェル": "Nanna Ditzel", "ヨーゼフ・フランク": "Josef Frank", "アイリーン・グレイ": "Eileen Gray", "ル・コルビュジエ": "Le Corbusier", "ルートヴィヒ・ミース・ファン・デル・ローエ": "Ludwig Mies van der Rohe", "フローレンス・ノル": "Florence Knoll", "ハリー・ベルトイア": "Harry Bertoia", "エーロ・アールニオ": "Eero Aarnio", "ジョエ・コロンボ": "Joe Colombo", "ヴィコ・マジストレッティ": "Vico Magistretti", "エンツォ・マーリ": "Enzo Mari", "アレッサンドロ・メンディーニ": "Alessandro Mendini", "ミケーレ・デ・ルッキ": "Michele De Lucchi", "コンスタンティン・グルチッチ": "Konstantin Grcic", "ロナン＆エルワン・ブールレック": "Ronan & Erwan Bouroullec", "ヘラ・ヨンゲリウス": "Hella Jongerius", "マールテン・ファン・セーヴェレン": "Maarten Van Severen", "マリオ・ベリーニ": "Mario Bellini", "アレキサンダー・ジラード": "Alexander Girard", "タピオ・ヴィルカラ": "Tapio Wirkkala", "カイ・フランク": "Kaj Franck", "イルマリ・タピオヴァーラ": "Ilmari Tapiovaara", "ロビン・デイ": "Robin Day", "ケネス・グレンジ": "Kenneth Grange", "クリストファー・ドレッサー": "Christopher Dresser", "チャールズ・レニー・マッキントッシュ": "Charles Rennie Mackintosh", "ヨーゼフ・ホフマン": "Josef Hoffmann", "マリアンネ・ブラント": "Marianne Brandt", "ヴィルヘルム・ヴァーゲンフェルト": "Wilhelm Wagenfeld", "グンタ・シュテルツル": "Gunta Stölzl", "ピート・ズワルト": "Piet Zwart", "ラディスラフ・ストナー": "Ladislav Sutnar", "エヴァ・ツァイゼル": "Eva Zeisel", "ラッセル・ライト": "Russel Wright", "アンナ・カステッリ・フェリエーリ": "Anna Castelli Ferrieri", "渡辺 力": "Riki Watanabe", "渡辺力": "Riki Watanabe", "剣持勇": "Isamu Kenmochi", "剣持 勇": "Isamu Kenmochi", "喜多俊之": "Toshiyuki Kita", "喜多 俊之": "Toshiyuki Kita", "デイヴィッド・ラドニック": "David Rudnick", "藤本壮介": "Sou Fujimoto", "ジョン・ガリアーノ": "John Galliano", "ジャン＝ポール・ゴルチエ": "Jean Paul Gaultier", "フィリップ・トレーシー": "Philip Treacy", "松井みどり": "Midori Matsui", "小山登美夫": "Tomio Koyama", "椹木野衣": "Noi Sawaragi", "千葉成夫": "Shigeo Chiba", "中原佑介": "Yusuke Nakahara", "長谷川祐子": "Yuko Hasegawa", "クレメント・グリーンバーグ": "Clement Greenberg", "ハロルド・ローゼンバーグ": "Harold Rosenberg", "ロザリンド・クラウス": "Rosalind E. Krauss", "アーサー・ダントー": "Arthur C. Danto", "ルーシー・リパード": "Lucy R. Lippard", "ダグラス・クリンプ": "Douglas Crimp", "ジェルマーノ・チェラント": "Germano Celant", "アキーレ・ボニート・オリーヴァ": "Achille Bonito Oliva", "ニコラ・ブリオー": "Nicolas Bourriaud", "ハラルド・ゼーマン": "Harald Szeemann", "ハンス・ウルリッヒ・オブリスト": "Hans Ulrich Obrist", "オクウィ・エンヴェゾー": "Okwui Enwezor", "レオ・カステリ": "Leo Castelli", "アルフレッド・H・バー・ジュニア": "Alfred H. Barr Jr.", "針生一郎": "Ichiro Hariu", "東野芳明": "Yoshiaki Tono", "宮川淳": "Atsushi Miyagawa", "瀧口修造": "Shuzo Takiguchi", "藤枝晃雄": "Teruo Fujieda", "建畠晢": "Akira Tatehata", "レオ・スタインバーグ": "Leo Steinberg", "マイケル・フリード": "Michael Fried", "ハル・フォスター": "Hal Foster", "ベンヤミン・ブッフロー": "Benjamin H. D. Buchloh", "ジャン＝フランソワ・リオタール": "Jean-François Lyotard", "ポントゥス・ヒュルテン": "Pontus Hultén", "カイナストン・マクシャイン": "Kynaston McShine", "ウォルター・ホップス": "Walter Hopps", "カスパー・ケーニヒ": "Kasper König", "ヤン・フート": "Jan Hoet", "ジャン＝ユベール・マルタン": "Jean-Hubert Martin", "マーシャ・タッカー": "Marcia Tucker", "逢坂恵理子": "Eriko Osaka", "北川フラム": "Fram Kitagawa", "片岡真実": "Mami Kataoka", "南條史生": "Fumio Nanjo", "イレアナ・ソナベント": "Ileana Sonnabend", "ダニエル＝ヘンリー・カーンワイラー": "Daniel-Henry Kahnweiler", "アンブロワーズ・ヴォラール": "Ambroise Vollard", "ラリー・ガゴシアン": "Larry Gagosian", "メアリー・ブーン": "Mary Boone", "ハインリヒ・ヴェルフリン": "Heinrich Wölfflin", "エルヴィン・パノフスキー": "Erwin Panofsky", "エルンスト・ゴンブリッチ": "Ernst Gombrich", "メイヤー・シャピロ": "Meyer Schapiro", "T・J・クラーク": "T. J. Clark", "リンダ・ノックリン": "Linda Nochlin", "グリゼルダ・ポロック": "Griselda Pollock", "ジョン・バージャー": "John Berger", "アンドレ・マルロー": "André Malraux", "高階秀爾": "Shuji Takashina", "若桑みどり": "Midori Wakakuwa", "酒井忠康": "Tadayasu Sakai", "岡倉天心": "Kakuzo Okakura", "柳宗悦": "Soetsu Yanagi", "石子順造": "Junzo Ishiko", "多木浩二": "Koji Taki", "飯沢耕太郎": "Kotaro Iizawa", "シャルル・ボードレール": "Charles Baudelaire", "ジョン・ラスキン": "John Ruskin", "フェリックス・フェネオン": "Félix Fénéon", "ギヨーム・アポリネール": "Guillaume Apollinaire", "アンドレ・ブルトン": "André Breton", "ロジャー・フライ": "Roger Fry", "ハーバート・リード": "Herbert Read", "ローレンス・アロウェイ": "Lawrence Alloway", "デイヴィッド・シルヴェスター": "David Sylvester", "ロバート・ヒューズ": "Robert Hughes", "李憲庭": "Li Xianting", "高名禄": "Gao Minglu", "土方定一": "Teiichi Hijikata", "小池一子": "Kazuko Koike", "アーノルト・ボーデ": "Arnold Bode", "ドロシー・ミラー": "Dorothy C. Miller", "ヘンリー・ゲルツァーラー": "Henry Geldzahler", "ウィリアム・ルービン": "William Rubin", "キャロリン・クリストフ＝バカルジエフ": "Carolyn Christov-Bakargiev", "マッシミリアーノ・ジオーニ": "Massimiliano Gioni", "侯瀚如": "Hou Hanru", "テルマ・ゴールデン": "Thelma Golden", "クラウス・ビーゼンバッハ": "Klaus Biesenbach", "山本孝": "Takashi Yamamoto", "志水楠男": "Kusuo Shimizu", "洲之内徹": "Toru Sunouchi", "ポール・デュラン＝リュエル": "Paul Durand-Ruel", "ベルト・ヴェイユ": "Berthe Weill", "セス・ジーゲラウブ": "Seth Siegelaub", "コンラート・フィッシャー": "Konrad Fischer", "ヴァージニア・ドワン": "Virginia Dwan", "ベティ・パーソンズ": "Betty Parsons", "ジュリアン・レヴィ": "Julian Levy", "パウル・カッシーラー": "Paul Cassirer", "ヨハン・ヨアヒム・ヴィンケルマン": "Johann Joachim Winckelmann", "ヤーコプ・ブルクハルト": "Jacob Burckhardt", "ヴィルヘルム・フォン・ボーデ": "Wilhelm von Bode", "バーナード・ベレンソン": "Bernard Berenson", "アロイス・リーグル": "Alois Riegl", "アビ・ヴァールブルク": "Aby Warburg", "マックス・ドヴォルジャーク": "Max Dvořák", "アーノルド・ハウザー": "Arnold Hauser", "ケネス・クラーク": "Kenneth Clark", "矢代幸雄": "Yukio Yashiro", "マイケル・バクサンダル": "Michael Baxandall", "スヴェトラーナ・アルパース": "Svetlana Alpers", "フランシス・ハスケル": "Francis Haskell", "セルゲイ・シチューキン": "Sergei Shchukin", "イワン・モロゾフ": "Ivan Morozov", "イザベラ・スチュワート・ガードナー": "Isabella Stewart Gardner", "ガートルード・スタイン": "Gertrude Stein", "アルバート・C・バーンズ": "Albert C. Barnes", "ペギー・グッゲンハイム": "Peggy Guggenheim", "ドミニク・ド・メニル": "Dominique de Menil", "チャールズ・サーチ": "Charles Saatchi", "高橋龍太郎": "Ryutaro Takahashi", "福武總一郎": "Soichiro Fukutake", "ヨハンナ・ファン・ゴッホ＝ボンガー": "Johanna van Gogh-Bonger", "武者小路実篤": "Saneatsu Mushanokoji", "都築響一": "Kyoichi Tsuzuki", "久保貞次郎": "Sadajiro Kubo", "宮本武典": "Takenori Miyamoto", "布施英利": "Hideto Fuse", "蔵屋美香": "Mika Kuraya", "黒嵜想": "So Kurosaki", "土方明司": "Meiji Hijikata", "デイヴィッド・ツヴィルナー": "David Zwirner", "イワン・ワース": "Iwan Wirth", "マリアン・グッドマン": "Marian Goodman", "エマニュエル・ペロタン": "Emmanuel Perrotin", "タデウス・ロパック": "Thaddaeus Ropac", "ジェイ・ジョプリング": "Jay Jopling", "セイディ・コールズ": "Sadie Coles", "バーバラ・グラッドストーン": "Barbara Gladstone", "ポーラ・クーパー": "Paula Cooper", "マシュー・マークス": "Matthew Marks", "ジェフリー・ダイチ": "Jeffrey Deitch", "大田秀則": "Hidenori Ota", "エルンスト・バイエラー": "Ernst Beyeler", "アーネ・グリムチャー": "Arne Glimcher", "アンソニー・ドフェイ": "Anthony d'Offay", "ニコラス・ログスデイル": "Nicholas Logsdail", "ヴィクトリア・ミロ": "Victoria Miro", "ダニエル・タンプロン": "Daniel Templon", "ダイア・アート財団": "Dia Art Foundation", "チナーティ財団": "The Chinati Foundation", "バイエラー財団": "Fondation Beyeler", "グッゲンハイム財団": "Solomon R. Guggenheim Foundation", "ルイ・ヴィトン財団": "Fondation Louis Vuitton", "プラダ財団": "Fondazione Prada", "ブラント財団": "The Brant Foundation", "ルーベル美術館": "Rubell Museum", "石橋財団": "Ishibashi Foundation", "ポーラ美術振興財団": "Pola Art Foundation", "セゾン文化財団": "The Saison Foundation", "鹿島美術財団": "Kajima Foundation for the Arts", "福武財団": "Fukutake Foundation", "エレナ・トゥタッチコワ": "Elena Tutatchkova", "安田侃": "Kan Yasuda", "多田美波": "Minami Tada"};
 const I18N_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const I18N_WD = {'日':'Sun','月':'Mon','火':'Tue','水':'Wed','木':'Thu','金':'Fri','土':'Sat'};
@@ -13945,7 +14032,7 @@ function detailScatterOpenViewer(){
       const t = String(p.work).trim();
       if(t) idx = ws.findIndex(w => (w.caption || '').indexOf(t) >= 0);
     }
-    if(idx >= 0){ openViewer(ws, idx, a.id); return; }
+    if(idx >= 0){ openWorksViewer(a, ws[idx]); return; }
     const cap = [p.work, p.year? p.year + '年': '', [p.house, bpFmtPrice(p)].filter(x => x !== '' && x != null).join(' ・ ')].filter(Boolean).join('　');
     viewerKindNext = 'prices';
     openViewer([{ img: p.img, caption: cap }], 0, a.id);
@@ -17197,7 +17284,7 @@ function chronicleHTML(a, ch, ws){
       const thumbs = [];
       per.works.forEach(w=>{
         const idx = chWorkIdx(ws, w.title, w.year);
-        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+idx+', \''+escA(a.id)+'\')">'+imgHTML(work, IMG_SIZE.thumb)+hiresDotHTML(work)+'</button>'); }
+        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openWorksViewerAt(\''+escA(a.id)+'\', '+idx+')">'+imgHTML(work, IMG_SIZE.thumb)+hiresDotHTML(work)+'</button>'); }
         else thumbs.push('<span class="chsym">《'+esc(w.title)+'》（'+w.year+'年）</span>');
       });
       h += '<div class="chworks"><div class="chwlabel">正本の代表作品</div><div class="biothumbs">'+thumbs.join('')+'</div></div>';
@@ -17525,7 +17612,7 @@ t = t.replace(/《([^》]+)》/g, (m, inner)=>{
 const idx = linkCtx.map[inner.trim()];
 if(idx == null) return m;
 const n = linkSubs.length;
-linkSubs.push('<button class="worklink" onclick="openViewer(displayWorks(artistById(\''+escA(linkCtx.id)+'\')), '+idx+', \''+escA(linkCtx.id)+'\')">《'+esc(inner)+'》</button>');
+linkSubs.push('<button class="worklink" onclick="openWorksViewerAt(\''+escA(linkCtx.id)+'\', '+idx+')">《'+esc(inner)+'》</button>');
 return ''+n+'';
 });
 if(!linkSubs.length) linkSubs = null;
@@ -17606,7 +17693,7 @@ function bioWorksStrip(a, ws){
   yrs.forEach(y=>{
     const age = (birth && +y >= birth)? ' '+(+y - birth)+'歳': '';
     h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
-      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
+      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openWorksViewerAt(\''+escA(a.id)+'\', '+d.i+')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
       + '</div></div>';
   });
   return h;
@@ -17898,7 +17985,7 @@ if(seriesKey && ph.closest('[data-dtab="works"]')){
 const fw = ws.filter(x=> x && x.series === seriesKey);
 const fi = fw.indexOf(ws[+ph.dataset.workidx]);
 openViewer(fw, fi < 0? 0: fi, a.id);
-} else openViewer(ws, +ph.dataset.workidx, a.id);
+} else openWorksViewer(a, ws[+ph.dataset.workidx]);
 });
 const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
 /* v27.9 (§6.4-1 of the return-jump diagnosis): a tile that is
@@ -18577,7 +18664,7 @@ else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj);
 }
 });
 v.querySelectorAll('[data-procwork]').forEach(b=>{
-b.addEventListener('click', (e)=>{ e.stopPropagation(); setTab('works'); openViewer(ws, +b.dataset.procwork, a.id); });
+b.addEventListener('click', (e)=>{ e.stopPropagation(); setTab('works'); openWorksViewer(a, ws[+b.dataset.procwork]); });
 });
 const pph = v.querySelector('[data-portrait]');
 if(pph){
@@ -18735,7 +18822,7 @@ const w = intvExWiring; if(!w) return;
 const a = artistById(state.detailId);
 if(w.isWork && a) captureIntvReturn();
 closeIntvReader();
-if(w.isWork){ if(a) openViewer(worksOf(a), 0, a.id); }
+if(w.isWork){ if(a) openWorksViewer(a, worksOf(a)[0]); }
 else if(w.venue) openMuseum(w.venue);
 }
 /* v5.81.3: work titles inside the interview reader (his ask,
@@ -18837,7 +18924,7 @@ function intvWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
 captureIntvReturn();
 closeIntvReader();
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 /* v5.82.11: book digest reader. The digest CONTENT lives only
    in a Drive-side file, book-digests.json — never in this repo,
@@ -19036,7 +19123,7 @@ const bd = $('drbody');
 viewerReturn = { kind: 'digest', scroll: bd? bd.scrollTop: 0 };
 (digestReader.scrolls = digestReader.scrolls || {})[digestReader.screen] = bd? bd.scrollTop: 0;
 closeDigestReader();
-openViewer(ws, idx, a.id);
+openWorksViewer(a, ws[idx]);
 }
 /* v5.81.4: the v5.81.3 rule extended to the 発言 quotes (his
    approval, 2026-11-21 08:27 — he tapped the option 「発言の
@@ -19084,7 +19171,7 @@ return h;
 function quoteWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
 viewerReturn = { kind: 'page', y: window.scrollY };
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 function openIntvReader(idx){
 const a = artistById(state.detailId); if(!a) return;
@@ -19189,7 +19276,9 @@ const cap = $('pbcap'); if(cap) cap.textContent = '';
    The caption is built through the placeholder convention, so
    no caption text can inject markup. */
 function viewerCaptionHTML(){
-const capEl = $('vcap'); if(!capEl) return;
+let capEl = $('vcap'); if(!capEl) return;
+/* v5.82.47: swap in a fresh caption node each render — mutating the old node's innerHTML left its text layer alive for the compositor to blend with the new caption during the turn swap on his iPhone (the doubled-caption frames in his 2026-11-27 recording). A fresh node has no old layer. */
+{ const fresh = capEl.cloneNode(false); capEl.replaceWith(fresh); capEl = fresh; }
 const w = viewerWorks[viewerIdx]; const cap = (w && w.caption) || '';
 const a = artistById(viewerArtistId);
 if(!a || (cap.indexOf('《') < 0 && cap.indexOf('『') < 0)){ capEl.textContent = cap; return; }
@@ -19229,7 +19318,7 @@ capEl.innerHTML = h;
 function viewerCapWorkTap(idx){
 const a = artistById(viewerArtistId); if(!a) return;
 viewerBack = { works: viewerWorks, idx: viewerIdx, kind: viewerKind, artistId: viewerArtistId };
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 function viewerGoBack(){
 const b = viewerBack; if(!b) return;
@@ -19328,7 +19417,7 @@ a.thumb_pinned_at = now; a.updated_at = now;
 saveDB(); scheduleSync();
 /* v2.64: stay in the current display order; the pinned work keeps
    its sorted position, only its canonical-first status changed. */
-viewerWorks = displayWorks(a);
+viewerWorks = worksViewerList(a); /* v5.82.47: keep the viewer's display order (was displayWorks) */
 const ni = viewerWorks.findIndex(x=> workKeysOf(x).some(k=> keys.indexOf(k)>=0));
 viewerIdx = ni>=0? ni: 0;
 updateVThumbBtn();
@@ -21490,9 +21579,9 @@ const go = ()=>{
 const a = artistById(e.artist.id);
 if(!a){ toast('この端末にはまだ届いていません'); return; }
 const ws = displayWorks(a);
-let ix = ws.indexOf(e.work);
-if(ix < 0) ix = Math.min(e.wi, ws.length - 1);
-if(ix >= 0) openViewer(ws, ix, a.id);
+let mw = e.work;
+if(ws.indexOf(mw) < 0) mw = ws[Math.min(e.wi, ws.length - 1)];
+if(mw) openWorksViewer(a, mw);
 };
 if(e.kind !== DS) switchDataset(e.kind);
 go();
@@ -22827,47 +22916,46 @@ function charmChapterNavHTML(ch, tabKey, skip){
 }
 const CHARM_SECTIONS = [
   { key:'humor', label:'ユーモア',
-    hasData: ()=> (DS==='artists' && DB)? rosterBase().some(a=>Array.isArray(a.humor) && a.humor.length): false,
+    hasData: ()=> CHARM_QUOTES.length > 0,
     render: renderCharmHumor },
+  { key:'wit', label:'ウィット', hasData: ()=> true, render: renderCharmWit },
+  { key:'culture', label:'教養', hasData: ()=> true, render: renderCharmCulture },
   { key:'aura', label:'オーラを稼ぐ', hasData: ()=> true, render: renderCharmAura },
   { key:'sociality', label:'社会性', hasData: ()=> true, render: renderCharmSociality },
   { key:'selfproduce', label:'セルフプロデュース', hasData: ()=> true, render: renderCharmSelfProduce },
+  { key:'character', label:'キャラクター', hasData: ()=> true, render: renderCharmCharacter },
   { key:'models', label:'ロールモデル', hasData: ()=> true, render: renderCharmModels },
+  { key:'capital', label:'変えられない資本', hasData: ()=> true, render: renderCharmCapital },
   { key:'lie', label:'嘘のうまさ', hasData: ()=> true, render: renderCharmLie }
 ];
 function setCharmTab(k){ charmTab = k; renderHumor(); window.scrollTo(0, 0); }
+function charmQuoteCardHTML(q){
+  const who = q.aid
+    ? '<button class="quotewho" onclick="openHumorArtist(\'' + q.aid + '\')">' + esc(q.who) + ' ›</button>'
+    : '<span class="quotewho">' + esc(q.who) + '</span>';
+  return '<div class="quotecard">'
+    + '<div class="quoteq">「' + esc(q.q) + '」</div>'
+    + (q.orig? '<div class="quoteorig">' + esc(q.orig) + '</div>': '')
+    + '<div class="quotemeta">' + who + (q.den? '<span class="quoteden">伝聞</span>': '') + '</div>'
+    + (q.scene? '<div class="quotescene">' + esc(q.scene) + '</div>': '')
+    + '</div>';
+}
 function renderCharmHumor(){
-  /* v5.82.35: same ensure pattern as charmLoadingHTML — on a
-     first-tap path (☺︎ before any detail/guide visit) the reading
-     section's chapters have not been fetched yet; guideEnsure's
-     landing repaints this view (the v5.82.33 hook), so the
-     section arrives instead of silently staying absent. */
+  /* v5.82.40: the tab's centre is now the quotes collection
+     (CHARM_QUOTES) — actual lines by actual people, quote-led
+     cards. The artist-group layout is gone from this page:
+     Duchamp is excluded entirely (his call), and Bacon's path
+     runs through his quote cards' speaker link to his artist
+     page ユーモア tab, plus the closing row below. The reading
+     section 「切れ味とユーモア」 stays but no longer leads —
+     it sits under the collection. */
   if(!guideData && !guideError) guideEnsure();
-  const list = (DS==='artists' && DB)? rosterBase().filter(a=>Array.isArray(a.humor) && a.humor.length): [];
-  const wiring = [];
-  let html = '';
-  /* reading layer first: セルフプロデュース 二「切れ味とユーモア」
-     (moved here from the guide chapter; the セルフプロデュース tab
-     carries a cross-reference row in its place). */
+  let html = CHARM_QUOTES.map(charmQuoteCardHTML).join('');
+  html += '<button class="quotemore" onclick="openHumorArtist(\'76\')">フランシス・ベーコンのユーモアをもっと見る<span class="charmxrefgo">作家ページのユーモアタブ ›</span></button>';
   const sp = charmChapterById('guide-ch-self-produce');
   const hsec = charmSecByHead(sp, '切れ味とユーモア');
-  if(hsec){ bizFigStore = []; html += charmSecHTML(hsec); }
-  if(list.length && hsec) html += '<h3 class="subhead">作家のユーモア</h3>';
-  list.forEach(a=>{
-    /* v5.82.35: the header image is the artist's portrait (the
-       profile band's keyWork(a.portrait) construction), not the
-       first work's thumbnail. No portrait registered → the shared
-       no-photo mark (v5.49.0), never a work posing as the artist. */
-    const pw = a.portrait? keyWork(a.portrait, a.name || ''): null;
-    if(pw) wiring.push(pw);
-    const ph = pw? '<div class="charmph"><span class="ph" data-portrait="1">'+imgHTML(pw, IMG_SIZE.thumb)+'</span></div>'
-      : '<div class="charmph">'+noPhotoHTML()+'</div>';
-    html += '<div class="humorgroup">'
-      + '<button class="charmhead" onclick="openHumorArtist(\''+escA(a.id)+'\')">'+ph+'<span class="charmmeta"><span class="charmname">'+esc(dispName(a))+'</span>'+(a.years? '<span class="charmyears">'+esc(yearsDisplay(a))+'</span>': '')+'</span><span class="inflgo">›</span></button>'
-      + a.humor.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('')
-      + '</div>';
-  });
-  return { html, wiring };
+  if(hsec){ bizFigStore = []; html += '<h3 class="subhead">読み物</h3>' + charmSecHTML(hsec); }
+  return { html, wiring: [] };
 }
 function renderCharmAura(){
   const sp = charmChapterById('guide-ch-self-produce');
@@ -22891,40 +22979,172 @@ function renderCharmSelfProduce(){
   const as = charmSecByHead(ch, 'オーラは揃えるもの'); if(as) skip.push({ sec: as, tab: 'aura', label: 'オーラを稼ぐ' });
   return { html: charmChapterNavHTML(ch, 'selfproduce', skip), wiring: [] };
 }
-/* ロールモデル: static editorial cards (Social Labo material,
-   2026-11-26). Who each model is + the exact points he takes
-   from them — nothing here is per-artist data. */
+/* ロールモデル: static editorial data (Social Labo material,
+   2026-11-26 — the 棚 in adult-sociality-material.md, plus the
+   five models the tab already carried, all supported elsewhere
+   in that file). Who each model is + his own commentary,
+   shortened faithfully; img is the one best photo per model
+   (Drive 図鑑画像 folder, bare fileId; Bacon's is his artist
+   portrait). Nothing here is per-artist data. */
 const CHARM_MODELS = [
-  { name:'フランシス・ベーコン', who:'画家（1909–1992）。大人の社交と雄弁の型。',
+  { name:'フランシス・ベーコン', img:'1gzPNuuOx4ZlHB2X5g38kzN21O5Gdag8D', who:'画家（1909–1992）。大人の社交と雄弁の型。',
+    hook:'挨拶は短く普通に。会話の中身と切れ味で人を掴む',
     pts:['挨拶は短く普通に。落ち着いた声と間で、会話の中身と切れ味で人を掴む',
          '同じ酒場の常連でいることで、関係が積み上がる仕組みを持っていた',
          '人前では気前よく奢る側に回る。読まれるのは金額ではなく、出す時の迷いのなさ',
          '雄弁さは才能ではなく、長年の会話と定番の言い回しの蓄積の上に立つ'] },
-  { name:'スパイク', who:'映画『ノッティングヒルの恋人』の同居人。ユーモアの型。',
+  { name:'デヴィッド・ボウイ', img:'1aKsnGByjYlZTXOYFl8xO4fTOYH-b4-5G', who:'ミュージシャン（1947–2016）。',
+    hook:'変わり続けた人。自分と少し重なる',
+    pts:['変わり続けた人',
+         '自分と少し重なる部分があって入れた',
+         'ただし「なりたい理想」とは少し違う'] },
+  { name:'カート・コバーン', img:'1tHU_bM6BdEiPRqRl8V8dN4z9iH_2VHyg', who:'ニルヴァーナ（1967–1994）。',
+    hook:'高校時代に衝撃。ファッションから真似した',
+    pts:['高校時代に出会って衝撃を受けた',
+         'ファッションから真似した',
+         '「Nirvana」というカッコ良すぎるバンド名にも負けず、カッコ良すぎる音楽を作っている',
+         '漫画のキャラクターすぎる'] },
+  { name:'ジョン・レノン', img:'16d6OM5I7TGq8--_HEp5ss8r5MnydUG16', who:'ビートルズ（1940–1980）。',
+    hook:'伝説を刻んだ、面白い変人。人間的魅力が凄まじい',
+    pts:['ビートルズという伝説を刻んだ',
+         '面白い変人である',
+         '人間的魅力が凄まじい',
+         'インタビューに出る不真面目さが好き'] },
+  { name:'ジェフ・バックリィ', img:'1LcZzX0kEZy8zhDIKuLydpkLBxtX3V7O-', who:'ミュージシャン（1966–1997）。',
+    hook:'完全に音楽の世界観。『Grace』のジャケに憧れた',
+    pts:['完全に音楽の世界観',
+         '『Grace』のジャケ写の世界観に憧れた'] },
+  { name:'デヴィッド・リンチ', img:'113zdBJ3ypIm-SIA335KWrnsI6z9Meyu_', who:'映画監督（1946–2025）。',
+    hook:'世界観とムード',
+    pts:['世界観とムード'] },
+  { name:'ジャン・コクトー', img:'1rQVlvumxoTaSbZzxxKIH5kbNeeMULFBx', who:'詩人・映画作家（1889–1963）。',
+    hook:'腕が何本もある写真＝多方面で評価された人',
+    pts:['腕が何本もある写真が表すように、いろいろなことで評価された',
+         '「二兎を追う者は〜」のことわざを打破してすごい',
+         '生き様は知らない'] },
+  { name:'ディーン・コルソ', img:'1R_faG666HVF7NYt6_z_GLBKRsPo6pCMo', who:'『ナインス・ゲート』の古書買い付け屋（ジョニー・デップ）。',
+    hook:'風貌・佇まい・ムードがカッコ良すぎる',
+    pts:['風貌・佇まい・ムードがカッコ良すぎる',
+         '黒よりのグレーなことをしているのも痺れる',
+         'タバコの付け方がいい'] },
+  { name:'ラウル・デューク', img:'1smDFjUlp5G4owbTOpSnbawMHs14GJ_o7', who:'『ラスベガスをやっつけろ』の記者（ジョニー・デップ）。',
+    hook:'全て魅力的。自由すぎて好き。俺もああなりたい',
+    pts:['全て魅力的',
+         '後先考えず、生きるために手段を問わない',
+         'ファッションも喋りも最高',
+         'ハゲてんのに魅力的',
+         '自由すぎて好き。「俺もああなりたい」'] },
+  { name:'ネオ', img:'1xm-ugOhOrSuNpFN561rNn5gFzEYcJ3Pl', who:'『マトリックス』（キアヌ・リーブス）。',
+    hook:'ビジュアル',
+    pts:['ビジュアル'] },
+  { name:'ジョン・コンスタンティン', img:'19p88pglVJ8ap3KDXoZzp2448n0NaEFT_', who:'『コンスタンティン』の悪魔祓い（キアヌ・リーブス）。',
+    hook:'スーツに悪魔祓い。佇まいとオーラがやばい',
+    pts:['ビジュアルも超イケてる',
+         'いつもスーツで、悪魔祓いをしているのが最高',
+         '佇まいもオーラもやばい。人柄も',
+         'タバコの付け方がいい'] },
+  { name:'ブルース・ウェイン', img:'1lrcRGTmpKLSn3bNpOG-sjpBv0fGtfkux', who:'『THE BATMAN』（ロバート・パティンソン）。',
+    hook:'全てに絶望しながらも生きて戦う',
+    pts:['全てに絶望しながらも生きて、バットマンとして戦っている感じ',
+         '風貌も格闘も好き',
+         '「Something in the Way」と相まって世界観が印象的で、影響を受けている'] },
+  { name:'ソルジャーボーイ', img:'1iICmfpbRr1yyG13RgvGIunv9yDmmJbb8', who:'『ザ・ボーイズ』（ジェンセン・アクレス）。',
+    hook:'古き良き強い男。ギガチャド',
+    pts:['カッコ良すぎる',
+         '古き良き強い男、ギガチャド',
+         '堂々として、嫌われることを気にせず自分のままで居続ける'] },
+  { name:'タイラー・ダーデン', img:'1jg5YTUiMCUQ7yi7-Z-ky4C6Ph6D6lkpb', who:'『ファイト・クラブ』（ブラッド・ピット）。',
+    hook:'無鉄砲で後先考えなそう、と思いきや。男としての憧れ',
+    pts:['ビジュアル',
+         '無鉄砲で後先考えず生きてそう',
+         'と思いきやプロジェクト・メイヘムでとんでもないことをする',
+         '男としての憧れ。魅力がすごい'] },
+  { name:'ディエゴ・ブランドー', img:'1mRuZcgg1kJG1tE2wmHYXTlSoX0jb9Meo', who:'『スティール・ボール・ラン』の騎手。',
+    hook:'紳士的なのに中身はDIO。飢えている',
+    pts:['紳士的なのに中身はDIO',
+         '飢えていて、ビジュアルも最高',
+         '「飢えることの良さ」を植え付けられた'] },
+  { name:'岸辺露伴', img:'1dY8YjDs3DV99idWEZn496gUpRBzQAGz3', who:'『ジョジョの奇妙な冒険』の漫画家。',
+    hook:'絶対的なこだわりを持っていて譲らない',
+    pts:['創作という面で素晴らしい',
+         '一瞬で仕事を終わらせる',
+         '若くして人気を博し、20代前半で大きな家を買って住んでいる',
+         '漫画のために手段を選ばない',
+         '絶対的なこだわりを持っていて譲らない'] },
+  { name:'ハル・ジョーダン', img:'1BncP4QPXub5UXp5MYNfH_30F4qE47o6z', who:'『ランタンズ』のグリーン・ランタン（カイル・チャンドラー）。',
+    hook:'存在そのもの。言動や振る舞いが好き',
+    pts:['存在そのもの',
+         '言動や振る舞いがとても好き。生き様や性格も含めて',
+         'ちょっと不器用なところも'] },
+  { name:'スパイク', img:'1a2ewWperjHBp-cfjchh2pwsxpx0p1Es5', who:'映画『ノッティングヒルの恋人』の同居人。ユーモアの型。',
+    hook:'思ったことを削らずに出す。隠さないことが面白さの正体',
     pts:['思ったことを削らずに出す。隠していないことが、面白さの正体',
          '空気を読まない奇抜さと、人懐っこい温かさが両立している',
          'ぶっ飛びは性格の改造ではなく出力の許可。安全な場で、最初に浮かんだ変な連想を声に出す'] },
-  { name:'クリフ・ブース', who:'映画『ワンス・アポン・ア・タイム・イン・ハリウッド』のスタントマン。',
+  { name:'クリフ・ブース', img:'1eC71_Wg9F5NAlLVDYa8v4f4-EW7VtN5K', who:'映画『ワンス・アポン・ア・タイム・イン・ハリウッド』のスタントマン。',
+    hook:'余裕があって、ちょっと危ない香りがする',
     pts:['余裕があり、誰にも媚びない。大きく見せようとしない',
-         '強さは体格ではなく態度。慌てをそのまま出さず、やる時はやる',
+         'ちょっと危ない香りがする',
+         '強さは体格ではなく態度。軍隊上がりで普通に強い',
+         '嘘が上手いところも生き上手',
          '友人への忠義を、言葉ではなく行動で置く'] },
-  { name:'ビートルズの4人', who:'記者会見の受け答えが、切れ味の見本になる。',
+  { name:'ビートルズの4人', img:'1WbE7eVZHxRQhZW0ST-wnS42ymmOwGkW5', who:'記者会見の受け答えが、切れ味の見本になる。',
+    hook:'全員一言で短く、自分で笑わず、説明しない',
     pts:['共通点は、全員一言で短く、自分で笑わず、説明しないこと',
          'レノン：馬鹿な質問を、質問の形ごと返す',
          'マッカートニー：評価ごとひっくり返して、相手を守る余裕',
          'ハリスン：暴漢に刺されて重傷の場面でも、平常の挨拶を崩さない',
          'リンゴ：自分の出番の少なさを、事実として短く置く乾いた自己言及'] },
-  { name:'有田哲平', who:'場を回す側のユーモア。',
+  { name:'有田哲平', img:'1u6Z_x3L0djQ3AkckfpooVRtV6-9v-lye', who:'場を回す側のユーモア。',
+    hook:'質問を設計し、言い換えて要約し直すことで場が笑う',
     pts:['自分がピエロになるのではなく、質問を設計し、相手の言葉を言い換えて要約し直すことで場が笑う',
          '声を張らず、落ち着いた立ち位置のまま到達できる大人のユーモア',
          '好きな分野の深い在庫が、そのまま切れ味の土台になる'] }
 ];
+let charmModelMode = storeGet('zlab.cmodelmode') || 'def';
+if(!MODES.includes(charmModelMode)) charmModelMode = 'def';
+function setModelMode(m){
+  charmModelMode = m; storeSet('zlab.cmodelmode', m);
+  const y = window.scrollY; renderHumor(); window.scrollTo(0, y);
+}
 function renderCharmModels(){
-  const html = CHARM_MODELS.map(m=>
-    '<div class="modelcard"><div class="modelname">' + esc(m.name) + '</div><div class="modelwho">' + esc(m.who) + '</div>'
-    + '<ul class="modelpts">' + m.pts.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>'
-  ).join('');
-  return { html, wiring: [] };
+  /* v5.82.39: the artist list's card grid (his standing rule:
+     cards + size switch wherever they fit) — big photo, name,
+     who/role and a one-line hook per card; the full commentary
+     lives in the bottom sheet (openModelSheet), not on the grid.
+     Photos pair through renderHumor's .modelgrid wiring loop,
+     the same observer path as the artist headers. */
+  const modelWiring = [];
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (charmModelMode===mo? ' class="on"': '') + ' onclick="setModelMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>';
+  html += '<div class="grid ' + charmModelMode + ' modelgrid">';
+  CHARM_MODELS.forEach((m, i)=>{
+    const w = keyWork(m.img, m.name); modelWiring.push(w);
+    html += '<figure class="work" onclick="openModelSheet(' + i + ')"><div class="ph">' + imgHTML(w, IMG_SIZE.thumb) + '</div><figcaption><div class="nm">' + esc(m.name) + '</div><div class="sub">' + esc(m.who) + '</div><div class="modelhook">' + esc(m.hook) + '</div></figcaption></figure>';
+  });
+  html += '</div>';
+  return { html, wiring: [], modelWiring };
+}
+function openModelSheet(i){
+  const m = CHARM_MODELS[i]; if(!m) return;
+  const w = keyWork(m.img, m.name);
+  $('modelSheetBody').innerHTML =
+    '<div class="modelsheetph">' + imgHTML(w, IMG_SIZE.plate) + '</div>'
+    + '<div class="tsterm">' + esc(m.name) + '</div>'
+    + '<div class="modelwho">' + esc(m.who) + '</div>'
+    + '<ul class="modelpts">' + m.pts.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul>';
+  $('modelsheet').classList.remove('hidden'); sheetLockSync();
+  const holder = $('modelSheetBody').querySelector('.imgholder');
+  if(holder){ holder._work = w; if(imgObserver) imgObserver.observe(holder); else hydrateImg(holder, w); }
+  $('modelSheetBody').scrollTop = 0;
+}
+function closeModelSheet(){ const s = $('modelsheet'); if(s) s.classList.add('hidden'); sheetLockSync(); }
+let modelSheetTouchY = null;
+function modelSheetTouchStart(e){ modelSheetTouchY = e.touches && e.touches.length? e.touches[0].clientY: null; }
+function modelSheetTouchMove(e){
+  if(modelSheetTouchY == null || !e.touches || !e.touches.length) return;
+  const dy = e.touches[0].clientY - modelSheetTouchY;
+  const b = $('modelSheetBody');
+  if(dy > 80 && b && b.scrollTop <= 0){ modelSheetTouchY = null; closeModelSheet(); }
 }
 /* 嘘のうまさ: NEW editorial text drafted for this tab (his call via
    Social Labo, 2026-11-26 19:55) — NOT moved from the guide; no
@@ -22932,6 +23152,82 @@ function renderCharmModels(){
    recorded ones: 演じることは嘘ではない (kept chapters 人間としての地
    / 顔つきと威厳）, 自分を安くしない, and the 加害の線. Drafted
    2026-11-26 for his review. */
+/* v5.82.40: the ユーモア tab's core dataset — actual utterances by
+   actual people, collected as quotes (his call, 2026-11-26:
+   「ユーモアのページ、イメージと違う。実際の人の発言とかそういうの
+   まとめて欲しい」). Speakers are NOT limited to encyclopedia
+   artists; this is one cross-person collection. Wording verified
+   against ~/workspace/social-labo/humour-research.md (2026-11-26
+   research, Wikiquote / Quote Investigator / Beatles Interviews
+   Database cross-checked); items whose attribution rests on
+   hearsay carry den:true and render with a 伝聞 chip. Bacon's
+   lines come from the Sylvester interviews — the two research-
+   verified ones plus quote-form conversions of his registered
+   humour items (anecdote-form items stay on his artist page).
+   Duchamp is excluded from this page entirely (his call,
+   2026-11-26: 「デュシャンのユーモアいらない」) — his artist-page
+   ユーモア tab and canonical humor data are untouched. */
+const CHARM_QUOTES = [
+  /* ---- ビートルズ：記者会見の返し（1964年 JFK空港ほか、Beatles Interviews Database） ---- */
+  { q:'僕らは狂った連中が好きなんだ。健全なことだよ', orig:'We like lunatics. It’s healthy.', who:'ジョン・レノン', scene:'記者「あなた方の巻き起こす狂騒に、少しは困惑していますか？」への返し。1964年、JFK空港の記者会見' },
+  { q:'英語じゃない。リバプール訛りだよ', orig:'It’s not English. It’s Liverpudlian, you see.', who:'ジョージ・ハリスン', scene:'記者「それはイギリスのアクセントですか？」への返し。1964年、JFK空港' },
+  { q:'アイルランドの首都だよ', orig:'It’s the capital of Ireland.', who:'リンゴ・スター', scene:'記者「リバプールというのは…」への即答。1964年、JFK空港' },
+  { q:'こっちは「デトロイトを追い出せ」キャンペーンを始めるよ', orig:'We’re bringing out a Stamp Out Detroit campaign.', who:'ポール・マッカートニー', scene:'記者「デトロイトでは『ビートルズを追い出せ』のステッカーが配られています」への返し。1964年、JFK空港' },
+  { q:'その医者、目が見えてないんだろ', orig:'He must be blind.', who:'ジョン・レノン', scene:'精神科医が「ビートルズはイギリス版エルヴィス・プレスリーの集まりだ」と評したことへの返し。1964年、JFK空港' },
+  { q:'ダメ。まず金が必要だ', orig:'No, we need money first.', who:'ジョン・レノン', scene:'記者会見で「何か歌って！」と言われて。1964年、JFK空港' },
+  { q:'半クラウンくらいかな', orig:'About half a crown.', who:'ジョン・レノン', scene:'記者「この国からいくら持ち出すつもりですか？」への返し。半クラウンは当時の少額硬貨。1964年、JFK空港' },
+  { q:'全員だよ。——僕は禿げてる。——耳も聞こえないし、口も利けない', orig:'All of us. — I’m bald. — And deaf and dumb, too.', who:'リンゴ・スター／ポール・マッカートニー／ジョン・レノン', scene:'記者「そのかつらの下は、皆さん禿げているのでは？」への三連の返し。1964年、JFK空港' },
+  { q:'手っ取り早く稼ぐ方法、くらいかな。それは良い手本だと思うけど', orig:'Only how to make money quickly, which is a good example, I think.', who:'ジョン・レノン', scene:'「手本になっているとしたら？」と重ねて聞かれて。1964年、モントリオールの記者会見' },
+  { q:'安い席の方は拍手を。それ以外の方々は、宝石をカチャカチャ鳴らしていただければ', orig:'The people in the cheaper seats clap your hands. And the rest of you, if you’d just rattle your jewellery.', who:'ジョン・レノン', scene:'1963年、ロイヤル・バラエティ・パフォーマンス（王室御前公演）。最後の曲の前の言葉' },
+  { q:'自分の頭が膨らみ始めたと感じたら、リンゴを見れば、僕らがスーパーマンじゃないことくらいよく分かる', orig:'When I feel my head start to swell, I look at Ringo and know perfectly well we’re not Superman.', who:'ジョン・レノン', scene:'人気への自意識について、当時のインタビューから' },
+  { q:'彼は泥棒じゃない。それに、トラベリング・ウィルベリーズのオーディションを受けに来たのでも、断じてない', orig:'He wasn’t a burglar, and he certainly wasn’t auditioning for the Traveling Wilburys.', who:'ジョージ・ハリスン', scene:'1999年、自宅に侵入した男に刺され重傷を負った直後、警察に犯人について聞かれて' },
+  { q:'なんでこういうことはローリング・ストーンズには起きないんだ？', orig:'Why doesn’t this kind of thing happen to The Rolling Stones?', who:'ジョージ・ハリスン', scene:'同じ襲撃事件の後。友人エリック・アイドルの自伝に記録された発言', den:true },
+  /* ---- フランシス・ベーコン（シルヴェスターとの対談） ---- */
+  { q:'破壊的な批判こそ、特に他の芸術家によるものは、間違いなく最も役に立つ批判だと思う', orig:'I think that destructive criticism, especially by other artists, is certainly the most helpful criticism.', who:'フランシス・ベーコン', scene:'シルヴェスター「破壊的な批判から得たものはありますか？」への答え。『インタビュー』第2回', aid:76 },
+  { q:'舗道の犬の糞を見ていて、ふと悟った。あれだ——人生とはこういうものだ、と', orig:'I remember looking at dog-shit on the pavement and suddenly I realised, there it is – this is what life is like.', who:'フランシス・ベーコン', scene:'1975年、シルヴェスターとの対談', aid:76 },
+  { q:'自分の暮らしは「金箔の貧窮」だ', orig:'a gilded squalor', who:'フランシス・ベーコン', scene:'自分の暮らしぶりを呼んだ言葉。贅沢な場所に住むのは嫌いだが、行ってサービスを楽しむのは好きだ、と。シルヴェスターとの対談', aid:76 },
+  { q:'楽しんだよ', orig:'', who:'フランシス・ベーコン', scene:'1930年代にあまり絵を描かなかった理由を聞かれて。シルヴェスターとの対談', aid:76 },
+  { q:'十分ありうる。でも彼女はそれを不道徳だと思ってやらないだろう', orig:'', who:'フランシス・ベーコン', scene:'絵具を投げる作業を掃除婦に頼めるかと聞かれて。シルヴェスターとの対談', aid:76 },
+  { q:'幸福な社会を誰が覚えているか。何百年か後、人々が思うのはその社会が何を残したかだ', orig:'', who:'フランシス・ベーコン', scene:'シルヴェスターとの対談', aid:76 },
+  { q:'休暇が嫌いだ', orig:'', who:'フランシス・ベーコン', scene:'休みなど誰も必要ない、と。シルヴェスターとの対談', aid:76 },
+  { q:'埃は永遠に残る唯一のもののように思える', orig:'', who:'フランシス・ベーコン', scene:'床の埃を絵具の上に置く描き方について。シルヴェスターとの対談', aid:76 },
+  /* ---- オスカー・ワイルド（戯曲の台詞として原典確認済み） ---- */
+  { q:'私は誘惑以外のすべてに抵抗できる', orig:'I can resist everything except temptation.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』（1892）、ダーリントン卿の台詞' },
+  { q:'人を善人と悪人に分けるのは馬鹿げている。人には、魅力的な人と退屈な人しかいない', orig:'It is absurd to divide people into good and bad. People are either charming or tedious.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』第1幕' },
+  { q:'人生はあまりに重要なものだから、それについて真面目に語ることなど決してできない', orig:'Life is far too important a thing ever to talk seriously about it.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』第1幕' },
+  { q:'我々はみな泥溝の中にいる。だがその中の何人かは、星を見上げている', orig:'We are all in the gutter, but some of us are looking at the stars.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』' },
+  { q:'あらゆるものの値段を知っていて、あらゆるものの価値を知らない男だ', orig:'A man who knows the price of everything and the value of nothing.', who:'オスカー・ワイルド', scene:'「冷笑家（シニック）とは何か？」への定義。『ウィンダミア夫人の扇』' },
+  { q:'経験とは、誰もが自分の失敗につける名前のことだ', orig:'Experience is the name every one gives to their mistakes.', who:'オスカー・ワイルド', scene:'『ウィンダミア夫人の扇』' },
+  { q:'この世で噂されることより悪いことが一つだけある。噂されないことだ', orig:'There is only one thing in the world worse than being talked about, and that is not being talked about.', who:'オスカー・ワイルド', scene:'『ドリアン・グレイの肖像』（1890）' },
+  /* ---- ジャン・コクトー ---- */
+  { q:'ルーヴルは死体安置所のようなものだ。友人たちの身元を確認しに行く場所である', orig:'The Louvre is like the morgue; one goes there to identify one’s friends.', who:'ジャン・コクトー', scene:'『Le Secret Professionnel』（1922）' },
+  { q:'私は、常に真実を語る嘘である', orig:'I am a lie who always speaks the truth.', who:'ジャン・コクトー', scene:'アフォリズム' },
+  { q:'運を信じなければならない。でなければ、嫌いな奴らの成功をどう説明できる？', orig:'We must believe in luck. For how else can we explain the success of those we don’t like?', who:'ジャン・コクトー', scene:'コクトーへの帰属が広く流布する警句。一次資料の特定は弱い', den:true },
+  /* ---- サルバドール・ダリ ---- */
+  { q:'私と狂人の唯一の違いは、私が狂っていないということだ', orig:'The only difference between me and a madman is that I am not mad.', who:'サルバドール・ダリ', scene:'1934年のアメリカ訪問時、複数の新聞が同時期に報道' },
+  { q:'私はドラッグをやらない。私自身がドラッグだ', orig:'I do not take drugs. I am drugs.', who:'サルバドール・ダリ', scene:'1982年、マドリードでのインタビュー' },
+  { q:'毎朝目覚めるたびに、私は至上の喜びを味わう。サルバドール・ダリであるという喜びを', orig:'Every morning upon awakening, I experience a supreme pleasure: that of being Salvador Dalí.', who:'サルバドール・ダリ', scene:'Smithsonian誌の引用として伝わる', den:true },
+  /* ---- モハメド・アリ ---- */
+  { q:'蝶のように舞い、蜂のように刺す', orig:'Float like a butterfly, sting like a bee.', who:'モハメド・アリ', scene:'1964年、ソニー・リストン戦の前。自分のスタイルの自己定義' },
+  { q:'俺は意地が悪すぎて、薬まで病気にする', orig:'I’m so mean, I make medicine sick.', who:'モハメド・アリ', scene:'自己宣伝の韻文から' },
+  { q:'俺ほど偉大だと、謙虚でいるのは難しい', orig:'It’s hard to be humble when you’re as great as I am.', who:'モハメド・アリ', scene:'' },
+  { q:'夢の中で俺を倒したとしても、目を覚まして謝った方がいい', orig:'If you even dream of beating me you’d better wake up and apologize.', who:'モハメド・アリ', scene:'' },
+  { q:'良い答えが思いつかない時、沈黙は金だ', orig:'Silence is golden when you can’t think of a good answer.', who:'モハメド・アリ', scene:'' },
+  /* ---- ドロシー・パーカー ---- */
+  { q:'園芸は連れて行けるが、考えさせることはできない', orig:'You can lead a horticulture, but you can’t make her think.', who:'ドロシー・パーカー', scene:'単語を使った文章を作るゲームで「horticulture」を出題された時の即答。「馬を水辺に連れては行けるが、水は飲ませられない」の諺のもじり。伝記経由の記録', den:true },
+  { q:'古いドグマに新しい芸は教えられない', orig:'You can’t teach an old dogma new tricks.', who:'ドロシー・パーカー', scene:'「古い犬に新しい芸は教えられない」のもじり。帰属は死後の編纂による' },
+  /* ---- グルーチョ・マルクス ---- */
+  { q:'私を会員として受け入れてくれるようなクラブには、入りたくない', orig:'I don’t want to belong to any club that will accept me as a member.', who:'グルーチョ・マルクス', scene:'クラブへの辞退の手紙に由来するとされる。文面の細部には諸説ある', den:true },
+  { q:'あなたの本を手に取った瞬間から置く瞬間まで、私は笑いで痙攣し続けました。いつか読むつもりです', orig:'From the moment I picked up your book until I laid it down, I was convulsed with laughter. Some day I intend reading it.', who:'グルーチョ・マルクス', scene:'書評として帰属される一文', den:true },
+  /* ---- ウィンストン・チャーチル ---- */
+  { q:'ベッシー、君は醜い。しかも不愉快なほど醜い。だが私は明日には醒める。君は明日も不愉快なほど醜いままだろう', orig:'Bessie, my dear, you are ugly, and what’s more, you are disgustingly ugly. But tomorrow I shall be sober and you will still be disgustingly ugly.', who:'ウィンストン・チャーチル', scene:'ベッシー・ブラドック議員に「あなたは酔っている」と言われて。1946年。護衛の証言で確認されるが、「明日は醒める」型自体は古いジョークの型でもある', den:true },
+  /* ---- マーク・トウェイン（原典テキストで照合済み） ---- */
+  { q:'人間は、顔を赤らめる唯一の動物である。いや、赤らめる必要がある唯一の動物である', orig:'Man is the only animal that blushes. Or needs to.', who:'マーク・トウェイン', scene:'『赤道に沿って』（1897）の格言' },
+  { q:'怒ったら4つ数えろ。激しく怒ったら、罵れ', orig:'When angry, count four; when very angry, swear.', who:'マーク・トウェイン', scene:'『水たまり頭ウィルソン』（1894）の格言' },
+  /* ---- ビートたけし ---- */
+  { q:'自分しか持ってない個性とか、誰にでも特別な才能があるんだとか、あれウソだよね。ない奴はないもん', orig:'', who:'ビートたけし', scene:'TBS『サワコの朝』（2013）' },
+  { q:'引退はお客が決めることで、お客さんが「たけしもう見たくない」ってなれば自然に視聴率もなくなるでしょ。そしたら辞めていく', orig:'', who:'ビートたけし', scene:'TBS『サワコの朝』（2013）' }
+];
 const CHARM_LIE = [
   { h:'なぜ下手か', paras:[
     '嘘が下手なのは、嘘の内容が悪いのではない。反応が先に出るからだ。驚き、罪悪感、訂正したさが、言葉より先に顔と声に出る。漏れているのは嘘そのものではなく、「今、嘘をついている」という自分の反応の方だ。',
@@ -22945,7 +23241,8 @@ const CHARM_LIE = [
     '一貫性。オーラと同じ条件で、後から話が食い違うと崩れる。ついた嘘は覚えておく。覚えていられない大きさの嘘は、つかない。',
     '細部を作り込みすぎない。説明が多い嘘ほど怪しい。本当のことを話す時は、人は要点しか言わない。短く置く。切れ味の話と同じで、言い切って、説明しない。',
     '真実に混ぜる。骨格は全部本当で、ずらすのは一点だけにする。作り話の割合が増えるほど、維持費が上がる。',
-    '自分が信じられる形にする。「たぶん」「確か」といった置き方で、自分の側の確信のなさを正直に出す方が、断言する嘘より崩れない。'
+    '自分が信じられる形にする。「たぶん」「確か」といった置き方で、自分の側の確信のなさを正直に出す方が、断言する嘘より崩れない。',
+    '手本はクリフ・ブースの道具としての嘘だ。場を守り、相手を楽にし、自分の値段は下げない。条件はこのタブの最初から最後まで同じで、線は二つ——自分を安くしないことと、人を傷つけないこと。'
   ]},
   { h:'顔と体の管理', paras:[
     '嘘の瞬間だけ表情を作らない。平常の顔のまま置く。漏れるのは内容ではなく変化だから、変えるべきは中身ではなく、平常との差だ。',
@@ -22966,15 +23263,170 @@ const CHARM_LIE = [
     '最上位は、嘘をつかずに済ますことだ。言わない、話題を置き換える、質問の形を変える。嘘は、その残りのための道具にすぎない。',
     '反応の遅延を作る。驚いた時ほど、まず一呼吸置いてから受ける。その一拍が、顔に出る反応を言葉の管理下に取り戻す。',
     '言い回しの在庫を持つ。感想に困る時、予定を断る時、知らないことを聞かれた時。場面は予測できるから、短い定型を先に用意しておく。即興の8割は準備、はここでも同じだ。'
+  ]},
+  /* v5.82.45: 嘘のうまさ data layer (expansions 9+10, 2026-11-27).
+     The draft sections above stay as the "how to lie well" core;
+     the sections below add the research roundup. Verdict chips use
+     the same visual language as the 教養 stock (LIE_VERDICTS):
+     研究で支持 / 一部だけ正しい / 諸説あり / 俗説. Sources: DePaulo
+     et al. 2003 (cues meta-analysis), Bond & DePaulo 2006
+     (detection accuracy), Serota et al. 2010 (frequency), Talwar &
+     Lee (development), NRC 2003 (polygraph), Vrij et al. (cognitive
+     approach), Hartwig et al. 2006 (SUE), Logan 2020 (Abagnale). */
+  { h:'嘘の心理学', types:[
+    '利己的な嘘：自分の得のために事実をずらす。盛る、隠す、ごまかす',
+    '社交の嘘：場と相手を守るための建前。日常の嘘の大半はこっち側',
+    '自己防衛の嘘：罰、恥、責任から逃げるための嘘。バレた時の代償が一番重い',
+    '手段としての嘘：時間を作る、場を動かす、流れを変えるための道具の嘘'
+  ], paras:[
+    '人はなぜ嘘をつくか。得を取りたい時、罰や恥を避けたい時、相手を傷つけたくない時、場の調子を保ちたい時。研究で日常の嘘を集めると、大半は小さな社交の嘘で、深刻な嘘は少数派だ。',
+    '頻度について。「人は1日に1〜2回嘘をつく」という数字は平均の話で、実態を隠す。セロタらの調査（米国の成人1,000人）では、60%が「過去24時間に嘘はゼロ」と答え、報告された嘘のほぼ半分は、わずか5%の「よくつく人」たちが出していた。嘘は均等に配られていない。',
+    '発達について。嘘は2〜3歳で始まる（タルワーとリーの研究）。4歳頃には相手の思い込みを計算に入れた嘘になり、7〜8歳になると、追及されても話の一貫性を保てる段階に入る。嘘の能力は、心の理論（相手の心を読む力）と実行機能の発達と結びついている。つまり嘘は、発達の通過点であって、性格の欠陥ではない。'
+  ]},
+  { h:'仕草とサイン', paras:[
+    '「嘘をついている人の仕草」は、研究の世界では一番の俗説の巣だ。デポーロらのメタ分析（158種類の手がかり）が示したのは、手がかりはどれも弱く、単独で決め手になるものはない、ということ。以下、言われるサインごとに判定を付ける。'
+  ], cues:[
+    { n:'目をそらす', v:'myth', d:'嘘と視線回避の間に関連はなかった、というのがメタ分析の結論。それでも世界58か国の調査では64%の人が「嘘つきは目をそらす」と信じていて、最も広まった俗説になっている。' },
+    { n:'そわそわする・手足がよく動く', v:'myth', d:'実際は逆の傾向が出ている。嘘をつく人は、手や腕や脚の動きがむしろ減る。「落ち着きなく動く」は嘘つきの像であって、実測ではない。' },
+    { n:'声がわずかに高くなる・張る', v:'fact', d:'声の緊張は、比較的出やすい手がかりの一つ。ただし効果は小さく、その人の平常の声を知らなければ使えない。' },
+    { n:'話が短くなり、具体性が落ちる', v:'fact', d:'嘘の話は詳細が少なく、出来が落ち、言い訳の要素が増える。体の動きより、言葉の中身の方が手がかりとしては強い、というのが研究の大きな流れ。' },
+    { n:'間が空く・言い淀む', v:'disputed', d:'効果は弱く、研究によって結果が揺れる。緊張している正直な人も同じように淀むので、これだけで切り分けることはできない。' },
+    { n:'微表情で見抜ける', v:'disputed', d:'エクマンの主張する「微表情」や、ほぼ完璧に見抜ける「ウィザード」の存在は、再現性への批判が強い。訓練で判定が劇的に上がるという話は、額面通りには受け取れない。' }
+  ]},
+  { h:'見抜き方と限界', fig:true, paras:[
+    '土台の数字はボンドとデポーロのメタ分析（2006年、206の研究、約24,500人の判定）。人間の嘘の判定は、平均54%。偶然の50%をわずかに上回るだけだ。',
+    '上げる方法はある。認知負荷をかける——逆の順番で語らせる、予期しない質問を挟む。嘘は作りながら話す分だけ頭の負担が重く、負荷を上げると差が開く。メタ分析では正答率71%対、通常の聞き方56%。ただし効果の大きさには再検討の批判もあり、万能ではない。',
+    '証拠の戦略的な使い方（SUE）——持っている証拠を伏せて先に語らせ、後から食い違いを突く。実験室の条件では、訓練を受けた警察官の正答率が85%まで上がった報告がある。検証可能性も同じ方向で、確認できる細部（誰がいたか、何が残っているか）を求めると、嘘の側は検証できる細部を避けるため、差が出る。',
+    '嘘発見器（ポリグラフ）については、米国研究評議会の2003年の報告書が基準になる。特定の事件についての検査なら「偶然よりは上、完璧には遠い」。大勢をふるいにかけるスクリーニングに使うには根拠が足りない。そして大前提として、嘘に特有の体の反応というものは存在しない。測っているのは覚醒——緊張や動揺——だけで、それは正直な人にも出る。',
+    '限界ははっきりしている。どの方法も、「この一言が嘘だ」と一対一で断定できる精度には届かない。見抜く側の現実的な使い道は、確率を少し上げることと、相手の話を検証できる形に持っていくことだ。'
+  ]},
+  { h:'身分を演じる', paras:[
+    '映画『キャッチ・ミー・イフ・ユー・キャン』型の、身分そのものを作って会話を持続させる演技は、魔法ではなく部品の組み立てだ。分解すると五つになる。',
+    '一、物の証拠を味方に。制服、道具、バッジ、持ち物——目に見える物は全部、物語と一致していなければならない。逆に、目に見える矛盾が一つあるだけで、その場の全員が違和感に気づく。',
+    '自分のケース。研修中のバッジをつけたまま「大学4年生です」と言った夜がある。崩れた理由は三つ。バッジという物の証拠が物語と食い違っていたこと。その場に長く留まって、ほころびの出る時間を与えたこと。そして相手が、その世界の本物の住人だったこと。本物ほど、浅い知識の継ぎ目に速く気づく。',
+    '二、最初の数分の語彙。その世界の専門語彙と儀礼を、浅く、しかし正確に。深さが試されることは滅多にない。なぜなら三つ目が働くからだ。',
+    '三、相手が台本を運んでくれる。その世界の住人は、役の側に能力を投影し、自分の世界の仕組みを向こうから説明してくれる。だから演じる側の主道具は主張ではなく質問になる。質問は、主張と違って「間違っている」と判定されることがない。',
+    '四、時間を区切る。長居しない。露出が短ければ、試される深さも浅くて済む。出口は入る前に用意する。',
+    '五、詰められた時。守らない、説明しない。笑いでかわすか、害のない小さな穴だけを認める。部分的な本当は、全面否定より崩れない。',
+    'この型の元祖とされるフランク・アバグネイルについては、正直な但し書きが要る。自伝と映画の物語は、記録と照らすと大半に裏付けがない。最も派手な詐欺を働いたとされる時期、彼は州の刑務所に収監されていたという記録が残っている（ローガンの調査『The Greatest Hoax on Earth』、2020年）。記録で確かめられるのは、少額の小切手詐欺と、釈放後の短期間の航空会社乗務員へのなりすましまでだ。「嘘についての嘘」が一番大きい、というのがこの型の落ちになる。',
+    '転用先は正当な舞台にある。画廊の受付、展示のオープニング——「その場にいるのが当然の人間」として部屋に入る技術は、同じ部品でできている。物の一致、最初の数分の語彙、質問で相手に運ばせる、長居しない。道具は同じで、目的と線引きが違うだけだ。'
+  ]},
+  /* Expansion 11 (2026-11-27 00:47): the practice layer. Drills
+     staged low-risk first, on the baito floor (his framing:
+     バイト先は道場 — strangers, short interactions, low stakes).
+     Mapped to tonight's 4-part decomposition （在庫／平常運転／
+     設計／かわし） plus the Catch Me-type drills continuing from
+     身分を演じる. Each drill: やること / 場 / 成功の形 / 落とし穴.
+     The 大学生-lie failure case is NOT duplicated — its analysis
+     lives in 身分を演じる （自分のケース）; the drills reference
+     its three death causes （物の証拠の不一致／出口なし／相手が
+     本物）. Guardrails stay visible: 短く、安くしない、加害の線を
+     越えない — harmless social territory only. */
+  { h:'嘘をつく練習', paras:[
+    '練習の場はバイト先の居酒屋だ。相手は他人で、会話は短く、失敗しても明日には消える。道場として条件が揃っている。段階は三つに分ける。第一段階は、一行で済む社交の嘘とかわし。第二段階は、出口まで設計した短い作り話。第三段階は、「身分を演じる」の持続する演技だ。低い段から登る。',
+    '守る線は練習でも同じ。短く置くこと。自分を安くしないこと。加害の線を越えないこと。練習の範囲は、無害な社交の中だけに限る。'
+  ], drills:[
+    { g:'在庫を使う練習', n:'在庫から一行返す', lines:[
+      'やること：バイト中の定番の質問（混み具合、おすすめ、天気）に、準備しておいた一行で即座に返す',
+      '場：接客中の雑談全般',
+      '成功の形：間が空かず、声の調子が平常のまま会話が流れる',
+      '落とし穴：在庫にない質問で固まること。固まったら、かわしの在庫（ドリル7・8）へ逃がす'
+    ]},
+    { g:'在庫を使う練習', n:'感想の定型を持つ', lines:[
+      'やること：感想を求められたら、全開の称賛ではなく、具体を一つだけ拾って短く置く',
+      '場：賄いや試食の感想、客の持ち物への反応を求められた時',
+      '成功の形：相手が納得して次へ進む。自分の言葉の値段も下がらない',
+      '落とし穴：思ってもいない称賛は「自分を安くする嘘」。使う嘘の側には入らない'
+    ]},
+    { g:'平常運転の練習', n:'平常のまま置く', lines:[
+      'やること：ずらす点を一つだけ決めて、声・速度・視線を平常のまま答える。嘘の瞬間だけ何も変えない',
+      '場：年齢、学校、シフトの入り具合など、軽い個人情報を聞かれた時',
+      '成功の形：相手が何も引っかからず、会話がそのまま流れる',
+      '落とし穴：嘘の瞬間だけ丁寧になる、説明が増える。漏れるのは内容ではなく「変化」の方'
+    ]},
+    { g:'平常運転の練習', n:'一呼吸の遅延', lines:[
+      'やること：意表を突く質問が来たら、相槌か相手の言葉の復唱で一拍作ってから答える',
+      '場：想定外の質問が飛んできた時全般',
+      '成功の形：顔に反応が出る前に、言葉の管理下に戻れる',
+      '落とし穴：黙り込むと逆に目立つ。一拍は「間」ではなく「受け」の形にする'
+    ]},
+    { g:'設計の練習', n:'一点だけずらす', lines:[
+      'やること：骨格は全部本当のまま、ずらすのは一点だけにする。何をずらしたか自分で覚えていられる大きさに限る',
+      '場：予定や経歴の軽い話題',
+      '成功の形：話が短く終わり、後日どこからも食い違いが出ない',
+      '落とし穴：楽しくなって作り話を増やすこと。作る割合が増えるほど維持費が上がる'
+    ]},
+    { g:'設計の練習', n:'出口つきの作り話', lines:[
+      'やること：短い理由と出口をセットで置く（「明日朝早いので」＋実際に席を立つ、作業に戻る）',
+      '場：誘いを断る時、その場を離れたい時',
+      '成功の形：相手が引き留めず、自分もその話に戻らない',
+      '落とし穴：出口なしで話を続けること。「身分を演じる」に置いた自分のケースの、死因の一つがこれだった'
+    ]},
+    { g:'かわし・誤魔化しの練習', n:'質問で返す', lines:[
+      'やること：答えたくないことは答えず、相手への質問に置き換える。質問は、主張と違って間違わない',
+      '場：プライバシーに踏み込まれた時、知らないことを聞かれた時',
+      '成功の形：話題の主語が相手に移り、相手が語り始める',
+      '落とし穴：質問を重ねすぎると尋問になる。一つ返したら、相手に語らせる'
+    ]},
+    { g:'かわし・誤魔化しの練習', n:'笑いに溶かす', lines:[
+      'やること：詰められたら守らず説明せず、自分の穴の方を先に笑いに変える',
+      '場：ほころびが見えた時、追及されそうになった時',
+      '成功の形：場が笑いに移って、追及そのものが消える',
+      '落とし穴：自虐で自分を安くしない。笑う対象は状況であって、自分の値段ではない'
+    ]},
+    { g:'身分を演じるの練習', n:'物の総ざらい', lines:[
+      'やること：シフト前に、名札・バッジ・持ち物・服装が、その日の自分の物語と全部一致しているか確認する',
+      '場：バイトに入る前、誰かと会う前',
+      '成功の形：目に見える矛盾がゼロの状態で場に入れる',
+      '落とし穴：不一致が一つあるだけで全部崩れる。自分のケースの死因の一つ目'
+    ]},
+    { g:'身分を演じるの練習', n:'最初の3分の語彙', lines:[
+      'やること：相手の世界の語彙と儀礼を、浅く正確に用意しておき、入りの3分を乗り切る',
+      '場：常連客、業者、その世界の住人との会話の入り口',
+      '成功の形：3分を過ぎる頃、相手が自分の世界の説明役に回ってくれる',
+      '落とし穴：深さを試される前に、時間を区切って去ること（次のドリル）と必ずセットにする'
+    ]},
+    { g:'身分を演じるの練習', n:'質問で運ばせる', lines:[
+      'やること：主張せず、質問だけで会話を前に進める。相手に自分の世界を語らせる',
+      '場：知らない話題の会話全般、初対面の場',
+      '成功の形：自分はほとんど語っていないのに、会話が持続し、相手の満足度が高い',
+      '落とし穴：知ったかぶりの主張を一つ入れると、崩れるのはそこから'
+    ]},
+    { g:'身分を演じるの練習', n:'時間を区切って去る', lines:[
+      'やること：入る前に出口（次の作業、次の客、決めた時間）を用意し、その時点で実際に去る',
+      '場：長くなりそうな会話全般',
+      '成功の形：一番いい印象の所で会話が終わる',
+      '落とし穴：楽しくて長居すること。露出が増えるほどほころびが出る。自分のケースの死因の二つ目'
+    ]}
+  ], tail:[
+    '失敗した時は、振り返りの物差しが決まっている。「身分を演じる」に置いた自分のケースの三つの死因——物の証拠の不一致、出口なし、相手が本物——のどれだったか。失敗を分類できれば、次に直すドリルは一つに絞れる。'
   ]}
 ];
+const LIE_VERDICTS = { fact:'研究で支持', exagg:'一部だけ正しい', disputed:'諸説あり', myth:'俗説' };
 function charmLieSecHTML(sec){
   let html = '<h3 class="subhead">' + esc(sec.h) + '</h3>';
   if(sec.duo){
     html += '<div class="modelcard"><div class="modelname">使う嘘</div><ul class="modelpts">' + sec.duo.use.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
     html += '<div class="modelcard"><div class="modelname">使わない嘘</div><ul class="modelpts">' + sec.duo.avoid.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
   }
+  if(sec.types){
+    html += '<div class="modelcard"><div class="modelname">嘘の4つの型</div><ul class="modelpts">' + sec.types.map(t=> '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
+  }
   (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
+  if(sec.fig){
+    html += '<div class="witfig"><div class="witfigrow"><div class="witbox">観察だけで判定した正答率<strong>54%</strong></div><div class="witop">vs</div><div class="witbox">偶然で当たる確率<strong>50%</strong></div></div><div class="witfigcap">しかも内訳は偏っている。本当の話は61%当てられるのに、嘘は47%しか当てられない。人は相手を正直だと仮定して聞く（真実バイアス）からで、嘘の判定は偶然以下に沈む。警察官・裁判官・税関職員でも、素人と成績は変わらない。</div></div>';
+  }
+  if(sec.cues){
+    html += sec.cues.map(c=> '<div class="stockcard"><div class="stockhead"><span class="stockname">' + esc(c.n) + '</span><span class="vchip v-' + c.v + '">' + LIE_VERDICTS[c.v] + '</span></div><div class="stocktxt">' + esc(c.d) + '</div></div>').join('');
+  }
+  if(sec.drills){
+    let g = '';
+    sec.drills.forEach(d=>{
+      if(d.g !== g){ g = d.g; html += '<h4 class="drillgroup">' + esc(g) + '</h4>'; }
+      html += '<div class="witcard"><div class="witname">' + esc(d.n) + '</div>' + d.lines.map(l=> '<div class="witline">' + esc(l) + '</div>').join('') + '</div>';
+    });
+  }
+  (sec.tail || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
   return html;
 }
 function renderCharmLie(){
@@ -22984,6 +23436,282 @@ function renderCharmLie(){
      「使う嘘、使わない嘘」 stay cards. */
   const items = CHARM_LIE.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> charmLieSecHTML(sec) }));
   return { html: charmSubNavHTML('lie', items), wiring: [] };
+}
+/* v5.82.41: キャラクター tab (his call, 2026-11-27: 「俺は自分を
+   本気で作り込んでいかなければならない」). Theme: integrating the
+   multiple role models into ONE core (土台) of his own; flexibility
+   sits on top of the foundation. Text is his recorded words and
+   the agreed readings in adult-sociality-material.md
+   (「キャラクターを作り込む」2026-11-27 00:00, 「キャラクター性」
+   23:33, ペコペコ 23:24, レノンの不真面目さ 23:50, plus the 麻生
+   and しゃべくり007 case decompositions). Distinction kept:
+   セルフプロデュース = appearance/manner/aura maintenance;
+   キャラクター = designing and integrating the self-character. */
+const CHARM_CHARACTER = [
+  { h:'作り込むしかない', paras:[
+    '「俺は自分を本気で作り込んでいかなければならない。真に理想的な人間になるには作り込まなければ」——本人の言葉（2026-11-27）。',
+    '出発点の自己評価も本人から出ている。「俺は本当はつまらない」。やっていることが面白い時はあるかもしれないが、人間性として見ると一貫性がなく、キャラクター性がない——それが本人の診断だ（2026-11-26 23:33）。',
+    '処方も本人が出した。土台（核）を先に作れば、臨機応変に対応できる。臨機応変は土台の代わりにはならない。土台の上に置くものだ。'
+  ]},
+  { h:'いま起きていること——モデルの喧嘩', paras:[
+    '「今は俺の中のロールモデルが喧嘩して、本当の自分がどれなのか分からないんだ。だから状況によって言動や振る舞いが変わることもある」——本人の言葉（2026-11-27）。',
+    '場面ごとに別のモデルが出てくる。接客では客にペコペコする（媚を売るつもりはないが、働いているとそうなる時がある）。普段は少しぶっきらぼう。一番嫌なのはその一貫性のなさで、振り幅が大きすぎて自己像と乖離し、辛くなる（2026-11-26 23:24）。',
+    '真面目さも同じ根から出ている。間違いを犯さないように、嫌われないようにビビって真面目になっている。真面目さは性格ではなく、間違いと嫌われへの恐怖が作る鎧だ、という本人の自己分析（2026-11-26 23:50）。レノンのインタビューの不真面目さが好きなのは、その逆を自分がやっている自覚があるからだ。'
+  ]},
+  { h:'部品はもう揃っている', paras:[
+    '堂々さ——ソルジャーボーイ。嫌われることを気にせず、自分のままで居続ける。彼が居酒屋で働くことになってもペコペコしないだろう、という本人の想像（2026-11-26 23:29）。',
+    '余裕と危なさ——クリフ・ブース。余裕があって、ちょっと危ない香りがする。嘘の上手さも含めての生き上手（2026-11-26 23:29、23:33）。',
+    '不真面目さ——ジョン・レノン。インタビューで見せる、場の前提を外して笑う態度（2026-11-26 23:50）。',
+    '一貫性そのもの——麻生太郎モノマネのセリフが面白いのは、人物の性格から必然的に出てくる一言だからだ。「言いそう」と思われる状態が、キャラクターの一貫性そのもの（事例の分解、2026-11-17）。',
+    '作る年月の側——しゃべくり007は台本なしが看板だが、出演者全員が何十年もかけて作ったキャラクターと鉄板の在庫を持ち込んでいる。キャラクターは生まれつきではなく、作って、持ち続けた年月の側にある（2026-11-17）。'
+  ]}
+];
+function renderCharmCharacter(){
+  const items2 = CHARM_CHARACTER.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> '<h3 class="subhead">' + esc(sec.h) + '</h3>' + sec.paras.map(p=> '<p class="bodytext bizp">' + esc(p) + '</p>').join('') }));
+  let html = charmSubNavHTML('character', items2);
+  html += '<button class="charmxref" onclick="setCharmTab(\'selfproduce\')">セルフプロデュース——見た目・振る舞い・オーラの手入れ<span class="charmxrefgo">「セルフプロデュース」タブで読む ›</span></button>';
+  return { html, wiring: [] };
+}
+/* v5.82.41: 変えられない資本 tab (his call, 2026-11-27). An
+   inventory of unchangeable initial capital and how to carry it —
+   NOT a consolation page. His items: 身長 167〜168cm (the "あと
+   10cm" regret), 顔立ち, 生まれ育ち (raised with the screws
+   tightened). Each is paired with the shelf men's own unchangeable
+   capital that did not stop their charm （デュークのハゲ, レノンの
+   173cm, ハル・ジョーダンの不器用さ）. Teeth are EXCLUDED: his
+   framing is 身長＝閉じた後悔 / 歯＝開いた後悔 (fixable from now).
+   Sources: adult-sociality-material.md 23:24/23:29/23:33/23:35/
+   23:55 passages + the 棚 commentary. */
+const CHARM_CAPITAL = [
+  { h:'身長', paras:[
+    '167〜168cm。「あと10cm高ければ」が本人の後悔で、人生の後悔2つのうちの1つ（2026-11-26 23:35）。',
+    '22歳では自然には伸びない。残る手段は骨延長術だけで、現実的ではない。つまりこれは閉じた後悔——今後の行動では変わらない側の在庫だ。',
+    'ロールモデルの棚について、本人は「みんな背が高い」と観察した（175以上、という本人の見立て、2026-11-26 23:29）。ただしレノンは173cmで、その身長が「伝説を刻んだ」ことの条件にはなっていない。棚の中にも、背の高さと魅力が直結していない実例がある。'
+  ]},
+  { h:'顔立ち', paras:[
+    '笑顔が少し可愛らしく、バイト先の年配の客に「可愛い」と言われる。超嫌ではないが「漢って感じはしない」——本人の受け取り方（2026-11-26 23:24）。',
+    '対の例はラウル・デューク。ハゲているのに全て魅力的で、ファッションも喋りも最高で、「俺もああなりたい」と本人は言った（棚の解説）。欠けた側の特徴が、そのまま署名になっている。'
+  ]},
+  { h:'生まれ育ち', paras:[
+    '「俺は頭のネジを硬くして育てられてしまった。どこか社交的な場に行ってぶっ壊れて場慣れ、社交慣れする必要がある」——本人の言葉（2026-11-26 23:55）。ネジの硬さは生まれつきではなく、育ちで締まった、という本人の見立てだ。',
+    '育ち自体は変えられない。ただし処方箋は本人から出ている。変えられないのは過去で、これから足していく場の数は、変えられる側にある。',
+    'ハル・ジョーダンの不器用さも同じ置き方だ。「それぞれ魅力と欠点があるから素晴らしい」と本人は棚の男たちについて言った（2026-11-26 23:33）。欠点は消す対象としてではなく、キャラクターの部品として置かれている。'
+  ]},
+  { h:'物差しの置き方', paras:[
+    '変えられないものを、物差しの中心に置かない。このタブは慰めのページではなく、棚卸しのページだ。何が固定で、何が動くかを分けておくためのもの。',
+    '歯はここに入れない。歯は今からでも手を打てる「開いた後悔」で、身長とは別の棚にある（本人の区別、2026-11-26 23:35）。'
+  ]}
+];
+function renderCharmCapital(){
+  const items = CHARM_CAPITAL.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> '<h3 class="subhead">' + esc(sec.h) + '</h3>' + sec.paras.map(p=> '<p class="bodytext bizp">' + esc(p) + '</p>').join('') }));
+  return { html: charmSubNavHTML('capital', items), wiring: [] };
+}
+/* v5.82.42: ウィット tab (his call, 2026-11-27: 「ウィット」).
+   Role split: ユーモア tab = the collection of actual lines;
+   ウィット = the MECHANISM — why such lines come out of people,
+   decomposed, plus a stock shelf he can actually use. Sources:
+   ~/workspace/social-labo/humour-research.md (benign-violation
+   theory as the core, the classical three theories as components,
+   the §5 type index, the training research) and the types
+   decomposed in Social Labo (adult-sociality-material.md).
+   The 45 decomposed quotes themselves live in the ユーモア tab's
+   collection (CHARM_QUOTES); here only their mechanism notes
+   live, keyed by type — no quote is duplicated. */
+const CHARM_WIT_TYPES = [
+  { n:'前提の反転', d:'質問や批判の枠組みを受け取らず、肯定と否定を入れ替える', ex:'レノン「僕らは狂った連中が好きなんだ」／ベーコン「破壊的な批判こそ最も役に立つ」' },
+  { n:'鏡返し', d:'攻撃の文法をそのまま相手に返す', ex:'ポール「デトロイトを追い出せキャンペーンを始めるよ」／チャーチルの「明日は醒める」' },
+  { n:'分類のずらし', d:'カテゴリーを一段ずらして、質問そのものを無効化する', ex:'ハリスン「英語じゃない。リバプール訛りだよ」／アリの「世界王者は美しくあるべきだ」' },
+  { n:'過剰な承認', d:'疑いを否定せず、認めすぎることで追及を空転させる', ex:'かつらの下は禿げているのでは、への「全員だよ」「僕は禿げてる」' },
+  { n:'桁・尺度の崩壊', d:'金額や評価軸のスケールを意図的に壊す', ex:'レノン「半クラウンくらいかな」／アリ「薬まで病気にする」' },
+  { n:'最後の一文の反転', d:'褒め言葉や教訓の形式で始めて、結論で裏切る', ex:'グルーチョの書評／トウェイン「激しく怒ったら、罵れ」' },
+  { n:'定義の奪取', d:'言葉を再定義して、相手の世界観を要約・無効化する', ex:'ワイルド「値段を知っていて価値を知らない男」／アリ「沈黙は金だ」の本音接続' },
+  { n:'自己演出の誇張', d:'自分を大きく言う。韻や様式が「芸」として成立させる', ex:'アリ「蝶のように舞い、蜂のように刺す」／ダリ「私自身がドラッグだ」' },
+  { n:'乾いた平熱', d:'重い・暗い内容を、感情を乗せず短く置く', ex:'ハリスンのウィルベリーズの一言／ベーコンの犬の糞／たけし「ない奴はないもん」' },
+  { n:'パラドックス', d:'矛盾する2文を同時に成立させる', ex:'ワイルド「誘惑以外のすべてに抵抗できる」／コクトー「常に真実を語る嘘」' },
+  { n:'音のずらし', d:'既知の諺や語の音を一音ずらして、意味を跳ばせる', ex:'パーカー「古いドグマに新しい芸は教えられない」' },
+  { n:'良性違反の同居', d:'格上や権威への違反を、丁寧な形式や場の了解で包む', ex:'レノン「宝石をカチャカチャ鳴らしていただければ」／コクトーのルーヴル' },
+  { n:'主語の移動', d:'決断や責任の主語を移して、重みを作る', ex:'たけし「引退はお客が決めること」' },
+  { n:'本音の接続', d:'立派な格言や建前に、本音の理由を接続して笑いに変える', ex:'レノン「ダメ。まず金が必要だ」' }
+];
+const CHARM_WIT_CONDITIONS = [
+  { n:'在庫と準備', d:'即興の8割は準備。ビートルズの記者会見の返しは、何百回も同じ質問を受けて磨かれた定番の変奏だった。しゃべくり007の「台本なし」も、全員が何十年分のキャラクターと鉄板の在庫を持ち込んでいる' },
+  { n:'検閲を通さない', d:'スパイク（『ノッティングヒルの恋人』）の型。思ったことが発話前の検閲に引っかからず、そのままの形で出る。違反成分が削られないから切れ味になる' },
+  { n:'場面を一歩外から見る', d:'レノンの型。自分が場の中にいながら、場そのものを眺める位置をもう一つ持っている。記者会見を「演奏する場」として扱い直す動きがそれ' },
+  { n:'キャラクターとの一致', d:'麻生太郎モノマネのセリフが面白いのは、人物の性格から必然的に出てくる一言だからだ。「言いそう」と思われる一貫性が、そのまま笑いの源になる' },
+  { n:'余裕', d:'ハリスンの型。刺されて重傷を負った直後でも、自分のバンド名で乾いた一言が置ける。失うものへの恐れが小さいほど、違反の許容量は大きくなる' }
+];
+function witSecMechanism(){
+  let h = '<h3 class="subhead">仕組み——違反と安全の同時成立</h3>';
+  h += '<div class="witfig">'
+    + '<div class="witfigrow"><span class="witbox">規範への違反</span><span class="witop">×</span><span class="witbox">安全だと分かる</span><span class="witop">→</span><span class="witbox hot">笑い</span></div>'
+    + '<div class="witfigcap">違反だけでは不快・攻撃になる。安全だけでは退屈。同時に成立した時だけ笑いになる（良性違反理論／マグロー＆ウォーレン）。古典の3理論——不一致（期待のズレが解ける）、優越（他者の弱みへの突然の栄光感）、解放（抑圧された緊張の放出）——は、この現象の別々の側面を説明する部品として残る。</div></div>';
+  h += '<p class="bodytext bizp">面白い発言は才能の発火ではない。在庫 × 検閲を緩める余裕 × 置く位置（タイミング）、の積として観察される。笑いは発話の文法的な切れ目に置かれる「句読点」のように機能するので、内容より先に置く位置の技術がある（プロヴァインの自然観察）。</p>';
+  h += '<p class="bodytext bizp">検閲が機知を殺す理由もここから分かる。面白い発言は違反を含む。場を壊すこと、嫌われることを恐れる状態では、発話前の検閲が違反成分を全部削ってしまい、残るのは安全で退屈な発言になる。逆に、地位が安定している者、失うものの少ない者は違反の許容量が大きく、機知が自由になる。</p>';
+  return h;
+}
+function witSecConditions(){
+  let h = '<h3 class="subhead">生む側の条件</h3>';
+  h += CHARM_WIT_CONDITIONS.map(c=> '<div class="witcard"><div class="witname">' + esc(c.n) + '</div><div class="witline">' + esc(c.d) + '</div></div>').join('');
+  return h;
+}
+function witSecTypes(){
+  let h = '<h3 class="subhead">型——分解の索引</h3>';
+  h += CHARM_WIT_TYPES.map(t=> '<div class="witcard"><div class="witname">' + esc(t.n) + '</div><div class="witline">' + esc(t.d) + '</div><div class="witex">例：' + esc(t.ex) + '</div></div>').join('');
+  h += '<button class="charmxref" onclick="setCharmTab(\'humor\')">実例はユーモアタブの引用集で読む<span class="charmxrefgo">「ユーモア」タブへ ›</span></button>';
+  return h;
+}
+function witSecBot(){
+  let h = '<h3 class="subhead">俺のユーモアbot——使える在庫の棚</h3>';
+  h += '<p class="bodytext bizp">発想は逆だ。即興で生むのではなく、日常の場面ごとに「置ける一言」を先に用意しておく。場面は予測できる——感想に困る時、予定を断る時、知らないことを聞かれた時、場が重くなった時。予測できる場面には、短い定型を先に仕込める。</p>';
+  h += '<p class="bodytext bizp">在庫の作り方。心が動いた一言を記録して、型に分解すること（このタブの「型」がその分解表）。言えなかった場面では「あの時なんて言えばよかったか」を後から作ること。ベーコンはアイスキュロス、ニーチェ、エリオットを読み込んでいた——語彙の在庫は入力から来る。</p>';
+  h += '<p class="bodytext bizp">訓練の研究の答えは「ある程度は学習可能」。ユーモア訓練の統制実験でも、8週間の習慣プログラムでも、改善したのは才能ではなく「日常の中のユーモアに気づく注意」と「言葉を産出する習慣」の側だった。才能の有無ではなく、注意と産出の習慣を作る方向に効果がある。</p>';
+  return h;
+}
+function renderCharmWit(){
+  const items = [
+    { label:'仕組み', build: witSecMechanism },
+    { label:'生む側の条件', build: witSecConditions },
+    { label:'型', build: witSecTypes },
+    { label:'俺のユーモアbot', build: witSecBot }
+  ];
+  return { html: charmSubNavHTML('wit', items), wiring: [] };
+}
+/* v5.82.43: 教養 tab (his call, 2026-11-27). The common-ground
+   knowledge base that conversation and wit stand on — the shared
+   references a remark can lean on. Source: adult-sociality-
+   material.md 「会話のための共通認識」 (2026-11-18): five layers,
+   depth standard 「受けられる水準」 — hear a name, one line of
+   context comes to mind, and you can return one question so the
+   conversation doesn't stop. Layers are framed as what to be
+   able to RECEIVE, not as an encyclopedia dump. Concrete stock
+   exists in the source only for 国民的コンテンツ (HUNTER×HUNTER)
+   and 自分の世界; the other layers are framework-only in the
+   source and are presented as frameworks. */
+const CHARM_CULTURE = [
+  { h:'受けられる水準', paras:[
+    '会話は共通認識の上でしか速く進まない。相手が前提として置いている名前（土地名、作品名、人物名）が分からないと、その場で会話が止まるか、説明役を相手に押し付けることになる。',
+    '必要な深さは「受けられる」水準。名前を聞いて一行分の文脈が浮かび、会話を止めずに一つ質問できる程度。専門的な深さが要るのは、自分の世界の分だけだ。',
+    '優先順位は、自分の出る場面の頻度で決める。君の場合、先に来るのは東京の土地勘と、同世代の国民的コンテンツ。'
+  ]},
+  { h:'地理', paras:[
+    '東京の地名と、大まかな位置・路線。美術の世界の中心は東京で、地名は空気ごと伝わる略号として使われる——どの辺りにあって、どういう種類の場所かまでが、地名一つに乗って届く。',
+    '受けられる水準は、名前を聞いて「どの辺りで、どんな空気の場所か」が浮かぶこと。住所の暗記ではない。'
+  ]},
+  { h:'国民的コンテンツ', paras:[
+    '同世代以上がほぼ全員触れている漫画・ジブリ・有名なドラマなど。比喩と笑いの在庫として会話に頻出する。',
+    '具体的な欠けとして本人が挙げたのが HUNTER×HUNTER（2026-11-18）。漫画ネタでよく出てくるのに分からないのが悔しい、という実感から。よく出てくる理由は、念能力や「制約と誓約」のような概念が一般語彙化していること、ヒソカやメルエムのような人物が人物評の比喩として使えること、作者の冨樫義博が他の作り手からも頻繁に参照されること。会話に頻出する要素は、念の基本、旅団（ヨークシン編）、キメラアント編に集中している。',
+    '埋め方は、漫画全38巻（2024年時点）を読むのが最速で、アニメより短い。ただし受験期の時間配分とは分けて考える。',
+    'なお、漫画の共通認識が全面欠けなのではない。ジョジョは深く知っている。特定の国民作が抜けている、という形の欠けだ。'
+  ]},
+  { h:'軽い時事・季節', paras:[
+    '大きなスポーツ大会、大きなニュース。季節の行事と同じく、初対面の会話の入口になる軽い共通項。',
+    '受けられる水準は、話題に出た時に「あの件か」と分かり、一つ返せること。中身の専門家になる必要はない。'
+  ]},
+  { h:'社会・会社の仕組み', paras:[
+    '年度、会社、社会の基本語彙。大人の社会の仕組みの常識。',
+    'ビジネスマナーの側と接続する——サラリーマンにならない分、マナーも仕組みも自分で選んで身に付ける側の話。'
+  ]},
+  { h:'自分の世界', paras:[
+    '美術界の美術館・画廊街・作家名。ここは君の強みで、既に深い。',
+    '他の層と違い、ここだけは受け手ではなく送り手になれる。専門的な深さが要るのも、この層だけだ。'
+  ]}
+];
+/* v5.82.44: 教養の在庫 — the 56 items from the X post
+   「インターネットにおける『教養』まとめ」(@wori2ru), sorted into
+   five categories and fact-checked (2026-11-27, against
+   reference sources; see the ship report for the verification
+   notes). Each item: 要点 at his 受けられる水準 + a truth verdict
+   (v: fact 事実 / exagg 大筋事実だが誇張あり / disputed 諸説あり・
+   真偽不明 / myth 都市伝説・デマ). For exaggerated or false ones
+   the text states concretely what differs from the legend. */
+const CHARM_STOCK_CATS = ['人物の奇行と伝説', '数学・科学のパラドックスと思考実験', '哲学の思考実験', '心理学と社会実験', '歴史の雑学'];
+const CHARM_STOCK = [
+  /* ---- 人物の奇行と伝説 (cat 0) ---- */
+  { c:0, t:'美大落ちヒトラー', v:'fact', d:'ウィーン美術アカデミーに1907年と1908年の2回不合格になったのは事実で、画家志望はそこで潰えた。ただし「落ちたから独裁者になった」という単純な因果は後付けの物語。' },
+  { c:0, t:'ゴッホの耳', v:'exagg', d:'1888年に自分の耳を切ったのは事実。長く「耳たぶだけ」と言われたが、治療した医師レイの残した図では耳介のほぼ全体が切り落とされている。渡した相手は娼婦ではなく、娼楽街で掃除係をしていた少女ガブリエルだった、というのが近年の調査（マーフィー）。' },
+  { c:0, t:'ニーチェの発狂', v:'disputed', d:'1889年にトリノで倒れて発狂し、以後11年間ほとんど言葉を失ったのは事実。ただし有名な「鞭打たれる馬に抱きついて泣いた」場面は、死後11年経ってから現れた伝聞で、同時代の記録には出てこない。伝説として扱うのが無難。' },
+  { c:0, t:'カントの散歩', v:'exagg', d:'晩年の生活が時計のように規則正しかったのは事実。ただし「近所の人がカントの散歩に時計を合わせた」は、死後数十年経ってハイネが書いた文学的な誇張。ルソーの『エミール』に夢中で散歩を一度だけ休んだ、という話にも確かな出典はない。' },
+  { c:0, t:'奇人ニコラ・テスラ', v:'fact', d:'奇行は本人の記録や同時代の証言が多い。3の倍数へのこだわり、鳩への深い愛着、清潔への強迫的な感覚。晩年はニューヨークのホテル暮らしで、鳩の世話をしながら孤独に死んだ。' },
+  { c:0, t:'ルソーの露出癖', v:'fact', d:'『告白』の中で本人が露出癖を告白している。若い頃、女性に見られることを期待して身を晒し、思った反応が得られず失望する話まで自分で書いた。自己告白が一次資料。' },
+  { c:0, t:'超人フォン・ノイマン', v:'fact', d:'暗算と記憶の逸話は同時代の同僚の証言が多数ある。ロスアラモスでは初期の計算機と競って計算した話も残る。「超人」という呼び名は誇張というより、同僚たちの実感に近い。' },
+  { c:0, t:'ニュートンの錬金術', v:'fact', d:'錬金術の膨大な手稿が残っている（100万語を超えるとも言われる）。万有引力の発見者と同一人物で、本人は錬金術にも神学にも本気だった。ケインズは彼を「最初の科学者ではなく、最後の魔術師」と呼んだ。' },
+  { c:0, t:'ガロアの決闘死', v:'fact', d:'20歳で決闘により命を落とした（1832年）。決闘の前夜、数学の手稿を友人に託して走り書きの注を残したのも事実。決闘の相手と理由には諸説あるが、決闘死そのものは確か。' },
+  { c:0, t:'ラマヌジャンのタクシー数1729', v:'fact', d:'病床を見舞ったハーディが「乗ってきたタクシーの番号1729は退屈な数だ」と言うと、「いや、二通りの立方数の和で表せる最小の数です」と即答した逸話。ハーディ自身の回想に残っている。' },
+  { c:0, t:'少年期ガウスは1から100までの和を即座に5050と答えた', v:'disputed', d:'逸話の初出はガウスの死後、1856年の伝記で、細部は語り直されるたびに変わっている。両端を組にして101×50と解く方法自体は正しいが、出来事として確実とは言えない。' },
+  { c:0, t:'グロタンディーク素数57', v:'disputed', d:'「具体的な素数を」と言われて「じゃあ57で」と答えた、という逸話。57は3×19で素数ではない。AMSの伝記自体がこの話を「伝説」として紹介している。具体例で考えない彼の思考様式を象徴する話として流通。' },
+  { c:0, t:'フェルマー「真に驚くべき証明を見つけたが、この余白はそれを書くには狭すぎる」', v:'fact', d:'ディオファントス『算術』の余白への書き込みとして伝わる言葉で、息子が編んだ版に収録された。フェルマーの最終定理の証明は約360年後、1995年にワイルズが完了させた。' },
+  /* ---- 数学・科学のパラドックスと思考実験 (cat 1) ---- */
+  { c:1, t:'0.999...=1', v:'fact', d:'0.999…=1は数学的事実。「ほぼ1」ではなく厳密に等しい。1/3=0.333…の両辺を3倍するなど、証明はいくつもある。直感が嫌がるのは「…」の無限の扱いの方。' },
+  { c:1, t:'ヒルベルトの無限ホテル', v:'fact', d:'無限個の部屋があるホテルは満室でも、全員に1つずつ部屋をずらしてもらえば新しい客を1人入れられる。ヒルベルトが講義で使ったとされる、無限の直感外れを示す思考実験。' },
+  { c:1, t:'ラッセルのパラドックス', v:'fact', d:'「自分自身を要素に含まない集合すべての集合」は、自分を含むのか含まないのか。1901年にラッセルが示して集合論の基礎を揺るがした。「村人の髭を剃る床屋」の話はその日常版。' },
+  { c:1, t:'バナッハ＝タルスキーのパラドックス', v:'fact', d:'球を有限個の部分に分けて組み替えるだけで、同じ大きさの球が2つできる、という1924年の定理。選択公理を認めると証明できる。現実の物質の話ではなく、数学の中の話。' },
+  { c:1, t:'モンティ・ホール問題', v:'fact', d:'3つのドアから1つ選び、司会者がハズレを1つ開けた後、ドアを変更すると当たる確率が1/3から2/3に上がる、が正解。司会者がハズレを知っていて開けることが情報を運んでいる。' },
+  { c:1, t:'マルチンゲール法', v:'fact', d:'負けたら賭け金を倍にしていく手法。勝てば損を取り戻せるが、連敗すると必要資金が指数関数的に膨らみ、資金か賭けの上限に当たって終わる。期待値そのものは変えられない。' },
+  { c:1, t:'猿のタイプライター', v:'fact', d:'無限の猿が無限の時間タイプライターを打てば、シェイクスピア全集がほぼ確実に出現する、という無限猿定理。確率の話としては正しいが、有限の時間では現実的に起こらない、という留保が本体。' },
+  { c:1, t:'ゲーデルの不完全性定理', v:'fact', d:'1931年。十分に強い数学の体系は、無矛盾である限り「証明も反証もできないのに真である文」を必ず含む。数学を完全に基礎付けようとする試みへの決定打になった。' },
+  { c:1, t:'ゲーデルの憲法バグ', v:'exagg', d:'アメリカ市民権の試験勉強中、ゲーデルが合衆国憲法に「合法的に独裁へ移れる抜け穴」を見つけたと言い、面接で口を滑らせてアインシュタインたちが慌てた、という話。モルゲンシュタインの回想に基づく実話だが、バグの中身は最後まで明かされず、改正手続きの自己適用あたりだろうという推測の域を出ない。' },
+  { c:1, t:'シュレーディンガーの猫', v:'fact', d:'1935年の思考実験。箱の中の猫が「生きていて死んでもいる」重ね合わせになる、という量子力学の解釈の不条理を、シュレーディンガー自身が突くために作った例。実際に猫で試した話ではない。' },
+  { c:1, t:'ラプラスの悪魔', v:'fact', d:'全ての粒子の位置と運動量を知る知性がいれば、未来も過去も一意に計算できる、という1814年の決定論の象徴。量子力学の不確定性とカオスの鋭敏さが、その前提を後から崩した。' },
+  { c:1, t:'マクスウェルの悪魔', v:'fact', d:'分子を見分けて扉を開け閉めする小悪魔がいれば、熱力学第二法則を破って温度差を作れるように見える、という1867年の思考実験。後の研究では、情報を見分けて記録する処理自体にエネルギーコストがかかる、という所に落ち着いた。' },
+  { c:1, t:'世界五分前仮説', v:'fact', d:'世界は実は5分前に、記憶も化石も地層も全部そろった状態で生まれたのかもしれない——ラッセルが1921年に提示した懐疑論の思考実験。反証できないが、それゆえに意味を持たない主張の見本。' },
+  { c:1, t:'ボルツマン脳', v:'fact', d:'熱のゆらぎで宇宙全体が生まれるより、「自分は宇宙を観測している」と思い込む脳だけが偶然組み上がる方が、確率的にはずっと起こりやすいはずだ、という現代宇宙論のパラドックス。' },
+  { c:1, t:'シミュレーション仮説', v:'disputed', d:'ボストロムの三つの命題（2003年）は、論理の提示としては成立している。ただし「私たちがシミュレーションの中にいる」こと自体は、証明も反証もできない。面白さは検証可能性の外側にある。' },
+  { c:1, t:'バタフライエフェクト', v:'fact', d:'気象学者のローレンツのモデルから出た、カオスの初期値への鋭敏さの比喩。「蝶の羽ばたきが竜巻を引き起こす」という字義通りの因果ではなく、初期条件のわずかな差が予測を不可能にする、という話。' },
+  /* ---- 哲学の思考実験 (cat 2) ---- */
+  { c:2, t:'哲学的ゾンビ', v:'fact', d:'外見も行動も人間と完全に同じなのに、内側の体験（クオリア）だけがない存在。想像できるかどうかが意識の問題の核心だ、とチャーマーズが使った思考実験。' },
+  { c:2, t:'中国語の部屋', v:'fact', d:'中国語を理解しない人が、規則書通りに中国語の記号を処理して完璧な受け答えをする部屋。それは中国語を「理解」したことになるか。サールが1980年に提示し、AIの理解をめぐる論争の起点になった。' },
+  { c:2, t:'トロッコ問題', v:'fact', d:'暴走するトロッコの進路を切り替えれば、5人の代わりに1人が死ぬ。切り替えるべきか。フットが1967年に提示し、トムソンが発展させた倫理学の定番の思考実験。自動運転の判断でも引き合いに出される。' },
+  { c:2, t:'オッカムの剃刀', v:'fact', d:'説明には不要な仮定を増やすな、という原則。14世紀のフランシスコ会修道士オッカムに帰される。「剃刀」という呼び名は後世のもので、本人の文章にそのままの形であるわけではない。' },
+  { c:2, t:'囚人のジレンマ', v:'fact', d:'二人とも黙秘すれば軽い罪で済むのに、互いを信じられず自白し合って重くなる。協力が得なのに合理的な選択が裏切りになる、ゲーム理論の基本形。1950年頃に定式化された。' },
+  { c:2, t:'パノプティコン', v:'fact', d:'中央の監視塔から見られているかもしれない、というだけで囚人が自ら規律を守る監獄の設計。ベンサムが18世紀末に考案し、後にフーコーが「見られるかもしれない」権力の比喩として広めた。' },
+  /* ---- 心理学と社会実験 (cat 3) ---- */
+  { c:3, t:'バーナム効果', v:'fact', d:'誰にでも当てはまる曖昧な性格描写を「まさに自分のことだ」と感じる傾向。フォアが1948年の実験で示し、学生たちは的中度に平均4.3点（5点満点）を付けた。占いと性格診断の仕組み。' },
+  { c:3, t:'ダニング＝クルーガー効果', v:'exagg', d:'「能力の低い人ほど自信過剰」という話。ただし有名な自信の山のグラフは原論文にない後世の創作で、効果自体も統計的な見かけ（平均への回帰）で大半が説明できるという批判が強い。実在するとしても小さい、というのが現状の評価。' },
+  { c:3, t:'スタンフォード監獄実験', v:'exagg', d:'1971年に行われたのは事実。ただし後の資料調査で、看守役は事前に厳しく振る舞うよう指導されていたこと、有名な「精神崩壊」は演技だったと本人が語ったことなどが判明した。手法への批判が強く、教科書の物語をそのまま信じることはできない。' },
+  { c:3, t:'ミルグラム実験', v:'fact', d:'1963年。教師役の参加者が、権威者の指示に従って「学習者」へ危険な電圧まで電気ショックを与え続けた。最大電圧まで進んだのは65%。倫理面の批判と解釈の論争はあるが、服従の水準自体は後の部分的な再現でも近い値が出ている。' },
+  /* ---- 歴史の雑学 (cat 4) ---- */
+  { c:4, t:'エスキモーには雪を表す単語が何十個もある', v:'exagg', d:'誇張。ボアスの元の指摘は数個の異なる語根で、英語と大差なかった。接尾辞を付けて無限に語を作れる言語なので「単語の数」を数えること自体が成り立たない、というのが言語学の批判で、プルムはこれを「大いなるエスキモー語彙のデマ」と呼んだ。海氷の用語が細かいのは事実だが、流通する数字は膨らんでいる。' },
+  { c:4, t:'ヴォイニッチ手稿', v:'fact', d:'15世紀頃に作られた、未知の文字と奇妙な植物画で埋まった写本。羊皮紙の年代測定はされているが、言語も著者も内容も未解読のまま。解読したという発表は繰り返し出ては否定されている。' },
+  { c:4, t:'神聖ローマ帝国は神聖でもローマでも帝国でもない', v:'fact', d:'ヴォルテールが1762年の著作で書いた皮肉。当時の神聖ローマ帝国は諸侯の連合体に近く、この評は実態への指摘として今も引用される。' },
+  { c:4, t:'カノッサの屈辱', v:'fact', d:'1077年、皇帝ハインリヒ4世が破門の解除を求めて、教皇グレゴリウス7世の滞在するカノッサ城の門前で許しを請うた事件。「カノッサの屈辱」は屈辱的な謝罪の代名詞になった。雪の中で3日立った、などの細部は年代記の修飾を含む。' },
+  { c:4, t:'ハプスブルク家の顎', v:'fact', d:'近親婚を重ねたスペイン・ハプスブルク家に特徴的な、下顎の突き出た顔立ち。2019年の研究で、肖像画から測った顎の程度と近親交配の係数に相関があることが確認された。' },
+  { c:4, t:'ボストン茶会事件', v:'fact', d:'1773年、茶税への抗議として、ボストン港でイギリス東インド会社の茶が海に投げ捨てられた事件。アメリカ独立への流れを加速させた。参加者たちは先住民の扮装をしていた。' },
+  { c:4, t:'ギロチンは人道的な処刑方法', v:'exagg', d:'導入の理念としては事実。身分によって違った処刑を「誰にでも平等で、苦痛の少ない死」に、という提案だった。ただし装置の考案・設計はギヨタン本人ではなく、提案を受けて別の医師が作った。「人道的」は斬首や車裂きとの比較の中での話。' },
+  { c:4, t:'フランスはすぐ降伏する', v:'myth', d:'英語圏のステレオタイプで、史実の総体とは合わない。フランスは欧州有数の軍事大国であり続けたし、主要な戦闘の集計では大きく勝ち越している（数え方によるが109勝49敗という集計がある）。像を決めたのは1940年の早期崩壊と1870年の普仏戦争で、20世紀以降の英語圏のジョークとして定着した。' },
+  { c:4, t:'エニグマ', v:'fact', d:'ドイツ軍の暗号機エニグマの解読は、イギリスのブレッチリー・パークが有名だが、その前にポーランドの数学者たち（レェフスキら）が解読法の基礎を作っていた。成果が英仏に渡されて引き継がれた。' },
+  { c:4, t:'ナチス制服とヒューゴ・ボス', v:'exagg', d:'ヒューゴ・ボス社がナチスの制服を「製造」したのは事実。ただし「デザインした」は誤りで、黒いSS制服のデザインはSS隊員のディービッチュとグラフィックデザイナーのヘック。ボス社は仕様書通りに縫製した製造側だった。' },
+  { c:4, t:'メンゲレの双子実験', v:'fact', d:'アウシュビッツの医師メンゲレが、双子を対象に人体実験を行ったのは記録のある事実。「死の天使」と呼ばれた。生存者と記録の双方から裏付けられている。' },
+  { c:4, t:'シモ・ヘイヘ', v:'fact', d:'冬戦争（1939〜40年）のフィンランド軍狙撃手で、確認された狙撃記録は505人。100日足らずの間の公式記録に基づく数字で、史上最多級。本人は「言われたことを、できる限りやっただけ」と控えめに語った。' },
+  { c:4, t:'ポル・ポトは眼鏡をかけていたら知識人認定で処刑した', v:'fact', d:'クメール・ルージュは知識人と見なした人々を標的にし、眼鏡をかけていることは「知識人の印」として命取りになり得た、というのは記録のある話。正式な規則というより、現場の選別の目印として機能した。' },
+  { c:4, t:'イギリス料理がマズイ理由は産業革命', v:'disputed', d:'産業革命で都市労働者の食文化が痩せたのは有力な一因。ただし評判を決定的にしたのは二度の世界大戦と、1954年まで続いた配給制だというのが食文化史の大きな見方で、単一の原因には帰せない。' },
+  { c:4, t:'ロシア宇宙飛行士は鉛筆を使い、アメリカ宇宙飛行士は宇宙用ボールペンを開発した', v:'myth', d:'都市伝説。宇宙ペンはNASAの開発ではなく、民間のフィッシャーが自費（約100万ドル、当時の価値で今の約16億円／約$10M）で開発したもので、NASAは完成品を買っただけ。ソ連も当初はグリースペンシルを使い、後に同じフィッシャーのペンを購入した。鉛筆は芯の粉塵と可燃性が宇宙船内では危険だった、というのが実際の事情。' },
+  { c:4, t:'墾田永年私財法', v:'fact', d:'743年、開墾した土地の永久の私有を認めた法。それまでの三世一身法では期限が切れると土地を失うため開墾が進まなかった。私有を認めたことで大土地所有＝荘園が広がる入口になった。' },
+  { c:4, t:'伊能忠敬が地図を作り始めたのは50歳から', v:'exagg', d:'50歳で家業を譲って隠居し、天文学を学び始めたのは事実。ただし実際に測量に出発したのは55歳（1800年、蝦夷地）。「50歳から地図作り」は、学び始めと測量の開始を混ぜた言い方。' }
+];
+let charmStockCat = 0;
+const STOCK_VERDICTS = { fact:'事実', exagg:'大筋事実・誇張あり', disputed:'諸説あり・真偽不明', myth:'都市伝説・デマ' };
+function cultureStockCardHTML(it){
+  return '<div class="stockcard"><div class="stockhead"><span class="stockname">' + esc(it.t) + '</span><span class="vchip v-' + it.v + '">' + STOCK_VERDICTS[it.v] + '</span></div><div class="stocktxt">' + esc(it.d) + '</div></div>';
+}
+function cultureStockHTML(){
+  let h = '<h3 class="subhead">教養の在庫——出回っている話と、その真偽</h3>';
+  h += '<div class="gsecrow stockrow">' + CHARM_STOCK_CATS.map((c, i)=> '<button class="gsec' + (i === charmStockCat? ' on': '') + '" data-scat="' + i + '" onclick="setStockCat(' + i + ')">' + esc(c) + '</button>').join('') + '</div>';
+  h += '<div id="stockhost">' + CHARM_STOCK.filter(it=> it.c === charmStockCat).map(cultureStockCardHTML).join('') + '</div>';
+  return h;
+}
+function setStockCat(i){
+  charmStockCat = i;
+  const row = document.querySelector('#viewHumor .stockrow');
+  if(row) row.querySelectorAll('.gsec').forEach(b=> b.classList.toggle('on', +b.dataset.scat === i));
+  const host = $('stockhost');
+  if(host) host.innerHTML = CHARM_STOCK.filter(it=> it.c === i).map(cultureStockCardHTML).join('');
+}
+function renderCharmCulture(){
+  const items = CHARM_CULTURE.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> '<h3 class="subhead">' + esc(sec.h) + '</h3>' + sec.paras.map(p=> '<p class="bodytext bizp">' + esc(p) + '</p>').join('') }));
+  items.push({ label:'在庫', build: cultureStockHTML });
+  let html = charmSubNavHTML('culture', items);
+  html += '<button class="charmxref" onclick="setCharmTab(\'sociality\')">社会の仕組みの作法は「社会性」タブで読む<span class="charmxrefgo">「社会性」タブへ ›</span></button>';
+  return { html, wiring: [] };
 }
 function renderHumor(){
   const v = $('viewHumor'); if(!v) return;
@@ -23017,6 +23745,9 @@ function renderHumor(){
      approach. Scoped to .charmph so the reading layer's guide
      figures (wired by wireBizFigs below) never enter the pairing. */
   v.querySelectorAll('.charmph .imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* v5.82.39: the same pairing for the ロールモデル grid, scoped
+     to .modelgrid so the two holder families never cross. */
+  v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -24460,13 +25191,13 @@ function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh){ sh.classList.add
    modalSheetOpen() first, and the swipe-back excludes the
    sheets the same way it already excluded the guide panel. */
 function modalSheetOpen(){
-  const ids = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'];
+  const ids = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel', 'modelsheet'];
   for(const id of ids){ const el = $(id); if(el && !el.classList.contains('hidden')) return true; }
   return false;
 }
 function sheetLockSync(){ document.documentElement.classList.toggle('sheetlock', modalSheetOpen()); }
 (function(){
-  const els = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'].map(id => $(id)).filter(Boolean);
+  const els = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel', 'modelsheet'].map(id => $(id)).filter(Boolean);
   if(window.MutationObserver && els.length){
     const mo = new MutationObserver(sheetLockSync);
     els.forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['class'] }));
@@ -24833,7 +25564,7 @@ function eraWorks(entries, spans, i){
 }
 function openEraWork(aid, wi){
   const a = artistById(aid); if(!a) return;
-  openViewer(displayWorks(a), wi, aid);
+  openWorksViewer(a, displayWorks(a)[wi]);
 }
 function openEra(i){
   eraCtx = { ds: DS, region: tlRegion, idx: i };
@@ -27095,7 +27826,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest('#intvreader')) return; /* v5.57.0: the interview reader is a modal overlay — the guide panel's treatment */
     if(e.target && e.target.closest && e.target.closest('#portraitbox')) return; /* v5.58.1: the portrait lightbox is a modal overlay — the interview reader's treatment */
-    if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
+    if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet, #modelsheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
     if(e.target && e.target.closest && e.target.closest('.charmsecrow')) return; /* v5.82.36: the 人間的魅力 section pill row is a native scroller too (the guide's .gsecrow, transplanted) — drags on it scroll the row and never arm the swipe-back (the .dtabs treatment). Inside the guide panel this never mattered; the panel itself is excluded above. */
@@ -27231,7 +27962,7 @@ function applyDeepLink(){
   if(dl.w){
     const ws = displayWorks(a);
     const idx = ws.findIndex(w => w && String(w.file || '') === String(dl.w));
-    if(idx >= 0) openViewer(ws, idx, a.id);
+    if(idx >= 0) openWorksViewer(a, ws[idx]);
   }
 }
 window.addEventListener('hashchange', ()=>{
@@ -27240,7 +27971,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.38';
+const APP_VERSION = '5.82.47';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */

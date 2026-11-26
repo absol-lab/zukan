@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.46">
+<meta name="app-version" content="5.82.47">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11335,6 +11335,35 @@ h += packGalleryHTML(dg.groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
 });
 return h;
 }
+/* v5.82.47 (his recording, 2026-11-27): the works viewer
+   pages the GRID's display order — in 年代別 that is the
+   decade groups flattened top to bottom, in 登録順 the
+   (possibly reversed) display list. Every works-viewer
+   entry point resolves its target work through these, so
+   the counter and the paging always match what the grid
+   showed. (Before, the viewer paged displayWorks order —
+   the flat data order — so in 年代別 a 1985 work opened as
+   101/101 and 次 jumped to 1953.) */
+function worksViewerList(a){
+  const ws = displayWorks(a);
+  if(workSortMode() !== 'decades' || ws.length < 2) return ws;
+  const dg = decadeGroupsOf(ws, workSortDir());
+  const out = [];
+  dg.keys.forEach(k=> dg.groups.get(k).forEach(ix=> out.push(ws[ix])));
+  return out;
+}
+function openWorksViewer(a, work){
+  if(!a) return;
+  const vl = worksViewerList(a);
+  let ix = work? vl.indexOf(work): 0;
+  if(ix < 0) ix = 0;
+  openViewer(vl, ix, a.id);
+}
+function openWorksViewerAt(aid, dispIdx){
+  const a = artistById(aid); if(!a) return;
+  openWorksViewer(a, displayWorks(a)[dispIdx]);
+}
+
 /* v30.6: the artist's drawings （ドローイング) — a list SEPARATE
    from works, in registration order (no sort controls; the order
    is the curated one, like works' 登録順）. */
@@ -14003,7 +14032,7 @@ function detailScatterOpenViewer(){
       const t = String(p.work).trim();
       if(t) idx = ws.findIndex(w => (w.caption || '').indexOf(t) >= 0);
     }
-    if(idx >= 0){ openViewer(ws, idx, a.id); return; }
+    if(idx >= 0){ openWorksViewer(a, ws[idx]); return; }
     const cap = [p.work, p.year? p.year + '年': '', [p.house, bpFmtPrice(p)].filter(x => x !== '' && x != null).join(' ・ ')].filter(Boolean).join('　');
     viewerKindNext = 'prices';
     openViewer([{ img: p.img, caption: cap }], 0, a.id);
@@ -17255,7 +17284,7 @@ function chronicleHTML(a, ch, ws){
       const thumbs = [];
       per.works.forEach(w=>{
         const idx = chWorkIdx(ws, w.title, w.year);
-        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+idx+', \''+escA(a.id)+'\')">'+imgHTML(work, IMG_SIZE.thumb)+hiresDotHTML(work)+'</button>'); }
+        if(idx>=0){ const work = ws[idx]; bioStripWiring.push(work); thumbs.push('<button class="biothumb" aria-label="'+escA(work.caption||'')+'" onclick="openWorksViewerAt(\''+escA(a.id)+'\', '+idx+')">'+imgHTML(work, IMG_SIZE.thumb)+hiresDotHTML(work)+'</button>'); }
         else thumbs.push('<span class="chsym">《'+esc(w.title)+'》（'+w.year+'年）</span>');
       });
       h += '<div class="chworks"><div class="chwlabel">正本の代表作品</div><div class="biothumbs">'+thumbs.join('')+'</div></div>';
@@ -17583,7 +17612,7 @@ t = t.replace(/《([^》]+)》/g, (m, inner)=>{
 const idx = linkCtx.map[inner.trim()];
 if(idx == null) return m;
 const n = linkSubs.length;
-linkSubs.push('<button class="worklink" onclick="openViewer(displayWorks(artistById(\''+escA(linkCtx.id)+'\')), '+idx+', \''+escA(linkCtx.id)+'\')">《'+esc(inner)+'》</button>');
+linkSubs.push('<button class="worklink" onclick="openWorksViewerAt(\''+escA(linkCtx.id)+'\', '+idx+')">《'+esc(inner)+'》</button>');
 return ''+n+'';
 });
 if(!linkSubs.length) linkSubs = null;
@@ -17664,7 +17693,7 @@ function bioWorksStrip(a, ws){
   yrs.forEach(y=>{
     const age = (birth && +y >= birth)? ' '+(+y - birth)+'歳': '';
     h += '<div class="biowrap"><div class="bioyear">'+y+'年'+age+'</div><div class="biothumbs">'
-      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openViewer(displayWorks(artistById(\''+escA(a.id)+'\')), '+d.i+', \''+escA(a.id)+'\')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
+      + by[y].map(d=>{ bioStripWiring.push(d.w); return '<button class="biothumb" aria-label="'+escA(d.w.caption || '')+'" onclick="openWorksViewerAt(\''+escA(a.id)+'\', '+d.i+')">'+imgHTML(d.w, IMG_SIZE.thumb)+hiresDotHTML(d.w)+'</button>'; }).join('')
       + '</div></div>';
   });
   return h;
@@ -17956,7 +17985,7 @@ if(seriesKey && ph.closest('[data-dtab="works"]')){
 const fw = ws.filter(x=> x && x.series === seriesKey);
 const fi = fw.indexOf(ws[+ph.dataset.workidx]);
 openViewer(fw, fi < 0? 0: fi, a.id);
-} else openViewer(ws, +ph.dataset.workidx, a.id);
+} else openWorksViewer(a, ws[+ph.dataset.workidx]);
 });
 const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
 /* v27.9 (§6.4-1 of the return-jump diagnosis): a tile that is
@@ -18635,7 +18664,7 @@ else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj);
 }
 });
 v.querySelectorAll('[data-procwork]').forEach(b=>{
-b.addEventListener('click', (e)=>{ e.stopPropagation(); setTab('works'); openViewer(ws, +b.dataset.procwork, a.id); });
+b.addEventListener('click', (e)=>{ e.stopPropagation(); setTab('works'); openWorksViewer(a, ws[+b.dataset.procwork]); });
 });
 const pph = v.querySelector('[data-portrait]');
 if(pph){
@@ -18793,7 +18822,7 @@ const w = intvExWiring; if(!w) return;
 const a = artistById(state.detailId);
 if(w.isWork && a) captureIntvReturn();
 closeIntvReader();
-if(w.isWork){ if(a) openViewer(worksOf(a), 0, a.id); }
+if(w.isWork){ if(a) openWorksViewer(a, worksOf(a)[0]); }
 else if(w.venue) openMuseum(w.venue);
 }
 /* v5.81.3: work titles inside the interview reader (his ask,
@@ -18895,7 +18924,7 @@ function intvWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
 captureIntvReturn();
 closeIntvReader();
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 /* v5.82.11: book digest reader. The digest CONTENT lives only
    in a Drive-side file, book-digests.json — never in this repo,
@@ -19094,7 +19123,7 @@ const bd = $('drbody');
 viewerReturn = { kind: 'digest', scroll: bd? bd.scrollTop: 0 };
 (digestReader.scrolls = digestReader.scrolls || {})[digestReader.screen] = bd? bd.scrollTop: 0;
 closeDigestReader();
-openViewer(ws, idx, a.id);
+openWorksViewer(a, ws[idx]);
 }
 /* v5.81.4: the v5.81.3 rule extended to the 発言 quotes (his
    approval, 2026-11-21 08:27 — he tapped the option 「発言の
@@ -19142,7 +19171,7 @@ return h;
 function quoteWorkTap(idx){
 const a = artistById(state.detailId); if(!a) return;
 viewerReturn = { kind: 'page', y: window.scrollY };
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 function openIntvReader(idx){
 const a = artistById(state.detailId); if(!a) return;
@@ -19247,7 +19276,9 @@ const cap = $('pbcap'); if(cap) cap.textContent = '';
    The caption is built through the placeholder convention, so
    no caption text can inject markup. */
 function viewerCaptionHTML(){
-const capEl = $('vcap'); if(!capEl) return;
+let capEl = $('vcap'); if(!capEl) return;
+/* v5.82.47: swap in a fresh caption node each render — mutating the old node's innerHTML left its text layer alive for the compositor to blend with the new caption during the turn swap on his iPhone (the doubled-caption frames in his 2026-11-27 recording). A fresh node has no old layer. */
+{ const fresh = capEl.cloneNode(false); capEl.replaceWith(fresh); capEl = fresh; }
 const w = viewerWorks[viewerIdx]; const cap = (w && w.caption) || '';
 const a = artistById(viewerArtistId);
 if(!a || (cap.indexOf('《') < 0 && cap.indexOf('『') < 0)){ capEl.textContent = cap; return; }
@@ -19287,7 +19318,7 @@ capEl.innerHTML = h;
 function viewerCapWorkTap(idx){
 const a = artistById(viewerArtistId); if(!a) return;
 viewerBack = { works: viewerWorks, idx: viewerIdx, kind: viewerKind, artistId: viewerArtistId };
-openViewer(displayWorks(a), idx, a.id);
+openWorksViewer(a, displayWorks(a)[idx]);
 }
 function viewerGoBack(){
 const b = viewerBack; if(!b) return;
@@ -19386,7 +19417,7 @@ a.thumb_pinned_at = now; a.updated_at = now;
 saveDB(); scheduleSync();
 /* v2.64: stay in the current display order; the pinned work keeps
    its sorted position, only its canonical-first status changed. */
-viewerWorks = displayWorks(a);
+viewerWorks = worksViewerList(a); /* v5.82.47: keep the viewer's display order (was displayWorks) */
 const ni = viewerWorks.findIndex(x=> workKeysOf(x).some(k=> keys.indexOf(k)>=0));
 viewerIdx = ni>=0? ni: 0;
 updateVThumbBtn();
@@ -21547,9 +21578,9 @@ const go = ()=>{
 const a = artistById(e.artist.id);
 if(!a){ toast('この端末にはまだ届いていません'); return; }
 const ws = displayWorks(a);
-let ix = ws.indexOf(e.work);
-if(ix < 0) ix = Math.min(e.wi, ws.length - 1);
-if(ix >= 0) openViewer(ws, ix, a.id);
+let mw = e.work;
+if(ws.indexOf(mw) < 0) mw = ws[Math.min(e.wi, ws.length - 1)];
+if(mw) openWorksViewer(a, mw);
 };
 if(e.kind !== DS) switchDataset(e.kind);
 go();
@@ -25532,7 +25563,7 @@ function eraWorks(entries, spans, i){
 }
 function openEraWork(aid, wi){
   const a = artistById(aid); if(!a) return;
-  openViewer(displayWorks(a), wi, aid);
+  openWorksViewer(a, displayWorks(a)[wi]);
 }
 function openEra(i){
   eraCtx = { ds: DS, region: tlRegion, idx: i };
@@ -27929,7 +27960,7 @@ function applyDeepLink(){
   if(dl.w){
     const ws = displayWorks(a);
     const idx = ws.findIndex(w => w && String(w.file || '') === String(dl.w));
-    if(idx >= 0) openViewer(ws, idx, a.id);
+    if(idx >= 0) openWorksViewer(a, ws[idx]);
   }
 }
 window.addEventListener('hashchange', ()=>{
@@ -27938,7 +27969,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.46';
+const APP_VERSION = '5.82.47';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
