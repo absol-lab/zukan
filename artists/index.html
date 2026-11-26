@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.45">
+<meta name="app-version" content="5.82.46">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2466,6 +2466,7 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 .vchip{flex:none; font-size:10.5px; border:1px solid var(--line); border-radius:999px; padding:1px 7px; color:var(--muted); margin-top:3px; white-space:nowrap;}
 .vchip.v-fact{color:var(--gold, #c9a227); border-color:var(--gold, #c9a227);}
 .vchip.v-myth{color:#c0564a; border-color:#c0564a;}
+.drillgroup{font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:.12em; color:var(--gold, #c9a227); margin:18px 4px 2px;}
 .quotescene{font-size:12px; line-height:1.55; color:var(--muted); margin-top:5px;}
 /* v5.82.42: ウィット tab — the benign-violation figure and the
    decomposed-type cards. Same panel language as the quote cards. */
@@ -23277,6 +23278,96 @@ const CHARM_LIE = [
     '五、詰められた時。守らない、説明しない。笑いでかわすか、害のない小さな穴だけを認める。部分的な本当は、全面否定より崩れない。',
     'この型の元祖とされるフランク・アバグネイルについては、正直な但し書きが要る。自伝と映画の物語は、記録と照らすと大半に裏付けがない。最も派手な詐欺を働いたとされる時期、彼は州の刑務所に収監されていたという記録が残っている（ローガンの調査『The Greatest Hoax on Earth』、2020年）。記録で確かめられるのは、少額の小切手詐欺と、釈放後の短期間の航空会社乗務員へのなりすましまでだ。「嘘についての嘘」が一番大きい、というのがこの型の落ちになる。',
     '転用先は正当な舞台にある。画廊の受付、展示のオープニング——「その場にいるのが当然の人間」として部屋に入る技術は、同じ部品でできている。物の一致、最初の数分の語彙、質問で相手に運ばせる、長居しない。道具は同じで、目的と線引きが違うだけだ。'
+  ]},
+  /* Expansion 11 (2026-11-27 00:47): the practice layer. Drills
+     staged low-risk first, on the baito floor (his framing:
+     バイト先は道場 — strangers, short interactions, low stakes).
+     Mapped to tonight's 4-part decomposition （在庫／平常運転／
+     設計／かわし） plus the Catch Me-type drills continuing from
+     身分を演じる. Each drill: やること / 場 / 成功の形 / 落とし穴.
+     The 大学生-lie failure case is NOT duplicated — its analysis
+     lives in 身分を演じる （自分のケース）; the drills reference
+     its three death causes （物の証拠の不一致／出口なし／相手が
+     本物）. Guardrails stay visible: 短く、安くしない、加害の線を
+     越えない — harmless social territory only. */
+  { h:'嘘をつく練習', paras:[
+    '練習の場はバイト先の居酒屋だ。相手は他人で、会話は短く、失敗しても明日には消える。道場として条件が揃っている。段階は三つに分ける。第一段階は、一行で済む社交の嘘とかわし。第二段階は、出口まで設計した短い作り話。第三段階は、「身分を演じる」の持続する演技だ。低い段から登る。',
+    '守る線は練習でも同じ。短く置くこと。自分を安くしないこと。加害の線を越えないこと。練習の範囲は、無害な社交の中だけに限る。'
+  ], drills:[
+    { g:'在庫を使う練習', n:'在庫から一行返す', lines:[
+      'やること：バイト中の定番の質問（混み具合、おすすめ、天気）に、準備しておいた一行で即座に返す',
+      '場：接客中の雑談全般',
+      '成功の形：間が空かず、声の調子が平常のまま会話が流れる',
+      '落とし穴：在庫にない質問で固まること。固まったら、かわしの在庫（ドリル7・8）へ逃がす'
+    ]},
+    { g:'在庫を使う練習', n:'感想の定型を持つ', lines:[
+      'やること：感想を求められたら、全開の称賛ではなく、具体を一つだけ拾って短く置く',
+      '場：賄いや試食の感想、客の持ち物への反応を求められた時',
+      '成功の形：相手が納得して次へ進む。自分の言葉の値段も下がらない',
+      '落とし穴：思ってもいない称賛は「自分を安くする嘘」。使う嘘の側には入らない'
+    ]},
+    { g:'平常運転の練習', n:'平常のまま置く', lines:[
+      'やること：ずらす点を一つだけ決めて、声・速度・視線を平常のまま答える。嘘の瞬間だけ何も変えない',
+      '場：年齢、学校、シフトの入り具合など、軽い個人情報を聞かれた時',
+      '成功の形：相手が何も引っかからず、会話がそのまま流れる',
+      '落とし穴：嘘の瞬間だけ丁寧になる、説明が増える。漏れるのは内容ではなく「変化」の方'
+    ]},
+    { g:'平常運転の練習', n:'一呼吸の遅延', lines:[
+      'やること：意表を突く質問が来たら、相槌か相手の言葉の復唱で一拍作ってから答える',
+      '場：想定外の質問が飛んできた時全般',
+      '成功の形：顔に反応が出る前に、言葉の管理下に戻れる',
+      '落とし穴：黙り込むと逆に目立つ。一拍は「間」ではなく「受け」の形にする'
+    ]},
+    { g:'設計の練習', n:'一点だけずらす', lines:[
+      'やること：骨格は全部本当のまま、ずらすのは一点だけにする。何をずらしたか自分で覚えていられる大きさに限る',
+      '場：予定や経歴の軽い話題',
+      '成功の形：話が短く終わり、後日どこからも食い違いが出ない',
+      '落とし穴：楽しくなって作り話を増やすこと。作る割合が増えるほど維持費が上がる'
+    ]},
+    { g:'設計の練習', n:'出口つきの作り話', lines:[
+      'やること：短い理由と出口をセットで置く（「明日朝早いので」＋実際に席を立つ、作業に戻る）',
+      '場：誘いを断る時、その場を離れたい時',
+      '成功の形：相手が引き留めず、自分もその話に戻らない',
+      '落とし穴：出口なしで話を続けること。「身分を演じる」に置いた自分のケースの、死因の一つがこれだった'
+    ]},
+    { g:'かわし・誤魔化しの練習', n:'質問で返す', lines:[
+      'やること：答えたくないことは答えず、相手への質問に置き換える。質問は、主張と違って間違わない',
+      '場：プライバシーに踏み込まれた時、知らないことを聞かれた時',
+      '成功の形：話題の主語が相手に移り、相手が語り始める',
+      '落とし穴：質問を重ねすぎると尋問になる。一つ返したら、相手に語らせる'
+    ]},
+    { g:'かわし・誤魔化しの練習', n:'笑いに溶かす', lines:[
+      'やること：詰められたら守らず説明せず、自分の穴の方を先に笑いに変える',
+      '場：ほころびが見えた時、追及されそうになった時',
+      '成功の形：場が笑いに移って、追及そのものが消える',
+      '落とし穴：自虐で自分を安くしない。笑う対象は状況であって、自分の値段ではない'
+    ]},
+    { g:'身分を演じるの練習', n:'物の総ざらい', lines:[
+      'やること：シフト前に、名札・バッジ・持ち物・服装が、その日の自分の物語と全部一致しているか確認する',
+      '場：バイトに入る前、誰かと会う前',
+      '成功の形：目に見える矛盾がゼロの状態で場に入れる',
+      '落とし穴：不一致が一つあるだけで全部崩れる。自分のケースの死因の一つ目'
+    ]},
+    { g:'身分を演じるの練習', n:'最初の3分の語彙', lines:[
+      'やること：相手の世界の語彙と儀礼を、浅く正確に用意しておき、入りの3分を乗り切る',
+      '場：常連客、業者、その世界の住人との会話の入り口',
+      '成功の形：3分を過ぎる頃、相手が自分の世界の説明役に回ってくれる',
+      '落とし穴：深さを試される前に、時間を区切って去ること（次のドリル）と必ずセットにする'
+    ]},
+    { g:'身分を演じるの練習', n:'質問で運ばせる', lines:[
+      'やること：主張せず、質問だけで会話を前に進める。相手に自分の世界を語らせる',
+      '場：知らない話題の会話全般、初対面の場',
+      '成功の形：自分はほとんど語っていないのに、会話が持続し、相手の満足度が高い',
+      '落とし穴：知ったかぶりの主張を一つ入れると、崩れるのはそこから'
+    ]},
+    { g:'身分を演じるの練習', n:'時間を区切って去る', lines:[
+      'やること：入る前に出口（次の作業、次の客、決めた時間）を用意し、その時点で実際に去る',
+      '場：長くなりそうな会話全般',
+      '成功の形：一番いい印象の所で会話が終わる',
+      '落とし穴：楽しくて長居すること。露出が増えるほどほころびが出る。自分のケースの死因の二つ目'
+    ]}
+  ], tail:[
+    '失敗した時は、振り返りの物差しが決まっている。「身分を演じる」に置いた自分のケースの三つの死因——物の証拠の不一致、出口なし、相手が本物——のどれだったか。失敗を分類できれば、次に直すドリルは一つに絞れる。'
   ]}
 ];
 const LIE_VERDICTS = { fact:'研究で支持', exagg:'一部だけ正しい', disputed:'諸説あり', myth:'俗説' };
@@ -23296,6 +23387,14 @@ function charmLieSecHTML(sec){
   if(sec.cues){
     html += sec.cues.map(c=> '<div class="stockcard"><div class="stockhead"><span class="stockname">' + esc(c.n) + '</span><span class="vchip v-' + c.v + '">' + LIE_VERDICTS[c.v] + '</span></div><div class="stocktxt">' + esc(c.d) + '</div></div>').join('');
   }
+  if(sec.drills){
+    let g = '';
+    sec.drills.forEach(d=>{
+      if(d.g !== g){ g = d.g; html += '<h4 class="drillgroup">' + esc(g) + '</h4>'; }
+      html += '<div class="witcard"><div class="witname">' + esc(d.n) + '</div>' + d.lines.map(l=> '<div class="witline">' + esc(l) + '</div>').join('') + '</div>';
+    });
+  }
+  (sec.tail || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
   return html;
 }
 function renderCharmLie(){
@@ -27839,7 +27938,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.45';
+const APP_VERSION = '5.82.46';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
