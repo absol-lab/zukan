@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.42">
+<meta name="app-version" content="5.82.43">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -22879,6 +22879,7 @@ const CHARM_SECTIONS = [
     hasData: ()=> CHARM_QUOTES.length > 0,
     render: renderCharmHumor },
   { key:'wit', label:'ウィット', hasData: ()=> true, render: renderCharmWit },
+  { key:'culture', label:'教養', hasData: ()=> true, render: renderCharmCulture },
   { key:'aura', label:'オーラを稼ぐ', hasData: ()=> true, render: renderCharmAura },
   { key:'sociality', label:'社会性', hasData: ()=> true, render: renderCharmSociality },
   { key:'selfproduce', label:'セルフプロデュース', hasData: ()=> true, render: renderCharmSelfProduce },
@@ -23378,6 +23379,52 @@ function renderCharmWit(){
     { label:'俺のユーモアbot', build: witSecBot }
   ];
   return { html: charmSubNavHTML('wit', items), wiring: [] };
+}
+/* v5.82.43: 教養 tab (his call, 2026-11-27). The common-ground
+   knowledge base that conversation and wit stand on — the shared
+   references a remark can lean on. Source: adult-sociality-
+   material.md 「会話のための共通認識」 (2026-11-18): five layers,
+   depth standard 「受けられる水準」 — hear a name, one line of
+   context comes to mind, and you can return one question so the
+   conversation doesn't stop. Layers are framed as what to be
+   able to RECEIVE, not as an encyclopedia dump. Concrete stock
+   exists in the source only for 国民的コンテンツ (HUNTER×HUNTER)
+   and 自分の世界; the other layers are framework-only in the
+   source and are presented as frameworks. */
+const CHARM_CULTURE = [
+  { h:'受けられる水準', paras:[
+    '会話は共通認識の上でしか速く進まない。相手が前提として置いている名前（土地名、作品名、人物名）が分からないと、その場で会話が止まるか、説明役を相手に押し付けることになる。',
+    '必要な深さは「受けられる」水準。名前を聞いて一行分の文脈が浮かび、会話を止めずに一つ質問できる程度。専門的な深さが要るのは、自分の世界の分だけだ。',
+    '優先順位は、自分の出る場面の頻度で決める。君の場合、先に来るのは東京の土地勘と、同世代の国民的コンテンツ。'
+  ]},
+  { h:'地理', paras:[
+    '東京の地名と、大まかな位置・路線。美術の世界の中心は東京で、地名は空気ごと伝わる略号として使われる——どの辺りにあって、どういう種類の場所かまでが、地名一つに乗って届く。',
+    '受けられる水準は、名前を聞いて「どの辺りで、どんな空気の場所か」が浮かぶこと。住所の暗記ではない。'
+  ]},
+  { h:'国民的コンテンツ', paras:[
+    '同世代以上がほぼ全員触れている漫画・ジブリ・有名なドラマなど。比喩と笑いの在庫として会話に頻出する。',
+    '具体的な欠けとして本人が挙げたのが HUNTER×HUNTER（2026-11-18）。漫画ネタでよく出てくるのに分からないのが悔しい、という実感から。よく出てくる理由は、念能力や「制約と誓約」のような概念が一般語彙化していること、ヒソカやメルエムのような人物が人物評の比喩として使えること、作者の冨樫義博が他の作り手からも頻繁に参照されること。会話に頻出する要素は、念の基本、旅団（ヨークシン編）、キメラアント編に集中している。',
+    '埋め方は、漫画全38巻（2024年時点）を読むのが最速で、アニメより短い。ただし受験期の時間配分とは分けて考える。',
+    'なお、漫画の共通認識が全面欠けなのではない。ジョジョは深く知っている。特定の国民作が抜けている、という形の欠けだ。'
+  ]},
+  { h:'軽い時事・季節', paras:[
+    '大きなスポーツ大会、大きなニュース。季節の行事と同じく、初対面の会話の入口になる軽い共通項。',
+    '受けられる水準は、話題に出た時に「あの件か」と分かり、一つ返せること。中身の専門家になる必要はない。'
+  ]},
+  { h:'社会・会社の仕組み', paras:[
+    '年度、会社、社会の基本語彙。大人の社会の仕組みの常識。',
+    'ビジネスマナーの側と接続する——サラリーマンにならない分、マナーも仕組みも自分で選んで身に付ける側の話。'
+  ]},
+  { h:'自分の世界', paras:[
+    '美術界の美術館・画廊街・作家名。ここは君の強みで、既に深い。',
+    '他の層と違い、ここだけは受け手ではなく送り手になれる。専門的な深さが要るのも、この層だけだ。'
+  ]}
+];
+function renderCharmCulture(){
+  const items = CHARM_CULTURE.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> '<h3 class="subhead">' + esc(sec.h) + '</h3>' + sec.paras.map(p=> '<p class="bodytext bizp">' + esc(p) + '</p>').join('') }));
+  let html = charmSubNavHTML('culture', items);
+  html += '<button class="charmxref" onclick="setCharmTab(\'sociality\')">社会の仕組みの作法は「社会性」タブで読む<span class="charmxrefgo">「社会性」タブへ ›</span></button>';
+  return { html, wiring: [] };
 }
 function renderHumor(){
   const v = $('viewHumor'); if(!v) return;
@@ -27636,7 +27683,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.42';
+const APP_VERSION = '5.82.43';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
