@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.22">
+<meta name="app-version" content="5.82.23">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2284,6 +2284,21 @@ button.srow:active{opacity:.6;}
 .pillrow .ic svg{width:25px; height:25px;}
 .srow .lb, .pillrow .lb{flex:1; font-size:calc(var(--fs) * 1.02); min-width:0;}
 .srow .val{color:var(--muted); font-size:calc(var(--fs) * .95);}
+/* v5.82.23: money panel compact chips + legend */
+.moneycard{padding:10px 14px 12px; margin-bottom:10px;}
+.moneygrid{display:grid; grid-template-columns:1fr 1fr; column-gap:16px;}
+.mcell{display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:5px 1px; border-bottom:1px solid var(--line); font-size:12.5px; line-height:1.4;}
+.moneygrid .mcell:nth-last-child(-n+2){border-bottom:none;}
+.mcell .my{color:var(--muted); flex:none;}
+.mcell .mv{font-weight:600; white-space:nowrap;}
+.munit{float:right; font-size:11px; font-weight:400; color:var(--muted); letter-spacing:0;}
+.msub{font-size:11.5px; font-weight:700; color:var(--text); margin:10px 0 2px; letter-spacing:.04em;}
+.msub:first-child{margin-top:0;}
+.moneylegend{display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; margin:0 2px 8px;}
+.mlg{display:flex; gap:7px; align-items:flex-start; font-size:11.5px; line-height:1.45;}
+.msw{flex:none; width:16px; height:3px; border-radius:2px; margin-top:6px;}
+.mln{flex:none; font-weight:700;}
+.mlv{color:var(--muted);}
 .srow .chev, .pillrow .chev{color:var(--muted); font-size:22px; line-height:1;}
 .srow.danger .lb{color:var(--danger);}
 #driveval{color:var(--muted); font-size:calc(var(--fs) * .95);}
@@ -26747,7 +26762,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.22';
+const APP_VERSION = '5.82.23';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -27415,34 +27430,50 @@ function renderSettingsPanel(){
     wireListImages(p);
   }
   else if(settingsPanel==='money'){
-    /* v5.82.20: お金の価値 — purchasing-power conversion table.
-       Each row reads 「その年の1単位 ＝ 今の約◯円」 at 2025
-       prices, from the official index named under each block;
-       yen conversion at Nov 2026 rates ($1=¥159, €1=¥175,
-       £1=¥209). Static data — revisits yearly at most. */
-    const mrow = (y, v)=> '<div class="srow" style="cursor:default"><span class="lb">'+y+'</span><span class="val">'+v+'</span></div>';
-    const mrows = (unit, pairs)=> pairs.map(r=> mrow(r[0], unit+' ＝ '+r[1])).join('');
-    const mblock = (title, rowsHTML, note)=> '<div class="dmlabel">'+title+'</div><div class="groupcard" style="margin-bottom:8px">'+rowsHTML+'</div>'+(note? '<div class="note">'+note+'</div>': '');
-    const msub = (t)=> '<div class="setlabel" style="margin:14px 0 0">'+t+'</div>';
-    let inner = '<div class="setbox"><div class="setlabel">読み方</div>'
-      + '<div class="small">表の数字は「その年の1単位が、今の何円にあたるか」。出てきた金額に、その年代の行の数字を掛けると今の感覚に直せる。例：1913年に240ドルで売れた絵なら、ドルの1910年の行（約5,400円）×240で、だいたい130万円。</div>'
-      + '<div class="small" style="margin-top:8px">「今」は2025年の購買力。円への換算は2026年11月のレート（1ドル＝159円、1ユーロ＝175円、1ポンド＝209円）。</div></div>';
-    inner += mblock('米ドル（アメリカ）',
-      mrows('1ドル', [['1900年','約6,100円'],['1910年','約5,400円'],['1920年','約2,600円'],['1930年','約3,100円'],['1940年','約3,700円'],['1950年','約2,100円'],['1960年','約1,700円'],['1970年','約1,300円'],['1980年','約620円'],['1990年','約390円'],['2000年','約300円'],['2010年','約230円'],['2020年','約200円'],['2025年','約160円']]),
+    /* v5.82.23: お金の価値 — compact redesign (his 2026-11-26
+       device report on .20: 56 full-height srow rows scrolled
+       forever). Figure first: one log-scale SVG chart of
+       「その年の1単位 ＝ 今の何円」 1900→2025 (米ドル／ポンド／
+       旧フラン／日本円), end values in the legend; the same
+       numbers follow as tight 2-column chips (unit stated once
+       per block). Values UNCHANGED from v5.82.20 — official
+       indices (BLS CPI-U / INSEE / ONS / BOJ+総務省), yen at
+       Nov 2026 rates ($1=¥159, €1=¥175, £1=¥209). Chart plot:
+       x 46..352 = 1900..2025, y = log10 grid 1..1万円+. */
+    const mcell = (y, v)=> '<div class="mcell"><span class="my">'+y+'</span><span class="mv">'+v+'</span></div>';
+    const mcells = pairs=> '<div class="moneygrid">'+pairs.map(r=> mcell(r[0], r[1])).join('')+'</div>';
+    const mblock = (title, unit, bodyHTML, note)=> '<div class="dmlabel">'+title+(unit? '<span class="munit">'+unit+'</span>': '')+'</div><div class="groupcard moneycard">'+bodyHTML+'</div>'+(note? '<div class="note">'+note+'</div>': '');
+    const msub = (t, unit)=> '<div class="msub">'+t+'<span class="munit">'+unit+'</span></div>';
+    const mchart = '<svg viewBox="0 0 360 236" role="img" aria-label="お金の価値の推移グラフ"><g stroke="var(--line)" stroke-width="1"><line x1="46" y1="49.2" x2="352" y2="49.2"/><line x1="46" y1="87.9" x2="352" y2="87.9"/><line x1="46" y1="126.6" x2="352" y2="126.6"/><line x1="46" y1="165.3" x2="352" y2="165.3"/></g><line x1="46" y1="204" x2="352" y2="204" stroke="var(--lineStrong)" stroke-width="1"/><g font-size="9.5" fill="var(--muted)" text-anchor="end"><text x="42" y="52.7">1万円</text><text x="42" y="91.4">1,000円</text><text x="42" y="130.1">100円</text><text x="42" y="168.8">10円</text><text x="42" y="207.5">1円</text></g><polyline points="46.0,29.2 70.5,29.7 95.0,46.2 119.4,39.3 143.9,42.4 168.4,50.6 192.9,57.3 217.4,63.8 241.8,84.8 266.3,96.2 290.8,101.3 315.3,106.0 339.8,110.6 352.0,114.1" fill="none" stroke="#e2704e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><polyline points="46.0,57.5 70.5,59.6 95.0,71.9 119.4,68.9 143.9,65.9 168.4,75.4 192.9,79.0 217.4,83.5 241.8,95.9 266.3,103.7 290.8,108.1 315.3,112.6 339.8,115.0 352.0,118.7" fill="none" stroke="#7fa8d9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><polyline points="46.0,89.9 70.5,89.9 95.0,114.1 119.4,123.5 143.9,129.1 168.4,174.2" fill="none" stroke="#8fce7a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><polyline points="46.0,77.1 70.5,80.0 95.0,98.3 119.4,87.9 143.9,97.7 168.4,166.0 192.9,172.8 217.4,182.5 241.8,197.2 266.3,199.6 290.8,200.9 315.3,200.9 339.8,202.4 352.0,204.0" fill="none" stroke="#e8b84b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="352" cy="114.1" r="2.6" fill="#e2704e"/><circle cx="352" cy="118.7" r="2.6" fill="#7fa8d9"/><circle cx="168.4" cy="174.2" r="2.6" fill="#8fce7a"/><circle cx="352" cy="204" r="2.6" fill="#e8b84b"/><text x="248" y="148" font-size="9.5" fill="var(--muted)" text-anchor="middle">円とフランは戦後に急落</text><g font-size="9.5" fill="var(--muted)"><text x="46" y="220" text-anchor="middle">1900</text><text x="168.4" y="220" text-anchor="middle">1950</text><text x="290.8" y="220" text-anchor="middle">2000</text><text x="352" y="220" text-anchor="end">2025</text></g></svg>';
+    let inner = '<div class="bizfig">'
+      + '<div class="figcap"><b>1単位の価値の推移</b>（縦軸は対数。1目盛で10倍）</div>'
+      + '<div class="moneylegend">'
+      + '<div class="mlg"><span class="msw" style="background:#e2704e"></span><span class="mln">ポンド</span><span class="mlv">1900年 約33,000円<br>→ 2025年 約210円</span></div>'
+      + '<div class="mlg"><span class="msw" style="background:#7fa8d9"></span><span class="mln">米ドル</span><span class="mlv">1900年 約6,100円<br>→ 2025年 約160円</span></div>'
+      + '<div class="mlg"><span class="msw" style="background:#e8b84b"></span><span class="mln">日本円</span><span class="mlv">1900年 約1,900円<br>→ 2025年 1円</span></div>'
+      + '<div class="mlg"><span class="msw" style="background:#8fce7a"></span><span class="mln">旧フラン</span><span class="mlv">1900年 約890円<br>→ 1950年 約5.9円</span></div>'
+      + '</div>'
+      + '<div class="figsvg zoomable" onclick="openFigZoom(this)">'+mchart+'</div>'
+      + '<div class="figzoomhint">図はタップで拡大できます</div></div>';
+    inner += '<div class="setbox"><div class="setlabel">読み方</div>'
+      + '<div class="small">数字は「その年の1単位が今の何円か」。出てきた金額にその年代の数字を掛けると今の感覚に直せる。例：1913年に240ドルで売れた絵 → 1910年の行（約5,400円）×240 ≒ 130万円。</div>'
+      + '<div class="small" style="margin-top:6px">「今」は2025年の購買力。円への換算は2026年11月のレート（1ドル＝159円、1ユーロ＝175円、1ポンド＝209円）。</div></div>';
+    inner += mblock('米ドル（アメリカ）', '1ドル ＝',
+      mcells([['1900年','約6,100円'],['1910年','約5,400円'],['1920年','約2,600円'],['1930年','約3,100円'],['1940年','約3,700円'],['1950年','約2,100円'],['1960年','約1,700円'],['1970年','約1,300円'],['1980年','約620円'],['1990年','約390円'],['2000年','約300円'],['2010年','約230円'],['2020年','約200円'],['2025年','約160円']]),
       '出典：米労働統計局 消費者物価指数（CPI-U）。1900年と1910年は歴史統計の延長系列。');
-    inner += mblock('フランス フラン → ユーロ',
-      msub('旧フラン（1959年まで）')
-      + mrows('1フラン', [['1900年','約890円'],['1910年','約890円'],['1920年','約210円'],['1930年','約120円'],['1940年','約86円'],['1950年','約5.9円']])
-      + msub('新フラン（1960〜2001年）')
-      + mrows('1フラン', [['1960年','約340円'],['1970年','約230円'],['1980年','約88円'],['1990年','約48円'],['2000年','約40円']])
-      + msub('ユーロ（2002年〜）')
-      + mrows('1ユーロ', [['2010年','約220円'],['2020年','約200円'],['2025年','約175円']]),
+    inner += mblock('フランス フラン → ユーロ', '',
+      msub('旧フラン（1959年まで）', '1フラン ＝')
+      + mcells([['1900年','約890円'],['1910年','約890円'],['1920年','約210円'],['1930年','約120円'],['1940年','約86円'],['1950年','約5.9円']])
+      + msub('新フラン（1960〜2001年）', '1フラン ＝')
+      + mcells([['1960年','約340円'],['1970年','約230円'],['1980年','約88円'],['1990年','約48円'],['2000年','約40円']])
+      + msub('ユーロ（2002年〜）', '1ユーロ ＝')
+      + mcells([['2010年','約220円'],['2020年','約200円'],['2025年','約175円']]),
       '1960年に100旧フラン＝1新フランへ切替、2002年にユーロへ（1ユーロ＝6.55957フラン）。出典：INSEE（フランス国立統計局）の換算表。1900年は指数のある1901年で計算。');
-    inner += mblock('イギリス ポンド',
-      mrows('1ポンド', [['1900年','約33,000円'],['1910年','約32,000円'],['1920年','約12,000円'],['1930年','約18,000円'],['1940年','約15,000円'],['1950年','約9,200円'],['1960年','約6,200円'],['1970年','約4,200円'],['1980年','約1,200円'],['1990年','約610円'],['2000年','約450円'],['2010年','約340円'],['2020年','約260円'],['2025年','約210円']]),
+    inner += mblock('イギリス ポンド', '1ポンド ＝',
+      mcells([['1900年','約33,000円'],['1910年','約32,000円'],['1920年','約12,000円'],['1930年','約18,000円'],['1940年','約15,000円'],['1950年','約9,200円'],['1960年','約6,200円'],['1970年','約4,200円'],['1980年','約1,200円'],['1990年','約610円'],['2000年','約450円'],['2010年','約340円'],['2020年','約260円'],['2025年','約210円']]),
       '出典：英国統計局（ONS）の長期物価指数（イングランド銀行の物価計算機と同じ系列）。');
-    inner += mblock('日本円',
-      mrows('1円', [['1900年','約1,900円'],['1910年','約1,600円'],['1920年','約540円'],['1930年','約1,000円'],['1940年','約560円'],['1950年','約9.6円'],['1960年','約6.4円'],['1970年','約3.6円'],['1980年','約1.5円'],['1990年','約1.3円'],['2000年','約1.2円'],['2010年','約1.2円'],['2020年','約1.1円'],['2025年','1円']]),
+    inner += mblock('日本円', '1円 ＝',
+      mcells([['1900年','約1,900円'],['1910年','約1,600円'],['1920年','約540円'],['1930年','約1,000円'],['1940年','約560円'],['1950年','約9.6円'],['1960年','約6.4円'],['1970年','約3.6円'],['1980年','約1.5円'],['1990年','約1.3円'],['2000年','約1.2円'],['2010年','約1.2円'],['2020年','約1.1円'],['2025年','1円']]),
       '出典：日本銀行の換算表の方式。戦前は企業物価指数、1947年以降は総務省の消費者物価指数。1900年は1901年の指数で計算。戦前と戦後で測り方が違うため、1940年と1950年の間の落差には指数の切替も含まれる。');
     p.innerHTML = panelShell('お金の価値', inner);
   }
