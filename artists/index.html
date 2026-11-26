@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.33">
+<meta name="app-version" content="5.82.34">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -699,7 +699,7 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    the v2.23 seg-drag family (SEG_SEL) and the swipe-back
    arbitration excludes it by name, like #bizpillbar: a drag on
    the bar scrolls the bar, nothing else. */
-.dtabs{display:flex; flex-wrap:nowrap; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:auto;}
+.dtabs{display:flex; flex-wrap:nowrap; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:pan-x pan-y; /* v5.82.34: was auto, which re-enabled double-tap zoom on the tab strip */}
 .dtabs::-webkit-scrollbar{display:none;}
 /* v32.6.1 (fix 2): while more tabs wait off the right edge,
    the row's right end fades out — the scroll affordance the
@@ -12871,6 +12871,29 @@ window.addEventListener('resize', ()=>{ fitToolbarTop(); if(view==='timeline'){ 
    a backdrop-sampling layer is exactly what made the stale copy visible
    as a ghost instead of failing silently. */
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active press feedback on iOS */
+/* v5.82.34 (his report, 2026-11-26): double-tap zoom still fired
+   inside the app despite touch-action:manipulation on html,body
+   (v2.41) — touch-action is only intersected up to the first
+   scroll container, and iOS is loose about honoring it, so the
+   zoom kept slipping through inner scrollers. Belt and braces:
+   swallow the SECOND tap of a same-spot double tap (within
+   350ms and 40px) at document level — that second tap is the
+   gesture Safari zooms on. Taps on different spots, taps in
+   form fields, and pinch zoom are all untouched. */
+let lastTapEnd = null;
+document.addEventListener('touchend', e=>{
+  const t = e.target;
+  if(t && t.closest && t.closest('input, textarea, select, [contenteditable]')){ lastTapEnd = null; return; }
+  const c = e.changedTouches && e.changedTouches[0];
+  if(!c) return;
+  const now = Date.now();
+  if(lastTapEnd && now - lastTapEnd.t < 350 && Math.hypot(c.clientX - lastTapEnd.x, c.clientY - lastTapEnd.y) < 40){
+    e.preventDefault();
+    lastTapEnd = null;
+    return;
+  }
+  lastTapEnd = { t: now, x: c.clientX, y: c.clientY };
+}, { passive:false });
 function updatePill(){
 refreshReqNotifBtn();
 refreshBizBtn(); refreshGuideBtn(); refreshTlBtn();
@@ -27088,7 +27111,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.33';
+const APP_VERSION = '5.82.34';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
