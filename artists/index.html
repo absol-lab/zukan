@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.12">
+<meta name="app-version" content="5.82.13">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18715,10 +18715,6 @@ h += d.flow.map(f=> '<div class="drflowbtn" role="button" tabindex="0" onclick="
 h += '</div>';
 }
 if(d.howto && d.howto.length){ h += '<h3 class="drsechead">読み方</h3>' + digestBlocksHTML(d.howto); }
-h += '<h3 class="drsechead">章の一覧</h3><div class="drflow">';
-h += (d.chapters || []).map(c=> '<div class="drchcard" role="button" tabindex="0" onclick="digestGo(\''+escA(c.id)+'\')"><span class="drflowmain"><span class="drflowtitle">'+digestTextHTML(c.title)+'</span>'+(c.desc? '<span class="drflownote" style="display:block">'+digestTextHTML(c.desc)+'</span>': '')+'</span><span class="drgo">›</span></div>').join('');
-if(d.treasure) h += '<div class="drchcard" role="button" tabindex="0" onclick="digestGo(\'treasure\')"><span class="drflowmain"><span class="drflowtitle">宝ログ</span><span class="drflownote" style="display:block">分類に収まらない拾い物、全'+((d.treasure.items || []).length)+'件・1件ずつカードで</span></span><span class="drgo">›</span></div>';
-h += '</div>';
 if(d.source_note) h += '<div class="drsrc">'+esc(d.source_note)+'</div>';
 } else if(digestReader.screen === 'treasure'){
 const tr = d.treasure || { items: [] };
@@ -26527,7 +26523,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.12';
+const APP_VERSION = '5.82.13';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
