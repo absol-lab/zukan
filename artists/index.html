@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.26">
+<meta name="app-version" content="5.82.27">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18265,24 +18265,31 @@ if(quotesHTML) interviewsHTML += collectBtnHTML(a, 'quotes') + quotesHTML;
    v5.69.0: this block no longer forms its own tab — it is
    appended to the 関係 panel at the pager assembly, with its
    rendering and links exactly as they were here. */
-let influencesHTML = '';
-if(inflArr.length){
-influencesHTML = '<h3 class="subhead">影響を受けた作家</h3>' + inflArr.map(inf=>{
-const target = (inf.id != null)? artistById(inf.id): null;
-const inner = '<span class="inflmain"><span class="inflname">'+esc(target? dispName(target): inf.name)+'</span>'+(inf.note? '<span class="inflnote">'+esc(inf.note)+'</span>': '')+'</span>';
-return target
-? '<button class="inflrow" onclick="openDetail(\''+escA(inf.id)+'\')">'+inner+'<span class="inflgo">›</span></button>'
-: '<div class="inflrow plain">'+inner+'</div>';
-}).join('');
-}
-/* v27.1: the derived reverse direction — every row resolves in
-   this dataset by construction, so every row navigates. */
-if(inflGiven.length){
-influencesHTML += '<h3 class="subhead">影響を与えた作家</h3>' + inflGiven.map(g=>{
-const inner = '<span class="inflmain"><span class="inflname">'+esc(g.name)+'</span>'+(g.note? '<span class="inflnote">'+esc(g.note)+'</span>': '')+'</span>';
-return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner+'<span class="inflgo">›</span></button>';
-}).join('');
-}
+/* v5.82.27: the 関係 tab's two influence sources merge into
+   ONE list per direction (his call, 2026-11-26 — the same pair
+   rendered twice: the RELS cards above, the influences list
+   below, and the card's note cut to the first sentence). The
+   union of both sources renders as relRowHTML cards; for a
+   pair present in both, the LONGER note wins (the RELS note is
+   often just the first sentence of the influences note —
+   Richter on Duchamp: 34 chars against the full 195). Pairs
+   only in influences join the cards. Influences entries that
+   resolve to no artist (id null / unknown) keep the plain row
+   form inside the same section — they exist only there. */
+const mergeInflInto = (rows, extra)=>{
+const byId = {};
+rows.forEach(r=>{ byId[String(r.id)] = r; });
+extra.forEach(e=>{
+if(e.id == null) return;
+const t = artistById(e.id); if(!t) return;
+const k = String(e.id), cur = byId[k];
+if(cur){ if((e.note || '').length > (cur.note || '').length) cur.note = e.note; }
+else { const row = { id: t.id, name: dispName(t), years: t.years? yearsDisplay(t): '', note: e.note || '', pfx: false }; rows.push(row); byId[k] = row; }
+});
+};
+mergeInflInto(relGroups.received, inflArr);
+mergeInflInto(relGroups.given, inflGiven);
+const unregInflHTML = inflArr.filter(inf=> inf.id == null || !artistById(inf.id)).map(inf=> '<div class="inflrow plain"><span class="inflmain"><span class="inflname">'+esc(inf.name)+'</span>'+(inf.note? '<span class="inflnote">'+esc(inf.note)+'</span>': '')+'</span></div>').join('');
 /* v32.2: the relations panel — subheads carry the kind (and,
    for 影響, the direction); ties and compared rows shown from
    the reverse side carry the name-prefixed note (see
@@ -18292,7 +18299,7 @@ return '<button class="inflrow" onclick="openDetail(\''+escA(g.id)+'\')">'+inner
    built just above) is appended to this panel at the pager
    assembly — one 関係 tab now carries both datasets. */
 let relationsHTML = '';
-if(relGroups.received.length) relationsHTML += '<h3 class="subhead">影響を受けた作家</h3>' + relGroups.received.map(r=>relRowHTML(r, false)).join('');
+if(relGroups.received.length || unregInflHTML) relationsHTML += '<h3 class="subhead">影響を受けた作家</h3>' + relGroups.received.map(r=>relRowHTML(r, false)).join('') + unregInflHTML;
 if(relGroups.given.length) relationsHTML += '<h3 class="subhead">影響を与えた作家</h3>' + relGroups.given.map(r=>relRowHTML(r, false)).join('');
 if(relGroups.ties.length) relationsHTML += '<h3 class="subhead">師弟・つながり</h3>' + relGroups.ties.map(r=>relRowHTML(r, true)).join('');
 if(relGroups.genealogy.length) relationsHTML += '<h3 class="subhead">同じ系譜の作家</h3>' + relGroups.genealogy.map(r=>relRowHTML(r, false)).join('');
@@ -18319,7 +18326,7 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+collectBtnHTML(a, 'works')+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+collectBtnHTML(a, 'drawings')+drawingsHTML+'</div>'
 +'<div class="dpage" data-dtab="process">'+collectBtnHTML(a, 'process')+processHTML+'</div>'
-+'<div class="dpage" data-dtab="relations">'+collectBtnHTML(a, 'relations')+relationsHTML+influencesHTML+'</div>'
++'<div class="dpage" data-dtab="relations">'+collectBtnHTML(a, 'relations')+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
 +'<div class="dpage" data-dtab="exhibitions">'+collectBtnHTML(a, 'exhibitions')+exhibitionsHTML+'</div>'
 +'<div class="dpage" data-dtab="prices">'+collectBtnHTML(a, 'prices')+pricesHTML+'</div>'
@@ -26818,7 +26825,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.26';
+const APP_VERSION = '5.82.27';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
