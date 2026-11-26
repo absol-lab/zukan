@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.13">
+<meta name="app-version" content="5.82.14">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -17859,7 +17859,15 @@ const booksArr = Array.isArray(a.books)? a.books: [];
 let booksHTML = '';
 if(!booksArr.length) booksHTML = '<div class="empty">作品集のデータはまだありません</div>';
 else{
-booksHTML = booksArr.map((b, bi)=>{
+/* v5.82.14 (his call, 2026-11-26): books with a readable digest
+   (この本を読む) lead the books tab. Display order only — bi
+   stays the original index everywhere it is used (data-bidx,
+   digestFor, openDigestReader). Stable for the rest; when the
+   digest fetch lands, the existing re-render hook re-sorts. */
+const bookOrder = booksArr.map((b, bi)=> bi);
+bookOrder.sort((x, y)=> (digestFor(a.id, y)? 1: 0) - (digestFor(a.id, x)? 1: 0));
+booksHTML = bookOrder.map(bi=>{
+const b = booksArr[bi];
 const price = (typeof b.price_jpy==='number')? '¥'+b.price_jpy.toLocaleString('ja-JP'): '価格未確認';
 const checked = b.price_checked_at? '<span class="small">（'+esc(b.price_checked_at)+' 時点の価格）</span>': '';
 return '<div class="bookrow"><div class="bookcover" data-bidx="'+bi+'">'+(b.img? imgHTML({ img: b.img, caption: b.title||'' }, IMG_SIZE.thumb): '<span class="imgholder"><span class="noimg">表紙</span></span>')+'</div>'+
@@ -26523,7 +26531,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.13';
+const APP_VERSION = '5.82.14';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
