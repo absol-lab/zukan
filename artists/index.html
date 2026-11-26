@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.23">
+<meta name="app-version" content="5.82.24">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2261,7 +2261,7 @@ input::placeholder, textarea::placeholder{color:var(--muted); opacity:1;}
 /* v5.82.22: the per-tab collect request — a calm pill button at
    the end of each tab page; the filed state is the same pill in
    muted outline, reading 回収中. */
-.collectreq{margin:30px 0 4px; text-align:center;}
+.collectreq{margin:10px 0 16px; text-align:center;}
 .collectbtn{background:none; border:1px solid var(--line); border-radius:999px; color:var(--text); font-size:13.5px; font-family:var(--sans); cursor:pointer; padding:11px 24px; min-height:44px;}
 .collectreq-filed{display:inline-block; color:var(--muted); font-size:12.5px; border:1px solid var(--line); border-radius:999px; padding:11px 24px;}
 @media (prefers-reduced-motion: reduce){
@@ -18236,9 +18236,10 @@ return '<button class="intvcard" onclick="openIntvReader('+ii+')">'
    same panel （本人の言葉, then 大事にしている思想 — stance
    and terms ride inside quotesHTML exactly as before).
    Nothing from either old tab is dropped. */
-if(intvArr.length) interviewsHTML += collectBtnHTML(a, 'interviews');
-if(quotesHTML) interviewsHTML = (interviewsHTML? interviewsHTML + quotesHTML: quotesHTML) + collectBtnHTML(a, 'quotes');
-if(!intvArr.length) interviewsHTML += collectBtnHTML(a, 'interviews');
+/* v5.82.24: the interviews button leads the panel (top, his
+   order 2026-11-26); the quotes button heads its own section. */
+interviewsHTML = collectBtnHTML(a, 'interviews') + interviewsHTML;
+if(quotesHTML) interviewsHTML += collectBtnHTML(a, 'quotes') + quotesHTML;
 /* v27.0: 影響 tab — the artists who shaped this one (data-side
    curated). A row whose id resolves in the current dataset
    navigates to that person's detail; an unregistered influence
@@ -18294,18 +18295,21 @@ if(a.evaluation && String(a.evaluation).trim()) evaluationHTML = proseHTML(a.eva
    one card per remark / episode, each with its source tag. */
 let humorHTML = '';
 if(humorArr.length) humorHTML = humorArr.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('');
+/* v5.82.24: each tab's 回収リクエスト button leads its panel
+   (very top, before the first content block — his order
+   2026-11-26: reachable without scrolling). One per tab. */
 html += '<div class="dpager" id="dpager">'
-+'<div class="dpage" data-dtab="works">'+worksHTML+collectBtnHTML(a, 'works')+'</div>'
-+'<div class="dpage" data-dtab="drawings">'+drawingsHTML+collectBtnHTML(a, 'drawings')+'</div>'
-+'<div class="dpage" data-dtab="process">'+processHTML+collectBtnHTML(a, 'process')+'</div>'
-+'<div class="dpage" data-dtab="relations">'+relationsHTML+influencesHTML+collectBtnHTML(a, 'relations')+'</div>'
++'<div class="dpage" data-dtab="works">'+collectBtnHTML(a, 'works')+worksHTML+'</div>'
++'<div class="dpage" data-dtab="drawings">'+collectBtnHTML(a, 'drawings')+drawingsHTML+'</div>'
++'<div class="dpage" data-dtab="process">'+collectBtnHTML(a, 'process')+processHTML+'</div>'
++'<div class="dpage" data-dtab="relations">'+collectBtnHTML(a, 'relations')+relationsHTML+influencesHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
-+'<div class="dpage" data-dtab="exhibitions">'+exhibitionsHTML+collectBtnHTML(a, 'exhibitions')+'</div>'
-+'<div class="dpage" data-dtab="prices">'+pricesHTML+collectBtnHTML(a, 'prices')+'</div>'
-+'<div class="dpage" data-dtab="evaluation">'+evaluationHTML+collectBtnHTML(a, 'evaluation')+'</div>'
-+'<div class="dpage" data-dtab="humor">'+humorHTML+collectBtnHTML(a, 'humor')+'</div>'
-+'<div class="dpage" data-dtab="bio">'+bioHTML+collectBtnHTML(a, 'bio')+'</div>'
-+'<div class="dpage" data-dtab="books">'+booksHTML+collectBtnHTML(a, 'books')+'</div>'
++'<div class="dpage" data-dtab="exhibitions">'+collectBtnHTML(a, 'exhibitions')+exhibitionsHTML+'</div>'
++'<div class="dpage" data-dtab="prices">'+collectBtnHTML(a, 'prices')+pricesHTML+'</div>'
++'<div class="dpage" data-dtab="evaluation">'+collectBtnHTML(a, 'evaluation')+evaluationHTML+'</div>'
++'<div class="dpage" data-dtab="humor">'+collectBtnHTML(a, 'humor')+humorHTML+'</div>'
++'<div class="dpage" data-dtab="bio">'+collectBtnHTML(a, 'bio')+bioHTML+'</div>'
++'<div class="dpage" data-dtab="books">'+collectBtnHTML(a, 'books')+booksHTML+'</div>'
 +'</div>';
 if(a.tags && a.tags.length) html += '<div class="tagline">'+a.tags.map(t=>'<span>'+esc(t)+'</span>').join('')+'</div>';
 /* v5.65.0: the deregistration request rides at the very bottom
@@ -26762,7 +26766,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.23';
+const APP_VERSION = '5.82.24';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
