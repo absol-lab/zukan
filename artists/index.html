@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.14">
+<meta name="app-version" content="5.82.15">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2377,6 +2377,17 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 /* hub button (item 2) */
 #navHub{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); flex:none;}
 #navHub svg{width:17px; height:17px;}
+/* v5.82.15: the humour button — same circular chrome as the hub
+   button, sitting immediately to its left in the header row
+   (his screenshot call, 2026-11-26: a ☺︎ smiley). Artists book
+   only; updateHeader hides it on the designers dataset, whose
+   records carry no humor field. */
+#navHumor{position:relative; display:inline-flex; align-items:center; justify-content:center; width:36px; height:33px; padding:0; border:1px solid var(--line); background:var(--bg2); border-radius:999px; color:var(--text); flex:none; font-size:19px; line-height:1;}
+/* v5.82.15: the cross-artist ユーモア page — one group per artist
+   (a relrow-style header into their page's ユーモア tab), then
+   their humour cards in the artist tab's own rendering. */
+.humorgroup{margin:0 0 20px;}
+#viewHumor .humortxt{font-size:14px; line-height:1.65;}
 #navHub .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
 /* v32.5.0: the hub opens a small icon popup under the header's
    top-right (2 rows x 3 cols, icons only — his call 2026-11-16:
@@ -2650,6 +2661,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
     <h1 class="appname" id="appname">作家図鑑</h1><span id="syncdot" title="Drive同期の状態（緑＝接続OK／赤＝未接続・エラー）"></span>
     <span class="topcount" id="topcount"></span>
     <span class="topsp"></span>
+    <button class="txtbtn" id="navHumor" onclick="openHumor()" aria-label="ユーモア（作家のユーモア集）">☺︎</button>
     <button class="txtbtn" id="navHub" onclick="openHub()" aria-label="メニュー（通知・アートビジネス・制作ガイド・年表・系譜・作家の言葉）"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="1.9"/><circle cx="12" cy="5" r="1.9"/><circle cx="19" cy="5" r="1.9"/><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/><circle cx="5" cy="19" r="1.9"/><circle cx="12" cy="19" r="1.9"/><circle cx="19" cy="19" r="1.9"/></svg><span class="nbadge" id="hubBadge" style="display:none"></span></button>
   </div>
   <button id="syncbar" onclick="onSyncBarTap()"><span>読み込み中…</span></button>
@@ -2704,6 +2716,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 </main>
 
 <main id="viewDetail" class="hidden"></main>
+<main id="viewHumor" class="hidden"></main>
 <main id="viewEx" class="hidden"></main>
 <main id="viewMuseum" class="hidden"></main>
 <main id="viewNews" class="hidden"></main>
@@ -12017,8 +12030,8 @@ if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
    the old one parallaxes left; back = the reverse. Header and pill nav are
    shared chrome and never move. WAAPI-driven; a navigation requested mid-flight
    finishes the running transition instantly so state can never wedge. */
-const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh', bizp:'viewBizPrice', makers:'viewMakers', makerdetail:'viewMakerDetail' };
-const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, makers:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2, bizp:2, makerdetail:2 };
+const VIEW_EL = { list:'viewList', detail:'viewDetail', ex:'viewEx', timeline:'viewTimeline', quiz:'viewQuiz', settings:'viewSettings', news:'viewNews', cal:'viewCal', era:'viewEra', museum:'viewMuseum', biz:'viewBiz', bizch:'viewBizCh', bizp:'viewBizPrice', makers:'viewMakers', makerdetail:'viewMakerDetail', humor:'viewHumor' };
+const VIEW_DEPTH = { list:0, detail:1, ex:1, timeline:1, settings:1, biz:1, makers:1, humor:1, quiz:2, news:2, cal:2, era:2, museum:2, bizch:2, bizp:2, makerdetail:2 };
 const VT_EASE = 'cubic-bezier(.32,.72,.24,1)';
 /* VT_EASE is kept over the rulebook's stock curves on purpose: on full-screen
    slides its gentler attack reads as less "snappy" (the user's standing
@@ -12440,6 +12453,7 @@ if(v==='bizp') renderBizPrice();
 if(v==='settings'){ renderSettings(); }
 if(v==='makers') renderMakers();
 if(v==='makerdetail') renderMakerDetail();
+if(v==='humor') renderHumor();
 const oldEl = prev? $(VIEW_EL[prev]): null, newEl = $(VIEW_EL[v]);
 if(isListReturn){
 backToListSync();
@@ -14596,6 +14610,10 @@ if(view==='timeline') return;
 showView('timeline');
 }
 function updateHeader(){
+/* v5.82.15: the ☺︎ humour button belongs to the artists book
+   only — designers records carry no humor field, so the button
+   hides there rather than opening an always-empty page. */
+const nhBtn = $('navHumor'); if(nhBtn) nhBtn.style.display = (DS==='artists')? '': 'none';
 /* v2.48: the settings view is named その他 — while it is open the
    header carries the view's own name (user's instruction), whatever
    path refreshes the header. */
@@ -21821,7 +21839,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"ユーモア","lines":["作家のユーモアを集める「ユーモア」タブを新設。第一号はデュシャン（8件）。","書籍の中身を吸収するたびに、その作家のユーモアも省かずに集めていく。"]},{"v":null,"label":"作品への直リンク","lines":["作家ページと作品へ直接飛べるURLに対応（#a=作家のID、&w=作品）。読み物など外の文章から、作品名を押すとその作品が開く。","第一号は『デュシャンは語る』口語ダイジェストの作品名リンク。今後、読み物を作るたびに同じ形でつなぐ。"]},{"v":null,"label":"書籍ダイジェスト","lines":["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。第一号はデュシャン『デュシャンは語る』（全章＋【解説】18か所＋宝ログ44件）。","ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは893点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は359人。"]},{"v":null,"label":"展示情報","lines":["展示は8,030件。ポスターなど展示自身の画像があるのは135件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
+const ROADMAP_FALLBACK = [{"v":null,"label":"作家の解剖","lines":["全767人中664人まで完了。残り103人。","収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]},{"v":null,"label":"ユーモア","lines":["作家のユーモアを集める「ユーモア」タブを新設。第一号はデュシャン（8件）。","書籍の中身を吸収するたびに、その作家のユーモアも省かずに集めていく。","作家を横断して読める「ユーモア」ページも新設（ホーム右上の☺︎ボタン）。作家名からその人のユーモアタブへ飛べる。"]},{"v":null,"label":"作品への直リンク","lines":["作家ページと作品へ直接飛べるURLに対応（#a=作家のID、&w=作品）。読み物など外の文章から、作品名を押すとその作品が開く。","第一号は『デュシャンは語る』口語ダイジェストの作品名リンク。今後、読み物を作るたびに同じ形でつなぐ。"]},{"v":null,"label":"書籍ダイジェスト","lines":["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。第一号はデュシャン『デュシャンは語る』（全章＋【解説】18か所＋宝ログ44件）。","ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]},{"v":null,"label":"来歴と年代記","lines":["来歴が薄い作家61人・デザイナー7人を厚くする。","年代記の型は五木田智央のみ適用済み。出典のある作家から広げる。"]},{"v":null,"label":"ドローイングと画像候補","lines":["ドローイングは893点まで収録。","登録候補の画像189点（作品173点・ドローイング16点）が確認待ち。作家本人のSNSから集める方法も検証済み。"]},{"v":null,"label":"関係と必見","lines":["関係は805件・439人分まで構築済み。","必見88人のうち、関係がまだ無い4人が次の対象。","必見の印を作品にも広げる件は、付けるルールが未定。"]},{"v":null,"label":"新しい作家の登録","lines":["登録済みの作家を濃くする期間として、新規登録は停止中（リクエスト分は登録する）。","系譜に名前があって未登録の作家は60人。画像の権利が確認できた人から登録する。"]},{"v":null,"label":"立役者の書籍","lines":["立役者148人・財団13団体・273冊まで収録。","著作がまだ無い33人を順に埋める。"]},{"v":null,"label":"制作過程の写真と肖像","lines":["制作過程の写真は224人・計567点。","肖像写真は359人。"]},{"v":null,"label":"展示情報","lines":["展示は8,030件。ポスターなど展示自身の画像があるのは135件。"]},{"v":null,"label":"価格のある作品の写真","lines":["価格の記録784件のうち、作品自身の写真があるのは627件。残り157件。"]},{"v":null,"label":"美大のカリキュラムと教授","lines":["カリキュラムは第2層まで収集済み。章への反映が残っている。","教授の登録は三校とも完了（94人全員が図鑑とつながった）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -22369,6 +22387,46 @@ function newsDateLabel(iso){
   const d = new Date(iso);
   if(isNaN(d.getTime())) return '';
   return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+/* v5.82.15: the cross-artist ユーモア page (his call, 2026-11-26:
+   a ☺︎ button at the header, left of the hub grid). Every artist
+   whose record carries humor items gets a group: a relrow-style
+   header (portrait + name) that opens their page on the ユーモア
+   tab, then their items as cards — the artist tab's own card
+   rendering (humorcard / humortxt / humorsrc), so the two
+   surfaces can never drift apart. Data is the records' humor
+   field only (v5.82.9); nothing new is fetched. */
+function openHumor(){ showView('humor'); }
+function openHumorArtist(id){
+  openDetail(id);
+  /* openDetail always lands on 作品; swing the pager to the
+     ユーモア panel (the caller only offers artists who have one). */
+  if(state.tab !== 'humor') setTab('humor');
+}
+function renderHumor(){
+  const v = $('viewHumor'); if(!v) return;
+  let html = '<button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button><div class="tlhead"><h2>ユーモア</h2></div>';
+  const list = (DS==='artists' && DB)? rosterBase().filter(a=>Array.isArray(a.humor) && a.humor.length): [];
+  if(!list.length){
+    html += '<div class="empty" style="margin-top:26px">まだユーモアが集まっていません。<br>書籍の中身を吸収するたびに、ここに増えていきます。</div>';
+    v.innerHTML = html;
+    return;
+  }
+  const wiring = [];
+  list.forEach(a=>{
+    const th = thumbOf(a);
+    if(th) wiring.push(th);
+    const ph = th? '<div class="relph">'+imgHTML(th, 256)+'</div>'
+      : '<div class="relph"><span class="noimg"><span class="ini">'+esc((Array.from(dispName(a)||'')[0]||''))+'</span>図版なし</span></div>';
+    html += '<div class="humorgroup">'
+      + '<button class="relrow" onclick="openHumorArtist(\''+escA(a.id)+'\')"><span class="relmini">'+ph+'<span class="relmeta"><span class="relname">'+esc(dispName(a))+'</span>'+(a.years? '<span class="relyears">'+esc(yearsDisplay(a))+'</span>': '')+'</span></span><span class="relnote"></span><span class="inflgo">›</span></button>'
+      + a.humor.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('')
+      + '</div>';
+  });
+  v.innerHTML = html;
+  /* the era view's wiring pattern: pair each imgholder with its
+     work so the observer can hydrate it on approach. */
+  v.querySelectorAll('.imgholder').forEach((span, k)=>{ const w = wiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 }
 function renderNews(){
   const v = $('viewNews'); if(!v) return;
@@ -26531,7 +26589,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.14';
+const APP_VERSION = '5.82.15';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
