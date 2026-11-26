@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.41">
+<meta name="app-version" content="5.82.42">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2460,6 +2460,18 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-family:inherit; text-align:left;}
 .quoteden{font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:1px 7px;}
 .quotescene{font-size:12px; line-height:1.55; color:var(--muted); margin-top:5px;}
+/* v5.82.42: ウィット tab — the benign-violation figure and the
+   decomposed-type cards. Same panel language as the quote cards. */
+.witfig{margin:10px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+.witfigrow{display:flex; align-items:center; gap:8px; padding:5px 0;}
+.witbox{flex:1; text-align:center; font-family:var(--serif); font-size:15px; padding:8px 4px; border:1px solid var(--line); border-radius:8px;}
+.witbox.hot{border-color:var(--gold, #c9a227); color:var(--text);}
+.witop{font-size:14px; color:var(--muted); flex:none;}
+.witfigcap{font-size:12px; color:var(--muted); line-height:1.55; margin-top:6px;}
+.witcard{margin:8px 0; padding:11px 13px; background:var(--bg2); border-radius:10px;}
+.witname{font-family:var(--serif); font-size:15.5px; color:var(--text);}
+.witline{font-size:13px; line-height:1.6; color:var(--muted); margin-top:4px;}
+.witex{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:5px;}
 .quotemore{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:14px 0 4px; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 /* v5.82.33: 人間的魅力 reading layer — cross-reference rows in the
    セルフプロデュース tab where the integrated sections sat, and
@@ -22866,6 +22878,7 @@ const CHARM_SECTIONS = [
   { key:'humor', label:'ユーモア',
     hasData: ()=> CHARM_QUOTES.length > 0,
     render: renderCharmHumor },
+  { key:'wit', label:'ウィット', hasData: ()=> true, render: renderCharmWit },
   { key:'aura', label:'オーラを稼ぐ', hasData: ()=> true, render: renderCharmAura },
   { key:'sociality', label:'社会性', hasData: ()=> true, render: renderCharmSociality },
   { key:'selfproduce', label:'セルフプロデュース', hasData: ()=> true, render: renderCharmSelfProduce },
@@ -23295,6 +23308,76 @@ const CHARM_CAPITAL = [
 function renderCharmCapital(){
   const items = CHARM_CAPITAL.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> '<h3 class="subhead">' + esc(sec.h) + '</h3>' + sec.paras.map(p=> '<p class="bodytext bizp">' + esc(p) + '</p>').join('') }));
   return { html: charmSubNavHTML('capital', items), wiring: [] };
+}
+/* v5.82.42: ウィット tab (his call, 2026-11-27: 「ウィット」).
+   Role split: ユーモア tab = the collection of actual lines;
+   ウィット = the MECHANISM — why such lines come out of people,
+   decomposed, plus a stock shelf he can actually use. Sources:
+   ~/workspace/social-labo/humour-research.md (benign-violation
+   theory as the core, the classical three theories as components,
+   the §5 type index, the training research) and the types
+   decomposed in Social Labo (adult-sociality-material.md).
+   The 45 decomposed quotes themselves live in the ユーモア tab's
+   collection (CHARM_QUOTES); here only their mechanism notes
+   live, keyed by type — no quote is duplicated. */
+const CHARM_WIT_TYPES = [
+  { n:'前提の反転', d:'質問や批判の枠組みを受け取らず、肯定と否定を入れ替える', ex:'レノン「僕らは狂った連中が好きなんだ」／ベーコン「破壊的な批判こそ最も役に立つ」' },
+  { n:'鏡返し', d:'攻撃の文法をそのまま相手に返す', ex:'ポール「デトロイトを追い出せキャンペーンを始めるよ」／チャーチルの「明日は醒める」' },
+  { n:'分類のずらし', d:'カテゴリーを一段ずらして、質問そのものを無効化する', ex:'ハリスン「英語じゃない。リバプール訛りだよ」／アリの「世界王者は美しくあるべきだ」' },
+  { n:'過剰な承認', d:'疑いを否定せず、認めすぎることで追及を空転させる', ex:'かつらの下は禿げているのでは、への「全員だよ」「僕は禿げてる」' },
+  { n:'桁・尺度の崩壊', d:'金額や評価軸のスケールを意図的に壊す', ex:'レノン「半クラウンくらいかな」／アリ「薬まで病気にする」' },
+  { n:'最後の一文の反転', d:'褒め言葉や教訓の形式で始めて、結論で裏切る', ex:'グルーチョの書評／トウェイン「激しく怒ったら、罵れ」' },
+  { n:'定義の奪取', d:'言葉を再定義して、相手の世界観を要約・無効化する', ex:'ワイルド「値段を知っていて価値を知らない男」／アリ「沈黙は金だ」の本音接続' },
+  { n:'自己演出の誇張', d:'自分を大きく言う。韻や様式が「芸」として成立させる', ex:'アリ「蝶のように舞い、蜂のように刺す」／ダリ「私自身がドラッグだ」' },
+  { n:'乾いた平熱', d:'重い・暗い内容を、感情を乗せず短く置く', ex:'ハリスンのウィルベリーズの一言／ベーコンの犬の糞／たけし「ない奴はないもん」' },
+  { n:'パラドックス', d:'矛盾する2文を同時に成立させる', ex:'ワイルド「誘惑以外のすべてに抵抗できる」／コクトー「常に真実を語る嘘」' },
+  { n:'音のずらし', d:'既知の諺や語の音を一音ずらして、意味を跳ばせる', ex:'パーカー「古いドグマに新しい芸は教えられない」' },
+  { n:'良性違反の同居', d:'格上や権威への違反を、丁寧な形式や場の了解で包む', ex:'レノン「宝石をカチャカチャ鳴らしていただければ」／コクトーのルーヴル' },
+  { n:'主語の移動', d:'決断や責任の主語を移して、重みを作る', ex:'たけし「引退はお客が決めること」' },
+  { n:'本音の接続', d:'立派な格言や建前に、本音の理由を接続して笑いに変える', ex:'レノン「ダメ。まず金が必要だ」' }
+];
+const CHARM_WIT_CONDITIONS = [
+  { n:'在庫と準備', d:'即興の8割は準備。ビートルズの記者会見の返しは、何百回も同じ質問を受けて磨かれた定番の変奏だった。しゃべくり007の「台本なし」も、全員が何十年分のキャラクターと鉄板の在庫を持ち込んでいる' },
+  { n:'検閲を通さない', d:'スパイク（『ノッティングヒルの恋人』）の型。思ったことが発話前の検閲に引っかからず、そのままの形で出る。違反成分が削られないから切れ味になる' },
+  { n:'場面を一歩外から見る', d:'レノンの型。自分が場の中にいながら、場そのものを眺める位置をもう一つ持っている。記者会見を「演奏する場」として扱い直す動きがそれ' },
+  { n:'キャラクターとの一致', d:'麻生太郎モノマネのセリフが面白いのは、人物の性格から必然的に出てくる一言だからだ。「言いそう」と思われる一貫性が、そのまま笑いの源になる' },
+  { n:'余裕', d:'ハリスンの型。刺されて重傷を負った直後でも、自分のバンド名で乾いた一言が置ける。失うものへの恐れが小さいほど、違反の許容量は大きくなる' }
+];
+function witSecMechanism(){
+  let h = '<h3 class="subhead">仕組み——違反と安全の同時成立</h3>';
+  h += '<div class="witfig">'
+    + '<div class="witfigrow"><span class="witbox">規範への違反</span><span class="witop">×</span><span class="witbox">安全だと分かる</span><span class="witop">→</span><span class="witbox hot">笑い</span></div>'
+    + '<div class="witfigcap">違反だけでは不快・攻撃になる。安全だけでは退屈。同時に成立した時だけ笑いになる（良性違反理論／マグロー＆ウォーレン）。古典の3理論——不一致（期待のズレが解ける）、優越（他者の弱みへの突然の栄光感）、解放（抑圧された緊張の放出）——は、この現象の別々の側面を説明する部品として残る。</div></div>';
+  h += '<p class="bodytext bizp">面白い発言は才能の発火ではない。在庫 × 検閲を緩める余裕 × 置く位置（タイミング）、の積として観察される。笑いは発話の文法的な切れ目に置かれる「句読点」のように機能するので、内容より先に置く位置の技術がある（プロヴァインの自然観察）。</p>';
+  h += '<p class="bodytext bizp">検閲が機知を殺す理由もここから分かる。面白い発言は違反を含む。場を壊すこと、嫌われることを恐れる状態では、発話前の検閲が違反成分を全部削ってしまい、残るのは安全で退屈な発言になる。逆に、地位が安定している者、失うものの少ない者は違反の許容量が大きく、機知が自由になる。</p>';
+  return h;
+}
+function witSecConditions(){
+  let h = '<h3 class="subhead">生む側の条件</h3>';
+  h += CHARM_WIT_CONDITIONS.map(c=> '<div class="witcard"><div class="witname">' + esc(c.n) + '</div><div class="witline">' + esc(c.d) + '</div></div>').join('');
+  return h;
+}
+function witSecTypes(){
+  let h = '<h3 class="subhead">型——分解の索引</h3>';
+  h += CHARM_WIT_TYPES.map(t=> '<div class="witcard"><div class="witname">' + esc(t.n) + '</div><div class="witline">' + esc(t.d) + '</div><div class="witex">例：' + esc(t.ex) + '</div></div>').join('');
+  h += '<button class="charmxref" onclick="setCharmTab(\'humor\')">実例はユーモアタブの引用集で読む<span class="charmxrefgo">「ユーモア」タブへ ›</span></button>';
+  return h;
+}
+function witSecBot(){
+  let h = '<h3 class="subhead">俺のユーモアbot——使える在庫の棚</h3>';
+  h += '<p class="bodytext bizp">発想は逆だ。即興で生むのではなく、日常の場面ごとに「置ける一言」を先に用意しておく。場面は予測できる——感想に困る時、予定を断る時、知らないことを聞かれた時、場が重くなった時。予測できる場面には、短い定型を先に仕込める。</p>';
+  h += '<p class="bodytext bizp">在庫の作り方。心が動いた一言を記録して、型に分解すること（このタブの「型」がその分解表）。言えなかった場面では「あの時なんて言えばよかったか」を後から作ること。ベーコンはアイスキュロス、ニーチェ、エリオットを読み込んでいた——語彙の在庫は入力から来る。</p>';
+  h += '<p class="bodytext bizp">訓練の研究の答えは「ある程度は学習可能」。ユーモア訓練の統制実験でも、8週間の習慣プログラムでも、改善したのは才能ではなく「日常の中のユーモアに気づく注意」と「言葉を産出する習慣」の側だった。才能の有無ではなく、注意と産出の習慣を作る方向に効果がある。</p>';
+  return h;
+}
+function renderCharmWit(){
+  const items = [
+    { label:'仕組み', build: witSecMechanism },
+    { label:'生む側の条件', build: witSecConditions },
+    { label:'型', build: witSecTypes },
+    { label:'俺のユーモアbot', build: witSecBot }
+  ];
+  return { html: charmSubNavHTML('wit', items), wiring: [] };
 }
 function renderHumor(){
   const v = $('viewHumor'); if(!v) return;
@@ -27553,7 +27636,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.41';
+const APP_VERSION = '5.82.42';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
