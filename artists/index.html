@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.25">
+<meta name="app-version" content="5.82.26">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1137,6 +1137,14 @@ h3.subhead:first-child{margin-top:8px;}
 #digestreader.hidden{display:none;}
 #digestreader .drhead{flex:none; padding:calc(10px + env(safe-area-inset-top)) 14px 8px; display:flex; align-items:center;}
 #digestreader .drbody{flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:6px 16px calc(22px + env(safe-area-inset-bottom));}
+/* v5.82.26: the person popup layer — bottom card over a dimmed
+   backdrop, inside the reader (the termsheet pattern). */
+#drpersonpop{position:absolute; inset:0; z-index:5; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45);}
+#drpersonpop.hidden{display:none;}
+.drppcard{background:var(--card); color:var(--text); border-radius:16px 16px 0 0; padding:18px 20px calc(16px + env(safe-area-inset-bottom)); width:100%; max-width:560px;}
+.drppname{font-size:16.5px; font-weight:600;}
+.drppgloss{margin-top:6px; font-size:14.5px; line-height:1.75; white-space:pre-wrap;}
+.drppclose{display:block; margin:14px auto 0; background:none; border:1px solid var(--line); border-radius:999px; color:var(--text); font-size:13.5px; font-family:var(--sans); padding:9px 26px; min-height:40px; cursor:pointer;}
 .drslide{animation:drslidein .28s ease;}
 @keyframes drslidein{from{opacity:0; transform:translateX(14px);} to{opacity:1; transform:none;}}
 .drtitle{font-family:var(--serif); font-size:21px; font-weight:600; line-height:1.5; margin:8px 0 4px;}
@@ -1766,6 +1774,10 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .termlink{background:none; border:none; border-bottom:1px dotted currentColor; padding:0; font:inherit; font-weight:700; color:inherit}
 .gtermlink{font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
 .worklink{background:none; border:none; padding:0; font:inherit; font-weight:700; color:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+/* v5.82.26: digest person links — deliberately quieter than
+   .worklink (no bold): accent colour + dotted underline, so
+   the prose flow survives. */
+.dperson{background:none; border:none; padding:0; font:inherit; color:var(--accent); cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px}
 #termsheet,#symsheet,#erasheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45)}
 #termsheet.hidden,#symsheet.hidden,#erasheet.hidden{display:none}
 #tlmapsheet,#termsheet,#symsheet,#erasheet{overscroll-behavior:contain;}
@@ -2787,6 +2799,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="digestreader" class="hidden" role="dialog" aria-label="書籍ダイジェスト">
   <div class="drhead"><button class="backbtn" onclick="digestReaderBack()">‹ 戻る</button></div>
   <div class="drbody" id="drbody"></div>
+  <div id="drpersonpop" class="hidden" onclick="digestPersonClose()"></div>
 </div>
 
 <div id="portraitbox" class="hidden" role="dialog" aria-label="肖像写真" onclick="closePortraitBox()">
@@ -18728,6 +18741,17 @@ const n = subs.length;
 subs.push('<button class="worklink" onclick="event.stopPropagation();digestWorkTap(\''+escA(file)+'\')">'+esc(label)+'</button>');
 return '\uE000'+n+'\uE001';
 });
+t = t.replace(/\[\[p:([^|\]]+)\|([^\]]+)\]\]/g, (m, key, label)=>{
+/* v5.82.26: person tokens — the shared XDIG.persons dictionary
+   (book-digests.json top level, data-side curated). A key the
+   dictionary does not hold (or no dictionary at all) degrades
+   to the plain label text, so data can never break the page. */
+const person = (XDIG && XDIG.persons)? XDIG.persons[key]: null;
+if(!person) return label;
+const n = subs.length;
+subs.push('<button class="dperson" onclick="event.stopPropagation();digestPersonTap(\''+escA(key)+'\')">'+esc(label)+'</button>');
+return '\uE000'+n+'\uE001';
+});
 t = t.replace(/［繰り返し］/g, ()=>{
 const n = subs.length;
 subs.push('<span class="drbadge">繰り返し</span>');
@@ -18756,6 +18780,7 @@ const bd = $('drbody'); if(bd) bd.scrollTop = 0;
 });
 }
 function closeDigestReader(){
+digestPersonClose();
 const ov = $('digestreader'); if(ov) ov.classList.add('hidden');
 }
 function digestReaderBack(){
@@ -18796,6 +18821,7 @@ return h;
 }
 function renderDigestReader(){
 const body = $('drbody'); if(!body || !digestReader) return;
+digestPersonClose();
 const d = digestFor(digestReader.artistId, digestReader.bookIndex);
 if(!d){ body.innerHTML = '<p class="drp">読み込めませんでした。</p>'; return; }
 let h = '<div class="drslide">';
@@ -18831,6 +18857,21 @@ h += digestNavHTML(d, ci);
 }
 h += '</div>';
 body.innerHTML = h;
+}
+/* v5.82.26: the person popup — a light context gloss (who they
+   are + what they mean in this passage, 1–2 lines from the
+   shared dictionary), NOT an encyclopedia entry. A bottom card
+   inside the reader; the backdrop tap and the close button both
+   dismiss it, and the reading scroll is never touched. */
+function digestPersonTap(key){
+const person = (XDIG && XDIG.persons)? XDIG.persons[key]: null;
+if(!person) return;
+const pop = $('drpersonpop'); if(!pop) return;
+pop.innerHTML = '<div class="drppcard" onclick="event.stopPropagation()"><div class="drppname">'+esc(person.name || '')+'</div>'+(person.gloss? '<div class="drppgloss">'+esc(person.gloss)+'</div>': '')+'<button class="drppclose" onclick="digestPersonClose()">閉じる</button></div>';
+pop.classList.remove('hidden');
+}
+function digestPersonClose(){
+const pop = $('drpersonpop'); if(pop){ pop.classList.add('hidden'); pop.innerHTML = ''; }
 }
 function digestWorkTap(file){
 if(!digestReader) return;
@@ -26777,7 +26818,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.25';
+const APP_VERSION = '5.82.26';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
