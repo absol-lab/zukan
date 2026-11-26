@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.38">
+<meta name="app-version" content="5.82.39">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2462,6 +2462,28 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .modelpts{margin:6px 0 0; padding:0; list-style:none;}
 .modelpts li{font-size:14px; line-height:1.65; padding-left:15px; position:relative; margin-top:5px;}
 .modelpts li::before{content:'・'; position:absolute; left:0; color:var(--muted);}
+/* v5.82.39: ロールモデル — the artist list's own card system
+   (figure.work cards in a .grid with the .modebar size switch),
+   not stacked text panels: one best photo per model, name +
+   who/role + a one-line hook on the card, and the full
+   commentary in a bottom sheet on the termsheet pattern
+   (#modelsheet: photo on top, text below; backdrop tap, the
+   閉じる button and a downward swipe on the scrolled-to-top
+   body dismiss it; the grid and its scroll stay untouched
+   behind). The hook hides at the small sizes, the same way
+   .sub already hides on compact artist cards. */
+.modelhook{font-size:11.5px; color:var(--sub); line-height:1.5; margin-top:3px;}
+.grid.compact .modelhook,.grid.mini .modelhook,.grid.micro .modelhook{display:none;}
+#modelsheet{position:fixed; inset:0; z-index:80; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45); overscroll-behavior:contain;}
+#modelsheet.hidden{display:none;}
+#modelsheet .tscard{animation:modelSheetUp .26s ease-out;}
+@keyframes modelSheetUp{from{transform:translateY(34px); opacity:.35;} to{transform:translateY(0); opacity:1;}}
+@media (prefers-reduced-motion: reduce){ #modelsheet .tscard{animation:none;} }
+#modelSheetBody{overflow-y:auto; min-height:0; -webkit-overflow-scrolling:touch;}
+#modelsheet .tsclose{flex:none;}
+.modelsheetph{margin:-18px -18px 14px; background:var(--bg2); aspect-ratio:16/10; overflow:hidden;}
+.modelsheetph .imgholder{display:block; width:100%; height:100%;}
+.modelsheetph img{width:100%; height:100%; object-fit:cover; display:block;}
 .charmhead{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px 12px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px;}
 .charmph{flex:none; width:64px; height:64px; border-radius:9px; overflow:hidden; background:var(--bg2); display:flex; align-items:center; justify-content:center; position:relative;}
 /* v5.82.35: the group header's image is the artist's PORTRAIT —
@@ -2825,6 +2847,7 @@ try{var r=localStorage.getItem('zukan.settings');if(r){var z=JSON.parse(r);var h
 <div id="legendsheet" class="hidden" role="dialog" aria-label="分野マークの凡例" onclick="if(event.target===this) closeSymLegend()"><div class="legendpop"><div class="legendttl">分野マークの凡例</div><div id="legendbody"></div></div></div>
 <div id="cherabar" class="cherabar hidden" role="navigation" aria-label="年代記の時代"><div class="cherabar-in" id="cherabarIn"></div></div>
 <div id="termsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeTerm()"><div class="tscard"><div class="tsterm" id="tsTerm"></div><div class="tsdef bodytext" id="tsDef"></div><button class="tsclose" onclick="closeTerm()">閉じる</button></div></div>
+<div id="modelsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeModelSheet()"><div class="tscard" ontouchstart="modelSheetTouchStart(event)" ontouchmove="modelSheetTouchMove(event)"><div id="modelSheetBody"></div><button class="tsclose" onclick="closeModelSheet()">閉じる</button></div></div>
 <div id="symsheet" class="hidden" role="dialog" onclick="if(event.target===this) closeSymSheet()"><div class="tscard"><div class="tsterm">分野で絞る</div><div class="small" style="margin-bottom:8px;">タップで付け外しできます。複数選ぶと、どれか1つでも当てはまる作家が出ます。</div><div id="symlist"></div><button class="tsapply" id="symApply" onclick="applySymSheet()">見る</button><button class="tsclose" onclick="closeSymSheet()">閉じる</button></div></div>
 <div id="erasheet" class="hidden" role="dialog" onclick="if(event.target===this) closeEraSheet()"><div class="tscard"><div class="tsterm">時代で選ぶ</div><div class="small" style="margin-bottom:8px;">生まれた年代で絞ります。タップした時代だけが一覧に残り、もう一度タップすると解除されます。</div><div id="eralist"></div><button class="tsclose" onclick="closeEraSheet()">閉じる</button></div></div>
 <div id="tlmapsheet" class="hidden" role="dialog" onclick="if(event.target===this) tlMapDismissSheet()"><div class="tscard"><div class="tsterm">世界地図 <span class="small" id="tlmapYear" style="color:var(--muted)"></span></div><div class="small tlm-sheetcap" style="margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">年表の年と連動。地名を押すと、その場所だけが光ります。</div><div class="tlmap-bigwrap"><canvas id="tlmapBigCv"></canvas></div><div class="tlm-tabs"><button type="button" class="tlm-tab on" id="tlmtabList" onclick="tlMapSetTab('list')">その年の動き <span class="small" id="tlmtabListN"></span></button><button type="button" class="tlm-tab" id="tlmtabDetail" onclick="tlMapSetTab('detail')">詳細：芸術家 <span class="small" id="tlmtabDetailN"></span></button></div><div id="tlmapBody"></div><button class="tsclose" onclick="tlMapDismissSheet()">閉じる</button></div></div>
@@ -22890,40 +22913,172 @@ function renderCharmSelfProduce(){
   const as = charmSecByHead(ch, 'オーラは揃えるもの'); if(as) skip.push({ sec: as, tab: 'aura', label: 'オーラを稼ぐ' });
   return { html: charmChapterNavHTML(ch, 'selfproduce', skip), wiring: [] };
 }
-/* ロールモデル: static editorial cards (Social Labo material,
-   2026-11-26). Who each model is + the exact points he takes
-   from them — nothing here is per-artist data. */
+/* ロールモデル: static editorial data (Social Labo material,
+   2026-11-26 — the 棚 in adult-sociality-material.md, plus the
+   five models the tab already carried, all supported elsewhere
+   in that file). Who each model is + his own commentary,
+   shortened faithfully; img is the one best photo per model
+   (Drive 図鑑画像 folder, bare fileId; Bacon's is his artist
+   portrait). Nothing here is per-artist data. */
 const CHARM_MODELS = [
-  { name:'フランシス・ベーコン', who:'画家（1909–1992）。大人の社交と雄弁の型。',
+  { name:'フランシス・ベーコン', img:'1gzPNuuOx4ZlHB2X5g38kzN21O5Gdag8D', who:'画家（1909–1992）。大人の社交と雄弁の型。',
+    hook:'挨拶は短く普通に。会話の中身と切れ味で人を掴む',
     pts:['挨拶は短く普通に。落ち着いた声と間で、会話の中身と切れ味で人を掴む',
          '同じ酒場の常連でいることで、関係が積み上がる仕組みを持っていた',
          '人前では気前よく奢る側に回る。読まれるのは金額ではなく、出す時の迷いのなさ',
          '雄弁さは才能ではなく、長年の会話と定番の言い回しの蓄積の上に立つ'] },
-  { name:'スパイク', who:'映画『ノッティングヒルの恋人』の同居人。ユーモアの型。',
+  { name:'デヴィッド・ボウイ', img:'1aKsnGByjYlZTXOYFl8xO4fTOYH-b4-5G', who:'ミュージシャン（1947–2016）。',
+    hook:'変わり続けた人。自分と少し重なる',
+    pts:['変わり続けた人',
+         '自分と少し重なる部分があって入れた',
+         'ただし「なりたい理想」とは少し違う'] },
+  { name:'カート・コバーン', img:'1tHU_bM6BdEiPRqRl8V8dN4z9iH_2VHyg', who:'ニルヴァーナ（1967–1994）。',
+    hook:'高校時代に衝撃。ファッションから真似した',
+    pts:['高校時代に出会って衝撃を受けた',
+         'ファッションから真似した',
+         '「Nirvana」というカッコ良すぎるバンド名にも負けず、カッコ良すぎる音楽を作っている',
+         '漫画のキャラクターすぎる'] },
+  { name:'ジョン・レノン', img:'16d6OM5I7TGq8--_HEp5ss8r5MnydUG16', who:'ビートルズ（1940–1980）。',
+    hook:'伝説を刻んだ、面白い変人。人間的魅力が凄まじい',
+    pts:['ビートルズという伝説を刻んだ',
+         '面白い変人である',
+         '人間的魅力が凄まじい',
+         'インタビューに出る不真面目さが好き'] },
+  { name:'ジェフ・バックリィ', img:'1LcZzX0kEZy8zhDIKuLydpkLBxtX3V7O-', who:'ミュージシャン（1966–1997）。',
+    hook:'完全に音楽の世界観。『Grace』のジャケに憧れた',
+    pts:['完全に音楽の世界観',
+         '『Grace』のジャケ写の世界観に憧れた'] },
+  { name:'デヴィッド・リンチ', img:'113zdBJ3ypIm-SIA335KWrnsI6z9Meyu_', who:'映画監督（1946–2025）。',
+    hook:'世界観とムード',
+    pts:['世界観とムード'] },
+  { name:'ジャン・コクトー', img:'1rQVlvumxoTaSbZzxxKIH5kbNeeMULFBx', who:'詩人・映画作家（1889–1963）。',
+    hook:'腕が何本もある写真＝多方面で評価された人',
+    pts:['腕が何本もある写真が表すように、いろいろなことで評価された',
+         '「二兎を追う者は〜」のことわざを打破してすごい',
+         '生き様は知らない'] },
+  { name:'ディーン・コルソ', img:'1R_faG666HVF7NYt6_z_GLBKRsPo6pCMo', who:'『ナインス・ゲート』の古書買い付け屋（ジョニー・デップ）。',
+    hook:'風貌・佇まい・ムードがカッコ良すぎる',
+    pts:['風貌・佇まい・ムードがカッコ良すぎる',
+         '黒よりのグレーなことをしているのも痺れる',
+         'タバコの付け方がいい'] },
+  { name:'ラウル・デューク', img:'1smDFjUlp5G4owbTOpSnbawMHs14GJ_o7', who:'『ラスベガスをやっつけろ』の記者（ジョニー・デップ）。',
+    hook:'全て魅力的。自由すぎて好き。俺もああなりたい',
+    pts:['全て魅力的',
+         '後先考えず、生きるために手段を問わない',
+         'ファッションも喋りも最高',
+         'ハゲてんのに魅力的',
+         '自由すぎて好き。「俺もああなりたい」'] },
+  { name:'ネオ', img:'1xm-ugOhOrSuNpFN561rNn5gFzEYcJ3Pl', who:'『マトリックス』（キアヌ・リーブス）。',
+    hook:'ビジュアル',
+    pts:['ビジュアル'] },
+  { name:'ジョン・コンスタンティン', img:'19p88pglVJ8ap3KDXoZzp2448n0NaEFT_', who:'『コンスタンティン』の悪魔祓い（キアヌ・リーブス）。',
+    hook:'スーツに悪魔祓い。佇まいとオーラがやばい',
+    pts:['ビジュアルも超イケてる',
+         'いつもスーツで、悪魔祓いをしているのが最高',
+         '佇まいもオーラもやばい。人柄も',
+         'タバコの付け方がいい'] },
+  { name:'ブルース・ウェイン', img:'1lrcRGTmpKLSn3bNpOG-sjpBv0fGtfkux', who:'『THE BATMAN』（ロバート・パティンソン）。',
+    hook:'全てに絶望しながらも生きて戦う',
+    pts:['全てに絶望しながらも生きて、バットマンとして戦っている感じ',
+         '風貌も格闘も好き',
+         '「Something in the Way」と相まって世界観が印象的で、影響を受けている'] },
+  { name:'ソルジャーボーイ', img:'1iICmfpbRr1yyG13RgvGIunv9yDmmJbb8', who:'『ザ・ボーイズ』（ジェンセン・アクレス）。',
+    hook:'古き良き強い男。ギガチャド',
+    pts:['カッコ良すぎる',
+         '古き良き強い男、ギガチャド',
+         '堂々として、嫌われることを気にせず自分のままで居続ける'] },
+  { name:'タイラー・ダーデン', img:'1jg5YTUiMCUQ7yi7-Z-ky4C6Ph6D6lkpb', who:'『ファイト・クラブ』（ブラッド・ピット）。',
+    hook:'無鉄砲で後先考えなそう、と思いきや。男としての憧れ',
+    pts:['ビジュアル',
+         '無鉄砲で後先考えず生きてそう',
+         'と思いきやプロジェクト・メイヘムでとんでもないことをする',
+         '男としての憧れ。魅力がすごい'] },
+  { name:'ディエゴ・ブランドー', img:'1mRuZcgg1kJG1tE2wmHYXTlSoX0jb9Meo', who:'『スティール・ボール・ラン』の騎手。',
+    hook:'紳士的なのに中身はDIO。飢えている',
+    pts:['紳士的なのに中身はDIO',
+         '飢えていて、ビジュアルも最高',
+         '「飢えることの良さ」を植え付けられた'] },
+  { name:'岸辺露伴', img:'1dY8YjDs3DV99idWEZn496gUpRBzQAGz3', who:'『ジョジョの奇妙な冒険』の漫画家。',
+    hook:'絶対的なこだわりを持っていて譲らない',
+    pts:['創作という面で素晴らしい',
+         '一瞬で仕事を終わらせる',
+         '若くして人気を博し、20代前半で大きな家を買って住んでいる',
+         '漫画のために手段を選ばない',
+         '絶対的なこだわりを持っていて譲らない'] },
+  { name:'ハル・ジョーダン', img:'1BncP4QPXub5UXp5MYNfH_30F4qE47o6z', who:'『ランタンズ』のグリーン・ランタン（カイル・チャンドラー）。',
+    hook:'存在そのもの。言動や振る舞いが好き',
+    pts:['存在そのもの',
+         '言動や振る舞いがとても好き。生き様や性格も含めて',
+         'ちょっと不器用なところも'] },
+  { name:'スパイク', img:'1a2ewWperjHBp-cfjchh2pwsxpx0p1Es5', who:'映画『ノッティングヒルの恋人』の同居人。ユーモアの型。',
+    hook:'思ったことを削らずに出す。隠さないことが面白さの正体',
     pts:['思ったことを削らずに出す。隠していないことが、面白さの正体',
          '空気を読まない奇抜さと、人懐っこい温かさが両立している',
          'ぶっ飛びは性格の改造ではなく出力の許可。安全な場で、最初に浮かんだ変な連想を声に出す'] },
-  { name:'クリフ・ブース', who:'映画『ワンス・アポン・ア・タイム・イン・ハリウッド』のスタントマン。',
+  { name:'クリフ・ブース', img:'1eC71_Wg9F5NAlLVDYa8v4f4-EW7VtN5K', who:'映画『ワンス・アポン・ア・タイム・イン・ハリウッド』のスタントマン。',
+    hook:'余裕があって、ちょっと危ない香りがする',
     pts:['余裕があり、誰にも媚びない。大きく見せようとしない',
-         '強さは体格ではなく態度。慌てをそのまま出さず、やる時はやる',
+         'ちょっと危ない香りがする',
+         '強さは体格ではなく態度。軍隊上がりで普通に強い',
+         '嘘が上手いところも生き上手',
          '友人への忠義を、言葉ではなく行動で置く'] },
-  { name:'ビートルズの4人', who:'記者会見の受け答えが、切れ味の見本になる。',
+  { name:'ビートルズの4人', img:'1WbE7eVZHxRQhZW0ST-wnS42ymmOwGkW5', who:'記者会見の受け答えが、切れ味の見本になる。',
+    hook:'全員一言で短く、自分で笑わず、説明しない',
     pts:['共通点は、全員一言で短く、自分で笑わず、説明しないこと',
          'レノン：馬鹿な質問を、質問の形ごと返す',
          'マッカートニー：評価ごとひっくり返して、相手を守る余裕',
          'ハリスン：暴漢に刺されて重傷の場面でも、平常の挨拶を崩さない',
          'リンゴ：自分の出番の少なさを、事実として短く置く乾いた自己言及'] },
-  { name:'有田哲平', who:'場を回す側のユーモア。',
+  { name:'有田哲平', img:'1u6Z_x3L0djQ3AkckfpooVRtV6-9v-lye', who:'場を回す側のユーモア。',
+    hook:'質問を設計し、言い換えて要約し直すことで場が笑う',
     pts:['自分がピエロになるのではなく、質問を設計し、相手の言葉を言い換えて要約し直すことで場が笑う',
          '声を張らず、落ち着いた立ち位置のまま到達できる大人のユーモア',
          '好きな分野の深い在庫が、そのまま切れ味の土台になる'] }
 ];
+let charmModelMode = storeGet('zukan.cmodelmode') || 'def';
+if(!MODES.includes(charmModelMode)) charmModelMode = 'def';
+function setModelMode(m){
+  charmModelMode = m; storeSet('zukan.cmodelmode', m);
+  const y = window.scrollY; renderHumor(); window.scrollTo(0, y);
+}
 function renderCharmModels(){
-  const html = CHARM_MODELS.map(m=>
-    '<div class="modelcard"><div class="modelname">' + esc(m.name) + '</div><div class="modelwho">' + esc(m.who) + '</div>'
-    + '<ul class="modelpts">' + m.pts.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>'
-  ).join('');
-  return { html, wiring: [] };
+  /* v5.82.39: the artist list's card grid (his standing rule:
+     cards + size switch wherever they fit) — big photo, name,
+     who/role and a one-line hook per card; the full commentary
+     lives in the bottom sheet (openModelSheet), not on the grid.
+     Photos pair through renderHumor's .modelgrid wiring loop,
+     the same observer path as the artist headers. */
+  const modelWiring = [];
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (charmModelMode===mo? ' class="on"': '') + ' onclick="setModelMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>';
+  html += '<div class="grid ' + charmModelMode + ' modelgrid">';
+  CHARM_MODELS.forEach((m, i)=>{
+    const w = keyWork(m.img, m.name); modelWiring.push(w);
+    html += '<figure class="work" onclick="openModelSheet(' + i + ')"><div class="ph">' + imgHTML(w, IMG_SIZE.thumb) + '</div><figcaption><div class="nm">' + esc(m.name) + '</div><div class="sub">' + esc(m.who) + '</div><div class="modelhook">' + esc(m.hook) + '</div></figcaption></figure>';
+  });
+  html += '</div>';
+  return { html, wiring: [], modelWiring };
+}
+function openModelSheet(i){
+  const m = CHARM_MODELS[i]; if(!m) return;
+  const w = keyWork(m.img, m.name);
+  $('modelSheetBody').innerHTML =
+    '<div class="modelsheetph">' + imgHTML(w, IMG_SIZE.plate) + '</div>'
+    + '<div class="tsterm">' + esc(m.name) + '</div>'
+    + '<div class="modelwho">' + esc(m.who) + '</div>'
+    + '<ul class="modelpts">' + m.pts.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul>';
+  $('modelsheet').classList.remove('hidden'); sheetLockSync();
+  const holder = $('modelSheetBody').querySelector('.imgholder');
+  if(holder){ holder._work = w; if(imgObserver) imgObserver.observe(holder); else hydrateImg(holder, w); }
+  $('modelSheetBody').scrollTop = 0;
+}
+function closeModelSheet(){ const s = $('modelsheet'); if(s) s.classList.add('hidden'); sheetLockSync(); }
+let modelSheetTouchY = null;
+function modelSheetTouchStart(e){ modelSheetTouchY = e.touches && e.touches.length? e.touches[0].clientY: null; }
+function modelSheetTouchMove(e){
+  if(modelSheetTouchY == null || !e.touches || !e.touches.length) return;
+  const dy = e.touches[0].clientY - modelSheetTouchY;
+  const b = $('modelSheetBody');
+  if(dy > 80 && b && b.scrollTop <= 0){ modelSheetTouchY = null; closeModelSheet(); }
 }
 /* 嘘のうまさ: NEW editorial text drafted for this tab (his call via
    Social Labo, 2026-11-26 19:55) — NOT moved from the guide; no
@@ -23016,6 +23171,9 @@ function renderHumor(){
      approach. Scoped to .charmph so the reading layer's guide
      figures (wired by wireBizFigs below) never enter the pairing. */
   v.querySelectorAll('.charmph .imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* v5.82.39: the same pairing for the ロールモデル grid, scoped
+     to .modelgrid so the two holder families never cross. */
+  v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -24459,13 +24617,13 @@ function closeTlMapSheet(){ const sh = $('tlmapsheet'); if(sh){ sh.classList.add
    modalSheetOpen() first, and the swipe-back excludes the
    sheets the same way it already excluded the guide panel. */
 function modalSheetOpen(){
-  const ids = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'];
+  const ids = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel', 'modelsheet'];
   for(const id of ids){ const el = $(id); if(el && !el.classList.contains('hidden')) return true; }
   return false;
 }
 function sheetLockSync(){ document.documentElement.classList.toggle('sheetlock', modalSheetOpen()); }
 (function(){
-  const els = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel'].map(id => $(id)).filter(Boolean);
+  const els = ['tlmapsheet', 'termsheet', 'symsheet', 'erasheet', 'guidepanel', 'modelsheet'].map(id => $(id)).filter(Boolean);
   if(window.MutationObserver && els.length){
     const mo = new MutationObserver(sheetLockSync);
     els.forEach(el => mo.observe(el, { attributes: true, attributeFilter: ['class'] }));
@@ -27093,7 +27251,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#guidepanel')) return; /* v24.2: the guide panel is a modal — touches inside it never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest('#intvreader')) return; /* v5.57.0: the interview reader is a modal overlay — the guide panel's treatment */
     if(e.target && e.target.closest && e.target.closest('#portraitbox')) return; /* v5.58.1: the portrait lightbox is a modal overlay — the interview reader's treatment */
-    if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
+    if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet, #modelsheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
     if(e.target && e.target.closest && e.target.closest('.charmsecrow')) return; /* v5.82.36: the 人間的魅力 section pill row is a native scroller too (the guide's .gsecrow, transplanted) — drags on it scroll the row and never arm the swipe-back (the .dtabs treatment). Inside the guide panel this never mattered; the panel itself is excluded above. */
@@ -27238,7 +27396,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.38';
+const APP_VERSION = '5.82.39';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
