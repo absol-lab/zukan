@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.34">
+<meta name="app-version" content="5.82.37">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2450,9 +2450,13 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    セルフプロデュース tab where the integrated sections sat, and
    the ロールモデル cards. Reading prose itself reuses the guide's
    bodytext/subhead styles, unchanged. */
-.charmxref{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:16px 0; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
+.charmxref{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:16px 0; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 .charmxrefgo{font-family:var(--sans); font-size:12.5px; color:var(--muted); flex:none;}
-.modelcard{margin:8px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+/* v5.82.36: the section pill row inside the reading tabs is the
+   guide's .gsecrow; on this page it also needs the .dtabs touch
+   treatment so horizontal drags scroll the row natively. */
+.charmsecrow{touch-action:pan-x pan-y;}
+.modelcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .modelname{font-family:var(--serif); font-size:16.5px; font-weight:600; line-height:1.4;}
 .modelwho{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.55;}
 .modelpts{margin:6px 0 0; padding:0; list-style:none;}
@@ -2460,6 +2464,14 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
 .modelpts li::before{content:'・'; position:absolute; left:0; color:var(--muted);}
 .charmhead{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 2px 12px; color:var(--text); font-family:inherit; cursor:pointer; min-height:44px;}
 .charmph{flex:none; width:64px; height:64px; border-radius:9px; overflow:hidden; background:var(--bg2); display:flex; align-items:center; justify-content:center; position:relative;}
+/* v5.82.35: the group header's image is the artist's PORTRAIT —
+   the profile band's own construction ([data-portrait] wrapper +
+   keyWork(a.portrait)), so a portrait that cannot load settles
+   the profile's way (plain placeholder), and an artist with no
+   portrait registered gets the shared no-photo mark, never a
+   work thumbnail posing as the artist (his 2026-11-26 verdict:
+   《泉》 beside Duchamp's name was crude). */
+.charmph .ph{display:block; width:100%; height:100%;}
 .charmph .imgholder{display:flex; align-items:center; justify-content:center; width:100%; height:100%;}
 .charmph .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .charmph .noimg{font-family:var(--serif); font-size:10px; color:var(--ink35); letter-spacing:.15em; padding:4px; text-align:center; line-height:1.6;}
@@ -10528,7 +10540,7 @@ let state = null;
 let pendingImages = {};
 
 /* ---------- dataset contexts （作家／デザイナー：保存キー・Driveファイル・状態は完全分離） ---------- */
-function freshState(prefix){ return { mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', workSort:'reg', tagsOpen:false, tagGroupsOpen:{}}; }
+function freshState(prefix){ return { mode: storeGet(LS_APP_MODE)||storeGet(prefix+'mode')||'def', query:'', tags:new Set(), detailId:null, tab:'works', workSort:'reg', workSortDir:'asc', tagsOpen:false, tagGroupsOpen:{}}; }
 function makeCtx(cfg){ return { cfg:cfg, DB:{ kind:cfg.kind, version:1, sections:[], artists:[], exhibitions:[] }, state:freshState(cfg.prefix), syncStatus:'disconnected', syncMsg:'', lastSyncAt:0, pendingImages:{}, scrollY:0, lastView:'list', started:false, loadedFromStore:false }; }
 const CTX = { artists: makeCtx(CFG_ARTISTS), designers: makeCtx(CFG_DESIGNERS) };
 let DS = (location.hash==='#designers')? 'designers': 'artists';
@@ -11193,16 +11205,8 @@ function bcYears(s){
 }
 function displayWorks(a){
   const ws = worksOf(a).slice();
-  const mode = state.workSort || 'reg';
-  if(mode === 'reg' || mode === 'decades' || ws.length < 2) return ws; /* v5.59.0: 年代別 is a mode of the tab, not a sort — the grouping orders the display list itself */
-  const dir = mode === 'old'? 1: -1;
-  return ws.map((w, i) => ({ w: w, i: i, y: workSortYearOf(w) }))
-    .sort((p, q) => {
-      if(p.y == null && q.y == null) return p.i - q.i;
-      if(p.y == null) return 1;
-      if(q.y == null) return -1;
-      return (p.y - q.y) * dir || (p.i - q.i);
-    }).map(x => x.w);
+  if(workSortMode() === 'decades' || ws.length < 2) return ws; /* v5.59.0: 年代別 is a mode of the tab, not a sort — decadeGroupsOf orders the groups (and takes the direction) */
+  return workSortDir() === 'desc'? ws.reverse(): ws;
 }
 /* v5.41.0: artists with many works (30+) get a 代表作 shelf plus
    a decade-grouped archive on the works tab — 189 cards in one
@@ -11248,7 +11252,7 @@ if(h) h.scrollIntoView({ block: 'start' });
    shelf in front of it) WAS the works tab for 30+ artists;
    v5.59.0 makes it the tab's 年代別 mode — the shelf and
    the flat full grid live in the 登録順 mode. */
-function decadeGroupsOf(ws){
+function decadeGroupsOf(ws, dir){
 const groups = new Map();
 ws.forEach((w, i)=>{
 const y = workYearOf(w);
@@ -11259,8 +11263,9 @@ groups.get(key).push(i);
 const keys = Array.from(groups.keys()).sort((p, q)=>{
 if(p === 'unknown') return 1;
 if(q === 'unknown') return -1;
-return (+p) - (+q);
+return ((+p) - (+q)) * (dir === 'desc'? -1: 1); /* v5.82.37: direction flips the groups; 年不詳 stays last in both */
 });
+if(dir === 'desc') groups.forEach(g=> g.reverse());
 return { groups: groups, keys: keys };
 }
 function decadeSectionsHTML(ws, mkCard, dg){
@@ -11423,13 +11428,28 @@ function profileBandHTML(a){
    last direction used (古い順 the first time). workSort is
    the state field it always was — it rides the per-book
    session state, as before. */
-let workClockDir = 'old';
-function setWorkSort(mode){ if(mode === 'old' || mode === 'new') workClockDir = mode; state.workSort = mode; renderDetail(); }
+/* v5.82.37 (his spec, delivered via recording, 2026-11-26):
+   the sort row is a MODE （登録順 / 年代別） plus an independent
+   DIRECTION (▲ asc / ▼ desc) that modifies the mode. The old
+   design carried 'old' / 'new' as extra modes inside
+   workSort, so tapping the clock REPLACED the mode and both
+   pills went dark — the deselection he demonstrated.
+   Direction now lives in state.workSortDir and never touches
+   the mode. The flat chronological sorts retire into this
+   model: 年代別 + ▼ is the newest-first presentation. */
+function workSortMode(){
+  const m = state.workSort || 'reg';
+  if(m === 'old' || m === 'new'){ /* legacy in-session value */
+    state.workSort = 'decades';
+    state.workSortDir = m === 'new'? 'desc': 'asc';
+    return 'decades';
+  }
+  return m === 'decades'? 'decades': 'reg';
+}
+function workSortDir(){ return state.workSortDir === 'desc'? 'desc': 'asc'; }
+function setWorkSort(mode){ if(mode !== 'reg' && mode !== 'decades') return; state.workSort = mode; renderDetail(); }
 function toggleWorkClock(){
-const cur = state.workSort || 'reg';
-const next = cur === 'old'? 'new': cur === 'new'? 'old': workClockDir;
-workClockDir = next;
-state.workSort = next;
+state.workSortDir = workSortDir() === 'desc'? 'asc': 'desc';
 renderDetail();
 /* v32.13.2: the order toggle jumps to the top (the list's
    renderListToTop rule) — mode switches （登録順 / 年代別）
@@ -16260,22 +16280,26 @@ function listModeOn(){
   if(listMode[DS] == null){
     let v = null;
     try{ v = storeGet('zlab.lmode.' + DS); localStorage.removeItem('zlab.rev.' + DS); }catch(e){}
-    listMode[DS] = (v === 'reg' || v === 'old' || v === 'new')? v: 'era';
-    listClockDir[DS] = (v === 'old' || v === 'new')? v: 'old';
+    /* v5.82.37: mode and direction are independent (the works tab note). A legacy stored 'old'/'new' was a clock mode — it lands on 年代別 carrying that direction; the direction itself now persists under zlab.ldir.<ds>. */
+    if(v === 'old' || v === 'new'){ listMode[DS] = 'era'; listClockDir[DS] = v; }
+    else { let dv = null; try{ dv = storeGet('zlab.ldir.' + DS); }catch(e){} listMode[DS] = v === 'reg'? 'reg': 'era'; listClockDir[DS] = dv === 'new'? 'new': 'old'; }
   }
   return listMode[DS];
 }
 function setListModePersist(m){
   listMode[DS] = m;
-  if(m === 'old' || m === 'new') listClockDir[DS] = m;
   try{ storeSet('zlab.lmode.' + DS, m); }catch(e){}
+}
+function setListDirPersist(d){
+  listClockDir[DS] = d;
+  try{ storeSet('zlab.ldir.' + DS, d); }catch(e){}
 }
 function syncSortSeg(){
   const row = $('sortRow'); if(!row) return;
   const m = listModeOn();
   row.querySelectorAll('button[data-lm]').forEach(b=>{
     const k = b.dataset.lm;
-    b.classList.toggle('on', k === 'clk'? (m === 'old' || m === 'new'): (k === m));
+    b.classList.toggle('on', k === m); /* v5.82.37: 'clk' is the direction toggle — it never takes the mode's on state */
   });
   const dir = $('listClkDir');
   if(dir) dir.textContent = listClockDir[DS] === 'new'? '▼': '▲';
@@ -16291,9 +16315,8 @@ function setListMode(m){
   renderListKeepScroll();
 }
 function toggleListClock(){
-  const m = listModeOn();
-  const next = m === 'old'? 'new': m === 'new'? 'old': listClockDir[DS];
-  setListModePersist(next);
+  listModeOn();
+  setListDirPersist(listClockDir[DS] === 'new'? 'old': 'new');
   syncSortSeg();
   renderListToTop(); /* v32.13.2: the order toggle jumps to the top */
 }
@@ -16506,10 +16529,13 @@ let mkSort = null;
 let mkClockDir = 'old';
 function mkSortOn(){
   if(mkSort == null){
-    let v = null;
-    try{ v = storeGet('zlab.lmode.makers'); localStorage.removeItem('zlab.rev.makers'); }catch(e){}
-    mkSort = (v === 'reg' || v === 'old' || v === 'new')? v: 'old';
-    mkClockDir = (v === 'new')? 'new': 'old';
+    let v = null, dv = null;
+    try{ v = storeGet('zlab.lmode.makers'); dv = storeGet('zlab.ldir.makers'); localStorage.removeItem('zlab.rev.makers'); }catch(e){}
+    /* v5.82.37: mode/direction split, same as the other sort
+       rows. A legacy stored 'old'/'new' was 年代別 + that
+       direction. The default stays 年代別・昇順. */
+    if(v === 'old' || v === 'new'){ mkSort = 'era'; mkClockDir = v; }
+    else { mkSort = v === 'reg'? 'reg': 'era'; mkClockDir = dv === 'new'? 'new': 'old'; }
   }
   return mkSort;
 }
@@ -16519,8 +16545,8 @@ function mkYearOf(m){
 }
 function mkSortedPeople(people){
   const mode = mkSortOn();
-  if(mode === 'reg') return people;
-  const dir = mode === 'new'? -1: 1;
+  if(mode === 'reg') return mkClockDir === 'new'? people.slice().reverse(): people; /* v5.82.37: 登録順 + ▼ reverses */
+  const dir = mkClockDir === 'new'? -1: 1;
   return people.map((m, i) => [m, i]).sort((x, y) => {
     const a = mkYearOf(x[0]), b = mkYearOf(y[0]);
     if(a == null && b == null) return x[1] - y[1];
@@ -16532,16 +16558,16 @@ function mkSortedPeople(people){
 function syncMakerSortSeg(){
   const row = $('mkSortRow'); if(!row) return;
   const mode = mkSortOn();
-  const era = (mode === 'old' || mode === 'new');
+
   row.querySelectorAll('button[data-mkm]').forEach(b => {
-    b.classList.toggle('on', b.dataset.mkm === 'reg'? !era: era);
+    b.classList.toggle('on', b.dataset.mkm === mode); /* v5.82.37: the clock never takes the on state */
   });
   const dir = $('mkClkDir');
   if(dir) dir.textContent = mkClockDir === 'new'? '▼': '▲';
 }
 function setMakerSort(m){
   if(m !== 'reg' && m !== 'era') return;
-  const next = m === 'reg'? 'reg': mkClockDir;
+  const next = m;
   if(mkSortOn() === next){ syncMakerSortSeg(); return; }
   mkSort = next;
   try{ storeSet('zlab.lmode.makers', mkSort); }catch(e){}
@@ -16549,11 +16575,9 @@ function setMakerSort(m){
   renderMakersBody();
 }
 function toggleMakerClock(){
-  const mode = mkSortOn();
-  const next = mode === 'old'? 'new': mode === 'new'? 'old': mkClockDir;
-  mkClockDir = next;
-  mkSort = next;
-  try{ storeSet('zlab.lmode.makers', mkSort); }catch(e){}
+  mkSortOn();
+  mkClockDir = mkClockDir === 'new'? 'old': 'new';
+  try{ storeSet('zlab.ldir.makers', mkClockDir); }catch(e){}
   syncMakerSortSeg();
   renderMakersBody();
   window.scrollTo(0, 0); /* v32.13.2: the order toggle jumps to the top */
@@ -16682,7 +16706,7 @@ if(s1==='') return 1; if(s2==='') return -1;
 const k1 = secKey[s1], k2 = secKey[s2];
 const i1 = !isFinite(k1), i2 = !isFinite(k2);
 if(i1 || i2) return i1 === i2? 0: (i1? 1: -1);
-return (k1 < k2? -1: k1 > k2? 1: 0);
+return (k1 < k2? -1: k1 > k2? 1: 0) * (listClockDir[DS] === 'new'? -1: 1); /* v5.82.37: direction flips the sections; '' and all-unknown sections stay last */
 });
 order.forEach(sec=>{
 const group = secArr.filter(a=> secOf(a)===sec);
@@ -16699,7 +16723,7 @@ group.sort((x, y)=>{
 const kx = birthSortKey(x), ky = birthSortKey(y);
 const ix = !isFinite(kx), iy = !isFinite(ky);
 if(ix || iy) return ix === iy? 0: (ix? 1: -1);
-return (kx < ky? -1: kx > ky? 1: 0);
+return (kx < ky? -1: kx > ky? 1: 0) * (listClockDir[DS] === 'new'? -1: 1); /* v5.82.37: direction within the section; unknown birth years stay last */
 });
 /* v32.13.2: the 時代/すべて controls live ONLY in the sticky
    era bar (#eraChips) — repeating them in every in-flow head
@@ -16722,15 +16746,7 @@ if(!secArr.length) html += '<div class="empty">該当する項目がありませ
 const region = regionOn();
 const cast = region === 'all'? arr: arr.filter(a=> regionClassOf(a) === region);
 const flat = cast.slice();
-if(lmode === 'old' || lmode === 'new'){
-const sgn = lmode === 'old'? 1: -1;
-flat.sort((x, y)=>{
-const kx = birthSortKey(x), ky = birthSortKey(y);
-const ix = !isFinite(kx), iy = !isFinite(ky);
-if(ix || iy) return ix === iy? 0: (ix? 1: -1);
-return (kx < ky? -1: kx > ky? 1: 0) * sgn;
-});
-}
+if(lmode === 'reg' && listClockDir[DS] === 'new') flat.reverse(); /* v5.82.37: 登録順 + ▼ = reverse registration order */
 if(!flat.length) html += '<div class="empty">該当する項目がありません</div>';
 else {
 html += '<div class="grid '+state.mode+'">';
@@ -17879,8 +17895,8 @@ const fCards = [];
 ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
 worksHTML = packGalleryHTML(fCards, workMode);
 }
-else if((state.workSort || 'reg') === 'decades'){
-worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws));
+else if(workSortMode() === 'decades'){
+worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws, workSortDir()));
 }
 else if(ws.length >= WORKS_GROUP_MIN){
 const idxOf = new Map();
@@ -17953,9 +17969,9 @@ worksHTML = '<div class="worksreq shelf">' + hlBtn +
    the sort seg alone; row 2 is unchanged (display seg + the
    count at its right end). */
 '<div class="wrrow"><span class="seg mini" role="group" aria-label="並び替え">' +
-'<button class="'+((state.workSort||'reg')==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
-'<button class="'+(state.workSort==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
-'<button class="clkbtn'+((state.workSort==='old' || state.workSort==='new')?' on':'')+'" onclick="toggleWorkClock()" aria-label="古い順／新しい順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(((state.workSort==='old' || state.workSort==='new')? state.workSort: workClockDir)==='new'? '▼': '▲')+'</span></button>' +
+'<button class="'+(workSortMode()==='reg'?'on':'')+'" onclick="setWorkSort(\'reg\')">登録順</button>' +
+'<button class="'+(workSortMode()==='decades'?'on':'')+'" onclick="setWorkSort(\'decades\')">年代別</button>' +
+'<button class="clkbtn" onclick="toggleWorkClock()" aria-label="昇順／降順を切り替える"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.1"/></svg><span class="clkdir">'+(workSortDir()==='desc'? '▼': '▲')+'</span></button>' +
 '</span></div>' +
 '<div class="wrrow"><span class="seg mini" role="group" aria-label="表示">' +
 /* v32.6.0 (item 2): the works mode seg is generated from the
@@ -22728,15 +22744,47 @@ function charmLoadingHTML(){
 }
 function charmRetry(){ guideError = false; guideEnsure(); renderHumor(); }
 function charmSecHTML(sec){ return (sec.h? '<h3 class="subhead">' + esc(sec.h) + '</h3>': '') + guideSectionBodyHTML(sec); }
-function charmChapterHTML(ch, skip){
+/* v5.82.36: the reading chapters no longer stack every section
+   into one long scrolling wall (his verdict, 2026-11-26: 「文章が
+   羅列してる状態で極めて見にくい」). They use the guide's own
+   true section tabs — a .gsecrow/.gsec pill row with one section
+   at a time, swapped in place (the production guide's chapters
+   work exactly this way: guideSetSection + guideSecSel). The
+   reader sees the section map first, then one bounded section.
+   Selection persists per tab for the session, like guideSecSel
+   persists per chapter. Pill labels are the full section
+   headings — they are short, and the row scrolls sideways
+   rather than cutting a label mid-word. */
+let charmSecSel = {};
+let charmSecBuilders = {};
+function charmSecLabel(h){ return String(h || '').split('——')[0]; }
+function charmSubNavHTML(tabKey, items){
+  charmSecBuilders[tabKey] = items;
+  let sel = charmSecSel[tabKey] || 0;
+  if(sel >= items.length) sel = 0;
+  charmSecSel[tabKey] = sel;
+  let h = '<div class="gsecrow charmsecrow">' + items.map((it, i)=> '<button class="gsec' + (i === sel? ' on': '') + '" data-csec="' + i + '" onclick="charmSetSec(\'' + tabKey + '\',' + i + ')">' + esc(it.label) + '</button>').join('') + '</div>';
+  h += '<div id="charmsecbody">' + (items[sel]? items[sel].build(): '') + '</div>';
+  return h;
+}
+function charmSetSec(tabKey, i){
+  const items = charmSecBuilders[tabKey]; if(!items || !items[i]) return;
+  charmSecSel[tabKey] = i;
+  const row = document.querySelector('#viewHumor .charmsecrow');
+  if(row) row.querySelectorAll('.gsec').forEach(b=> b.classList.toggle('on', +b.dataset.csec === i));
+  const host = $('charmsecbody');
+  if(host){ host.innerHTML = items[i].build(); wireBizFigs(host); }
+}
+function charmChapterNavHTML(ch, tabKey, skip){
   let h = '';
   if(ch.lead) h += '<p class="bodytext">' + guideLinkHTML(ch.lead) + '</p>';
   if(ch.leadFigs) h += bizFigsHTML(ch.leadFigs);
-  (Array.isArray(ch.sections)? ch.sections: []).forEach(sec=>{
+  const items = (Array.isArray(ch.sections)? ch.sections: []).map(sec=>{
     const sk = skip && skip.find(x=> x.sec === sec);
-    if(sk){ h += '<button class="charmxref" onclick="setCharmTab(\'' + sk.tab + '\')">' + esc(sec.h || '') + '<span class="charmxrefgo">「' + sk.label + '」タブで読む ›</span></button>'; return; }
-    h += charmSecHTML(sec);
+    if(sk) return { label: charmSecLabel(sec.h), build: ()=> '<button class="charmxref" onclick="setCharmTab(\'' + sk.tab + '\')">' + esc(sec.h || '') + '<span class="charmxrefgo">「' + sk.label + '」タブで読む ›</span></button>' };
+    return { label: charmSecLabel(sec.h), build: ()=> charmSecHTML(sec) };
   });
+  if(items.length) h += charmSubNavHTML(tabKey, items);
   return h;
 }
 const CHARM_SECTIONS = [
@@ -22751,6 +22799,12 @@ const CHARM_SECTIONS = [
 ];
 function setCharmTab(k){ charmTab = k; renderHumor(); window.scrollTo(0, 0); }
 function renderCharmHumor(){
+  /* v5.82.35: same ensure pattern as charmLoadingHTML — on a
+     first-tap path (☺︎ before any detail/guide visit) the reading
+     section's chapters have not been fetched yet; guideEnsure's
+     landing repaints this view (the v5.82.33 hook), so the
+     section arrives instead of silently staying absent. */
+  if(!guideData && !guideError) guideEnsure();
   const list = (DS==='artists' && DB)? rosterBase().filter(a=>Array.isArray(a.humor) && a.humor.length): [];
   const wiring = [];
   let html = '';
@@ -22762,10 +22816,14 @@ function renderCharmHumor(){
   if(hsec){ bizFigStore = []; html += charmSecHTML(hsec); }
   if(list.length && hsec) html += '<h3 class="subhead">作家のユーモア</h3>';
   list.forEach(a=>{
-    const th = thumbOf(a);
-    if(th) wiring.push(th);
-    const ph = th? '<div class="charmph">'+imgHTML(th, 256)+'</div>'
-      : '<div class="charmph"><span class="noimg"><span class="ini">'+esc((Array.from(dispName(a)||'')[0]||''))+'</span>図版なし</span></div>';
+    /* v5.82.35: the header image is the artist's portrait (the
+       profile band's keyWork(a.portrait) construction), not the
+       first work's thumbnail. No portrait registered → the shared
+       no-photo mark (v5.49.0), never a work posing as the artist. */
+    const pw = a.portrait? keyWork(a.portrait, a.name || ''): null;
+    if(pw) wiring.push(pw);
+    const ph = pw? '<div class="charmph"><span class="ph" data-portrait="1">'+imgHTML(pw, IMG_SIZE.thumb)+'</span></div>'
+      : '<div class="charmph">'+noPhotoHTML()+'</div>';
     html += '<div class="humorgroup">'
       + '<button class="charmhead" onclick="openHumorArtist(\''+escA(a.id)+'\')">'+ph+'<span class="charmmeta"><span class="charmname">'+esc(dispName(a))+'</span>'+(a.years? '<span class="charmyears">'+esc(yearsDisplay(a))+'</span>': '')+'</span><span class="inflgo">›</span></button>'
       + a.humor.map(h=> '<div class="humorcard"><div class="humortxt">'+pTermEsc(String(h.text))+'</div>'+(h.source? '<div class="humorsrc">'+esc(String(h.source))+'</div>': '')+'</div>').join('')
@@ -22784,7 +22842,7 @@ function renderCharmSociality(){
   const ch = charmChapterById('guide-ch-sociality');
   if(!ch) return { html: charmLoadingHTML(), wiring: [] };
   bizFigStore = [];
-  return { html: charmChapterHTML(ch, null), wiring: [] };
+  return { html: charmChapterNavHTML(ch, 'sociality', null), wiring: [] };
 }
 function renderCharmSelfProduce(){
   const ch = charmChapterById('guide-ch-self-produce');
@@ -22793,7 +22851,7 @@ function renderCharmSelfProduce(){
   const skip = [];
   const hs = charmSecByHead(ch, '切れ味とユーモア'); if(hs) skip.push({ sec: hs, tab: 'humor', label: 'ユーモア' });
   const as = charmSecByHead(ch, 'オーラは揃えるもの'); if(as) skip.push({ sec: as, tab: 'aura', label: 'オーラを稼ぐ' });
-  return { html: charmChapterHTML(ch, skip), wiring: [] };
+  return { html: charmChapterNavHTML(ch, 'selfproduce', skip), wiring: [] };
 }
 /* ロールモデル: static editorial cards (Social Labo material,
    2026-11-26). Who each model is + the exact points he takes
@@ -22872,17 +22930,22 @@ const CHARM_LIE = [
     '言い回しの在庫を持つ。感想に困る時、予定を断る時、知らないことを聞かれた時。場面は予測できるから、短い定型を先に用意しておく。即興の8割は準備、はここでも同じだ。'
   ]}
 ];
+function charmLieSecHTML(sec){
+  let html = '<h3 class="subhead">' + esc(sec.h) + '</h3>';
+  if(sec.duo){
+    html += '<div class="modelcard"><div class="modelname">使う嘘</div><ul class="modelpts">' + sec.duo.use.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
+    html += '<div class="modelcard"><div class="modelname">使わない嘘</div><ul class="modelpts">' + sec.duo.avoid.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
+  }
+  (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
+  return html;
+}
 function renderCharmLie(){
-  let html = '';
-  CHARM_LIE.forEach(sec=>{
-    html += '<h3 class="subhead">' + esc(sec.h) + '</h3>';
-    if(sec.duo){
-      html += '<div class="modelcard"><div class="modelname">使う嘘</div><ul class="modelpts">' + sec.duo.use.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
-      html += '<div class="modelcard"><div class="modelname">使わない嘘</div><ul class="modelpts">' + sec.duo.avoid.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
-    }
-    (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
-  });
-  return { html, wiring: [] };
+  /* v5.82.36: same section-tab treatment as the chapters — the
+     six sections were a stacked wall; now the pill row is the
+     map and one section renders at a time. The duo cards inside
+     「使う嘘、使わない嘘」 stay cards. */
+  const items = CHARM_LIE.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> charmLieSecHTML(sec) }));
+  return { html: charmSubNavHTML('lie', items), wiring: [] };
 }
 function renderHumor(){
   const v = $('viewHumor'); if(!v) return;
@@ -22894,14 +22957,39 @@ function renderHumor(){
     return;
   }
   if(!secs.some(s=>s.key===charmTab)) charmTab = secs[0].key;
-  html += '<div class="bizpills" style="margin-top:10px">' + secs.map(s=> '<button class="'+(charmTab===s.key? 'on': '')+'" onclick="setCharmTab(\''+s.key+'\')">'+s.label+'</button>').join('') + '</div>';
+  /* v5.82.35: the tab bar is the artist page's own .dtabs — compact
+     pills that hug their labels (padding 5px 12px, min-height 32px,
+     12.5px), NOT the .bizpills chunky ovals (9px 16px, 48px,
+     13.5px) the v5.82.31 build borrowed (his verdicts, 2026-11-26:
+     「野暮い」「文字の周りの余白が多すぎる」「ピルタブスクロール
+     できない」). The .bizpills row could not scroll at all: its
+     touch-action is pan-y and the segment-drag system (SEG_SEL)
+     captures horizontal drags on it. .dtabs is the app's working
+     native scroller — touch-action pan-x pan-y, excluded from both
+     the segment drags and the swipe-back arming by name — so the
+     row scrolls sideways with the same right-edge fade (.more,
+     wired by wireDTabs) as the artist page's tab bar. */
+  html += '<div class="dtabs">' + secs.map(s=> '<button class="'+(charmTab===s.key? 'on': '')+'" onclick="setCharmTab(\''+s.key+'\')">'+s.label+'</button>').join('') + '</div>';
   const sec = secs.find(s=>s.key===charmTab);
   const out = sec.render();
   html += out.html;
   v.innerHTML = html;
-  /* the era view's wiring pattern: pair each imgholder with its
-     work so the observer can hydrate it on approach. */
-  v.querySelectorAll('.imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* the era view's wiring pattern: pair each header portrait
+     holder with its work so the observer can hydrate it on
+     approach. Scoped to .charmph so the reading layer's guide
+     figures (wired by wireBizFigs below) never enter the pairing. */
+  v.querySelectorAll('.charmph .imgholder').forEach((span, k)=>{ const w = (out.wiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* the tab bar's fade + the dtabHighlight treatment: if the
+     selected pill sits off the right edge, slide the row so it
+     shows (a cross-reference jump can land on a late tab). */
+  wireDTabs(v);
+  const cb = v.querySelector('.dtabs');
+  if(cb){ const on = cb.querySelector('button.on'); if(on){ const br = cb.getBoundingClientRect(), r = on.getBoundingClientRect(); if(r.left < br.left + 2 || r.right > br.right - 2) cb.scrollLeft = Math.max(0, cb.scrollLeft + (r.left - br.left) - 12); } }
+  /* v5.82.36: same treatment for the section pill row — a
+     persisted late selection （九、… etc.) must not sit off the
+     row's right edge when the tab re-renders. */
+  const sr = v.querySelector('.charmsecrow');
+  if(sr){ const son = sr.querySelector('button.on'); if(son){ const sbr = sr.getBoundingClientRect(), srr = son.getBoundingClientRect(); if(srr.left < sbr.left + 2 || srr.right > sbr.right - 2) sr.scrollLeft = Math.max(0, sr.scrollLeft + (srr.left - sbr.left) - 12); } }
   /* v5.82.33: the reading tabs carry guide figures — wire their
      tap-to-enlarge the same way the guide and biz views do. */
   wireBizFigs(v);
@@ -26972,6 +27060,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
+    if(e.target && e.target.closest && e.target.closest('.charmsecrow')) return; /* v5.82.36: the 人間的魅力 section pill row is a native scroller too (the guide's .gsecrow, transplanted) — drags on it scroll the row and never arm the swipe-back (the .dtabs treatment). Inside the guide panel this never mattered; the panel itself is excluded above. */
     if(e.target && e.target.closest && e.target.closest('#tlbar')) return; /* v29.3: the timeline year bar is a drag control — horizontal drags on it scrub the timeline and never arm the swipe-back (his 2026-11-14 video: bar drags engaged this gesture, the view slid to the list and back, and the engage/teardown churn — pin, WAAPI, un-pin — ghosted the card text into double print). The bar's own handler is Pointer Events; this exclusion is the same treatment #bizpillbar gets. */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
@@ -27113,7 +27202,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.34';
+const APP_VERSION = '5.82.37';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
