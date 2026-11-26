@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.35">
+<meta name="app-version" content="5.82.36">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2452,6 +2452,10 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    bodytext/subhead styles, unchanged. */
 .charmxref{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:16px 0; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 .charmxrefgo{font-family:var(--sans); font-size:12.5px; color:var(--muted); flex:none;}
+/* v5.82.36: the section pill row inside the reading tabs is the
+   guide's .gsecrow; on this page it also needs the .dtabs touch
+   treatment so horizontal drags scroll the row natively. */
+.charmsecrow{touch-action:pan-x pan-y;}
 .modelcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .modelname{font-family:var(--serif); font-size:16.5px; font-weight:600; line-height:1.4;}
 .modelwho{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.55;}
@@ -22735,15 +22739,47 @@ function charmLoadingHTML(){
 }
 function charmRetry(){ guideError = false; guideEnsure(); renderHumor(); }
 function charmSecHTML(sec){ return (sec.h? '<h3 class="subhead">' + esc(sec.h) + '</h3>': '') + guideSectionBodyHTML(sec); }
-function charmChapterHTML(ch, skip){
+/* v5.82.36: the reading chapters no longer stack every section
+   into one long scrolling wall (his verdict, 2026-11-26: 「文章が
+   羅列してる状態で極めて見にくい」). They use the guide's own
+   true section tabs — a .gsecrow/.gsec pill row with one section
+   at a time, swapped in place (the production guide's chapters
+   work exactly this way: guideSetSection + guideSecSel). The
+   reader sees the section map first, then one bounded section.
+   Selection persists per tab for the session, like guideSecSel
+   persists per chapter. Pill labels are the full section
+   headings — they are short, and the row scrolls sideways
+   rather than cutting a label mid-word. */
+let charmSecSel = {};
+let charmSecBuilders = {};
+function charmSecLabel(h){ return String(h || '').split('——')[0]; }
+function charmSubNavHTML(tabKey, items){
+  charmSecBuilders[tabKey] = items;
+  let sel = charmSecSel[tabKey] || 0;
+  if(sel >= items.length) sel = 0;
+  charmSecSel[tabKey] = sel;
+  let h = '<div class="gsecrow charmsecrow">' + items.map((it, i)=> '<button class="gsec' + (i === sel? ' on': '') + '" data-csec="' + i + '" onclick="charmSetSec(\'' + tabKey + '\',' + i + ')">' + esc(it.label) + '</button>').join('') + '</div>';
+  h += '<div id="charmsecbody">' + (items[sel]? items[sel].build(): '') + '</div>';
+  return h;
+}
+function charmSetSec(tabKey, i){
+  const items = charmSecBuilders[tabKey]; if(!items || !items[i]) return;
+  charmSecSel[tabKey] = i;
+  const row = document.querySelector('#viewHumor .charmsecrow');
+  if(row) row.querySelectorAll('.gsec').forEach(b=> b.classList.toggle('on', +b.dataset.csec === i));
+  const host = $('charmsecbody');
+  if(host){ host.innerHTML = items[i].build(); wireBizFigs(host); }
+}
+function charmChapterNavHTML(ch, tabKey, skip){
   let h = '';
   if(ch.lead) h += '<p class="bodytext">' + guideLinkHTML(ch.lead) + '</p>';
   if(ch.leadFigs) h += bizFigsHTML(ch.leadFigs);
-  (Array.isArray(ch.sections)? ch.sections: []).forEach(sec=>{
+  const items = (Array.isArray(ch.sections)? ch.sections: []).map(sec=>{
     const sk = skip && skip.find(x=> x.sec === sec);
-    if(sk){ h += '<button class="charmxref" onclick="setCharmTab(\'' + sk.tab + '\')">' + esc(sec.h || '') + '<span class="charmxrefgo">「' + sk.label + '」タブで読む ›</span></button>'; return; }
-    h += charmSecHTML(sec);
+    if(sk) return { label: charmSecLabel(sec.h), build: ()=> '<button class="charmxref" onclick="setCharmTab(\'' + sk.tab + '\')">' + esc(sec.h || '') + '<span class="charmxrefgo">「' + sk.label + '」タブで読む ›</span></button>' };
+    return { label: charmSecLabel(sec.h), build: ()=> charmSecHTML(sec) };
   });
+  if(items.length) h += charmSubNavHTML(tabKey, items);
   return h;
 }
 const CHARM_SECTIONS = [
@@ -22801,7 +22837,7 @@ function renderCharmSociality(){
   const ch = charmChapterById('guide-ch-sociality');
   if(!ch) return { html: charmLoadingHTML(), wiring: [] };
   bizFigStore = [];
-  return { html: charmChapterHTML(ch, null), wiring: [] };
+  return { html: charmChapterNavHTML(ch, 'sociality', null), wiring: [] };
 }
 function renderCharmSelfProduce(){
   const ch = charmChapterById('guide-ch-self-produce');
@@ -22810,7 +22846,7 @@ function renderCharmSelfProduce(){
   const skip = [];
   const hs = charmSecByHead(ch, '切れ味とユーモア'); if(hs) skip.push({ sec: hs, tab: 'humor', label: 'ユーモア' });
   const as = charmSecByHead(ch, 'オーラは揃えるもの'); if(as) skip.push({ sec: as, tab: 'aura', label: 'オーラを稼ぐ' });
-  return { html: charmChapterHTML(ch, skip), wiring: [] };
+  return { html: charmChapterNavHTML(ch, 'selfproduce', skip), wiring: [] };
 }
 /* ロールモデル: static editorial cards (Social Labo material,
    2026-11-26). Who each model is + the exact points he takes
@@ -22889,17 +22925,22 @@ const CHARM_LIE = [
     '言い回しの在庫を持つ。感想に困る時、予定を断る時、知らないことを聞かれた時。場面は予測できるから、短い定型を先に用意しておく。即興の8割は準備、はここでも同じだ。'
   ]}
 ];
+function charmLieSecHTML(sec){
+  let html = '<h3 class="subhead">' + esc(sec.h) + '</h3>';
+  if(sec.duo){
+    html += '<div class="modelcard"><div class="modelname">使う嘘</div><ul class="modelpts">' + sec.duo.use.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
+    html += '<div class="modelcard"><div class="modelname">使わない嘘</div><ul class="modelpts">' + sec.duo.avoid.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
+  }
+  (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
+  return html;
+}
 function renderCharmLie(){
-  let html = '';
-  CHARM_LIE.forEach(sec=>{
-    html += '<h3 class="subhead">' + esc(sec.h) + '</h3>';
-    if(sec.duo){
-      html += '<div class="modelcard"><div class="modelname">使う嘘</div><ul class="modelpts">' + sec.duo.use.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
-      html += '<div class="modelcard"><div class="modelname">使わない嘘</div><ul class="modelpts">' + sec.duo.avoid.map(p=> '<li>' + esc(p) + '</li>').join('') + '</ul></div>';
-    }
-    (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
-  });
-  return { html, wiring: [] };
+  /* v5.82.36: same section-tab treatment as the chapters — the
+     six sections were a stacked wall; now the pill row is the
+     map and one section renders at a time. The duo cards inside
+     「使う嘘、使わない嘘」 stay cards. */
+  const items = CHARM_LIE.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> charmLieSecHTML(sec) }));
+  return { html: charmSubNavHTML('lie', items), wiring: [] };
 }
 function renderHumor(){
   const v = $('viewHumor'); if(!v) return;
@@ -22939,6 +22980,11 @@ function renderHumor(){
   wireDTabs(v);
   const cb = v.querySelector('.dtabs');
   if(cb){ const on = cb.querySelector('button.on'); if(on){ const br = cb.getBoundingClientRect(), r = on.getBoundingClientRect(); if(r.left < br.left + 2 || r.right > br.right - 2) cb.scrollLeft = Math.max(0, cb.scrollLeft + (r.left - br.left) - 12); } }
+  /* v5.82.36: same treatment for the section pill row — a
+     persisted late selection （九、… etc.) must not sit off the
+     row's right edge when the tab re-renders. */
+  const sr = v.querySelector('.charmsecrow');
+  if(sr){ const son = sr.querySelector('button.on'); if(son){ const sbr = sr.getBoundingClientRect(), srr = son.getBoundingClientRect(); if(srr.left < sbr.left + 2 || srr.right > sbr.right - 2) sr.scrollLeft = Math.max(0, sr.scrollLeft + (srr.left - sbr.left) - 12); } }
   /* v5.82.33: the reading tabs carry guide figures — wire their
      tap-to-enlarge the same way the guide and biz views do. */
   wireBizFigs(v);
@@ -27008,6 +27054,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest('#tlmapsheet, #termsheet, #symsheet, #erasheet')) return; /* v30.8: the modal sheets get the guide panel's treatment — touches inside them never arm the swipe-back on the screen underneath */
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
+    if(e.target && e.target.closest && e.target.closest('.charmsecrow')) return; /* v5.82.36: the 人間的魅力 section pill row is a native scroller too (the guide's .gsecrow, transplanted) — drags on it scroll the row and never arm the swipe-back (the .dtabs treatment). Inside the guide panel this never mattered; the panel itself is excluded above. */
     if(e.target && e.target.closest && e.target.closest('#tlbar')) return; /* v29.3: the timeline year bar is a drag control — horizontal drags on it scrub the timeline and never arm the swipe-back (his 2026-11-14 video: bar drags engaged this gesture, the view slid to the list and back, and the engage/teardown churn — pin, WAAPI, un-pin — ghosted the card text into double print). The bar's own handler is Pointer Events; this exclusion is the same treatment #bizpillbar gets. */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
@@ -27149,7 +27196,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.35';
+const APP_VERSION = '5.82.36';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
