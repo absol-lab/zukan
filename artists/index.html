@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.48">
+<meta name="app-version" content="5.82.49">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -840,6 +840,7 @@ button.inflrow{cursor:pointer;}
 #viewDetail .gallery.wm-wide{grid-template-columns:1fr;}
 #viewDetail .gallery.wm-compact{grid-template-columns:repeat(3, 1fr); gap:10px 7px;}
 #viewDetail .gallery.wm-mini{grid-template-columns:repeat(4, 1fr); gap:8px 6px;}
+#viewDetail .gallery.wm-micro{grid-template-columns:repeat(5, 1fr); gap:7px 5px;} /* v5.82.49: completes the row-flow size set (was pcols-only) */
 #viewDetail .gallery.wm-mini figcaption .sub{font-size:10.5px; line-height:1.35;}
 .gallery figure.work .ph{aspect-ratio:1/1;}
 /* v32.17.0 (fix 3): masonry packing for the aspect-fit galleries
@@ -11356,7 +11357,16 @@ if(p === 'unknown') return 1;
 if(q === 'unknown') return -1;
 return ((+p) - (+q)) * (dir === 'desc'? -1: 1); /* v5.82.37: direction flips the groups; 年不詳 stays last in both */
 });
-if(dir === 'desc') groups.forEach(g=> g.reverse());
+/* v5.82.49 (his report, 2026-11-27): within a decade the
+   works are sorted BY YEAR (direction applied); before,
+   asc kept data order and desc merely reversed it, so a
+   group read 1935, 1933, c.1930, 1933... workYearOf takes
+   the caption's first 4-digit year, so c.1935 and ranges
+   like 1932-35 land on their first year. Same-year ties
+   keep data order (stable sort); the unknown group is
+   all-null and stays in data order both ways. */
+const ysign = (dir === 'desc')? -1: 1;
+groups.forEach(g=> g.sort((i, j)=> (((workYearOf(ws[i]) || 0) - (workYearOf(ws[j]) || 0)) * ysign)));
 return { groups: groups, keys: keys };
 }
 function decadeSectionsHTML(ws, mkCard, dg){
@@ -11364,7 +11374,7 @@ const label = k=> (k === 'unknown')? '制作年不詳': (k + '年代');
 let h = '<div class="wgrpchips">' + dg.keys.map(k=> '<button onclick="jumpWorkGroup(\'' + k + '\')">' + esc(label(k)) + '（' + dg.groups.get(k).length + '）</button>').join('') + '</div>';
 dg.keys.forEach(k=>{
 h += '<h3 class="subhead wgrphead" data-wgrp="' + k + '">' + esc(label(k)) + '<span class="wgrpcnt">' + dg.groups.get(k).length + '点</span></h3>';
-h += packGalleryHTML(dg.groups.get(k).map(i=> mkCard(ws[i], i)), workMode);
+h += packGalleryHTML(dg.groups.get(k).map(i=> mkCard(ws[i], i)), workMode, true); /* v5.82.49: decades read chronologically — row flow (.gallery grid), never the packed columns, so the visual order IS the DOM order */
 });
 return h;
 }
@@ -11976,9 +11986,9 @@ cols[best].items.push(c.h); cols[best].h += c.e + 12;
 });
 return cols.map(c=> c.items);
 }
-function packGalleryHTML(cards, mode){
+function packGalleryHTML(cards, mode, rowFlow){
 const n = PCOLS_N[mode] || 2;
-if(n <= 1 || cards.length <= n) return '<div class="gallery wm-' + mode + '">' + cards.map(c=> c.h).join('') + '</div>';
+if(rowFlow || n <= 1 || cards.length <= n) return '<div class="gallery wm-' + mode + '">' + cards.map(c=> c.h).join('') + '</div>';
 return '<div class="pcols wm-' + mode + '">' + packCols(cards, n).map(items=> '<div class="pcol">' + items.join('') + '</div>').join('') + '</div>';
 }
 /* v32.17.1: the exhibition grids (exhibitions view, museum
@@ -28096,7 +28106,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.48';
+const APP_VERSION = '5.82.49';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
