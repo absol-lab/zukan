@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.65">
+<meta name="app-version" content="5.82.66">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13283,7 +13283,7 @@ const GUIDE_TAX = [
      university chapters as reference at the end. This
      supersedes the v5.80.0 seating (全体地図 → the schools
      → 課題 → 藝大に勝つ → the procedure chapters). */
-  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大に勝つ', 'exam-ch9'], ['逆算', 'exam-ch2'], ['デッサン', 'exam-ch4'], ['油彩', 'exam-ch3'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['課題', 'exam-ch8'], ['過去問', 'exam-ch10'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi']] },
+  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大に勝つ', 'exam-ch9'], ['逆算', 'exam-ch2'], ['デッサン', 'exam-ch4'], ['油彩', 'exam-ch3'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['課題', 'exam-ch8'], ['過去問', 'exam-ch10'], ['予想問題', 'exam-ch11'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi']] },
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8'], ['タイトル', 'guide-ch-titles']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials'], ['顔', 'guide-ch-faces']] },
@@ -14452,6 +14452,22 @@ function bizFigsHTML(figs){
   if(!Array.isArray(figs) || !figs.length) return '';
   return figs.map(f=>{
     if(!f || !f.type) return '';
+    if(f.type === 'problems'){
+      /* v5.82.66: predicted-problem cards (exam-ch11 予想問題).
+         One problem = one card in the mock-exam sheet's own
+         format （モチーフ／課題／紙／画材／場所／時間）, plus the
+         assumed 出題意図， the past pattern it is built on, and
+         a practice memo. Same card shell as the year cards.
+         These are NOT official problems — practice only, and
+         the chapter says so at every level. */
+      const rows = [['モチーフ','motif'], ['課題','q'], ['紙','paper'], ['画材','tools'], ['場所','place'], ['時間','time'], ['出題意図','intent'], ['型と根拠','base'], ['練習メモ','memo']];
+      return '<div class="bizfig">' + (f.title ? '<div class="bizfigtitle">' + esc(f.title) + '</div>' : '')
+        + (f.items || []).map(c=>{
+            let b = rows.map(r=> c[r[1]] ? '<div class="yrow"><div class="ylab">' + r[0] + '</div><div class="yval">' + esc(c[r[1]]) + '</div></div>' : '').join('');
+            return '<details class="ycard"><summary class="ycardhead"><span class="ycardy">' + esc(c.n) + '</span><span class="ycardera">第1次・素描</span><span class="ycardtags">' + (c.tag ? '<span class="ycardt">' + esc(c.tag) + '</span>' : '') + '</span><span class="ycardchev">▽</span></summary><div class="ycardbody">' + b + '</div></details>';
+          }).join('')
+        + (f.note ? '<div class="bizfignote">' + esc(f.note) + '</div>' : '') + '</div>';
+    }
     if(f.type === 'years'){
       /* v5.82.62: year cards — one card per exam year, the
          出題／合格作品／評価 set complete inside the card;
@@ -28906,7 +28922,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.65';
+const APP_VERSION = '5.82.66';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
