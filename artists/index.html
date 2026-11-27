@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.55">
+<meta name="app-version" content="5.82.56">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -13226,7 +13226,7 @@ const GUIDE_TAX = [
      procedure chapters that answer it. */
   { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi'], ['課題', 'exam-ch8'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8'], ['タイトル', 'guide-ch-titles']] },
-  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials']] },
+  { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials'], ['顔', 'guide-ch-faces']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['インタビュー', 'guide-ch-interview'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
 ];
 /* v30.9: one line icon per guide major (his call: swap the
@@ -14236,6 +14236,15 @@ function bizCasesHTML(cases){
      {type:'svg', kind:'pyramid', title?, layers:[{t,s}]}
        Stacked layers, widest at the bottom.
      {type:'table', title?, head:[...], rows:[[...]]}
+     v5.82.56 addition (似せない顔の描き方 chapter):
+     {type:'svg', kind:'faces', title?, items:[{k,t,s}] (1-3 items)}
+       Schematic face glyphs, one per method type. k selects the
+       glyph: sign (dots/lines/circle + crown), scratch (incised
+       polygon + hatching + X eyes), smear (ghosted oval + smeared
+       mouth band), shift (front eye + profile nose on one face),
+       upside (features inverted), scribble (loose line loops),
+       planes (flat tonal polygons, no outline features), comic
+       (one big eye in a round heavy-outlined head).
      v5.60.0 additions: a works figure may carry stack:true —
      its cards render full-width in a column instead of the
      horizontal row (for comparisons that must stay readable
@@ -14577,6 +14586,72 @@ function bizFigSVG(f){
       s += T(cx, 88, it.t, 12, 'middle', 600) + S2(cx, 101, it.s, 8);
     });
     s += '<text x="' + x00 + '" y="140" font-size="9.5" fill="var(--muted)">' + esc(f.legend || '版（板）／インク（金色）／紙（白い帯）の位置は4図とも同じ') + '</text>';
+    return s + '</svg>';
+  }
+  if(f.kind === 'faces'){
+    const items = (f.items || []).slice(0, 3); if(!items.length) return '';
+    const cw = items.length === 1? 168: (items.length === 2? 150: 106);
+    const gap = 8, W = cw * items.length + gap * (items.length - 1) + 8, H = 158;
+    const ink = 'var(--text)', acc = 'var(--accent)';
+    const P = (d, w, c, o)=>'<path d="' + d + '" fill="none" stroke="' + (c || ink) + '" stroke-width="' + (w || 2) + '" stroke-linecap="round" stroke-linejoin="round"' + (o? ' opacity="' + o + '"': '') + '/>';
+    const glyph = (k, cx)=>{
+      let g = '';
+      if(k === 'sign'){
+        g += '<circle cx="' + cx + '" cy="56" r="25" fill="none" stroke="' + ink + '" stroke-width="2"/>';
+        g += P('M' + (cx - 12) + ' 20 L' + (cx - 6) + ' 29 L' + cx + ' 21 L' + (cx + 6) + ' 29 L' + (cx + 12) + ' 20', 2, acc);
+        g += '<circle cx="' + (cx - 10) + '" cy="50" r="3" fill="' + ink + '"/><circle cx="' + (cx + 10) + '" cy="50" r="3" fill="' + ink + '"/>';
+        g += P('M' + cx + ' 53 L' + cx + ' 63');
+        g += P('M' + (cx - 9) + ' 70 L' + (cx + 9) + ' 70');
+      } else if(k === 'scratch'){
+        g += P('M' + (cx - 4) + ' 24 L' + (cx + 16) + ' 29 L' + (cx + 24) + ' 49 L' + (cx + 16) + ' 73 L' + (cx - 2) + ' 82 L' + (cx - 20) + ' 71 L' + (cx - 25) + ' 47 L' + (cx - 18) + ' 28 Z', 2.4);
+        g += P('M' + (cx - 18) + ' 35 L' + (cx + 11) + ' 31 M' + (cx - 20) + ' 45 L' + (cx + 17) + ' 41 M' + (cx - 15) + ' 58 L' + (cx + 13) + ' 62', 1.1, ink, 0.55);
+        g += P('M' + (cx - 14) + ' 43 L' + (cx - 8) + ' 49 M' + (cx - 8) + ' 43 L' + (cx - 14) + ' 49 M' + (cx + 8) + ' 43 L' + (cx + 14) + ' 49 M' + (cx + 14) + ' 43 L' + (cx + 8) + ' 49', 1.8);
+        g += P('M' + (cx - 8) + ' 65 L' + (cx - 3) + ' 62 L' + (cx + 2) + ' 65 L' + (cx + 7) + ' 62', 1.8);
+      } else if(k === 'smear'){
+        g += '<ellipse cx="' + cx + '" cy="54" rx="26" ry="30" fill="none" stroke="' + ink + '" stroke-width="1.6" opacity="0.45"/>';
+        g += P('M' + (cx - 16) + ' 45 L' + (cx - 4) + ' 44 M' + (cx + 6) + ' 43 L' + (cx + 17) + ' 42', 2.4);
+        g += P('M' + (cx - 12) + ' 27 L' + (cx - 10) + ' 75 M' + (cx + 14) + ' 29 L' + (cx + 12) + ' 73', 1.1, ink, 0.4);
+        g += P('M' + (cx - 20) + ' 63 Q' + cx + ' 53 ' + (cx + 21) + ' 64', 7, acc, 0.5);
+      } else if(k === 'shift'){
+        g += '<ellipse cx="' + cx + '" cy="54" rx="26" ry="30" fill="none" stroke="' + ink + '" stroke-width="1.8"/>';
+        g += '<line x1="' + cx + '" y1="26" x2="' + cx + '" y2="82" stroke="' + ink + '" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>';
+        g += '<circle cx="' + (cx - 11) + '" cy="47" r="3.6" fill="none" stroke="' + ink + '" stroke-width="2"/>';
+        g += P('M' + cx + ' 42 L' + (cx + 13) + ' 55 L' + cx + ' 60', 2.2, acc);
+        g += P('M' + (cx - 12) + ' 69 L' + (cx - 2) + ' 69 M' + (cx + 2) + ' 69 L' + (cx + 10) + ' 69', 2);
+      } else if(k === 'upside'){
+        g += '<ellipse cx="' + cx + '" cy="52" rx="26" ry="30" fill="none" stroke="' + ink + '" stroke-width="2"/>';
+        g += '<circle cx="' + (cx - 10) + '" cy="64" r="3" fill="' + ink + '"/><circle cx="' + (cx + 10) + '" cy="64" r="3" fill="' + ink + '"/>';
+        g += P('M' + (cx - 9) + ' 40 Q' + cx + ' 32 ' + (cx + 9) + ' 40', 2);
+        g += P('M' + (cx - 16) + ' 76 L' + (cx - 13) + ' 84 M' + (cx - 4) + ' 79 L' + (cx - 2) + ' 87 M' + (cx + 8) + ' 78 L' + (cx + 11) + ' 85', 1.8, acc);
+      } else if(k === 'scribble'){
+        g += P('M' + (cx - 20) + ' 42 Q' + (cx - 27) + ' 20 ' + (cx - 4) + ' 25 Q' + (cx + 17) + ' 16 ' + (cx + 22) + ' 35 Q' + (cx + 29) + ' 55 ' + (cx + 12) + ' 63 Q' + (cx + 25) + ' 77 ' + (cx + 2) + ' 81 Q' + (cx - 19) + ' 87 ' + (cx - 23) + ' 67 Q' + (cx - 31) + ' 53 ' + (cx - 16) + ' 51', 2);
+        g += P('M' + (cx - 13) + ' 45 q3 -4 6 0 q-3 4 -6 0 M' + (cx + 8) + ' 44 q3 -4 6 0 q-3 4 -6 0', 1.7);
+        g += P('M' + (cx - 7) + ' 62 Q' + cx + ' 58 ' + (cx + 8) + ' 63', 1.7, acc);
+      } else if(k === 'planes'){
+        g += '<ellipse cx="' + cx + '" cy="54" rx="26" ry="30" fill="none" stroke="' + ink + '" stroke-width="1.6"/>';
+        g += '<polygon points="' + (cx - 23) + ',41 ' + (cx + 2) + ',27 ' + (cx + 2) + ',55 ' + (cx - 23) + ',59" fill="' + acc + '" opacity="0.28"/>';
+        g += '<polygon points="' + (cx + 2) + ',27 ' + (cx + 23) + ',42 ' + (cx + 17) + ',72 ' + (cx + 2) + ',55" fill="' + ink + '" opacity="0.14"/>';
+        g += '<polygon points="' + (cx - 23) + ',59 ' + (cx + 2) + ',55 ' + (cx + 17) + ',72 ' + (cx - 2) + ',83" fill="' + acc + '" opacity="0.12"/>';
+        g += P('M' + (cx - 15) + ' 48 L' + (cx - 7) + ' 48 L' + (cx - 11) + ' 53 Z', 1.6);
+        g += P('M' + (cx + 8) + ' 47 L' + (cx + 16) + ' 47 L' + (cx + 12) + ' 52 Z', 1.6);
+        g += P('M' + (cx - 6) + ' 70 L' + (cx + 8) + ' 69', 2);
+      } else if(k === 'comic'){
+        g += '<circle cx="' + cx + '" cy="54" r="27" fill="none" stroke="' + ink + '" stroke-width="3"/>';
+        g += '<circle cx="' + (cx + 2) + '" cy="44" r="9" fill="none" stroke="' + ink + '" stroke-width="2.4"/>';
+        g += '<circle cx="' + (cx + 2) + '" cy="44" r="2.6" fill="' + ink + '"/>';
+        g += P('M' + (cx + 25) + ' 56 q6 3 1 8', 2.4);
+        g += P('M' + (cx - 5) + ' 71 L' + (cx + 10) + ' 72', 2.4);
+        g += P('M' + (cx - 14) + ' 24 q4 -5 9 -2 M' + (cx + 4) + ' 21 q5 -3 9 1', 2, acc);
+      }
+      return g;
+    };
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+    items.forEach((it, i)=>{
+      const x = 4 + i * (cw + gap), cx = x + cw / 2;
+      s += '<rect x="' + x + '" y="6" width="' + cw + '" height="96" fill="var(--bg2)" stroke="var(--line)"/>';
+      s += glyph(it.k, cx);
+      s += T(cx, 124, it.t, 12, 'middle', 600) + S2(cx, 139, it.s, 9);
+    });
     return s + '</svg>';
   }
   if(f.kind === 'contrast'){
@@ -28534,7 +28609,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.55';
+const APP_VERSION = '5.82.56';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
