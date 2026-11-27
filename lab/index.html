@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.58">
+<meta name="app-version" content="5.82.62">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1776,6 +1776,26 @@ button.gcalcell{background:none; border:none; cursor:pointer; font:inherit;}
 .biztypo-c{font-family:var(--headfont); font-size:44px; line-height:1; color:var(--accent); opacity:.92}
 .casebox{border:1px solid var(--line); border-left:3px solid #d9a441; border-radius:10px; padding:10px 12px; margin:0 0 12px; background:var(--card)}
 .casetitle{font-weight:800; margin-bottom:4px}
+/* v5.82.62: year cards (exam-ch10 過去の受験リサーチ). One year
+   = one large card; the summary line carries the year and the
+   two exam labels, the body carries the labelled rows. Native
+   details/summary, so no wiring is needed. */
+.ycard{border:1px solid var(--line); border-radius:12px; background:var(--card); margin:0 0 10px; overflow:hidden}
+.ycard summary{list-style:none}
+.ycard summary::-webkit-details-marker{display:none}
+.ycardhead{display:flex; align-items:center; gap:8px; padding:12px 12px; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.ycardy{font-family:var(--headfont); font-size:21px; font-weight:700; line-height:1}
+.ycardera{font-size:11px; color:var(--muted)}
+.ycardtags{display:flex; flex-wrap:wrap; gap:5px; margin-left:auto}
+.ycardt{font-size:11px; border:1px solid var(--line); border-radius:999px; padding:3px 8px; color:var(--text); white-space:nowrap}
+.ycardchev{font-size:12px; color:var(--muted); transition:transform .2s}
+.ycard[open ] .ycardchev{transform:rotate(180deg)}
+.ycardbody{border-top:1px solid var(--line)}
+.yrow{display:flex; gap:10px; padding:9px 12px; border-top:1px solid var(--line)}
+.yrow:first-child{border-top:none}
+.ylab{flex:0 0 58px; font-size:11px; font-weight:700; color:#d9a441; padding-top:3px; line-height:1.5}
+.yval{flex:1; font-size:13.5px; line-height:1.8; overflow-wrap:anywhere}
+.yval a{color:#d9a441}
 .biznav{display:flex; justify-content:space-between; gap:8px; margin-top:18px}
 .biznavbtn{flex:1; min-height:48px; border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:10px; font-size:14px; font-family:inherit}
 .glossrow{padding:10px 0; border-top:1px solid var(--line)}
@@ -2496,6 +2516,22 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 .witname{font-family:var(--serif); font-size:15.5px; color:var(--text);}
 .witline{font-size:13px; line-height:1.6; color:var(--muted); margin-top:4px;}
 .witex{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:5px;}
+/* v5.82.59: 緊張 tab — the double-structure SVG figure, the
+   practice-memo cards and the exam-day step flow. Same panel
+   language as the ウィット figure above. */
+.nrvfig{margin:10px 0; padding:12px 14px; background:var(--bg2); border-radius:10px;}
+.nrvfig svg{display:block; width:100%; height:auto;}
+.nrvfig svg text{font-family:var(--serif); fill:var(--text);}
+.nrvfig svg .svgsub{font-family:var(--sans); fill:var(--muted);}
+.nrvmemo{margin:10px 0; padding:11px 13px; background:var(--bg2); border-radius:10px; border-left:3px solid var(--gold, #c9a227);}
+.nrvmt{font-family:var(--sans); font-size:11.5px; letter-spacing:.1em; color:var(--muted); margin-bottom:5px;}
+.nrvml{font-size:14px; line-height:1.65; color:var(--text); padding:2px 0;}
+.nrvsteps{margin:6px 0 10px;}
+.nrvstep{display:flex; gap:11px; padding:10px 0; border-bottom:1px solid var(--line);}
+.nrvstep:last-child{border-bottom:none;}
+.nrvn{flex:none; width:25px; height:25px; border-radius:50%; border:1px solid var(--gold, #c9a227); font-family:var(--headfont); font-size:13px; color:var(--text); display:flex; align-items:center; justify-content:center; margin-top:2px;}
+.nrvst{font-family:var(--serif); font-size:15.5px; color:var(--text); line-height:1.4;}
+.nrvsd{font-size:13.5px; line-height:1.65; color:var(--muted); margin-top:3px;}
 .quotemore{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:14px 0 4px; color:var(--text); font-family:var(--serif); font-size:15px; cursor:pointer; min-height:44px;}
 /* v5.82.48: 診断 tab — 性格診断300問 (his ask via the MBTI chat,
    2026-11-27). Type runs slightly small on purpose (300 questions
@@ -13226,14 +13262,18 @@ let guideCalOpen = false;
    絵のうまさとは何か appended. Chapter ids are unchanged, so
    chapter bookmarks and state survive the merge. */
 const GUIDE_TAX = [
+  /* v5.82.61 (his order, 2026-11-27: 「制作ガイドのトップは
+     受験にしといて」): the 美大 major takes the head of the
+     row and openGuide lands on it — the guide opens on the
+     exam. Inside the major the cards read in the order you
+     win in: 全体地図 → 藝大に勝つ → 逆算 (exam-ch2, cross-
+     listed here from its home major カレンダー) → デッサン
+     → 油彩 → ドリル → 共通テスト → 当日 → 課題 → the three
+     university chapters as reference at the end. This
+     supersedes the v5.80.0 seating (全体地図 → the schools
+     → 課題 → 藝大に勝つ → the procedure chapters). */
+  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大に勝つ', 'exam-ch9'], ['逆算', 'exam-ch2'], ['デッサン', 'exam-ch4'], ['油彩', 'exam-ch3'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7'], ['課題', 'exam-ch8'], ['過去問', 'exam-ch10'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi']] },
   { id: 'calendar', label: 'カレンダー', subs: [['逆算', 'exam-ch2']] },
-  /* v5.80.0 (his order, 2026-11-21): the 美大 major gains the
-     課題 chapter (exam-ch8 — past exam tasks 2019–2026 for the
-     three schools, their patterns, and the draft answer types
-     G-1/G-2/T-1/T-2/M-1/M-2), seated right after 全体地図:
-     map first, then what each school actually asks, then the
-     procedure chapters that answer it. */
-  { id: 'exam', label: '美大', subs: [['全体地図', 'exam-ch1'], ['藝大', 'exam-geidai'], ['多摩美', 'exam-tamabi'], ['武蔵野', 'exam-musabi'], ['課題', 'exam-ch8'], ['油彩', 'exam-ch3'], ['デッサン', 'exam-ch4'], ['ドリル', 'exam-ch5'], ['共通テスト', 'exam-ch6'], ['当日', 'exam-ch7']] },
   { id: 'process', label: '制作プロセス', subs: [['下地づくり', 'guide-ch1'], ['油彩の工程', 'guide-ch2'], ['仕上げと保存', 'guide-ch8'], ['タイトル', 'guide-ch-titles']] },
   { id: 'technique-material', label: '技法・材料', subs: [['油彩', 'guide-ch2'], ['水性画材', 'guide-ch4'], ['版画', 'guide-ch5'], ['古典技法', 'guide-ch6'], ['支持体', 'guide-ch1'], ['地を作る', 'guide-ch-grounds'], ['描画材', 'guide-ch3'], ['顔料と色', 'guide-ch7'], ['絵の具の素性', 'guide-ch11'], ['うまさ', 'guide-ch-skill'], ['特殊技法', 'guide-ch-special-techniques'], ['特殊素材', 'guide-ch-special-materials'], ['顔', 'guide-ch-faces']] },
   { id: 'introspection', label: '内省', subs: [['見る・判断', 'guide-ch9'], ['続けること', 'guide-ch10'], ['発言集', 'guide-ch-statements'], ['師事', 'guide-ch-mentorship'], ['サイン', 'guide-ch-signature'], ['人間の地', 'guide-ch-maturity'], ['困りごと', 'guide-ch-trouble'], ['心が沈むとき', 'guide-ch-mind-care'], ['顔つきと威厳', 'guide-ch-demeanor'], ['インタビュー', 'guide-ch-interview'], ['視覚の仕組み', 'guide-ch-vision'], ['人の見え方', 'guide-ch-audience'], ['AIと芸術', 'guide-ch-ai-art']] }
@@ -13644,7 +13684,7 @@ function guideEnsure(){
     .catch(()=>{ guideError = true; if(!$('guidepanel').classList.contains('hidden')) renderGuide(); });
 }
 function guideRetry(){ guideError = false; guideEnsure(); renderGuide(); }
-function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'process'; guideIdx = true; const pm = GUIDE_TAX.find(x=> x.id === 'process'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
+function openGuide(){ guideStack = []; guideView = 'major'; guideMajorId = 'exam'; guideIdx = true; const pm = GUIDE_TAX.find(x=> x.id === 'exam'); if(pm && !pm.subs.some(s=> s[1] === guideChapterId)) guideChapterId = pm.subs[0][1]; $('guidepanel').classList.remove('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.add('on'); guideEnsure(); renderGuide(); }
 function closeGuide(){ guideStack = []; $('guidepanel').classList.add('hidden'); sheetLockSync(); const b = $('navGuide'); if(b) b.classList.remove('on'); }
 function guideChapters(){ return (guideData && Array.isArray(guideData.chapters))? guideData.chapters: []; }
 function guideGlossary(){ return (guideData && Array.isArray(guideData.glossary))? guideData.glossary: []; }
@@ -14401,6 +14441,19 @@ function bizFigsHTML(figs){
   if(!Array.isArray(figs) || !figs.length) return '';
   return figs.map(f=>{
     if(!f || !f.type) return '';
+    if(f.type === 'years'){
+      /* v5.82.62: year cards — one card per exam year, the
+         出題／合格作品／評価 set complete inside the card;
+         detail rows (incl. 出典 links) open with the card. */
+      const rows = [['出題・第1次','q1'], ['出題・第2次','q2'], ['面接','inter'], ['合格作品','work'], ['評価','ev'], ['読みどころ','read']];
+      return '<div class="bizfig">' + (f.title ? '<div class="bizfigtitle">' + esc(f.title) + '</div>' : '')
+        + (f.years || []).map(c=>{
+            let b = rows.map(r=> c[r[1]] ? '<div class="yrow"><div class="ylab">' + r[0] + '</div><div class="yval">' + esc(c[r[1]]) + '</div></div>' : '').join('');
+            if((c.src || []).length) b += '<div class="yrow"><div class="ylab">出典</div><div class="yval">' + c.src.map(s=> '<a href="' + escA(s.u) + '" target="_blank" rel="noopener">' + esc(s.t) + '</a>').join('／') + '</div></div>';
+            return '<details class="ycard"><summary class="ycardhead"><span class="ycardy">' + esc(c.y) + '</span><span class="ycardera">' + esc(c.era || '') + '</span><span class="ycardtags">' + (c.t1 ? '<span class="ycardt">一次 ' + esc(c.t1) + '</span>' : '') + (c.t2 ? '<span class="ycardt">二次 ' + esc(c.t2) + '</span>' : '') + '</span><span class="ycardchev">▽</span></summary><div class="ycardbody">' + b + '</div></details>';
+          }).join('')
+        + (f.note ? '<div class="bizfignote">' + esc(f.note) + '</div>' : '') + '</div>';
+    }
     if(f.type === 'works'){
       const cards = [];
       (f.items || []).forEach(it=>{
@@ -14897,6 +14950,18 @@ function bizFigSVG(f){
   s+='<path d="M'+(x+pw/2-30)+' '+(y0+50-21)+' A50 32 0 0 1 '+(x+pw/2+28)+' '+(y0+50-22)+'" fill="none" stroke="#e9e2cf" stroke-width="2.4" opacity="0.55"/>';
   s+=S(x+pw/2,y0+ph+18,(f.right||{}).label||'被さる——膜の縁で形が立つ');
   s+=S(x+pw/2,y0+ph+33,(f.right||{}).sub||'地は覆われて消える');
+  return s+'</svg>';}
+ /* v5.82.62: exam-year timeline — two tracks (第1次・素描 /
+    第2次・絵画), one column per year, short labels above and
+    below the tracks. items: [{y, a, b}] oldest first. */
+ if(f.kind==='ytimeline'){const items=(f.items||[]).slice(0,8); if(items.length<3) return ''; const W=340,H=158,n=items.length,step=(W-36)/(n-1); let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(f.title||'')+'">';
+  items.forEach((it,i)=>{const x=18+i*step; s+=T(x,14,it.y,10.5,'middle','700');});
+  s+=S(14,34,'第1次・素描','start');
+  s+='<line x1="14" y1="58" x2="326" y2="58" stroke="var(--line)"/>';
+  items.forEach((it,i)=>{const x=18+i*step; s+='<circle cx="'+x+'" cy="58" r="3.5" fill="var(--accent)"/>'+S2(x,48,it.a,'middle',8.5);});
+  s+=S(14,96,'第2次・絵画','start');
+  s+='<line x1="14" y1="118" x2="326" y2="118" stroke="var(--line)"/>';
+  items.forEach((it,i)=>{const x=18+i*step; s+='<circle cx="'+x+'" cy="118" r="3.5" fill="#d8cdbb"/>'+S2(x,132,it.b,'middle',8.5);});
   return s+'</svg>';}
  return '';
 }
@@ -23330,6 +23395,7 @@ const CHARM_SECTIONS = [
   { key:'stature', label:'小物と大物', hasData: ()=> true, render: renderCharmStature },
   { key:'allure', label:'性的魅力', hasData: ()=> true, render: renderCharmAllure },
   { key:'character', label:'キャラクター', hasData: ()=> true, render: renderCharmCharacter },
+  { key:'nerves', label:'緊張', hasData: ()=> true, render: renderCharmNerves },
   { key:'models', label:'ロールモデル', hasData: ()=> true, render: renderCharmModels },
   { key:'capital', label:'変えられない資本', hasData: ()=> true, render: renderCharmCapital },
   { key:'lie', label:'嘘のうまさ', hasData: ()=> true, render: renderCharmLie },
@@ -24197,6 +24263,132 @@ function diagShowStr(str, done){
   const box = document.getElementById('diagstrbox');
   if(box){ box.style.display = 'block'; box.value = str; box.focus(); box.select(); }
   done('下の欄の数字を長押しでコピーして、Muse に送ってください');
+}
+/* v5.82.59: 緊張 tab (his call, 2026-11-27: 「緊張について調べて
+   きて、人間的魅力のところについて。俺は今このタイミングで克服
+   しなきゃならない課題だ」). His framing going in: 緊張は長年の
+   敵; the failure pattern he identified himself is not lost
+   ability but doing いつもと違うこと under tension; the
+   reappraisal 「緊張してる→興奮してる」 he adopted the same day
+   is section 2. Sources, each checked against the paper itself:
+   Brooks 2014 (J Exp Psychol Gen 143:1144–1158) — reappraising
+   anxiety as excitement beat trying to calm down (speech 167s vs
+   132s, higher ratings for persuasiveness/confidence/competence/
+   persistence; arousal stayed high in both groups); Crum,
+   Salovey & Achor 2013 (J Pers Soc Psychol 104:716–733) —
+   stress-is-enhancing mindset: moderate cortisol response and a
+   stronger desire for feedback; Kross et al. 2014 (J Pers Soc
+   Psychol 106:304–324) — distanced self-talk (own name / non-
+   first-person pronouns) raised objective raters' scores and cut
+   distress and post-event rumination; Balban et al. 2023 (Cell
+   Rep Med 4:100895) — daily 5-minute cyclic sighing beat
+   mindfulness meditation on positive-affect gains and respiratory
+   -rate reduction over one month; Ramirez & Beilock 2011
+   (Science 331:211–213) — 10 minutes writing about one's worries
+   before the test lifted scores, most clearly for the highly
+   test-anxious; Phelps, Beijing 2008, 200m butterfly final —
+   goggles flooded, he swam by rehearsed stroke count to a world
+   record, after a coach who deliberately disrupted practice and
+   years of visualising the failure cases too. The exam-day flow
+   folds in his own November method （恐怖と事実を分ける／受け皿を
+   先に決めておく）. */
+function nrvMemo(lines){
+  return '<div class="nrvmemo"><div class="nrvmt">実践メモ</div>' + lines.map(l=> '<div class="nrvml">' + l + '</div>').join('') + '</div>';
+}
+function nerveSecBody(){
+  let h = '<h3 class="subhead">正体——バクバクは故障じゃない</h3>';
+  h += '<p class="bodytext bizp">緊張した時の体の変化——心拍が上がる、手が冷える、呼吸が浅くなる——は、闘争・逃走反応と呼ばれる、体に最初から入っている緊急プログラムだ。血流を筋肉に優先して回し、エネルギー源を血の中に放出する。「今から本気で動く」ための準備であって、故障ではない。バクバクは、エンジンがかかった音だ。</p>';
+  h += '<p class="bodytext bizp">厄介なのは、その一段上だ。緊張そのものより、「緊張している自分」に気づいてまずいと思う第二の緊張が乗る。「やばい、緊張してる」→「このままでは失敗する」→さらにバクバクする。緊張が敵に見える正体は、この二重構造の方だ。</p>';
+  h += '<div class="nrvfig"><svg viewBox="0 0 340 196" role="img" aria-label="緊張の二重構造の図">'
+    + '<rect x="15" y="12" width="140" height="36" rx="8" style="fill:var(--bg);stroke:var(--line)"/>'
+    + '<rect x="185" y="12" width="140" height="36" rx="8" style="fill:var(--bg);stroke:var(--line)"/>'
+    + '<rect x="185" y="78" width="140" height="36" rx="8" style="fill:var(--bg);stroke:var(--line)"/>'
+    + '<rect x="15" y="78" width="140" height="36" rx="8" style="fill:var(--bg);stroke:var(--line)"/>'
+    + '<line x1="157" y1="30" x2="173" y2="30" style="stroke:var(--muted)"/><polygon points="183,30 174,25.5 174,34.5" style="fill:var(--muted)"/>'
+    + '<line x1="255" y1="50" x2="255" y2="66" style="stroke:var(--muted)"/><polygon points="255,76 250.5,67 259.5,67" style="fill:var(--muted)"/>'
+    + '<line x1="183" y1="96" x2="167" y2="96" style="stroke:var(--muted)"/><polygon points="157,96 166,91.5 166,100.5" style="fill:var(--muted)"/>'
+    + '<line x1="85" y1="76" x2="85" y2="60" style="stroke:var(--muted)"/><polygon points="85,50 80.5,59 89.5,59" style="fill:var(--muted)"/>'
+    + '<text x="85" y="35" text-anchor="middle" font-size="12.5">バクバクする</text>'
+    + '<text x="255" y="35" text-anchor="middle" font-size="11.5">「まずい、緊張してる」</text>'
+    + '<text x="255" y="101" text-anchor="middle" font-size="12.5">自分を監視し始める</text>'
+    + '<text x="85" y="101" text-anchor="middle" font-size="12.5">緊張が増える</text>'
+    + '<line x1="170" y1="116" x2="170" y2="131" stroke-dasharray="3 3" style="stroke:var(--muted)"/><polygon points="170,140 165.5,131 174.5,131" style="fill:var(--muted)"/>'
+    + '<rect x="15" y="142" width="310" height="44" rx="8" style="fill:none;stroke:var(--gold, #c9a227)"/>'
+    + '<text class="svgsub" x="170" y="160" text-anchor="middle" font-size="10.5">出口は3つ</text>'
+    + '<text x="170" y="178" text-anchor="middle" font-size="12.5">解釈を変える・体から下げる・手順に戻る</text>'
+    + '</svg><div class="witfigcap">緊張の二重構造。輪を断つ場所は3つある。この先の節は、その出口の話だ。</div></div>';
+  h += '<p class="bodytext bizp">「緊張は俺の長年の敵」——本人の言葉（2026-11-27）。ただし研究の側から見ると、敵の座にいるのは緊張そのものではなく、緊張への解釈と付き合い方の方だ、という話がこの先ずっと続く。</p>';
+  h += nrvMemo(['バクバクに気づいたら、まず「エンジンがかかった」とだけ置く。消そうとしない——消そうとする行為そのものが、二重構造の燃料になる。']);
+  return h;
+}
+function nerveSecReframe(){
+  let h = '<h3 class="subhead">言い換え——「緊張」ではなく「興奮」</h3>';
+  h += '<p class="bodytext bizp">緊張と興奮は、体の側ではほぼ同じ状態だ。心拍が上がり、血が巡り、感覚が鋭くなる。違うのは付けられた名前だけだ、というのが出発点になる。</p>';
+  h += '<p class="bodytext bizp">ハーバード・ビジネススクールのブルックスの実験（2014）。本番前に「私は興奮している」と声に出したグループは、「私は落ち着いている」と言ったグループよりスピーチが長く続き（平均167秒対132秒）、説得力・自信・粘り強さの評価も高かった。カラオケと計算の課題でも、同じ方向の結果が出ている。そして肝心なことに、心拍はどちらのグループも高いままだった。体は変えていない。ラベルだけを変えて、結果が動いた。</p>';
+  h += '<div class="witfig">'
+    + '<div class="witfigrow"><span class="witbox">心拍は高いまま（両グループ同じ）</span></div>'
+    + '<div class="witfigrow"><span class="witbox">ラベル「緊張・脅威」</span><span class="witop">→</span><span class="witbox">自分を監視する・萎縮する</span></div>'
+    + '<div class="witfigrow"><span class="witbox hot">ラベル「興奮・機会」</span><span class="witop">→</span><span class="witbox hot">燃料として使う</span></div>'
+    + '<div class="witfigcap">ブルックス（2014）。変わったのは体の状態ではなく、ラベルと、その先の結果だった。</div></div>';
+  h += '<p class="bodytext bizp">なぜ「落ち着け」が効きにくいか。高ぶった体を低い状態へ移すのは、距離の遠い移動だ。興奮は同じ高さの状態だから、一歩で乗り換えられる（覚醒の一致、と言う）。「落ち着け」と自分に命じるのは、走り出した体に「寝ろ」と言うようなもので、たいてい喧嘩になる。</p>';
+  h += '<p class="bodytext bizp">スタンフォードのクラムらの研究（2013）も同じ線だ。ストレス反応を「自分を弱らせるもの」ではなく「力を引き出すもの」と捉えている人は、ストレスホルモンの上がり方が極端にならず、終わった後にフィードバックを求める姿勢も強かった。捉え方は、気分だけでなく体の反応にまで届く。</p>';
+  h += '<p class="bodytext bizp">本人は2026-11-27、この言い換えをその場で採用した。「バクバクしてきた」ら、「興奮してる」と言う。それでいい、が結論だ。</p>';
+  h += nrvMemo(['言う場所を先に決めておく——家を出る時、会場に入る時、イーゼルの前。声に出せない場面では頭の中で言う。文は短く、「興奮してる」の一言でいい。']);
+  return h;
+}
+function nerveSecDistance(){
+  let h = '<h3 class="subhead">自分との距離——名前で呼ぶ</h3>';
+  h += '<p class="bodytext bizp">緊張している時の頭の中の声は、一人称で回る。「俺は大丈夫か」「俺はまたやらかすんじゃないか」。この「俺」との距離が近いほど、感情に巻き込まれる。</p>';
+  h += '<p class="bodytext bizp">ミシガン大学のクロスらの研究（2014、7つの実験）。内省の時に一人称ではなく、自分の名前や二人称で考えた人は、スピーチや初対面の場面で第三者の評価が高く、苦痛が少なく、終わった後のくよくよも短かった。名前で呼ぶだけで、自分を「もう一人の人間」として扱う距離が生まれる。</p>';
+  h += '<p class="bodytext bizp">仕組みは単純だ。友達が緊張していたら、君は「お前はダメだ」とは言わない。「まず地だ。いつも通りやれ」と言うはずだ。その助言の形を、自分に向けて借りる。距離を取った独り言は、他人への助言の文法で書かれた自己指示だ。</p>';
+  h += nrvMemo(['使う文は短く、命令形で。', '「翔万、まず最初の手順だ」', '「君はいつも通りでいい」', '「興奮してるな。よし、そのまま行け」']);
+  return h;
+}
+function nerveSecSoma(){
+  let h = '<h3 class="subhead">体のスイッチ——呼吸で直接下げる</h3>';
+  h += '<p class="bodytext bizp">考え方で届かない分は、体から直接触る。呼吸は、自律神経の働きの中で、意識して動かせる数少ない入口だ。</p>';
+  h += '<p class="bodytext bizp">「生理的ため息」は、体が自然にやっているリセット動作だ。短く2回続けて吸って（2回目で肺を膨らませ切る）、口から長く吐く。ため息そのものは数分に一度、無意識に出ている。その形を意図的にやると、高ぶりの下がり方が速くなる。</p>';
+  h += '<p class="bodytext bizp">スタンフォードのバルバンらの実験（2023）では、この形を繰り返す呼吸法（サイクリック・サイイング）を1日5分・1か月続けたグループが、同じ時間の瞑想をしたグループより気分の改善が大きく、呼吸数も下がった。本番直前の一回としても使えるし、毎日の練習として先に仕込んでおくこともできる。</p>';
+  h += '<p class="bodytext bizp">他の入口も体にある。顎・肩・拳の力を抜く（緊張はまずこの3か所に溜まる）。手をこすり合わせる（手の冷たさは緊張の目安で、こする動作は次の手順への切り替えの合図にもなる）。冷たい水で顔を洗う、冷たい缶を持つ（顔への冷たい刺激は、心拍を下げる反射の引き金になる）。</p>';
+  h += nrvMemo(['席に着いたら1回。バクバクが波で来たら、そのたびに1回。回数を数える必要はない。吐く方を長くすることだけ守る。']);
+  return h;
+}
+function nerveSecRoutine(){
+  let h = '<h3 class="subhead">型と反復——本番を「初めて」にしない</h3>';
+  h += '<p class="bodytext bizp">本人の失敗パターンの特定（2026-11-27）：緊張すると「よくわからなくなって、いつもと違うことをしてしまう」。緊張の害は、能力が下がることより先に、いつもの型から外れる形で現れる。</p>';
+  h += '<p class="bodytext bizp">なら処方は正面からだ。当日、新しいことをしない。道具も手順も、朝の動きも、いつも通りの再現にする。本番を「考える日」から「再現する日」に変える。</p>';
+  h += '<p class="bodytext bizp">模試の意味も変わる。模試は絵の練習である前に、緊張の練習だ。本番と寸分同じ条件——号数、時間、集合時刻、家からの移動まで——で通すたびに、体はその場面を「経験済み」に分類していく。緊張が一番強く出るのは、初めての場面に対してだ。</p>';
+  h += '<p class="bodytext bizp">実例が水泳のフェルプスだ。2008年北京五輪、200mバタフライ決勝。飛び込んだ直後からゴーグルに水が入り、最後はほぼ見えない状態で泳いだ。それでも世界記録で金メダルを取った。準備の側に理由がある。コーチは練習でわざとゴーグルを踏んで壊すような妨害を入れていたし、フェルプス自身、毎晩「うまくいく映像」だけでなく「失敗する映像」と、その対処まで頭の中で再生していた。見えない状態は、彼にとって初めての場面ではなかった。だから彼は、数え慣れたストローク数という「いつもの手順」に戻れた。</p>';
+  h += '<p class="bodytext bizp">緊張のピークは開始直後に来る。だから最初の手順だけは、考えなくても手が動くまで自動化しておく。ピークを型で越えれば、あとは体がいつもの仕事を始める。</p>';
+  h += nrvMemo(['決め打ちは、最初の一手だけでいい。藝大2次の油彩なら「最初の30分は、地を触る順番と、最初に置く色だけ決めておく」。残りはピークを越えてから考える。']);
+  return h;
+}
+function nerveSecExamDay(){
+  let h = '<h3 class="subhead">本番当日——藝大受験の手順</h3>';
+  h += '<p class="bodytext bizp">全部を覚える必要はない。当日は、この順番を辿るだけでいい。</p>';
+  const steps = [
+    ['前日｜心配を紙に書く', '試験の直前に10分間、不安に思っていることを書き出した生徒は、そうでない生徒より成績が上がった（ラミレス＆ベイロック、2011。特に試験不安の強い生徒で差が出た）。不安は頭の中に置くと、考える場所を食う。紙に出せば、外に出る。'],
+    ['前日｜受け皿を確認する', 'ダメだった場合の道筋は、もう決めてある。恐怖と事実を分ける——本人が11月に、落ち込んだ自分を立て直した方法そのものだ。当日に新しい心配を作らない。'],
+    ['朝｜いつも通りを再現する', '起床、食事、持ち物、家を出る時刻、電車。全部、練習した通りに。当日だけの工夫はゼロにする。'],
+    ['会場｜バクバクしたら', '「興奮してる」と言う。生理的ため息を1回。名前で声をかける。「翔万、まず地だ」。'],
+    ['開始30分｜決め打ちだけをやる', '最初の一手の手順だけをやる。評価も反省もしない。緊張のピークはここで越える。'],
+    ['途中｜いつもと違うことをしたくなったら', 'それが緊張のサインだ。判断をやめて、手順に戻る。新しい判断は、ピークを越えた後の体に任せる。']
+  ];
+  h += '<div class="nrvsteps">' + steps.map((s, i)=> '<div class="nrvstep"><div class="nrvn">' + (i + 1) + '</div><div><div class="nrvst">' + s[0] + '</div><div class="nrvsd">' + s[1] + '</div></div></div>').join('') + '</div>';
+  h += '<p class="bodytext bizp">緊張しない人間になる必要はない。緊張しても、いつも通りやれる人間になる。それが全部だ。</p>';
+  h += '<button class="charmxref" onclick="setCharmTab(\'character\')">キャラクター——土台を作り込む話<span class="charmxrefgo">「キャラクター」タブで読む ›</span></button>';
+  return h;
+}
+function renderCharmNerves(){
+  const items = [
+    { label:'正体', build: nerveSecBody },
+    { label:'言い換え', build: nerveSecReframe },
+    { label:'自分との距離', build: nerveSecDistance },
+    { label:'体のスイッチ', build: nerveSecSoma },
+    { label:'型と反復', build: nerveSecRoutine },
+    { label:'本番当日', build: nerveSecExamDay }
+  ];
+  return { html: charmSubNavHTML('nerves', items), wiring: [] };
 }
 function renderCharmDiag(){
   const a = diagLoad();
@@ -28648,7 +28840,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.58';
+const APP_VERSION = '5.82.59';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
