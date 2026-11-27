@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.80">
+<meta name="app-version" content="5.82.81">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18243,6 +18243,10 @@ let highlightsHTML = '';
 if(a.relation && showHighlights){
 highlightsHTML = '<div class="hlhead"><h3 class="subhead">見どころ</h3></div><div class="hlbody">'+proseHTML(a.relation)+'</div>';
 }
+const genreRow = genresPresent.length >= 2? '<div class="wserieschips" role="group" aria-label="ジャンルで絞る">'
++ '<button class="'+(genreKey? '': 'on')+'" onclick="setWorkGenre(null)">すべて</button>'
++ genresPresent.map(g=> '<button class="'+(genreKey === g.key? 'on': '')+'" onclick="setWorkGenre(\''+g.key+'\')">'+esc(g.label)+'</button>').join('')
++ '</div>': '';
 worksHTML = '<div class="worksreq shelf">' + hlBtn +
 /* v32.7.1: sort and display each get their OWN row again.
    v4.5 merged them into one row and v32.6.1 kept that inside
@@ -18280,19 +18284,13 @@ worksHTML = '<div class="worksreq shelf">' + hlBtn +
    micro, grid glyphs included — so the two switchers can
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span>' + hlCountSlot + '</div></div>' + highlightsHTML + worksHTML;
+'</span>' + hlCountSlot + '</div></div>' + genreRow + highlightsHTML + worksHTML;
 /* v5.57.0: the series chip row rides at the very top of the
    works tab, above the count / sort / display shelf. */
 if(wgArr.length){
 worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで絞る">'
 + '<button class="'+(seriesKey? '': 'on')+'" onclick="setWorkSeries(null)">すべて</button>'
 + wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
-+ '</div>' + worksHTML;
-}
-if(genresPresent.length >= 2){
-worksHTML = '<div class="wserieschips" role="group" aria-label="ジャンルで絞る">'
-+ '<button class="'+(genreKey? '': 'on')+'" onclick="setWorkGenre(null)">すべて</button>'
-+ genresPresent.map(g=> '<button class="'+(genreKey === g.key? 'on': '')+'" onclick="setWorkGenre(\''+g.key+'\')">'+esc(g.label)+'</button>').join('')
 + '</div>' + worksHTML;
 }
 return worksHTML;
@@ -29341,7 +29339,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.80';
+const APP_VERSION = '5.82.81';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
