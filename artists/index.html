@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.51">
+<meta name="app-version" content="5.82.52">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2575,15 +2575,22 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 .charmname{font-family:var(--serif); font-size:16px; line-height:1.35; text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere;}
 .charmyears{font-family:var(--headfont); font-size:11.5px; color:var(--muted); letter-spacing:.05em; line-height:1.35; margin-top:2px;}
 .charmhead .inflgo{align-self:center;}
-/* v5.82.50: 「インスタをまとめた」 rows — the .charmhead row idiom
-   (64px tile, serif name, muted meta, › at the far right) as
-   external links. The tile carries the account's initial in the
-   app's no-photo serif treatment instead of a fetched avatar. */
-.instarow{display:flex; align-items:center; gap:12px; width:100%; text-align:left; border-bottom:1px solid var(--line); padding:10px 2px 12px; color:var(--text); text-decoration:none; min-height:44px; box-sizing:border-box;}
-.instaph{flex:none; width:64px; height:64px; border-radius:9px; background:var(--bg2); display:flex; align-items:center; justify-content:center;}
-.instaph .ini{font-family:var(--serif); font-size:24px; color:var(--accent); line-height:1;}
-.instameta{font-family:var(--headfont); font-size:11.5px; color:var(--muted); letter-spacing:.05em; line-height:1.35; margin-top:2px; overflow-wrap:anywhere;}
-.instadesc{font-size:13.5px; line-height:1.65; margin-top:4px; overflow-wrap:anywhere;}
+/* v5.82.52: 「インスタをまとめた」 is a CARD GRID — the artist
+   list's own card system (figure.work cards in a .grid with the
+   .modebar size switch), replacing the v5.82.50 rows (his
+   correction, 2026-11-27: the card-format rule applies here —
+   each account has a photo, a name and meta). The card is an
+   external link (the page's job is jumping to Instagram), so an
+   <a> wraps the figure; the description rides as the card's
+   hook line and hides at the small sizes, the same way
+   .modelhook does on the ロールモデル cards. Photos are the
+   accounts' real Instagram avatars (Drive 図鑑画像, bare
+   fileIds, paired through keyWork like the model photos). */
+.instahook{font-size:11.5px; color:var(--sub); line-height:1.55; margin-top:3px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;}
+.grid.compact .instahook,.grid.mini .instahook,.grid.micro .instahook{display:none;}
+.grid.wide .instahook{-webkit-line-clamp:3;}
+a.instalink{display:block; text-decoration:none; color:inherit;}
+a.instalink figure.work{height:100%; box-sizing:border-box;}
 .instafoot{font-size:11.5px; color:var(--muted); line-height:1.6; margin-top:14px;}
 #navHub .nbadge{position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box;}
 /* v32.5.0: the hub opens a small icon popup under the header's
@@ -22923,29 +22930,52 @@ function openHumor(){ showView('humor'); }
 function openInsta(){ showView('insta'); }
 /* v5.82.50: 「インスタをまとめた」 — the curated Instagram accounts
    (his 2026-11-27 curation, painter-curated accounts first, broad
-   contemporary last). Follower/post counts are as of 2026-11-27. */
+   contemporary last). Follower/post counts are as of 2026-11-27.
+   v5.82.52: rebuilt as a card grid (his correction the same day —
+   the v5.82.50 rows violated the card-format rule). img is the
+   account's real Instagram avatar (Drive 図鑑画像 folder, bare
+   fileId; fetched 2026-11-27), paired through keyWork exactly
+   like the ロールモデル photos. An account whose avatar could
+   not be fetched would carry no img and get the shared
+   no-photo mark; today all seven carry their real avatar. */
 const INSTA_ACCOUNTS = [
- { name:'Peter Shear', ini:'P', handle:'@petershear', url:'https://www.instagram.com/petershear', meta:'', desc:'画家本人が、古今の他の画家の作品を紹介し続けるアカウント。キャプションは作家名とデータだけで、知られざる絵が次々に流れてくる。' },
- { name:'asaco', ini:'A', handle:'@ac_tkart', url:'https://www.instagram.com/ac_tkart', meta:'', desc:'展示を巡って記録する目利きアカウント。国内の展示の情報源として、図鑑の毎週の収穫でも追っている。' },
- { name:'MEPAINTSME', ini:'M', handle:'@mepaintsme', url:'https://www.instagram.com/mepaintsme', meta:'フォロワー約27万人 ・ 投稿1万5千件超', desc:'匿名の画家／キュレーターが毎日5〜6点の作品を紹介する。美術史のアウトサイダー寄りの選眼で、ピーター・シアーに一番近いタイプ。' },
- { name:'Painters Painting Paintings', ini:'P', handle:'@painterspaintingpaintings', url:'https://www.instagram.com/painterspaintingpaintings', meta:'フォロワー約15万人', desc:'絵画だけを紹介するアカウント。オンライン展覧会も開いていて、現役の画家たちから薦められる。' },
- { name:'Gerry Bonetti', ini:'G', handle:'@gerrybonetti', url:'https://www.instagram.com/gerrybonetti', meta:'フォロワー約1万人 ・ 投稿約4,400件', desc:'現代の作品を個人的に選び続けるキュレーション。' },
- { name:'The Jealous Curator', ini:'T', handle:'@thejealouscurator', url:'https://www.instagram.com/thejealouscurator', meta:'フォロワー約50万人', desc:'Danielle Krysa が現代の作家を幅広く紹介するアカウント。絵画に限らない。' },
- { name:'Daily Contemporary Art', ini:'D', handle:'@daily_contemporary_art', url:'https://www.instagram.com/daily_contemporary_art', meta:'フォロワー約12万人 ・ 投稿約1万件', desc:'Delphian Gallery 系。現代アート全般を毎日紹介する。' }
+ { name:'Peter Shear', img:'14apWZO9Bf_1EndsJZIn1omaOZoU4UY82', handle:'@petershear', url:'https://www.instagram.com/petershear', meta:'', desc:'画家本人が、古今の他の画家の作品を紹介し続けるアカウント。キャプションは作家名とデータだけで、知られざる絵が次々に流れてくる。' },
+ { name:'asaco', img:'1xzqGtIsO2O1inZjXZcZf5DMAovvcQrqf', handle:'@ac_tkart', url:'https://www.instagram.com/ac_tkart', meta:'', desc:'展示を巡って記録する目利きアカウント。国内の展示の情報源として、図鑑の毎週の収穫でも追っている。' },
+ { name:'MEPAINTSME', img:'1WmYvIom1jlumhI3jeUWdwTXQSeB7ZUnw', handle:'@mepaintsme', url:'https://www.instagram.com/mepaintsme', meta:'フォロワー約27万人 ・ 投稿1万5千件超', desc:'匿名の画家／キュレーターが毎日5〜6点の作品を紹介する。美術史のアウトサイダー寄りの選眼で、ピーター・シアーに一番近いタイプ。' },
+ { name:'Painters Painting Paintings', img:'1uKTRvZk6Yaa_XO-CoASu2wP07Zp_I5Rv', handle:'@painterspaintingpaintings', url:'https://www.instagram.com/painterspaintingpaintings', meta:'フォロワー約15万人', desc:'絵画だけを紹介するアカウント。オンライン展覧会も開いていて、現役の画家たちから薦められる。' },
+ { name:'Gerry Bonetti', img:'1nQWYnBs6v7nTbwZsS8fIibWJdQwIOsEW', handle:'@gerrybonetti', url:'https://www.instagram.com/gerrybonetti', meta:'フォロワー約1万人 ・ 投稿約4,400件', desc:'現代の作品を個人的に選び続けるキュレーション。' },
+ { name:'The Jealous Curator', img:'15Tm79tmiSu4XC3cjX_z-VhxzgBeV5n4a', handle:'@thejealouscurator', url:'https://www.instagram.com/thejealouscurator', meta:'フォロワー約50万人', desc:'Danielle Krysa が現代の作家を幅広く紹介するアカウント。絵画に限らない。' },
+ { name:'Daily Contemporary Art', img:'16tXcxDBrTKience8Z6QBUfzR1zorHws4', handle:'@daily_contemporary_art', url:'https://www.instagram.com/daily_contemporary_art', meta:'フォロワー約12万人 ・ 投稿約1万件', desc:'Delphian Gallery 系。現代アート全般を毎日紹介する。' }
 ];
+let instaMode = storeGet('zukan.instamode') || 'def';
+if(!MODES.includes(instaMode)) instaMode = 'def';
+function setInstaMode(m){
+  instaMode = m; storeSet('zukan.instamode', m);
+  const y = window.scrollY; renderInsta(); window.scrollTo(0, y);
+}
 function renderInsta(){
   const v = $('viewInsta'); if(!v) return;
   let html = '<button class="backbtn" onclick="showView(\'list\')">‹ 一覧へ戻る</button><div class="tlhead"><h2>インスタをまとめた</h2></div>';
-  html += INSTA_ACCOUNTS.map(a =>
-    '<a class="instarow" href="' + a.url + '" target="_blank" rel="noopener">'
-    + '<span class="instaph"><span class="ini">' + a.ini + '</span></span>'
-    + '<span class="charmmeta"><span class="charmname">' + esc(a.name) + '</span>'
-    + '<span class="instameta">' + esc(a.handle + (a.meta? ' ・ ' + a.meta: '')) + '</span>'
-    + '<span class="instadesc">' + esc(a.desc) + '</span></span>'
-    + '<span class="inflgo">›</span></a>'
-  ).join('');
+  html += '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (instaMode===mo? ' class="on"': '') + ' onclick="setInstaMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>';
+  html += '<div class="grid ' + instaMode + ' instagrid">';
+  const wiring = [];
+  INSTA_ACCOUNTS.forEach(a=>{
+    let fig;
+    if(a.img){ const w = keyWork(a.img, a.name); wiring.push(w); fig = '<div class="ph">' + imgHTML(w, IMG_SIZE.thumb) + '</div>'; }
+    else fig = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
+    html += '<a class="instalink" href="' + a.url + '" target="_blank" rel="noopener"><figure class="work">'
+      + fig
+      + '<figcaption><div class="nm">' + esc(a.name) + '</div>'
+      + '<div class="sub">' + esc(a.handle + (a.meta? ' ・ ' + a.meta: '')) + '</div>'
+      + '<div class="instahook">' + esc(a.desc) + '</div></figcaption></figure></a>';
+  });
+  html += '</div>';
   html += '<div class="instafoot">フォロワー数と投稿数は2026年11月時点の概数。</div>';
   v.innerHTML = html;
+  /* the model grid's wiring pattern, scoped to .instagrid: pair
+     each holder with its work so the observer hydrates it. Only
+     accounts with an avatar produce a holder, in data order. */
+  v.querySelectorAll('.instagrid .imgholder').forEach((span, k)=>{ const w = wiring[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
 }
 function openHumorArtist(id){
   openDetail(id);
@@ -28198,7 +28228,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.51';
+const APP_VERSION = '5.82.52';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
