@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.77">
+<meta name="app-version" content="5.82.78">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23552,6 +23552,7 @@ const CHARM_SECTIONS = [
   { key:'stature', label:'小物と大物', hasData: ()=> true, render: renderCharmStature },
   { key:'allure', label:'性的魅力', hasData: ()=> true, render: renderCharmAllure },
   { key:'courtship', label:'女の口説き方', hasData: ()=> true, render: renderCharmCourtship },
+  { key:'sex', label:'セックスについて', hasData: ()=> true, render: renderCharmSex },
   { key:'character', label:'キャラクター', hasData: ()=> true, render: renderCharmCharacter },
   { key:'nerves', label:'緊張', hasData: ()=> true, render: renderCharmNerves },
   { key:'models', label:'ロールモデル', hasData: ()=> true, render: renderCharmModels },
@@ -24519,6 +24520,109 @@ function renderCharmCourtship(){
    風格・オーラ・威厳の必然 / 人前でしないこと / 茂木哲也
    case). Both tabs sit right after セルフプロデュース:
    the "how one is read" cluster next to オーラを稼ぐ. */
+/* v5.82.78: セックスについて tab (his order via Secret
+   Labo, 2026-11-28) — the mechanics and practice chapter,
+   placed after 女の口説き方. Same discipline as the other
+   reading tabs: every load-bearing claim is grounded in
+   named research, folklore is marked or dropped, nothing
+   is personalised. Sources: Masters & Johnson 1966 (the
+   response cycle); Basson 2000 (the circular, responsive-
+   desire model); Chivers et al. 2010 (meta-analysis —
+   subjective and genital arousal agree far less in women,
+   so a bodily response is not a readout of wanting);
+   Herbenick et al. 2018 (US probability sample: ~18% of
+   women orgasm from penetration alone, ~37% require
+   clitoral stimulation); Waldinger et al. 2005 (median
+   intravaginal ejaculation latency ~5.4 minutes across
+   five countries); Trussell's contraceptive-efficacy
+   estimates (pregnancies per 100 women in a year of use);
+   Muise et al. 2014 (post-sex affection and satisfaction). */
+const CHARM_SEX = [
+  { h:'身体の仕組み——興奮はリラックスの後に来る', paras:[
+    '順番が生理で決まっている。勃起と潤滑は副交感神経——リラックスしている側の神経——の仕事で、オーガズムと射精は交感神経——緊張と興奮の側——への切り替えで起きる。つまり興奮の立ち上がりには、先にリラックスが要る。不安、焦り、「うまくやらなければ」という緊張が勃起や潤滑を直接妨げるのは、気合いの問題ではなく神経の配線の問題だ。',
+    '反応の流れは4段階に整理されている（マスターズ＆ジョンソン、1966年）。興奮期（血流が集まり、勃起・潤滑が始まる）、高原期（興奮が高く保たれる）、オーガズム期、消退期（元に戻る）。男女で違うのは消退の形で、男性にはしばらく再勃起できない不応期があり、女性にはそれがなく、刺激が続けば再び高まれる。この非対称を知らないと、「終わった後」の齟齬が生まれる。',
+    '女性の欲求の生まれ方は、直線型より循環型で説明される（Basson、2000年）。最初から欲求が湧いているのではなく、親密さの中で刺激を受け、身体が反応し、そこから欲求が生まれる順番も普通にある。「誘われ方で変わる」のは気分の問題ではなく、モデルの違いだ。',
+    'もう一つ、読み違いを防ぐ事実。身体の反応と「感じている・求めている」は、女性では一致しにくい（Chivers ほか、2010年のメタ分析）。潤滑があることは、快感や同意の証明にはならない。身体は刺激への反射で反応する。判断材料は身体のサインより、本人の言葉と態度だ。'
+  ], figs:[
+    { type:'svg', kind:'flow', title:'反応の流れと神経の順番', steps:[
+      { t:'リラックス', s:'副交感神経優位——興奮の前提条件' },
+      { t:'興奮期', s:'血流が集まる／勃起・潤滑' },
+      { t:'高原期', s:'高い興奮が保たれる' },
+      { t:'オーガズム期', s:'交感神経へ切り替わる' },
+      { t:'消退期', s:'男性には不応期／女性は再び高まれる' }
+    ], note:'緊張は最初の段で流れを止める。' }
+  ]},
+  { h:'進め方——前戯が中心にある', paras:[
+    '数字を先に置く。米国の大規模調査（Herbenick ほか、2018年）では、挿入だけでオーガズムに達する女性は約18%。約37%はクリトリスへの刺激が必須で、約36%は必須ではないが刺激があると強く達する。つまり多数派にとって、挿入は中心ではなく、前戯とクリトリス刺激の方が中心にある。順番を逆に組むと、構造として届かない。',
+    '女性の興奮の立ち上がりは、男性より時間がかかるのが普通だ。身体の準備（潤滑、膣の拡張、クリトリスの充血）が整う前に進めると、摩擦と痛みの体験になる。痛みの記憶は次の興奮を妨げる側に働くので、急ぐことは長期でも損になる。',
+    '相手の反応は読むものだが、過信しない。呼吸、筋の緊張、骨盤の動き、声は手がかりになる。ただし感じ方には個人差が大きく、合わせる演技もありうる。読む力は当てる力ではなく、違和感に気づいて止まれる力だ。固まる、押し返す、呼吸が浅く止まる——そういう時は進めず、言葉で確認する。'
+  ], figs:[
+    { type:'table', title:'反応のサインと、読み違いやすいところ', head:['サイン', '意味しやすいこと', '注意'], rows:[
+      ['呼吸が速く、深くなる', '興奮の上昇', '速さだけでは快感の保証にならない'],
+      ['体が近づく、脚が開く', '続けてほしい表示', '形だけのこともある。言葉と併せて読む'],
+      ['体が固まる、押し返す', '痛み・過負荷の可能性', '進めずに止めて、言葉で確認する'],
+      ['声が出る', '快感のことも、合わせていることも', '確実なのは言葉での確認だけ']
+    ], note:'サインは仮説。確定は言葉で取る。' }
+  ]},
+  { h:'気持ちよさの作り方——圧とリズムと場所', paras:[
+    'クリトリスは、見えている先端が全体ではない。内部に海綿体が脚のように広がる大きな器官で、先端には神経終末が非常に密に集まっている（古くから約8,000超とされ、近年の計数では1万を超える）。密度が高いということは、直接の強い刺激は快感より先に痛みや痺れになりやすいということでもある。周辺から、圧は弱く、が基本になる。',
+    'リズムは一定に保つ。興奮が高原に乗り、オーガズムへ移る過程では、同じ刺激の継続が効く。反応が上がってきた瞬間に速く・強く変えるのは、最もよくある失敗だ。高まってきた時ほど変えない。変えるのは、相手の言葉があった時だけにする。',
+    '膣の感度は入口側と前壁側に寄っている。いわゆるGスポットは、独立した器官としては確立しておらず、研究の結論は割れている——前壁への圧が効く人がいる、という程度の置き方が正確だ。深さより、角度と前壁への当たり方。',
+    '潤滑が足りなければ、潤滑剤を使う。それは「負け」ではなく標準の道具で、使用した方が快感とオーガズムの報告が上がるという調査もある。摩擦は痛みになり、痛みは興奮を止める。道具で消せる摩擦は、道具で消す。'
+  ], figs:[
+    { type:'svg', kind:'trio', title:'効く側の三原則', items:[
+      { t:'圧', s:'弱く、一定に' },
+      { t:'リズム', s:'高まってきた時ほど変えない' },
+      { t:'場所', s:'周辺から、中心へ' }
+    ], result:'気持ちよさ' }
+  ]},
+  { h:'安全——避妊と性病予防を具体的に', paras:[
+    '避妊の効果は「通常の使い方」で見る。1年間使って妊娠する割合は、コンドームで理想的な使用なら約2%、通常の使用では約13%。低用量ピルは通常約7%（飲み忘れが効く）、子宮内避妊具（IUD／IUS）は1%未満で最も確実な部類に入る（Trussell の推計）。コンドームの失敗の主因は、サイズの不適合、油性の潤滑剤でラテックスが劣化すること、二重に着けること（摩擦で破れる）。潤滑剤は水性かシリコーン系を使う。',
+    '緊急避妊薬は、避妊に失敗した後の手段としてある。72時間以内、早いほど有効で、処方や薬局での入手の経路は地域で違う。知らないことは不安になるので、要る前に知っておく側の知識だ。',
+    '性病予防でコンドームが担う範囲は大きいが、完全ではない。クラミジアと淋病は無症状のまま進み、放置すれば不妊の原因になる。梅毒、性器ヘルペス、HPV（ヒトパピローマウイルス）は皮膚や粘膜の接触で移るため、コンドームで覆えない範囲からは防ぎきれない。HPVにはワクチンがある。検査は保健所で無料・匿名で受けられるものがあり、オーラルセックスでも感染は起こる。',
+    '安全の話は、雰囲気を壊す話ではない。事前に言葉にできることは、相手の身体を預かる側の資格の話だ（第5節）。'
+  ], figs:[
+    { type:'table', title:'避妊法の比較（1年間の妊娠率）', head:['方法', '理想的な使用', '通常の使用', '性病予防'], rows:[
+      ['コンドーム', '約2%', '約13%', '大幅に下げる（完全ではない）'],
+      ['低用量ピル', '約0.3%', '約7%', 'なし'],
+      ['子宮内避妊具', '1%未満', '1%未満', 'なし'],
+      ['何もしない', '—', '約85%', 'なし']
+    ], note:'数字は Trussell の推計。性病予防を担うのはコンドームだけ。' }
+  ]},
+  { h:'コミュニケーション——聞く、伝える、終わった後', paras:[
+    '事前に言葉にするのは、希望とNGと避妊の三点だ。行為の直前ではなく、落ち着いた場面で。「壊す」のは雰囲気ではなく不安の方で、確認済みのことは最中に考えなくて済む。',
+    '最中の聞き方は、選択肢の形が効く。「気持ちいい？」の連呼は相手に評価の圧をかける。「このまま」か「もっとゆっくり」か、のように答えが次の動きに直結する聞き方をする。自分の快感も言葉で返す。反応が返ってくることは、相手側の興奮と安心の材料になる——応答性が親密さの核だというのは、「女の口説き方」タブで扱った研究と同じ構造だ。',
+    '終わった後には、アフターケアの時間がある。抱擁、会話、水分。オーガズムの後はオキシトシンやプロラクチンの影響で情緒が揺れやすく、性的行為の後の情緒的な接し方の長さと質が、その夜の満足と関係の満足の両方と相関するという調査がある（Muise ほか、2014年）。終わり方までが一回の出来事の内側にある。'
+  ], figs:[
+    { type:'svg', kind:'flow', title:'言葉にするタイミング', steps:[
+      { t:'事前', s:'希望・NG・避妊を落ち着いて確認' },
+      { t:'最中', s:'選択肢で聞く／自分の反応も返す' },
+      { t:'事後', s:'アフターケア——抱擁と会話の時間' }
+    ], note:'確認は早いほど安く、遅いほど高い。' }
+  ]},
+  { h:'思い込みの訂正——裏付けのあるものだけ', paras:[
+    '大きさ。男性器の大きさと女性側の満足の相関は、研究では弱いか無い側に寄っている。膣の感度は入口側に集中しており、効くのは寸法より当たり方と動きだ。不安の産業（大きく見せる広告とポルノの casting）は、実測より不安で商売をしている。',
+    '持続時間。膣内射精潜伏時間の中央値は約5.4分（Waldinger ほか、2005年、5か国の調査）。「長いほど良い」は実測に根拠がなく、長すぎる側は潤滑の枯渇と摩擦、痛みに倒れる。望ましい長さはカップルごとに違う、が正確な言い方だ。',
+    '同時オーガズムは、映画の演出であって生理の標準ではない。到達のタイミングは別々が普通で、どちらが先かを設計できる方が現実的だ（女性側が先、が多数派の身体には合う）。',
+    'ポルノは教科書ではない。演技、編集、選ばれた身体、演出された反応と音声——記録ではなく作品だ。実際の相手の反応がポルノと違うのは、相手が悪いのではなく、比べる物が違う。',
+    '最後に、技術の位置。性的満足の強い予測因子として研究が繰り返し挙げるのは、特定の技術より、関係の質とコミュニケーションだ。注意が相手に向いていること、言葉が通ること。その土台の上にだけ、技術が乗る。'
+  ], figs:[
+    { type:'table', title:'思い込みと、実測の側', head:['思い込み', '実際のところ'], rows:[
+      ['大きさが決める', '満足との相関は弱い〜無い。感度は入口側に集中'],
+      ['長いほど良い', '中央値は約5.4分。長すぎは摩擦と痛みに倒れる'],
+      ['同時が理想', '演出。到達は別々が標準で、順番は設計できる'],
+      ['ポルノが手本', '演技と編集の作品。実際の反応とは別物'],
+      ['技術が全て', '強い予測因子は関係の質とコミュニケーション']
+    ], note:'外すのは不安の方で、相手ではない。' }
+  ]}
+];
+function renderCharmSex(){
+  bizFigStore = [];
+  const items = CHARM_SEX.map(sec=> ({ label: charmSecLabel(sec.h), build: ()=> charmStaticSecHTML(sec) + bizFigsHTML(sec.figs || []) }));
+  let html = charmSubNavHTML('sex', items);
+  html += '<button class="charmxref" onclick="setCharmTab(\'courtship\')">言葉で距離を詰める側の話<span class="charmxrefgo">「女の口説き方」タブで読む ›</span></button>';
+  return { html, wiring: [] };
+}
 function charmStaticSecHTML(sec){
   let html = '<h3 class="subhead">' + esc(sec.h) + '</h3>';
   (sec.paras || []).forEach(p=>{ html += '<p class="bodytext bizp">' + esc(p) + '</p>'; });
@@ -29359,7 +29463,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.77';
+const APP_VERSION = '5.82.78';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
