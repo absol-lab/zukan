@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.76">
+<meta name="app-version" content="5.82.77">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11692,6 +11692,8 @@ window.scrollTo(0, 0);
    the person changes). null = すべて. */
 let workSeries = { forId: null, key: null };
 function setWorkSeries(key){ workSeries = { forId: String(state.detailId), key: key || null }; refreshWorksPanel(); }
+let workGenre = { forId: null, key: null };
+function setWorkGenre(key){ workGenre = { forId: String(state.detailId), key: key || null }; refreshWorksPanel(); }
 /* v4.3: display modes for the detail works grid (his ask: the
    works list gets the same ワイド/標準/小/ミニ stops as the
    artist list). Device-local, shared across datasets. */
@@ -18107,6 +18109,53 @@ if(r2.height > 0 && r2.bottom > -50 && r2.top < vh2 + 50){ if(imgObserver) imgOb
 /* v5.82.38: the works panel's HTML builder, lifted out of
    renderDetail so sort / series / highlights changes can
    rebuild ONLY this panel (see refreshWorksPanel). */
+/* v5.82.77 (his order, 2026-11-28): genre split inside the
+   works tab. The genre of a work is read off its caption's
+   technique words — printmaking first （リトグラフ・版画…),
+   then sculpture, photo media, installation/textile, and
+   drawing media （鉛筆・木炭…); a caption with no technique
+   words counts as painting (the works list is a painting
+   list first). Titles 《…》 and parenthetical notes are
+   stripped before matching, and trailing holdings segments
+   （…蔵／美術館／庭園…) are dropped, so a museum's name can
+   never fake a genre (the Hirshhorn Sculpture Garden once
+   made Bacon a sculptor). The chip row mirrors the series
+   chips; while a genre is selected the tab shows a flat
+   grid of that genre and the viewer pages the same set. */
+const WORK_GENRES = [
+  { key:'painting', label:'絵画' }, { key:'print', label:'版画' }, { key:'sculpture', label:'彫刻' },
+  { key:'drawing', label:'素描' }, { key:'photo', label:'写真' }, { key:'other', label:'その他' }
+];
+function workGenreOf(w){
+  let s = String((w && w.caption) || '');
+  s = s.replace(/[《『][^》』]*[》』]/g, '');
+  s = s.replace(/[（(][^）)]*[）)]/g, '');
+  const segs = s.split('、');
+  const HOLD = ['蔵','美術館','画廊','庭園','コレクション','ギャラリー','museum','gallery','garden','collection'];
+  while(segs.length > 1){
+    const last = segs[segs.length - 1].toLowerCase();
+    if(last.indexOf('cm') < 0 && HOLD.some(h=> last.indexOf(h) >= 0)) segs.pop(); else break;
+  }
+  s = segs.join('、').toLowerCase();
+  const has = ks=> ks.some(k=> s.indexOf(k) >= 0);
+  if(has(['リトグラフ','エッチング','ドライポイント','アクアチント','メゾチント','木版','銅版','石版','平版','シルクスクリーン','スクリーンプリント','リノカット','版画','lithograph','etching','woodcut','engraving','screenprint','drypoint','aquatint','mezzotint'])) return 'print';
+  if(has(['彫刻','ブロンズ','木彫','石彫','大理石','テラコッタ','鋳造','陶器','陶磁','セラミック','sculpture','bronze','terracotta','marble','ceramic'])) return 'sculpture';
+  if(has(['ゼラチン・シルバー','ゼラチンシルバー','クロモジェニック','フォト','photograph','gelatin','chromogenic'])) return 'photo';
+  if(has(['映像','ビデオ','インスタレーション','タペストリー','テキスタイル'])) return 'other';
+  if(has(['鉛筆','木炭','チョーク','コンテ','ペン画'])) return 'drawing';
+  return 'painting';
+}
+function workGenresPresent(ws){
+  const counts = {};
+  (ws || []).forEach(w=>{ if(w){ const g = workGenreOf(w); counts[g] = (counts[g] || 0) + 1; } });
+  return WORK_GENRES.filter(g=> counts[g.key]).map(g=> ({ key: g.key, label: g.label, count: counts[g.key] }));
+}
+function workGenreKeyOf(a, present){
+  if(workGenre.forId !== String(a.id)) workGenre = { forId: String(a.id), key: null };
+  if(!present || present.length < 2) return null;
+  return present.some(g=> g.key === workGenre.key)? workGenre.key: null;
+}
+function genreLabelOf(key){ const g = WORK_GENRES.find(x=> x.key === key); return g? g.label: ''; }
 function workSeriesKeyOf(a){
   const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
   if(workSeries.forId !== String(a.id)) workSeries = { forId: String(a.id), key: null };
@@ -18128,6 +18177,8 @@ let worksHTML = '';
    (v5.58.0 fix — see the data-workidx wiring below). */
 const wgArr = (Array.isArray(a.work_groups)? a.work_groups: []).filter(g=> g && g.key && g.label);
 const seriesKey = workSeriesKeyOf(a);
+const genresPresent = workGenresPresent(ws);
+const genreKey = workGenreKeyOf(a, genresPresent);
 if(!ws.length) worksHTML = '<div class="empty">作品画像はまだありません</div>';
 else{
 const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figure class="work" data-wi="'+i+'"><div class="ph" data-workidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(ct)+'</div></figcaption></figure>', e: packEst(ct, workMode) }; };
@@ -18140,9 +18191,9 @@ const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figur
    decade-grouped presentation is the 年代別 mode; the clock
    modes are the flat chronological sorts. The shelf rides
    in 登録順 only. */
-if(seriesKey){
+if(seriesKey || genreKey){
 const fCards = [];
-ws.forEach((w,i)=>{ if(w && w.series === seriesKey) fCards.push(mkCard(w, i)); });
+ws.forEach((w,i)=>{ if(w && (!seriesKey || w.series === seriesKey) && (!genreKey || workGenreOf(w) === genreKey)) fCards.push(mkCard(w, i)); });
 worksHTML = packGalleryHTML(fCards, workMode);
 }
 else if(workSortMode() === 'decades'){
@@ -18166,7 +18217,7 @@ worksHTML = packGalleryHTML(wCards, workMode);
 /* v2.63: works-request bar — rides the registration-request file
    with kind:'works' (see requestWorks). Shown whether or not the
    person already has works: "too few" is the user's call to make. */
-const shelfCount = seriesKey? esc((wgArr.find(g=> g.key === seriesKey) || {}).label || '')+'：'+ws.filter(w=> w && w.series === seriesKey).length+'点' : '作品 '+ws.length+'点';
+const shelfCount = (seriesKey || genreKey)? esc([seriesKey? ((wgArr.find(g=> g.key === seriesKey) || {}).label || ''): '', genreKey? genreLabelOf(genreKey): ''].filter(Boolean).join('／'))+'：'+ws.filter(w=> w && (!seriesKey || w.series === seriesKey) && (!genreKey || workGenreOf(w) === genreKey)).length+'点' : '作品 '+ws.length+'点';
 /* v5.79.0 (his orders, 2026-11-20 14:51): the 見どころ eye
    toggle pins to the shelf's TOP-RIGHT corner (absolute —
    out of the layout flow), and the on/off appearances swap
@@ -18238,9 +18289,16 @@ worksHTML = '<div class="wserieschips" role="group" aria-label="シリーズで�
 + wgArr.map(g=> '<button class="'+(seriesKey === g.key? 'on': '')+'" onclick="setWorkSeries(\''+escA(g.key)+'\')">'+esc(g.label)+'</button>').join('')
 + '</div>' + worksHTML;
 }
+if(genresPresent.length >= 2){
+worksHTML = '<div class="wserieschips" role="group" aria-label="ジャンルで絞る">'
++ '<button class="'+(genreKey? '': 'on')+'" onclick="setWorkGenre(null)">すべて</button>'
++ genresPresent.map(g=> '<button class="'+(genreKey === g.key? 'on': '')+'" onclick="setWorkGenre(\''+g.key+'\')">'+esc(g.label)+'</button>').join('')
++ '</div>' + worksHTML;
+}
 return worksHTML;
 }
 function wireWorkTiles(scope, a, ws, seriesKey){
+const genreKey = workGenreKeyOf(a, workGenresPresent(ws));
 scope.querySelectorAll('[data-workidx]').forEach(ph=>{
 const w = ws[+ph.dataset.workidx]; ph._work = w;
 const fig = ph.closest('figure');
@@ -18254,8 +18312,8 @@ if(fig) fig.addEventListener('click', ()=>{
    work. Scoped to the works tab page: the 来歴 tab's
    chronicle figures carry data-workidx too and keep the
    full-list behaviour. */
-if(seriesKey && ph.closest('[data-dtab="works"]')){
-const fw = ws.filter(x=> x && x.series === seriesKey);
+if((seriesKey || genreKey) && ph.closest('[data-dtab="works"]')){
+const fw = ws.filter(x=> x && (!seriesKey || x.series === seriesKey) && (!genreKey || workGenreOf(x) === genreKey));
 const fi = fw.indexOf(ws[+ph.dataset.workidx]);
 openViewer(fw, fi < 0? 0: fi, a.id);
 } else openWorksViewer(a, ws[+ph.dataset.workidx]);
@@ -29301,7 +29359,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.76';
+const APP_VERSION = '5.82.77';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
