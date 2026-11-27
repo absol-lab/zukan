@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.70">
+<meta name="app-version" content="5.82.71">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23868,12 +23868,18 @@ function toggleActressCheck(id, input){
   try{ localStorage.setItem('actressChecks', JSON.stringify(c)); }catch(e){}
   const card = input.closest('.actcard'); if(card) card.classList.toggle('on', !!input.checked);
 }
+let actressMode = storeGet('zukan.actressmode') || 'def';
+if(!MODES.includes(actressMode)) actressMode = 'def';
+function setActressMode(m){
+  actressMode = m; storeSet('zukan.actressmode', m);
+  const y = window.scrollY; renderHumor(); window.scrollTo(0, y);
+}
 function renderCharmActress(){
   const checks = actressChecksGet();
   const actWiring = [];
-  let html = '<div class="small" style="margin:2px 4px 10px">チェック＝好き。状態はこの端末にだけ保存されます（同期されません）。</div>';
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。状態はこの端末にだけ保存されます（同期されません）。</div>';
   ACTRESS_BATCHES.forEach(b=>{
-    html += '<h3 class="subhead">' + esc(b.label) + '</h3><div class="grid def actgrid">';
+    html += '<h3 class="subhead">' + esc(b.label) + '</h3><div class="grid ' + actressMode + ' actgrid">';
     b.items.forEach(m=>{
       const on = !!checks[m.id];
       if(!m.img){ html += '<figure class="work actcard' + (on? ' on': '') + '"><div class="ph noplate">' + noPhotoHTML() + '</div><figcaption><div class="nm">' + esc(m.name) + '</div><label class="actcheck"><input type="checkbox" onchange="toggleActressCheck(\'' + m.id + '\', this)"' + (on? ' checked': '') + '> 好き</label></figcaption></figure>'; return; }
@@ -29127,7 +29133,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.70';
+const APP_VERSION = '5.82.71';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
