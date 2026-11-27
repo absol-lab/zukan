@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.73">
+<meta name="app-version" content="5.82.74">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2579,7 +2579,7 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 .charmsecrow{touch-action:pan-x; overscroll-behavior-x:contain; /* v5.82.57: same rail treatment as .dtabs — pan-x only, no chaining */}
 .modelcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .actcard.on{box-shadow:0 0 0 2px var(--accent);}
-.actcard .ph img{object-position:center 22%;}
+.actcard .ph img{object-fit:contain;}
 .actcheck{display:flex; align-items:center; gap:7px; margin-top:7px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer;}
 .actcard.on .actcheck{color:var(--accent);}
 .actcheck input{width:19px; height:19px; accent-color:var(--accent); flex:none;}
@@ -29280,7 +29280,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.73';
+const APP_VERSION = '5.82.74';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
