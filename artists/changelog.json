@@ -1,6 +1,17 @@
 {
  "entries": [
   {
+   "v": "5.82.54",
+   "at": "2026-11-27T12:05:00+09:00",
+   "notes": [
+    "「インスタをまとめた」を「目利きアカウント」に改名（本人の決定、2026-11-27）。入口のボタンはそのまま。",
+    "Xのアカウントも同じページにまとめた。上の切り替え（インスタグラム／X）で出し分け、カード形式と大きさ切替は共通。Xは17件：本人のおすすめ Trojan Norse（@trojan_norse）と burt berman（@bbu）を先頭に、#WOMENSART、Jerry Saltz、テート、ナショナル・ギャラリー、MoMA、メトロポリタン美術館、ライクス美術館、Gagosian、Pace、Hauser & Wirth、美術手帖、森美術館など。全件、表示名とフォロワー数を実際のプロフィールで照合済み（同名の別アカウントは除外）。",
+    "インスタグラム側に19件追加（合計26件）。Two Coats of Paint、SUPERSONIC ART、Cross Connect、WOW x WOW、Juxtapoz、Hi-Fructose、Dark Art & Craft、Jerry Saltz、GalleriesNow、David Zwirner、Hauser & Wirth、NIGHT GALLERY、テート、ナショナル・ギャラリー、Hyperallergic、Colossal、Tokyo Art Beat、森美術館、東京国立近代美術館。全件プロフィールで実在と数字を確認し、写真は実際のアバターを収録。",
+    "一覧をアプリ内で編集できるようにした。「アカウントを追加」から、ハンドルかプロフィールURLを入れるだけで追加できる（写真は自動で入る。表示名・フォロワー数・ひとこと説明は任意）。「編集」を押すと各カードに削除ボタンが出て、確認してから消せる。",
+    "追加と削除は Drive に同期される専用の小さなファイル（insta-accounts.json）に保存される。アプリを更新しても消えず、最初に入っている分を消したら消えたままになる。"
+   ]
+  },
+  {
    "v": "5.82.53",
    "at": "2026-11-27T11:15:00+09:00",
    "notes": [
