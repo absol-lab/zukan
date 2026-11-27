@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.78">
+<meta name="app-version" content="5.82.79">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23909,7 +23909,7 @@ const ACTRESS_BATCHES = [
     { id:'fujimori-riho', name:'藤森里穂', memo:'ボブの大人美人。艶枠のテスト', img:'1bArPx_pwFXtZBg02vxFye6DdlKh0f3Wu' }
   ]}
 ];
-const ACTRESS_DEFAULT_CHECKS = ["nanatsumori-riri", "higashi-mika", "kuraki-hana", "hatsumi-nanoka", "ozaki-erika", "hanamiya-kyoko", "uno-kanna", "shinozaki-saho", "kitsunai-hinata", "tsukumo-yoru", "aoi-mirei", "aona-miumi", "kamiki-mahoro", "misaki-hikari", "nomiya-an", "hanasaki-yura", "shiraishi-jun", "takimoto-shizukuha", "itoi-ruka", "ai-kaoru", "uehara-mizuho", "yuki-koiro", "uragami-hinori", "mino-nanoha", "ichikawa-ema", "nozomi-kanae", "ishikawa-hinami", "kawakita-saika", "hoshino-natsuki", "mita-marin", "ishihara-nozomi", "saito-amiri", "sakurai-ayu", "kamisaki-shiori", "nanami-tina", "yumeno-aika", "tsubasa-mai", "onodera-mai", "igarashi-kiyoka", "tenjin-ui", "arima-miku", "jinguji-nao", "ito-mayuki", "kashii-kaho", "tenshin-noa", "shishido-riho", "suehiro-jun", "hizuki-rui", "eikawa-noa", "azusa-hikari", "nagase-miyu", "ikuta-yuri", "yoshitaka-nene", "arai-rima", "maeda-minami", "ebisaki-ao", "aoi-ibuki", "aozora-hikari", "misaki-kanna", "fujiura-megu", "himesaki-hana", "aimi-rika", "kisaragi-mei", "honjo-suzu", "sakura-momo", "tadai-mahiro", "hinata-natsu", "marui-moeka", "horikita-wan", "nishino-sho", "nomiya-satomi", "ishikawa-mio", "yagi-nana", "otsuki-hibiki", "satsuki-ena", "ohashi-miku", "kasumi-risa", "tsuji-sakura", "neo-akari", "miru", "ogura-yuna", "minoshima-meguri", "wakamiya-hazuki", "futaba-ema", "miyagi-rie", "aizawa-miyu", "miyoshi-yuka", "nagisa-airi", "hirose-hina", "aisai-ria", "hanamori-kaho", "junpaku-ayana", "satsuki-nao"];
+const ACTRESS_DEFAULT_CHECKS = ["nanatsumori-riri", "higashi-mika", "kuraki-hana", "hatsumi-nanoka", "ozaki-erika", "hanamiya-kyoko", "uno-kanna", "shinozaki-saho", "kitsunai-hinata", "tsukumo-yoru", "aoi-mirei", "aona-miumi", "kamiki-mahoro", "misaki-hikari", "nomiya-an", "hanasaki-yura", "shiraishi-jun", "takimoto-shizukuha", "itoi-ruka", "ai-kaoru", "uehara-mizuho", "yuki-koiro", "uragami-hinori", "mino-nanoha", "ichikawa-ema", "nozomi-kanae", "ishikawa-hinami", "kawakita-saika", "hoshino-natsuki", "mita-marin", "ishihara-nozomi", "saito-amiri", "sakurai-ayu", "kamisaki-shiori", "nanami-tina", "yumeno-aika", "tsubasa-mai", "onodera-mai", "igarashi-kiyoka", "tenjin-ui", "arima-miku", "jinguji-nao", "ito-mayuki", "kashii-kaho", "tenshin-noa", "shishido-riho", "suehiro-jun", "hizuki-rui", "eikawa-noa", "azusa-hikari", "nagase-miyu", "ikuta-yuri", "yoshitaka-nene", "arai-rima", "maeda-minami", "ebisaki-ao", "aoi-ibuki", "aozora-hikari", "misaki-kanna", "fujiura-megu", "himesaki-hana", "aimi-rika", "kisaragi-mei", "honjo-suzu", "sakura-momo", "tadai-mahiro", "hinata-natsu", "marui-moeka", "horikita-wan", "nishino-sho", "nomiya-satomi", "ishikawa-mio", "yagi-nana", "otsuki-hibiki", "satsuki-ena", "ohashi-miku", "kasumi-risa", "tsuji-sakura", "neo-akari", "miru", "ogura-yuna", "minoshima-meguri", "wakamiya-hazuki", "futaba-ema", "miyagi-rie", "aizawa-miyu", "miyoshi-yuka", "nagisa-airi", "hirose-hina", "aisai-ria", "hanamori-kaho", "junpaku-ayana", "satsuki-nao", "kurumi-sakura", "misumi-nene", "asano-kokoro", "ichinomiya-rui"];
 function actressChecksGet(){
   /* defaults first (the missav favourites + batch 1's picks),
      then the device's saved choices laid over them — so a
@@ -29461,7 +29461,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.78';
+const APP_VERSION = '5.82.79';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
