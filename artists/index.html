@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.63">
+<meta name="app-version" content="5.82.64">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -11116,6 +11116,7 @@ work_groups: (Array.isArray(a.work_groups)? a.work_groups: []).map(g=>({ key: St
 portrait: String(a.portrait||''),
 portrait_src: String(a.portrait_src||''),
 process_photos: Array.isArray(a.process_photos)? a.process_photos.filter(p=>p && p.img).map(p=>{ const o = { img: String(p.img), caption: String(p.caption||'') }; if(p.work) o.work = String(p.work); return o; }): [],
+source_materials: Array.isArray(a.source_materials)? a.source_materials.filter(p=>p && p.img).map(p=>{ const o = { img: String(p.img), caption: String(p.caption||'') }; if(p.work) o.work = String(p.work); return o; }): [],
 birthplace: String(a.birthplace||''),
 base: String(a.base||''),
 /* v32.13.0: full birth / death dates, when a record ever
@@ -11521,6 +11522,11 @@ function keyWork(key, caption){
 function processPhotosOf(a){
   return (a && Array.isArray(a.process_photos)? a.process_photos: []).slice();
 }
+/* v5.82.64: source materials (the drawings tab's materials view) -
+   same stored shape as process_photos, its own field. */
+function sourceMaterialsOf(a){
+  return (a && Array.isArray(a.source_materials)? a.source_materials: []).slice();
+}
 /* v32.6.1: the person's own SNS / site links — record field
    sns: [{kind:'instagram'|'x'|'web', url}]. Rendered only
    when the record carries links; glyphs drawn in the app's
@@ -11691,6 +11697,11 @@ try { workMode = storeGet('zukan.workMode') || 'def'; } catch(e){}
 if(['wide','def','compact','mini','micro'].indexOf(workMode) < 0) workMode = 'def';
 function setWorkModeCore(m){ if(MODES.indexOf(m) < 0) m = 'def'; workMode = m; try { storeSet('zukan.workMode', m); } catch(e){} }
 function setWorkMode(m){ setWorkModeCore(m); renderDetail(); }
+/* v5.82.64: the drawings tab's drawings/materials toggle
+   (session state; the panel falls back to drawings when the
+   record carries no materials). */
+let drawingsMode = 'drawings';
+function setDrawingsMode(m){ drawingsMode = (m==='materials')? 'materials': 'drawings'; renderDetail(); }
 /* v5.76.0 (his order, 2026-11-20 「見どころ表示切り替え
    できるようにして。基本は非表示で」): the 見どころ block at
    the top of the 作品 panel is toggleable, DEFAULT HIDDEN —
@@ -18287,6 +18298,7 @@ const dws = drawingsOf(a);
    button, its fallback and its panel from one result. */
 const exsOfA = exhibitionsOfArtist(a);
 const pps = processPhotosOf(a);
+const mats = sourceMaterialsOf(a);
 const sp = splitNotes(a.notes);
 /* v15.0: the prices tab exists (as a hidden button + an empty
    pager panel, so DTABS indices always line up) but is only
@@ -18342,7 +18354,7 @@ if(hit) inflGiven.push({ id: x.id, name: dispName(x), note: hit.note || '' });
    same result. */
 const relGroups = relationsFor(a);
 const relCount = relGroups.received.length + relGroups.given.length + relGroups.ties.length + relGroups.genealogy.length + relGroups.compared.length;
-if(state.tab==='drawings' && !dws.length) state.tab = 'works';
+if(state.tab==='drawings' && !dws.length && !mats.length) state.tab = 'works';
 if(state.tab==='exhibitions' && !exsOfA.length) state.tab = 'works';
 if(state.tab==='process' && !hasProcessContent && !pps.length) state.tab = 'works';
 /* v5.59.0: a restored 'quotes' state lands on the merged
@@ -18373,7 +18385,7 @@ let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" o
 profileBandHTML(a)+
 '<div class="dtabs">'+
 '<button class="'+(state.tab==='works'?'on':'')+'" onclick="setTab(\'works\')">作品'+(ws.some(w=>w.video)? '（動画'+ws.filter(w=>w.video).length+'）': '')+'</button>'+
-'<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+(dws.length? '': ' style="display:none"')+'>ドローイング</button>'+
+'<button class="'+(state.tab==='drawings'?'on':'')+'" onclick="setTab(\'drawings\')"'+((dws.length || mats.length)? '': ' style="display:none"')+'>ドローイング</button>'+
 '<button class="'+(state.tab==='process'?'on':'')+'" onclick="setTab(\'process\')"'+((hasProcessContent || pps.length)? '': ' style="display:none"')+'>制作過程</button>'+
 '<button class="'+(state.tab==='relations'?'on':'')+'" onclick="setTab(\'relations\')"'+((relCount || inflArr.length || inflGiven.length)? '': ' style="display:none"')+'>関係</button>'+
 '<button class="'+(state.tab==='interviews'?'on':'')+'" onclick="setTab(\'interviews\')"'+((intvArr.length || hasQuotesTab)? '': ' style="display:none"')+'>インタビュー</button>'+
@@ -18437,6 +18449,28 @@ pCards.push({ h: '<figure class="work" data-pi="'+i+'"><div class="ph" data-proc
 });
 procGalleryHTML = packGalleryHTML(pCards, workMode);
 }
+/* v5.82.64: the materials gallery - the process gallery's
+   card + viewer manners over source_materials[] (grid cards
+   carry no caption text, same as the process photos; the
+   caption and the in-progress work line show in the viewer). */
+let matGalleryHTML = '';
+if(mats.length){
+const mCards = [];
+mats.forEach((p,i)=>{
+const wobj = keyWork(p.img, p.caption||'');
+mCards.push({ h: '<figure class="work" data-mi="'+i+'"><div class="ph" data-matidx="'+i+'">'+imgHTML(wobj, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+'</div></figure>', e: packEst('', workMode) });
+});
+matGalleryHTML = packGalleryHTML(mCards, workMode);
+}
+let materialsHTML = '';
+if(mats.length) materialsHTML = '<div class="worksreq"><span class="small">資料 '+mats.length+'点</span></div>' + matGalleryHTML;
+/* v5.82.64: the drawings panel body - a drawings/materials
+   toggle rides at the top when the record carries materials
+   (his call, 2026-11-27); with materials but no drawings the
+   panel opens on the materials side. */
+const effDrawMode = ((drawingsMode==='materials' && mats.length) || (!dws.length && mats.length))? 'materials': 'drawings';
+const drawToggleHTML = mats.length? '<div class="wrrow"><span class="seg mini" role="group" aria-label="ドローイングと資料の切替"><button class="'+(effDrawMode==='drawings'?'on':'')+'" onclick="setDrawingsMode(\'drawings\')">ドローイング</button><button class="'+(effDrawMode==='materials'?'on':'')+'" onclick="setDrawingsMode(\'materials\')">資料</button></span></div>': '';
+const drawPanelBody = drawToggleHTML + (effDrawMode==='materials'? materialsHTML: drawingsHTML);
 /* v2.65: books tab — cover, title, publisher, year, price WITH
    the date it was checked (prices move; a price without its date
    would be a small lie), and the purchase-page link. */
@@ -18645,10 +18679,13 @@ let processHTML = '';
    環境・画材メモ・制作メモ). Each part renders only when the
    record carries it; the third heading appears only when the
    trio is present and how-content follows. */
+/* v5.82.64 (his call, 2026-11-27): the process photos lead
+   the process tab - heading + grid first, then the trio and
+   the rest as before. */
+if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
 if(procObj && procObj.subjects) processHTML += '<h3 class="subhead trio">何を描いたか</h3><div class="bodytext">'+pTermEsc(procObj.subjects)+'</div>';
 if(procObj && procObj.composition) processHTML += '<h3 class="subhead trio">絵作り</h3><div class="bodytext">'+pTermEsc(procObj.composition)+'</div>';
-if(procObj && (procObj.subjects || procObj.composition) && (pps.length || (procObj.steps && procObj.steps.length) || procObj.environment || procObj.materials_notes || sp.tech || sp.rest)) processHTML += '<h3 class="subhead trio">どう描いたか</h3>';
-if(pps.length) processHTML += '<h3 class="subhead">制作風景</h3>' + procGalleryHTML;
+if(procObj && (procObj.subjects || procObj.composition) && ((procObj.steps && procObj.steps.length) || procObj.environment || procObj.materials_notes || sp.tech || sp.rest)) processHTML += '<h3 class="subhead trio">どう描いたか</h3>';
 if(procObj && procObj.steps && procObj.steps.length){
 processHTML += '<h3 class="subhead">制作の工程</h3>' + procObj.steps.map((s, i)=>
 '<div class="procstep"><div class="procstep-h"><span class="procnum">'+(i+1)+'</span><span class="proctitle">'+esc(s.title||'')+'</span></div>'
@@ -18824,7 +18861,7 @@ if(humorArr.length) humorHTML = humorArr.map(h=> '<div class="humorcard"><div cl
    2026-11-26: reachable without scrolling). One per tab. */
 html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="works">'+collectBtnHTML(a, 'works')+worksHTML+'</div>'
-+'<div class="dpage" data-dtab="drawings">'+collectBtnHTML(a, 'drawings')+drawingsHTML+'</div>'
++'<div class="dpage" data-dtab="drawings">'+collectBtnHTML(a, 'drawings')+drawPanelBody+'</div>'
 +'<div class="dpage" data-dtab="process">'+collectBtnHTML(a, 'process')+processHTML+'</div>'
 +'<div class="dpage" data-dtab="relations">'+collectBtnHTML(a, 'relations')+relationsHTML+'</div>'
 +'<div class="dpage" data-dtab="interviews">'+interviewsHTML+'</div>'
@@ -18896,6 +18933,17 @@ const p = pps[+ph.dataset.procidx]; if(!p) return;
 const wobj = keyWork(p.img, p.caption||''); ph._work = wobj;
 const fig = ph.closest('figure');
 if(fig) fig.addEventListener('click', ()=>openViewerProc(a, +ph.dataset.procidx));
+const span = ph.querySelector('.imgholder'); if(span){ span._work = wobj;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, wobj);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj);
+}
+});
+v.querySelectorAll('[data-matidx]').forEach(ph=>{
+const p = mats[+ph.dataset.matidx]; if(!p) return;
+const wobj = keyWork(p.img, p.caption||''); ph._work = wobj;
+const fig = ph.closest('figure');
+if(fig) fig.addEventListener('click', ()=>openViewerMat(a, +ph.dataset.matidx));
 const span = ph.querySelector('.imgholder'); if(span){ span._work = wobj;
 const sr = span.getBoundingClientRect();
 if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, wobj);
@@ -19465,6 +19513,14 @@ function openViewerProc(a, idx){
 viewerKindNext = 'proc';
 openViewer(processPhotosOf(a).map(p => keyWork(p.img, (p.caption || '') + (p.work? ((p.caption? '\n': '') + '制作中の作品：《' + p.work + '》'): ''))), idx, a.id);
 }
+/* v5.82.64: the materials viewer - openViewerProc's manners
+   over source_materials[]; the caption's in-progress work
+   line linkifies to the registered work exactly as process
+   photos do (viewerCaptionHTML). */
+function openViewerMat(a, idx){
+viewerKindNext = 'materials';
+openViewer(sourceMaterialsOf(a).map(p => keyWork(p.img, (p.caption || '') + (p.work? ((p.caption? '\n': '') + '制作中の作品：《' + p.work + '》'): ''))), idx, a.id);
+}
 /* v5.58.1 (DESIGN CHANGE — his device video, 2026-11-18
    01:55): the profile portrait NO LONGER opens in the works
    viewer. v5.54.0 routed it there as a synthetic one-item
@@ -19627,7 +19683,7 @@ const b = $('vthumb'); if(!b) return;
 /* v30.6: no thumbnail button while paging drawings */
 /* v5.78.0: nor for a priced work opened from the prices tab —
    it may not be one of the registered works at all. */
-if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices'){ b.style.display = 'none'; return; }
+if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices' || viewerKind==='materials'){ b.style.display = 'none'; return; }
 b.style.display = '';
 const isT = viewerIsThumb();
 b.textContent = isT? 'サムネ' : 'サムネにする';
@@ -19636,7 +19692,7 @@ b.classList.toggle('on', isT);
 function viewerSetThumb(){
 /* v30.6: the thumbnail pin applies to works only — a drawing must
    never be copied into the works list from the viewer. */
-if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices') return;
+if(viewerKind==='drawings' || viewerKind==='proc' || viewerKind==='prices' || viewerKind==='materials') return;
 const a = artistById(viewerArtistId); if(!a) return;
 const w = viewerWorks[viewerIdx]; if(!w) return;
 if(viewerIsThumb()){ toast('この作品がサムネです'); return; }
@@ -26776,6 +26832,7 @@ if(old && old.drawings && old.drawings.length) rec.drawings = old.drawings;
 if(old && old.portrait) rec.portrait = old.portrait;
 if(old && old.portrait_src) rec.portrait_src = old.portrait_src;
 if(old && old.process_photos && old.process_photos.length) rec.process_photos = old.process_photos;
+if(old && old.source_materials && old.source_materials.length) rec.source_materials = old.source_materials;
 if(old && old.birthplace) rec.birthplace = old.birthplace;
 if(old && old.base) rec.base = old.base;
 if(old && old.sns && old.sns.length) rec.sns = old.sns;
@@ -26963,6 +27020,8 @@ function mergeDataInto(local, incoming, opts){
     if(ia.drawings && ia.drawings.length) merged.drawings = ia.drawings;
     /* v32.6.1: process_photos, same wholesale treatment as drawings. */
     if(ia.process_photos && ia.process_photos.length) merged.process_photos = ia.process_photos;
+    /* v5.82.64: source_materials, same wholesale treatment. */
+    if(ia.source_materials && ia.source_materials.length) merged.source_materials = ia.source_materials;
     /* v32.6.1: sns links, same wholesale treatment. */
     if(ia.sns && ia.sns.length) merged.sns = ia.sns;
     if(ia.interviews && ia.interviews.length) merged.interviews = ia.interviews;
@@ -28838,7 +28897,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.63';
+const APP_VERSION = '5.82.64';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
