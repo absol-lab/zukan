@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.56">
+<meta name="app-version" content="5.82.57">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -699,7 +699,7 @@ button.backbtn{position:sticky; top:var(--hdrh, 56px); z-index:26; background:va
    the v2.23 seg-drag family (SEG_SEL) and the swipe-back
    arbitration excludes it by name, like #bizpillbar: a drag on
    the bar scrolls the bar, nothing else. */
-.dtabs{display:flex; flex-wrap:nowrap; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:pan-x pan-y; /* v5.82.34: was auto, which re-enabled double-tap zoom on the tab strip */}
+.dtabs{display:flex; flex-wrap:nowrap; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:pan-x; overscroll-behavior-x:contain; /* v5.82.34: was auto, which re-enabled double-tap zoom on the tab strip. v5.82.57: pan-x ONLY, no pan-y — with pan-y in the intersection a slightly diagonal drag on the bar was claimed by the document's vertical scroller mid-gesture (iOS arbitration), the bar stopped scrolling and the whole page jittered/ghosted under the finger (his 2026-11-27 video, Nagashima page). A horizontal rail must never hand its drags to the vertical page scroller; vertical scrolls simply do not start from this 32px strip. overscroll-behavior-x:contain stops end-of-bar drags chaining anywhere else. */}
 .dtabs::-webkit-scrollbar{display:none;}
 /* v32.6.1 (fix 2): while more tabs wait off the right edge,
    the row's right end fades out — the scroll affordance the
@@ -2531,7 +2531,7 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 /* v5.82.36: the section pill row inside the reading tabs is the
    guide's .gsecrow; on this page it also needs the .dtabs touch
    treatment so horizontal drags scroll the row natively. */
-.charmsecrow{touch-action:pan-x pan-y;}
+.charmsecrow{touch-action:pan-x; overscroll-behavior-x:contain; /* v5.82.57: same rail treatment as .dtabs — pan-x only, no chaining */}
 .modelcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
 .modelname{font-family:var(--serif); font-size:16.5px; font-weight:600; line-height:1.4;}
 .modelwho{font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.55;}
@@ -24368,7 +24368,7 @@ function renderHumor(){
      できない」). The .bizpills row could not scroll at all: its
      touch-action is pan-y and the segment-drag system (SEG_SEL)
      captures horizontal drags on it. .dtabs is the app's working
-     native scroller — touch-action pan-x pan-y, excluded from both
+     native scroller — touch-action pan-x (v5.82.57), excluded from both
      the segment drags and the swipe-back arming by name — so the
      row scrolls sideways with the same right-edge fade (.more,
      wired by wireDTabs) as the artist page's tab bar. */
@@ -28609,7 +28609,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.56';
+const APP_VERSION = '5.82.57';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
