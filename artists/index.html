@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.66">
+<meta name="app-version" content="5.82.67">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -1677,6 +1677,7 @@ button.linkbtn{background:none; border:none; color:var(--accent); font-size:13px
    tab keep the setting-linked sizes. */
 .dpage[data-dtab="bio"] .bodytext{font-size:11.5px; line-height:1.5;}
 .dpage[data-dtab="evaluation"] .bodytext{font-size:11.5px; line-height:1.5;}
+.dpage[data-dtab="persona"] .bodytext{font-size:11.5px; line-height:1.5;}
 .dpage[data-dtab="evaluation"] h3.subhead{font-size:15.5px;}
 .dpage[data-dtab="humor"] .humortxt{font-size:11.5px; line-height:1.5;}
 .humorcard{margin:8px 0; padding:10px 12px; background:var(--bg2); border-radius:10px;}
@@ -1949,7 +1950,7 @@ html.sheetlock, html.sheetlock body{overflow:hidden;}
 .mtile .imgholder{display:block; aspect-ratio:4/3;}
 .mtile .imgholder img{width:100%; height:100%; object-fit:cover; display:block;}
 .mtile .mcap{display:block; padding:8px 10px 9px; font-size:12.5px; line-height:1.45; color:var(--text);}
-.mcell .mart{padding:5px 2px 0; font-size:12.5px;}
+.mshcell .mart{padding:5px 2px 0; font-size:12.5px;}
 .galsub{font-family:var(--sans); font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.08em; margin:12px 2px 0;}
 /* v2.42: registration requests */
 .reqinput{width:100%; font-size:16px; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); margin-top:12px; font-family:var(--sans);}
@@ -11093,6 +11094,7 @@ prices: prices,
    or a device write-back would erase them (the name_kana
    lesson). */
 evaluation: String(a.evaluation||''),
+persona: String(a.persona||''),
 humor: (Array.isArray(a.humor)? a.humor: []).map(h=>{ h = h || {}; return { text: String(h.text||''), source: String(h.source||'') }; }).filter(h=>h.text),
 breakthrough: normalizeBreakthrough(a.breakthrough),
 process: normalizeProcess(a.process),
@@ -17293,7 +17295,7 @@ openSettingsPanel('reqnotif');
    section and not folded into the intro). It rides the prices
    convention: always in the DTABS order, shown only when the
    record carries an `evaluation` text. */
-const DTABS = ['works','drawings','process','relations','interviews','exhibitions','prices','evaluation','humor','bio','books'];
+const DTABS = ['works','drawings','process','relations','interviews','exhibitions','prices','evaluation','humor','persona','bio','books'];
 /* v5.82.9: ユーモア (humor) joins immediately after 評価
    (his call, 2026-11-26 — an artist's humour is collected,
    never summarised away). It rides the evaluation convention:
@@ -18387,6 +18389,7 @@ if(state.tab==='relations' && !relCount && !inflArr.length && !inflGiven.length)
 if(state.tab==='evaluation' && !(a.evaluation && String(a.evaluation).trim())) state.tab = 'works'; /* v5.82.8: no 評価 text, no 評価 tab */
 const humorArr = humorItemsOf(a);
 if(state.tab==='humor' && !humorArr.length) state.tab = 'works'; /* v5.82.9: no ユーモア items, no ユーモア tab */
+if(state.tab==='persona' && !(a.persona && String(a.persona).trim())) state.tab = 'works'; /* v5.82.67: no persona text, no 人物像 tab */
 let html = '<div class="detailhead"><div class="dhbar"><button class="backbtn" onclick="detailHome()">'+(((detailOrigin && detailOrigin.view && detailOrigin.view !== 'list' && detailOrigin.view !== 'detail') || (detailStack[0] && (detailStack[0].panel === 'schools' || detailStack[0].panel === 'heldlist')))? '‹ 戻る': '‹ 一覧へ戻る')+'</button>'+
 (detailStack.length? '<button class="backbtn" onclick="detailBack()">‹ 前へ</button>': '')+
 '<div style="float:right"><button class="favbtn" id="favBtn" onclick="toggleFavPerson()" aria-label="お気に入り">☆</button><button class="txtbtn" onclick="openEditor(\''+escA(a.id)+'\')">編集</button></div></div>'+
@@ -18409,6 +18412,7 @@ profileBandHTML(a)+
 '<button class="'+(state.tab==='prices'?'on':'')+'" onclick="setTab(\'prices\')"'+((pricesArr.length || a.breakthrough)? '': ' style="display:none"')+'>価格</button>'+
 '<button class="'+(state.tab==='evaluation'?'on':'')+'" onclick="setTab(\'evaluation\')"'+((a.evaluation && String(a.evaluation).trim())? '': ' style="display:none"')+'>評価</button>'+
 '<button class="'+(state.tab==='humor'?'on':'')+'" onclick="setTab(\'humor\')"'+(humorArr.length? '': ' style="display:none"')+'>ユーモア</button>'+
+'<button class="'+(state.tab==='persona'?'on':'')+'" onclick="setTab(\'persona\')"'+((a.persona && String(a.persona).trim())? '': ' style="display:none"')+'>人物像</button>'+
 '<button class="'+(state.tab==='bio'?'on':'')+'" onclick="setTab(\'bio\')">来歴</button>'+
 '<button class="'+(state.tab==='books'?'on':'')+'" onclick="setTab(\'books\')">作品集</button>'+
 '</div>';
@@ -18868,6 +18872,8 @@ if(relGroups.compared.length) relationsHTML += '<h3 class="subhead">比較され
    rendered with the shared prose renderer. */
 let evaluationHTML = '';
 if(a.evaluation && String(a.evaluation).trim()) evaluationHTML = proseHTML(a.evaluation);
+let personaHTML = '';
+if(a.persona && String(a.persona).trim()) personaHTML = proseHTML(a.persona);
 /* v5.82.9: the ユーモア panel — the record's `humor` items,
    one card per remark / episode, each with its source tag. */
 let humorHTML = '';
@@ -18885,6 +18891,7 @@ html += '<div class="dpager" id="dpager">'
 +'<div class="dpage" data-dtab="prices">'+collectBtnHTML(a, 'prices')+pricesHTML+'</div>'
 +'<div class="dpage" data-dtab="evaluation">'+collectBtnHTML(a, 'evaluation')+evaluationHTML+'</div>'
 +'<div class="dpage" data-dtab="humor">'+collectBtnHTML(a, 'humor')+humorHTML+'</div>'
++'<div class="dpage" data-dtab="persona">'+collectBtnHTML(a, 'persona')+personaHTML+'</div>'
 +'<div class="dpage" data-dtab="bio">'+collectBtnHTML(a, 'bio')+bioHTML+'</div>'
 +'<div class="dpage" data-dtab="books">'+collectBtnHTML(a, 'books')+booksHTML+'</div>'
 +'</div>';
@@ -21839,11 +21846,25 @@ for(const a of c.DB.artists){
 }
 return idx;
 }
+/* v5.82.67: guarded containment for museum-name matching —
+   a short katakana name must not match inside a longer
+   katakana word (ペラ美術館 inside オペラ美術館 sent Florence's
+   holdings and English name to Pera's page). An occurrence
+   counts only when it is not wedged directly after a katakana
+   character while itself starting with katakana. */
+function nameContains(str, sub){
+if(!str || !sub) return false;
+const i = str.indexOf(sub);
+if(i < 0) return false;
+if(i === 0) return true;
+const kata = c => (c >= 'ァ' && c <= 'ヶ') || c === 'ー';
+return !(kata(str.charAt(i - 1)) && kata(sub.charAt(0)));
+}
 function museumNameMatch(name, key, gal){
 if(!key) return false;
 if(key === name) return true;
 if(gal && (key === gal.g.name || key.indexOf(gal.g.match) >= 0 || gal.g.name.indexOf(key) >= 0)) return true;
-if(key.indexOf(name) >= 0 || name.indexOf(key) >= 0) return true;
+if(nameContains(key, name) || nameContains(name, key)) return true;
 return false;
 }
 function holdingsFor(name, idx){
@@ -21902,7 +21923,7 @@ go();
    plus the artist-link row under each tile. Wide stays the
    plain single-column shelf. */
 function museumShelfHTML(held, shelfWide, shelfModeCls){
-const cards = held.map((e, i)=> ({ h: '<div class="mcell"><button class="mtile" onclick="openMuseumWork(' + i + ')">' + imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb) + hiresBadgeHTML(e.work) + '<span class="mcap">' + esc(e.work.caption || '') + '</span></button>'
+const cards = held.map((e, i)=> ({ h: '<div class="mshcell"><button class="mtile" onclick="openMuseumWork(' + i + ')">' + imgHTML(e.work, shelfWide? IMG_SIZE.plate: IMG_SIZE.thumb) + hiresBadgeHTML(e.work) + '<span class="mcap">' + esc(e.work.caption || '') + '</span></button>'
 + '<button class="linkbtn mart" onclick="openCrossDetail(\'' + e.kind + '\', \'' + escA(e.artist.id) + '\')">' + esc(e.artist.name) + '</button></div>', e: packEst(e.work.caption, workMode, 30) }));
 const n = PCOLS_N[workMode] || 2;
 if(n <= 1 || cards.length <= n) return '<div class="mgrid' + shelfModeCls + '">' + cards.map(c=> c.h).join('') + '</div>';
@@ -26849,6 +26870,7 @@ if(old && old.portrait) rec.portrait = old.portrait;
 if(old && old.portrait_src) rec.portrait_src = old.portrait_src;
 if(old && old.process_photos && old.process_photos.length) rec.process_photos = old.process_photos;
 if(old && old.source_materials && old.source_materials.length) rec.source_materials = old.source_materials;
+if(old && old.persona) rec.persona = old.persona;
 if(old && old.birthplace) rec.birthplace = old.birthplace;
 if(old && old.base) rec.base = old.base;
 if(old && old.sns && old.sns.length) rec.sns = old.sns;
@@ -26986,7 +27008,7 @@ function mergeDataInto(local, incoming, opts){
        happens) keeps its text under eqConv as well. */
     const scalarConverge = scalarFromRemote ||
       (!stampGt(la.updated_at, ia.updated_at) && !!(opts && opts.eqConv));
-    ['name','name_latin','name_native','name_kana','years','field','section','relation','evaluation','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','birth_date','death_date','updated_at'].forEach(k=>{
+    ['name','name_latin','name_native','name_kana','years','field','section','relation','evaluation','persona','key_works','notes','work_image','work_caption','portrait','portrait_src','birthplace','base','layer','birth_date','death_date','updated_at'].forEach(k=>{
       /* v5.72.1: a strictly newer incoming record states its
          scalar fields WHOLESALE — an empty string included.
          The old rule counted an incoming value only when it
@@ -28237,7 +28259,7 @@ function requestWorks(){
    completion rides the standard notification panel.
    v5.82.25: the button is a compact icon (magnifier) in a
    right-aligned row at the panel head — no text label. */
-const COLLECT_LABELS = { works:'作品', drawings:'ドローイング', process:'制作', relations:'関係', interviews:'インタビュー', quotes:'本人の言葉', exhibitions:'展示', prices:'価格', evaluation:'評価', humor:'ユーモア', bio:'来歴', books:'書籍' };
+const COLLECT_LABELS = { works:'作品', drawings:'ドローイング', process:'制作', relations:'関係', interviews:'インタビュー', quotes:'本人の言葉', exhibitions:'展示', prices:'価格', evaluation:'評価', humor:'ユーモア', persona:'人物像', bio:'来歴', books:'書籍' };
 function collectReqItemFor(a, section){
   if(!a) return null;
   return reqAllItems().find(r=> r.kind==='collect' && String(r.artist_id)===String(a.id) && r.dataset===DS && r.section===section && (r._local || r.status==='pending')) || null;
@@ -28922,7 +28944,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.66';
+const APP_VERSION = '5.82.67';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
@@ -30900,7 +30922,7 @@ function xDetailFill(){
       (a.works || []).forEach(w => { if(w.held_by) held[w.held_by] = true; });
       const found = [];
       Object.keys(held).forEach(hb => {
-        const loc = XLOC.find(l => l.key === hb || hb.indexOf(l.key) >= 0 || l.key.indexOf(hb) >= 0 || (l.aliases || []).some(al => hb.indexOf(al) >= 0));
+        const loc = XLOC.find(l => l.key === hb || nameContains(hb, l.key) || nameContains(l.key, hb) || (l.aliases || []).some(al => nameContains(hb, al)));
         if(loc && !found.some(f => f.loc === loc)) found.push({ loc: loc, hb: hb });
       });
       if(found.length){
@@ -31226,7 +31248,7 @@ function xMuseumGallery(){
     if(!gals || $('xgalblock')) return;
     const nm = museumName;
     const hit = gals.find(g => g.name === nm || (g.aliases || []).some(al => al === nm))
-      || gals.find(g => nm.indexOf(g.name) >= 0 || (g.aliases || []).some(al => nm.indexOf(al) >= 0));
+      || gals.find(g => nameContains(nm, g.name) || (g.aliases || []).some(al => nameContains(nm, al)));
     if(!hit) return;
     const div = document.createElement('div');
     div.id = 'xgalblock'; div.className = 'xgal';
@@ -31249,9 +31271,9 @@ function xMuseumSns(){
     const nm = museumName;
     let sns = [], latin = '';
     const g = (gals || []).find(x => x.name === nm || (x.aliases || []).some(al => al === nm))
-      || (gals || []).find(x => nm.indexOf(x.name) >= 0 || (x.aliases || []).some(al => nm.indexOf(al) >= 0));
+      || (gals || []).find(x => nameContains(nm, x.name) || (x.aliases || []).some(al => nameContains(nm, al)));
     if(g && Array.isArray(g.sns) && g.sns.length){ sns = g.sns.slice(); latin = g.kana || g.name || ''; }
-    const loc = (locs || []).find(l => l.key === nm || nm.indexOf(l.key) >= 0 || l.key.indexOf(nm) >= 0 || (l.aliases || []).some(al => nm.indexOf(al) >= 0 || al.indexOf(nm) >= 0));
+    const loc = (locs || []).find(l => l.key === nm || nameContains(nm, l.key) || nameContains(l.key, nm) || (l.aliases || []).some(al => nameContains(nm, al) || nameContains(al, nm)));
     if(loc && Array.isArray(loc.sns) && loc.sns.length){
       loc.sns.forEach(s2 => { if(!sns.some(s1 => s1.kind === s2.kind && s1.url === s2.url)) sns.push(s2); });
       if(!latin) latin = loc.name || '';
@@ -31285,7 +31307,7 @@ function xMuseumRoster(){
     if(!gals || $('xrostertabs') || !museumName) return;
     const nm = museumName;
     const hit = gals.find(g => g.name === nm || (g.aliases || []).some(al => al === nm))
-      || gals.find(g => nm.indexOf(g.name) >= 0 || (g.aliases || []).some(al => nm.indexOf(al) >= 0));
+      || gals.find(g => nameContains(nm, g.name) || (g.aliases || []).some(al => nameContains(nm, al)));
     if(!hit || !Array.isArray(hit.artists) || !hit.artists.length) return;
     const pool = (CTX.artists && CTX.artists.DB && CTX.artists.DB.artists) || [];
     const cards = hit.artists.map(en => {
