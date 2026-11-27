@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.64">
+<meta name="app-version" content="5.82.65">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23000,7 +23000,7 @@ function reqFindIn(kind, r){
   try{
     /* v27.18: memory reference, not a re-parse of the stored mirror */
     const arr = liveDB(kind).artists || [];
-    if((r.kind==='works' || r.kind==='collect') && r.artist_id!=null){ const a = arr.find(x=>String(x.id)===String(r.artist_id)); if(a) return a.id; }
+    if((r.kind==='works' || r.kind==='collect' || r.kind==='update') && r.artist_id!=null){ const a = arr.find(x=>String(x.id)===String(r.artist_id)); if(a) return a.id; }
     const a = reqFindByName(arr, reqResolvedName(r));
     return a? a.id: null;
   }catch(e){ return null; }
@@ -23009,13 +23009,13 @@ function reqNotifJump(id){
   const r = reqAllItems().find(x=>x.id===id); if(!r || r.status==='declined') return;
   const nm = reqResolvedName(r);
   const panelDs = DS;
-  if((r.kind==='works' || r.kind==='collect') && r.dataset && r.dataset!==DS){
+  if((r.kind==='works' || r.kind==='collect' || r.kind==='update') && r.dataset && r.dataset!==DS){
     const oid = reqFindIn(r.dataset, r);
     switchDataset(r.dataset);
     if(oid!=null){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(oid); } else toast('この端末にはまだ届いていません');
     return;
   }
-  if((r.kind==='works' || r.kind==='collect') && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(a.id); return; } }
+  if((r.kind==='works' || r.kind==='collect' || r.kind==='update') && r.artist_id!=null){ const a = artistById(r.artist_id); if(a){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(a.id); return; } }
   const here = reqFindByName(DB.artists, nm);
   if(here){ reqMarkOneRead(r); armPanelOrigin(panelDs); openDetail(here.id); return; }
   const other = DS==='artists'? 'designers':'artists';
@@ -23031,8 +23031,8 @@ function renderRequestNotifs(targetId){
     const resolved = reqResolvedName(r);
     const isNew = !readIds.has(r.id);
     /* v13.2 compact row: name + kind chip + time only. */
-    const kindLabel = r.status==='declined'? '見送り': (r.kind==='works'? '更新': (r.kind==='collect'? '回収': (r.kind==='remove'? '解除': '登録')));
-    const dispName = (r.kind==='works' || r.kind==='collect')? r.name: (resolved || r.name);
+    const kindLabel = r.status==='declined'? '見送り': (r.kind==='works'? '更新': (r.kind==='collect'? '回収': (r.kind==='update'? '追加': (r.kind==='remove'? '解除': '登録'))));
+    const dispName = (r.kind==='works' || r.kind==='collect' || r.kind==='update')? r.name: (resolved || r.name);
     const key = 'req:' + r.id;
     const open = !!notifOpen[key];
     /* v30.6 (his complaint, 2026-11-15): the row itself is the
@@ -23053,7 +23053,7 @@ function renderRequestNotifs(targetId){
     /* v32.4.0 (item 13): a person row carries the person's
        thumbnail — the standard card form in miniature (their
        representative work, or the initial tile). */
-    const pa = ((r.kind==='works' || r.kind==='collect') && r.artist_id!=null)? artistById(r.artist_id): reqFindByName(DB.artists, resolved);
+    const pa = ((r.kind==='works' || r.kind==='collect' || r.kind==='update') && r.artist_id!=null)? artistById(r.artist_id): reqFindByName(DB.artists, resolved);
     const pth = pa? thumbOf(pa): null;
     const thumb = '<span class="nthumb">' + (pth? '<figure class="work"><div class="ph" data-work="'+escA(pa.id)+'">'+imgHTML(pth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(dispName||'')[0]||''))+'</span></span>') + '</span>';
     const head = '<div class="nhead"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
@@ -28102,7 +28102,16 @@ function sbMaxUpdated(data){
    existing items and never deletes; the app only appends.
    v2.63: items may carry kind:'works' (plus artist_id and dataset)
    — a request to harvest MORE WORKS for an already-registered
-   person; absent kind means a new-person registration request. */
+   person; absent kind means a new-person registration request.
+   v5.82.65: items may also carry kind:'update' (plus artist_id
+   and dataset) — not a user request but the processor's own
+   completion note when information was ADDED to an existing
+   artist outside the request flow (harvest loop, manual
+   enrichment). His rule, 2026-11-28: an addition the user
+   never asked for still notifies. status 'registered' +
+   resolved_at + note (what was added) make it a notification;
+   the panel chip reads 追加, the history label ✓ 追加済み.
+   New-person registrations need no entry (detectNewPeople). */
 const REQ_FILE = 'zukan-requests.json';
 const LS_REQ_OUTBOX = 'zlab.requests.outbox';
 const LS_REQ_CACHE = 'zlab.requests.cache';
@@ -28144,7 +28153,7 @@ function reqSummaryLabel(){
 }
 function reqStatusOf(r, pos){
   if(r._local) return { key:'queued', label:'送信待ち' };
-  if(r.status==='registered') return { key:'registered', label: (r.kind==='works' || r.kind==='collect')? '✓ 回収済み': (r.kind==='remove'? '✓ 解除済み': '✓ 登録済み') };
+  if(r.status==='registered') return { key:'registered', label: (r.kind==='works' || r.kind==='collect')? '✓ 回収済み': (r.kind==='update'? '✓ 追加済み': (r.kind==='remove'? '✓ 解除済み': '✓ 登録済み')) };
   if(r.status==='declined') return { key:'declined', label:'見送り' };
   /* v8.2: pending splits into 処理中 (the processor stamped
      processing_at) and 順番待ち (not yet claimed, with its
@@ -28899,7 +28908,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.64';
+const APP_VERSION = '5.82.65';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
