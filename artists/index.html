@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.57">
+<meta name="app-version" content="5.82.58">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -830,6 +830,14 @@ button.inflrow{cursor:pointer;}
 .dpager{display:flex; overflow-x:hidden; overflow-y:hidden; align-items:flex-start; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior-x:contain;}
 .dpager::-webkit-scrollbar{display:none;}
 .dpage{flex:0 0 100%; width:100%; min-width:0; scroll-snap-align:start; scroll-snap-stop:always; overflow:hidden;}
+
+/* v5.82.58: while a view transition or a swipe-back drag runs (body.vt-run), only the
+   detail pager's CURRENT page paints. The other panels stay laid out but visibility:hidden,
+   so the compositor moves one page of content instead of the whole 11-panel strip — with a
+   587-work artist the full strip was rasterised into every slide and transitions stuttered
+   and ghosted (his 2026-11-27 video). vtMarkCurrentPage() marks .vtcur at transition start. */
+body.vt-run .dpager .dpage{visibility:hidden;}
+body.vt-run .dpager .dpage.vtcur{visibility:visible;}
 /* v5.73.0: the process panel carries the longest prose of any
    tab; pad its end so the last lines clear the fixed pill nav
    (56px + its bottom offset + the safe area) with room to
@@ -1102,7 +1110,7 @@ h3.subhead:first-child{margin-top:8px;}
    the chips ride a horizontal rail in the .dtabs manner. */
 .wgrphead{scroll-margin-top:calc(var(--hdrh, 56px) + 56px);}
 .wgrpcnt{color:var(--muted); font-size:11.5px; letter-spacing:.05em; margin-left:6px;}
-.wgrpchips{display:flex; flex-wrap:nowrap; gap:6px; margin:10px 0 2px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px;}
+.wgrpchips{display:flex; flex-wrap:nowrap; gap:6px; margin:10px 0 2px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px; touch-action:pan-x; overscroll-behavior-x:contain; /* v5.82.58: the .dtabs rail treatment (v5.82.57) — horizontal drags belong to this row's own scroller */}
 .wgrpchips::-webkit-scrollbar{display:none;}
 .wgrpchips button{flex:none; white-space:nowrap; background:var(--bg2); border:1px solid var(--line); color:var(--text); border-radius:999px; font-family:var(--sans); font-size:12.5px; letter-spacing:.06em; padding:5px 12px; min-height:32px;}
 /* v5.57.0: the works tab's series chips — the .wgrpchips rail
@@ -12775,6 +12783,7 @@ if(typeof updateMakerEraName === 'function') updateMakerEraName();
 }
 function vtSlide(oldEl, newEl, dir, restoreY){
 vtBusy = true;
+vtMarkCurrentPage(oldEl); vtMarkCurrentPage(newEl); /* v5.82.58: paint only the current tab page during the slide */
 const hdr = document.querySelector('header.top');
 const H = hdr? hdr.offsetHeight: 0;
 const y = window.scrollY || 0;
@@ -17318,6 +17327,7 @@ setTimeout(()=>{ if(pg.isConnected) scheduleFitDPager(); }, 700);
 let pgDrag = null;
 pg.addEventListener('touchstart', e=>{
 if(!e.touches || e.touches.length!==1){ pgDrag = null; return; }
+if(e.target && inHScroller(e.target)){ pgDrag = null; return; } /* v5.82.58: drags on a horizontal scroller (decade pills…) scroll it — they never switch tabs */
 const t = e.touches[0];
 pgDrag = { x: t.clientX, y: t.clientY, idx: Math.max(0, DTABS.indexOf(state.tab)) };
 }, { passive:true });
@@ -28342,6 +28352,31 @@ function goBack(){
    left to fight. listScrollPre is the engage-time half of the
    landing; teardownSwipe only verifies it stuck. */
 function listScrollPre(win, y){ win.scrollTo(0, y); }
+/* v5.82.58: mark the detail pager's current page (.vtcur) from its real
+   scroll offset — the same formula the swipe-back arbitration uses.
+   While body.vt-run is on, the CSS at .dpage hides every other page's
+   paint, so a transition only composites the page actually on screen. */
+function vtMarkCurrentPage(el){
+  if(!el || !el.querySelector) return;
+  const pg = el.querySelector('.dpager'); if(!pg) return;
+  const idx = Math.round(pg.scrollLeft / Math.max(1, pg.clientWidth));
+  pg.querySelectorAll('.dpage').forEach((p, i)=>p.classList.toggle('vtcur', i === idx));
+}
+/* v5.82.58: true when a touch starts inside an element that scrolls
+   horizontally on its own (decade pill row, series chips, tab bar…).
+   Those drags belong to that scroller alone: neither the tab pager
+   nor the view swipe-back may arm on them (his 2026-11-27 video:
+   swiping the decade pills switched tabs and left the page). */
+function inHScroller(el){
+  let n = el;
+  while(n && n.nodeType === 1){
+    if(n.classList && n.classList.contains('dpager')) break;
+    const cs = window.getComputedStyle(n);
+    if(cs && (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth + 4) return true;
+    n = n.parentElement;
+  }
+  return false;
+}
 function engageSwipe(st){
   /* v2.70: a pill-trail swipe can cross datasets （展示/その他 of the
      other context). Swap the dataset context first so the target
@@ -28359,6 +28394,7 @@ function engageSwipe(st){
   const oldEl = $(VIEW_EL[view]), newEl = $(VIEW_EL[st.target]);
   if(!oldEl || !newEl){ st.engaged = false; return; }
   st.oldEl = oldEl; st.newEl = newEl;
+  vtMarkCurrentPage(oldEl); vtMarkCurrentPage(newEl); /* v5.82.58 */
   const hdr = document.querySelector('header.top');
   st.H = hdr? hdr.offsetHeight: 0;
   st.y = window.scrollY || 0;
@@ -28468,6 +28504,7 @@ function teardownSwipe(st, commit){
     if(e.target && e.target.closest && e.target.closest(SEG_SEL)) return; /* segment drags belong to the segment (v2.23) */
     if(e.target && e.target.closest && e.target.closest('.dtabs')) return; /* v27.1: the detail tab bar is a native scroller now — drags on it scroll the bar and never arm the swipe-back (the #bizpillbar treatment) */
     if(e.target && e.target.closest && e.target.closest('.charmsecrow')) return; /* v5.82.36: the 人間的魅力 section pill row is a native scroller too (the guide's .gsecrow, transplanted) — drags on it scroll the row and never arm the swipe-back (the .dtabs treatment). Inside the guide panel this never mattered; the panel itself is excluded above. */
+    if(e.target && inHScroller(e.target)) return; /* v5.82.58: any horizontally scrollable row (decade pill row, series chips…) owns its drags — the swipe-back never arms on them */
     if(e.target && e.target.closest && e.target.closest('#tlbar')) return; /* v29.3: the timeline year bar is a drag control — horizontal drags on it scrub the timeline and never arm the swipe-back (his 2026-11-14 video: bar drags engaged this gesture, the view slid to the list and back, and the engage/teardown churn — pin, WAAPI, un-pin — ghosted the card text into double print). The bar's own handler is Pointer Events; this exclusion is the same treatment #bizpillbar gets. */
     /* v2.23 detail-pager arbitration: a horizontal swipe that starts on
        the detail pager belongs to the pager whenever a later tab is
@@ -28609,7 +28646,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.57';
+const APP_VERSION = '5.82.58';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
