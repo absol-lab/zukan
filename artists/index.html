@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.52">
+<meta name="app-version" content="5.82.53">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2458,6 +2458,9 @@ h2.sechead{font-family:var(--headfont); letter-spacing:.07em;}
    scene small beneath. 伝聞 items carry a small chip rather than
    being silently presented as certain. */
 .quotecard{margin:8px 0; padding:14px 14px 12px; background:var(--bg2); border-radius:10px;}
+/* v5.82.53: the speaker card's landing mark (the 診断 tab's
+   diagflash treatment, same outline in the accent colour). */
+.quotecard.quoteflash{outline:2px solid var(--accent); outline-offset:-2px;}
 .quoteq{font-family:var(--serif); font-size:17.5px; line-height:1.65; color:var(--text);}
 .quoteorig{font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:7px; font-style:italic;}
 .quotemeta{margin-top:9px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px;}
@@ -23074,11 +23077,24 @@ const CHARM_SECTIONS = [
   { key:'diag', label:'診断', hasData: ()=> true, render: renderCharmDiag }
 ];
 function setCharmTab(k){ charmTab = k; renderHumor(); window.scrollTo(0, 0); }
+/* v5.82.53: speakers in first-appearance order, for the speaker
+   card grid at the head of the ユーモア tab (the card-format rule:
+   the group presentation is cards, the quotes stay the hero below). */
+let _charmSpkIndex = null;
+function charmSpkIndex(){ if(!_charmSpkIndex){ _charmSpkIndex = {}; CHARM_QUOTES.forEach(q=>{ if(!(q.who in _charmSpkIndex)) _charmSpkIndex[q.who] = Object.keys(_charmSpkIndex).length; }); } return _charmSpkIndex; }
+let spkMode = storeGet('zukan.spkmode') || 'def'; if(!MODES.includes(spkMode)) spkMode = 'def';
+function setSpkMode(m){ spkMode = m; storeSet('zukan.spkmode', m); const y = window.scrollY; renderHumor(); window.scrollTo(0, y); }
+function openSpeakerQuotes(si){
+  const el = document.querySelector('#viewHumor .quotecard[data-spk="' + si + '"]');
+  if(!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.remove('quoteflash'); void el.offsetWidth; el.classList.add('quoteflash');
+}
 function charmQuoteCardHTML(q){
   const who = q.aid
     ? '<button class="quotewho" onclick="openHumorArtist(\'' + q.aid + '\')">' + esc(q.who) + ' ›</button>'
     : '<span class="quotewho">' + esc(q.who) + '</span>';
-  return '<div class="quotecard">'
+  return '<div class="quotecard" data-spk="' + charmSpkIndex()[q.who] + '">'
     + '<div class="quoteq">「' + esc(q.q) + '」</div>'
     + (q.orig? '<div class="quoteorig">' + esc(q.orig) + '</div>': '')
     + '<div class="quotemeta">' + who + (q.den? '<span class="quoteden">伝聞</span>': '') + '</div>'
@@ -23095,12 +23111,32 @@ function renderCharmHumor(){
      section 「切れ味とユーモア」 stays but no longer leads —
      it sits under the collection. */
   if(!guideData && !guideError) guideEnsure();
-  let html = CHARM_QUOTES.map(charmQuoteCardHTML).join('');
+  /* v5.82.53: the speaker groups lead as a card grid — the same
+     components as the artist list / ロールモデル / インスタ grids
+     (figure.work + .modebar size switch). A speaker's photo comes
+     from the ロールモデル cards when one exists; speakers with no
+     photo in the app get the shared no-photo mark, exactly like a
+     photo-less artist card. Tap = land on that speaker's first
+     quote card below (the quotes stay the hero). */
+  const spkWiring = [];
+  const spkCounts = {}; CHARM_QUOTES.forEach(q=>{ spkCounts[q.who] = (spkCounts[q.who] || 0) + 1; });
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (spkMode===mo? ' class="on"': '') + ' onclick="setSpkMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>';
+  html += '<div class="grid ' + spkMode + ' spkgrid">';
+  Object.keys(charmSpkIndex()).forEach(who=>{
+    const mm = CHARM_MODELS.find(m=> m.name === who);
+    let fig;
+    if(mm){ const w = keyWork(mm.img, who); spkWiring.push(w); fig = '<div class="ph">' + imgHTML(w, IMG_SIZE.thumb) + '</div>'; }
+    else fig = '<div class="ph noplate">' + noPhotoHTML() + '</div>';
+    html += '<figure class="work" onclick="openSpeakerQuotes(' + charmSpkIndex()[who] + ')">' + fig
+      + '<figcaption><div class="nm">' + esc(who) + '</div><div class="sub">発言 ' + spkCounts[who] + '件</div></figcaption></figure>';
+  });
+  html += '</div>';
+  html += CHARM_QUOTES.map(charmQuoteCardHTML).join('');
   html += '<button class="quotemore" onclick="openHumorArtist(\'76\')">フランシス・ベーコンのユーモアをもっと見る<span class="charmxrefgo">作家ページのユーモアタブ ›</span></button>';
   const sp = charmChapterById('guide-ch-self-produce');
   const hsec = charmSecByHead(sp, '切れ味とユーモア');
   if(hsec){ bizFigStore = []; html += '<h3 class="subhead">読み物</h3>' + charmSecHTML(hsec); }
-  return { html, wiring: [] };
+  return { html, wiring: [], spkWiring };
 }
 function renderCharmAura(){
   const sp = charmChapterById('guide-ch-self-produce');
@@ -24006,6 +24042,8 @@ function renderHumor(){
   /* v5.82.39: the same pairing for the ロールモデル grid, scoped
      to .modelgrid so the two holder families never cross. */
   v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
+  /* v5.82.53: same pairing for the ユーモア speaker grid. */
+  v.querySelectorAll('.spkgrid .imgholder').forEach((span, k)=>{ const w = (out.spkWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -28228,7 +28266,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.52';
+const APP_VERSION = '5.82.53';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
