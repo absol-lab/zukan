@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.62">
+<meta name="app-version" content="5.82.63">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -22974,7 +22974,7 @@ function renderRequestNotifs(targetId){
     const resolved = reqResolvedName(r);
     const isNew = !readIds.has(r.id);
     /* v13.2 compact row: name + kind chip + time only. */
-    const kindLabel = r.status==='declined'? '見送り': (r.kind==='works'? '更新': (r.kind==='collect'? '回収': '登録'));
+    const kindLabel = r.status==='declined'? '見送り': (r.kind==='works'? '更新': (r.kind==='collect'? '回収': (r.kind==='remove'? '解除': '登録')));
     const dispName = (r.kind==='works' || r.kind==='collect')? r.name: (resolved || r.name);
     const key = 'req:' + r.id;
     const open = !!notifOpen[key];
@@ -22984,7 +22984,7 @@ function renderRequestNotifs(targetId){
        read on arrival, as before) — no expand-then-small-button
        detour. A declined row has no page to open, so it keeps
        the expand (to read the note). */
-    const navigable = r.status !== 'declined';
+    const navigable = r.status !== 'declined' && r.kind !== 'remove' /* v5.82.63: a removal has no page to open - the row expands to its note, like a declined row */;
     let detail = '';
     if(!navigable && open){
       let d = '';
@@ -28838,7 +28838,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.59';
+const APP_VERSION = '5.82.63';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
