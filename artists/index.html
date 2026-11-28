@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.84">
+<meta name="app-version" content="5.82.85">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -2582,7 +2582,7 @@ button.quotewho{background:none; border:none; padding:0; cursor:pointer; font-fa
 .actrefreshwrap{margin:20px 4px 8px; text-align:center;}
 .actrefresh{width:100%; padding:13px; border-radius:10px; border:1px solid var(--line); background:var(--bg2); color:var(--ink); font-size:14px; font-weight:700; cursor:pointer;}
 .actpoolmsg{margin-top:10px; font-size:12.5px; font-weight:600; color:var(--accent);}
-.actcard .ph img{object-fit:contain;}
+figure.work.actcard .ph img{object-fit:contain;} /* v5.82.85: specificity raised — the plain .actcard rule lost to figure.work .ph img (cover) and faces stayed cropped */
 .actcheck{display:flex; align-items:center; gap:7px; margin-top:7px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer;}
 .actcard.on .actcheck{color:var(--accent);}
 .actcheck input{width:19px; height:19px; accent-color:var(--accent); flex:none;}
@@ -29397,7 +29397,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.84';
+const APP_VERSION = '5.82.85';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
