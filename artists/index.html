@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.97">
+<meta name="app-version" content="5.82.98">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18196,14 +18196,19 @@ function workSeriesKeyOf(a){
    only the DOM grows in slices. Appended tiles are wired with
    the same scoped wireWorkTiles call, so clicks, the viewer
    and image hydration behave exactly as for the first block. */
-const WORKS_FILL_FIRST = 240;
-const WORKS_FILL_CHUNK = 150;
-let WORKS_FILL = null, WORKS_FILL_GEN = 0, worksFillTimer = 0, worksFillObs = null;
+const WORKS_FILL_FIRST = 120;
+const WORKS_FILL_CHUNK = 120;
+const DRAW_FILL_FIRST = 60;
+const DRAW_FILL_CHUNK = 60;
+let WORKS_FILL = null, WORKS_FILL_GEN = 0;
+let DRAW_FILL = null, DRAW_FILL_GEN = 0;
 function worksFillHTML(cards, mode, a, ws, seriesKey){
 if(cards.length <= WORKS_FILL_FIRST) return packGalleryHTML(cards, mode);
 const chunks = [];
 for(let i = WORKS_FILL_FIRST; i < cards.length; i += WORKS_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + WORKS_FILL_CHUNK), mode));
-WORKS_FILL = { chunks: chunks, a: a, ws: ws, seriesKey: seriesKey, gen: ++WORKS_FILL_GEN };
+const job = { chunks: chunks, markId: 'worksFillMark', gen: ++WORKS_FILL_GEN, wire: div=> wireWorkTiles(div, a, ws, seriesKey) };
+job.isCurrent = ()=> WORKS_FILL === job;
+WORKS_FILL = job;
 return packGalleryHTML(cards.slice(0, WORKS_FILL_FIRST), mode) + '<div class="worksfillmark" id="worksFillMark"></div>';
 }
 /* The decades presentation under the same cap: sections are
@@ -18228,35 +18233,60 @@ chunks.push(head + packGalleryHTML(cards.slice(0, WORKS_FILL_CHUNK), workMode, t
 for(let i = WORKS_FILL_CHUNK; i < cards.length; i += WORKS_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + WORKS_FILL_CHUNK), workMode, true));
 }
 });
-if(chunks.length){ WORKS_FILL = { chunks: chunks, a: a, ws: ws, seriesKey: seriesKey, gen: ++WORKS_FILL_GEN }; h += '<div class="worksfillmark" id="worksFillMark"></div>'; }
+if(chunks.length){ const job = { chunks: chunks, markId: 'worksFillMark', gen: ++WORKS_FILL_GEN, wire: div=> wireWorkTiles(div, a, ws, seriesKey) }; job.isCurrent = ()=> WORKS_FILL === job; WORKS_FILL = job; h += '<div class="worksfillmark" id="worksFillMark"></div>'; }
 return h;
 }
-function stopWorksFillDrivers(){
-if(worksFillObs){ worksFillObs.disconnect(); worksFillObs = null; }
-if(worksFillTimer){ clearTimeout(worksFillTimer); worksFillTimer = 0; }
+function stopFillJob(job){
+if(!job) return;
+if(job.obs){ job.obs.disconnect(); job.obs = null; }
+if(job.timer){ clearTimeout(job.timer); job.timer = 0; }
 }
-function startWorksFill(){
-stopWorksFillDrivers();
-const job = WORKS_FILL; if(!job) return;
+/* v5.82.98: the driver is per-job now (works and drawings fill
+   independently), the first fill waits 1s and later ones land
+   every 700ms — v5.82.97's 500ms cadence could still land an
+   append inside the user's first scroll after opening. A stale
+   job (a newer render replaced it) stops itself via isCurrent
+   instead of appending into the new panel's marker. */
+function startFillJob(job){
+if(!job) return;
+stopFillJob(job);
+job.active = true;
 const step = ()=>{
-if(WORKS_FILL !== job) return;
-const mark = document.getElementById('worksFillMark');
-if(!mark || !mark.isConnected){ WORKS_FILL = null; stopWorksFillDrivers(); return; }
+if(!job.active || !job.isCurrent()){ job.active = false; stopFillJob(job); return; }
+const mark = document.getElementById(job.markId);
+if(!mark || !mark.isConnected){ job.active = false; stopFillJob(job); return; }
 const htmlStr = job.chunks.shift();
-if(htmlStr == null){ mark.remove(); WORKS_FILL = null; stopWorksFillDrivers(); return; }
+if(htmlStr == null){ mark.remove(); job.active = false; stopFillJob(job); return; }
 const div = document.createElement('div');
 div.innerHTML = htmlStr;
 mark.parentNode.insertBefore(div, mark);
-wireWorkTiles(div, job.a, job.ws, job.seriesKey);
-if(!job.chunks.length){ mark.remove(); WORKS_FILL = null; stopWorksFillDrivers(); }
+job.wire(div);
+if(!job.chunks.length){ mark.remove(); job.active = false; stopFillJob(job); }
 };
-const mark0 = document.getElementById('worksFillMark');
+const mark0 = document.getElementById(job.markId);
 if(mark0 && window.IntersectionObserver){
-worksFillObs = new IntersectionObserver(es=>{ if(es.some(e=> e.isIntersecting)) step(); }, { rootMargin: '900px' });
-worksFillObs.observe(mark0);
+job.obs = new IntersectionObserver(es=>{ if(es.some(e=> e.isIntersecting)) step(); }, { rootMargin: '900px' });
+job.obs.observe(mark0);
 }
-const tick = ()=>{ if(WORKS_FILL !== job) return; step(); if(WORKS_FILL === job) worksFillTimer = setTimeout(tick, 500); };
-worksFillTimer = setTimeout(tick, 500);
+const tick = ()=>{ if(!job.active) return; step(); if(job.active) job.timer = setTimeout(tick, 700); };
+job.timer = setTimeout(tick, 1000);
+}
+function startWorksFill(){
+if(WORKS_FILL) startFillJob(WORKS_FILL);
+if(DRAW_FILL) startFillJob(DRAW_FILL);
+}
+/* The drawings gallery under the same treatment (v5.82.98):
+   Dubuffet carries 109 drawings — the second-heaviest panel at
+   open — so it renders 60 first and fills the rest the same
+   way, wired by wireDrawTiles. */
+function drawFillHTML(cards, mode, a, dws){
+if(cards.length <= DRAW_FILL_FIRST) return packGalleryHTML(cards, mode);
+const chunks = [];
+for(let i = DRAW_FILL_FIRST; i < cards.length; i += DRAW_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + DRAW_FILL_CHUNK), mode));
+const job = { chunks: chunks, markId: 'drawFillMark', gen: ++DRAW_FILL_GEN, wire: div=> wireDrawTiles(div, a, dws) };
+job.isCurrent = ()=> DRAW_FILL === job;
+DRAW_FILL = job;
+return packGalleryHTML(cards.slice(0, DRAW_FILL_FIRST), mode) + '<div class="worksfillmark" id="drawFillMark"></div>';
 }
 function buildWorksPanelHTML(a, ws){
 WORKS_FILL = null;
@@ -18434,6 +18464,19 @@ else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
 });
 }
 
+function wireDrawTiles(scope, a, dws){
+scope.querySelectorAll('[data-drawidx]').forEach(ph=>{
+const w = dws[+ph.dataset.drawidx]; ph._work = w;
+const fig = ph.closest('figure');
+if(fig) fig.addEventListener('click', ()=>openViewerDrawings(a, +ph.dataset.drawidx));
+const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
+const sr = span.getBoundingClientRect();
+if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
+else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
+}
+});
+}
+
 /* v5.82.38 (his recording, 2026-11-26 22:13): tapping the
    sort row made the whole artist page ghost — every tap ran
    a FULL renderDetail (profile band, all tab panels and the
@@ -18592,6 +18635,7 @@ const worksHTML = buildWorksPanelHTML(a, ws);
    tiles carry data-drawidx, NOT data-workidx: the works wiring
    below is keyed to the works list and must never see them. */
 let drawingsHTML = '';
+DRAW_FILL = null;
 if(!dws.length) drawingsHTML = '<div class="empty">ドローイングはまだありません</div>';
 else{
 drawingsHTML = '<div class="worksreq"><span class="small">ドローイング '+dws.length+'点</span></div>';
@@ -18600,7 +18644,7 @@ dws.forEach((w,i)=>{
 const dct = cardCapText(w.caption);
 dCards.push({ h: '<figure class="work" data-di="'+i+'"><div class="ph" data-drawidx="'+i+'">'+imgHTML(w, (workMode==='compact' || workMode==='mini' || workMode==='micro')? IMG_SIZE.thumb: IMG_SIZE.plate)+hiresBadgeHTML(w)+'</div><figcaption>'+videoBadgeHTML(w)+'<div class="sub">'+esc(dct)+'</div></figcaption></figure>', e: packEst(dct, workMode) });
 });
-drawingsHTML += packGalleryHTML(dCards, workMode);
+drawingsHTML += drawFillHTML(dCards, workMode, a, dws);
 }
 /* v32.15.0: the exhibitions panel — this artist's exhibitions
    as poster cards, latest information first (the builder lives
@@ -19083,17 +19127,10 @@ wireWorkTiles(v, a, ws, workSeriesKeyOf(a));
 startWorksFill();
 /* v30.6: the drawings tiles — same wiring shape as works, but
    the click opens the viewer over the DRAWINGS list (kind
-   'drawings'), never the works list. */
-v.querySelectorAll('[data-drawidx]').forEach(ph=>{
-const w = dws[+ph.dataset.drawidx]; ph._work = w;
-const fig = ph.closest('figure');
-if(fig) fig.addEventListener('click', ()=>openViewerDrawings(a, +ph.dataset.drawidx));
-const span = ph.querySelector('.imgholder'); if(span){ span._work = w;
-const sr = span.getBoundingClientRect();
-if(sr.height > 0 && sr.bottom > -50 && sr.top < (window.innerHeight || 800) + 50) hydrateImg(span, w);
-else if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w);
-}
-});
+   'drawings'), never the works list. v5.82.98: extracted as
+   wireDrawTiles so the drawings fill's appended blocks wire
+   themselves with the same code. */
+wireDrawTiles(v, a, dws);
 /* v32.15.0: the exhibitions tab's card plates — same wiring
    shape as the gallery cards (the work object rides the wiring
    array the panel builder filled); hydration only, the card's
@@ -29602,7 +29639,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.97';
+const APP_VERSION = '5.82.98';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
