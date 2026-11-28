@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.89">
+<meta name="app-version" content="5.82.90">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -415,6 +415,8 @@ h2.sechead.duptitle>span:first-child{visibility:hidden;}
 .grid.compact{grid-template-columns:repeat(3,1fr); gap:10px;}
 .grid.mini{grid-template-columns:repeat(4,1fr); gap:8px;}
 .grid.micro{grid-template-columns:repeat(5,1fr); gap:6px;}
+/* v5.82.90: huge works grids (Dubuffet 664 cards) jank the phone — let the browser skip layout/paint of off-screen cards. Ignored where unsupported. */
+.dpage[data-dtab="works"] figure.work, .grid figure.work{content-visibility:auto; contain-intrinsic-size:auto 200px;}
 figure.work{margin:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px; cursor:pointer; overflow:hidden;}
 figure.work:active{background:var(--card2);}
 /* v21.11 (his ask): a person tile says what the person IS — painter,
@@ -29447,7 +29449,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.89';
+const APP_VERSION = '5.82.90';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
