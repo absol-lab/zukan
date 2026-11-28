@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.91">
+<meta name="app-version" content="5.82.92">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23909,6 +23909,7 @@ function actressRefreshPool(){
 function renderCharmActress(){
   const checks = actressChecksGet();
   const actWiring = [];
+  const actNames = [];
   const pool = actressPoolGet();
   if(actressPoolPending && (guideData || guideError)){
     actressPoolPending = false;
@@ -23919,7 +23920,7 @@ function renderCharmActress(){
   const likeIds = new Set(likeItems.map(m=> m.id));
   actressGradsGet().forEach(m=>{ if(!likeIds.has(m.id)){ likeItems.push(m); likeIds.add(m.id); } });
   const items = actressTab === 'like'? likeItems: pool.items;
-  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。状態はこの端末にだけ保存されます（同期されません）。</div>';
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。写真をタップすると missav のその人のページが開きます。状態はこの端末にだけ保存されます（同期されません）。</div>';
   html += '<div class="wrrow"><div class="seg mini" role="group" aria-label="リスト切替">'
     + '<button class="' + (actressTab === 'new'? 'on': '') + '" onclick="setActressTab(\'new\')">未登録（' + pool.items.length + '）</button>'
     + '<button class="' + (actressTab === 'like'? 'on': '') + '" onclick="setActressTab(\'like\')">like（' + likeItems.length + '）</button>'
@@ -23928,7 +23929,7 @@ function renderCharmActress(){
   items.forEach(m=>{
     const on = !!checks[m.id];
     if(!m.img){ html += '<figure class="work actcard' + (on? ' on': '') + '"><div class="ph noplate">' + noPhotoHTML() + '</div><figcaption><div class="nm">' + esc(m.name) + '</div><label class="actcheck"><input type="checkbox" onchange="toggleActressCheck(\'' + m.id + '\', this)"' + (on? ' checked': '') + '> 好き</label></figcaption></figure>'; return; }
-    const w = keyWork(m.img, m.name); actWiring.push(w);
+    const w = keyWork(m.img, m.name); actWiring.push(w); actNames.push(m.name);
     html += '<figure class="work actcard' + (on? ' on': '') + '"><div class="ph">' + imgHTML(w, IMG_SIZE.thumb) + '</div><figcaption><div class="nm">' + esc(m.name) + '</div>'
       + (m.memo? '<div class="sub">' + esc(m.memo) + '</div>': '')
       + '<label class="actcheck"><input type="checkbox" onchange="toggleActressCheck(\'' + m.id + '\', this)"' + (on? ' checked': '') + '> 好き</label></figcaption></figure>';
@@ -23939,7 +23940,7 @@ function renderCharmActress(){
       + '<div class="small" style="margin-top:8px">押すと、チェックしなかった人は消えて、新しい候補に入れ替わります。チェックした人は like に残ります。</div>'
       + (actressPoolMsg? '<div class="actpoolmsg">' + esc(actressPoolMsg) + '</div>': '') + '</div>';
   }
-  return { html, wiring: [], actWiring };
+  return { html, wiring: [], actWiring, actNames };
 }
 
 function renderCharmModels(){
@@ -25186,7 +25187,7 @@ function renderHumor(){
   v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* v5.82.53: same pairing for the ユーモア speaker grid. */
   v.querySelectorAll('.spkgrid .imgholder').forEach((span, k)=>{ const w = (out.spkWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
-  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=> openViewer(out.actWiring, k, null)); } }); /* v5.82.86: tap a photo to open it enlarged (viewer pages the whole displayed list) */
+  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=>{ const nm = (out.actNames || [])[k]; if(nm) window.open('https://missav.ws/actresses/' + encodeURIComponent(nm), '_blank'); }); } }); /* v5.82.92: tap a photo to open her missav actress page (replaces the v5.82.86 enlarge viewer, his call) */
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -29450,7 +29451,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.91';
+const APP_VERSION = '5.82.92';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
