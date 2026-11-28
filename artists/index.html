@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.98">
+<meta name="app-version" content="5.82.99">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -22883,7 +22883,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "お気に入りを最高水準に", "lines": ["★のお気に入り46人を、1人ずつ最高水準まで埋める作業が進行中。ベーコンはカンスト完了。いまはジャン・デュビュッフェ。", "デュビュッフェは作品890点を収録済み（本人の指示で作品は打ち切り）。いまはドローイングを集めている。", "デュビュッフェが終わったら、ヴィルヘルム・サスナルへ進む。"]}, {"v": null, "label": "作家の解剖", "lines": ["解剖の記録があるのは全831人中563人。残り268人。", "収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]}, {"v": null, "label": "書籍ダイジェスト", "lines": ["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。デュシャン『デュシャンは語る』とベーコンの2冊（シルヴェスター対談／ドゥルーズ）が公開済み。", "ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]}, {"v": null, "label": "来歴と年代記", "lines": ["年代記（年代で見る作風と活動）は7人まで適用済み。★46人のうち残り39人が次の対象。", "来歴が薄い作家は、収集のたびに厚くしていく。"]}, {"v": null, "label": "ドローイングと画像候補", "lines": ["ドローイングは980点まで収録。", "登録候補の画像は確認待ちが残っている。作家本人のSNSから集める方法も検証済み。"]}, {"v": null, "label": "ユーモア", "lines": ["作家のユーモアは、書籍の中身を吸収するたびに、その作家分も省かず集めていく。今はデュシャン16件・ベーコン27件。", "作家を横断して読める「人間的魅力」ページ（ホーム右上の☺︎ボタン）のタブは18個。今回「女の口説き方」を追加した（性的魅力の隣。ステータスに頼らない前提で、雄弁さを核にした完全マニュアル——前提／雄弁さの基礎／接触と会話／距離の詰め方／ユーモア／誘いの設計／断られた時／長い弧）。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "お気に入りを最高水準に", "lines": ["★のお気に入り46人を、1人ずつ最高水準まで埋める作業が進行中。ベーコンはカンスト完了。いまは中園孔二。", "デュビュッフェは本人の指示で一旦切り上げ（作品890点・ドローイング109点まで収録）。再開は本人の指示待ち。", "中園孔二の次はヴィルヘルム・サスナルへ進む。"]}, {"v": null, "label": "作家の解剖", "lines": ["解剖の記録があるのは全831人中563人。残り268人。", "収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]}, {"v": null, "label": "書籍ダイジェスト", "lines": ["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。デュシャン『デュシャンは語る』とベーコンの2冊（シルヴェスター対談／ドゥルーズ）が公開済み。", "ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]}, {"v": null, "label": "来歴と年代記", "lines": ["年代記（年代で見る作風と活動）は7人まで適用済み。★46人のうち残り39人が次の対象。", "来歴が薄い作家は、収集のたびに厚くしていく。"]}, {"v": null, "label": "ドローイングと画像候補", "lines": ["ドローイングは980点まで収録。", "登録候補の画像は確認待ちが残っている。作家本人のSNSから集める方法も検証済み。"]}, {"v": null, "label": "ユーモア", "lines": ["作家のユーモアは、書籍の中身を吸収するたびに、その作家分も省かず集めていく。今はデュシャン16件・ベーコン27件。", "作家を横断して読める「人間的魅力」ページ（ホーム右上の☺︎ボタン）のタブは18個。今回「女の口説き方」を追加した（性的魅力の隣。ステータスに頼らない前提で、雄弁さを核にした完全マニュアル——前提／雄弁さの基礎／接触と会話／距離の詰め方／ユーモア／誘いの設計／断られた時／長い弧）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -29639,7 +29639,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.98';
+const APP_VERSION = '5.82.99';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
