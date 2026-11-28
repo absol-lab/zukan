@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.96">
+<meta name="app-version" content="5.82.97">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -344,6 +344,9 @@ html[lang="en"] .sortrow .seg button{font-size:11.5px; padding:5px 10px;} html[l
 /* v5.82.96: inside the ★ filter, a 作家／作品 segment (the sortrow's
    .seg mini pattern) and the favorite-works grid's artist line. */
 .favsegrow{margin:12px 0 0;}
+/* v5.82.97: the works panel's incremental-fill marker — the fill
+   appends the remaining card blocks just before this point. */
+.worksfillmark{height:1px;}
 .favworks .fwartist{font-size:11.5px; color:var(--accent); margin-top:2px;}
 #vfav{font-size:17px; color:#cfd2e0;}
 #vfav.on{color:#e3a93c;}
@@ -18179,7 +18182,84 @@ function workSeriesKeyOf(a){
   if(workSeries.forId !== String(a.id)) workSeries = { forId: String(a.id), key: null };
   return wgArr.some(g=> g.key === workSeries.key)? workSeries.key: null;
 }
+/* v5.82.97 (his device report, 2026-11-28: opening Dubuffet
+   froze the app): the works panel no longer builds its whole
+   grid into the detail's first innerHTML. renderDetail builds
+   EVERY tab panel eagerly, so a catalogue of ~900 works (plus
+   the drawings panel) meant ~1,000 cards of DOM parse + layout
+   in one blocked frame at open. The panel now renders the
+   first WORKS_FILL_FIRST cards and fills the rest in small
+   blocks — appended before the marker by startWorksFill, on a
+   timer and whenever the marker nears the viewport — the same
+   incremental-fill idea the exhibition grids adopted in
+   v5.73.3. Card strings are pre-built (string work is cheap);
+   only the DOM grows in slices. Appended tiles are wired with
+   the same scoped wireWorkTiles call, so clicks, the viewer
+   and image hydration behave exactly as for the first block. */
+const WORKS_FILL_FIRST = 240;
+const WORKS_FILL_CHUNK = 150;
+let WORKS_FILL = null, WORKS_FILL_GEN = 0, worksFillTimer = 0, worksFillObs = null;
+function worksFillHTML(cards, mode, a, ws, seriesKey){
+if(cards.length <= WORKS_FILL_FIRST) return packGalleryHTML(cards, mode);
+const chunks = [];
+for(let i = WORKS_FILL_FIRST; i < cards.length; i += WORKS_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + WORKS_FILL_CHUNK), mode));
+WORKS_FILL = { chunks: chunks, a: a, ws: ws, seriesKey: seriesKey, gen: ++WORKS_FILL_GEN };
+return packGalleryHTML(cards.slice(0, WORKS_FILL_FIRST), mode) + '<div class="worksfillmark" id="worksFillMark"></div>';
+}
+/* The decades presentation under the same cap: sections are
+   emitted in order until the cap is met; the remaining section
+   blocks (header + gallery, or further gallery slices of one
+   huge section) become fill chunks. The chips row always lists
+   every decade, exactly as decadeSectionsHTML does. */
+function worksDecadesCappedHTML(ws, mkCard, dg, a, seriesKey){
+const label = k=> (k === 'unknown')? '制作年不詳': (k + '年代');
+let h = '<div class="wgrpchips">' + dg.keys.map(k=> '<button onclick="jumpWorkGroup(\'' + k + '\')">' + esc(label(k)) + '（' + dg.groups.get(k).length + '）</button>').join('') + '</div>';
+let count = 0; const chunks = [];
+dg.keys.forEach(k=>{
+const cards = dg.groups.get(k).map(i=> mkCard(ws[i], i));
+const head = '<h3 class="subhead wgrphead" data-wgrp="' + k + '">' + esc(label(k)) + '<span class="wgrpcnt">' + dg.groups.get(k).length + '点</span></h3>';
+if(count + cards.length <= WORKS_FILL_FIRST){ h += head + packGalleryHTML(cards, workMode, true); count += cards.length; }
+else if(count < WORKS_FILL_FIRST){
+const take = WORKS_FILL_FIRST - count;
+h += head + packGalleryHTML(cards.slice(0, take), workMode, true); count += take;
+for(let i = take; i < cards.length; i += WORKS_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + WORKS_FILL_CHUNK), workMode, true));
+} else {
+chunks.push(head + packGalleryHTML(cards.slice(0, WORKS_FILL_CHUNK), workMode, true));
+for(let i = WORKS_FILL_CHUNK; i < cards.length; i += WORKS_FILL_CHUNK) chunks.push(packGalleryHTML(cards.slice(i, i + WORKS_FILL_CHUNK), workMode, true));
+}
+});
+if(chunks.length){ WORKS_FILL = { chunks: chunks, a: a, ws: ws, seriesKey: seriesKey, gen: ++WORKS_FILL_GEN }; h += '<div class="worksfillmark" id="worksFillMark"></div>'; }
+return h;
+}
+function stopWorksFillDrivers(){
+if(worksFillObs){ worksFillObs.disconnect(); worksFillObs = null; }
+if(worksFillTimer){ clearTimeout(worksFillTimer); worksFillTimer = 0; }
+}
+function startWorksFill(){
+stopWorksFillDrivers();
+const job = WORKS_FILL; if(!job) return;
+const step = ()=>{
+if(WORKS_FILL !== job) return;
+const mark = document.getElementById('worksFillMark');
+if(!mark || !mark.isConnected){ WORKS_FILL = null; stopWorksFillDrivers(); return; }
+const htmlStr = job.chunks.shift();
+if(htmlStr == null){ mark.remove(); WORKS_FILL = null; stopWorksFillDrivers(); return; }
+const div = document.createElement('div');
+div.innerHTML = htmlStr;
+mark.parentNode.insertBefore(div, mark);
+wireWorkTiles(div, job.a, job.ws, job.seriesKey);
+if(!job.chunks.length){ mark.remove(); WORKS_FILL = null; stopWorksFillDrivers(); }
+};
+const mark0 = document.getElementById('worksFillMark');
+if(mark0 && window.IntersectionObserver){
+worksFillObs = new IntersectionObserver(es=>{ if(es.some(e=> e.isIntersecting)) step(); }, { rootMargin: '900px' });
+worksFillObs.observe(mark0);
+}
+const tick = ()=>{ if(WORKS_FILL !== job) return; step(); if(WORKS_FILL === job) worksFillTimer = setTimeout(tick, 500); };
+worksFillTimer = setTimeout(tick, 500);
+}
 function buildWorksPanelHTML(a, ws){
+WORKS_FILL = null;
 let worksHTML = '';
 /* v5.57.0: series / group filter — an artist carrying
    work_groups gets a chip row at the top of the works tab
@@ -18212,10 +18292,11 @@ const mkCard = (w, i)=> { const ct = cardCapText(w.caption); return { h: '<figur
 if(seriesKey || genreKey){
 const fCards = [];
 ws.forEach((w,i)=>{ if(w && (!seriesKey || w.series === seriesKey) && (!genreKey || workGenreOf(w) === genreKey)) fCards.push(mkCard(w, i)); });
-worksHTML = packGalleryHTML(fCards, workMode);
+worksHTML = worksFillHTML(fCards, workMode, a, ws, seriesKey);
 }
 else if(workSortMode() === 'decades'){
-worksHTML = decadeSectionsHTML(ws, mkCard, decadeGroupsOf(ws, workSortDir()));
+const dgx = decadeGroupsOf(ws, workSortDir());
+worksHTML = ws.length > WORKS_FILL_FIRST? worksDecadesCappedHTML(ws, mkCard, dgx, a, seriesKey): decadeSectionsHTML(ws, mkCard, dgx);
 }
 else if(ws.length >= WORKS_GROUP_MIN){
 const idxOf = new Map();
@@ -18224,12 +18305,12 @@ const reps = representativeWorks(a).filter(w=> idxOf.has(w));
 const wCards = [];
 ws.forEach((w, i)=>{ wCards.push(mkCard(w, i)); });
 worksHTML = '<h3 class="subhead">代表作</h3>' + packGalleryHTML(reps.map(w=> mkCard(w, idxOf.get(w))), workMode)
-+ '<h3 class="subhead">全作品</h3>' + packGalleryHTML(wCards, workMode);
++ '<h3 class="subhead">全作品</h3>' + worksFillHTML(wCards, workMode, a, ws, seriesKey);
 }
 else{
 const wCards = [];
 ws.forEach((w,i)=>{ wCards.push(mkCard(w, i)); });
-worksHTML = packGalleryHTML(wCards, workMode);
+worksHTML = worksFillHTML(wCards, workMode, a, ws, seriesKey);
 }
 }
 /* v2.63: works-request bar — rides the registration-request file
@@ -18373,6 +18454,7 @@ function refreshWorksPanel(){
   const ws = displayWorks(a);
   panel.innerHTML = buildWorksPanelHTML(a, ws);
   wireWorkTiles(panel, a, ws, workSeriesKeyOf(a));
+  startWorksFill();
 }
 
 function renderDetail(){
@@ -18998,6 +19080,7 @@ const p = pricesDesc[+cv.dataset.pidx]; if(!p) return;
 const span = cv.querySelector('.imgholder'); if(span){ const wobj = { img: p.img, caption: p.work }; span._work = wobj; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, wobj); }
 });
 wireWorkTiles(v, a, ws, workSeriesKeyOf(a));
+startWorksFill();
 /* v30.6: the drawings tiles — same wiring shape as works, but
    the click opens the viewer over the DRAWINGS list (kind
    'drawings'), never the works list. */
@@ -29519,7 +29602,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.96';
+const APP_VERSION = '5.82.97';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
