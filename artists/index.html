@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.92">
+<meta name="app-version" content="5.82.93">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23920,7 +23920,7 @@ function renderCharmActress(){
   const likeIds = new Set(likeItems.map(m=> m.id));
   actressGradsGet().forEach(m=>{ if(!likeIds.has(m.id)){ likeItems.push(m); likeIds.add(m.id); } });
   const items = actressTab === 'like'? likeItems: pool.items;
-  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。写真をタップすると missav のその人のページが開きます。状態はこの端末にだけ保存されます（同期されません）。</div>';
+  let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。写真をタップすると Brave で missav のその人のページが開きます。状態はこの端末にだけ保存されます（同期されません）。</div>';
   html += '<div class="wrrow"><div class="seg mini" role="group" aria-label="リスト切替">'
     + '<button class="' + (actressTab === 'new'? 'on': '') + '" onclick="setActressTab(\'new\')">未登録（' + pool.items.length + '）</button>'
     + '<button class="' + (actressTab === 'like'? 'on': '') + '" onclick="setActressTab(\'like\')">like（' + likeItems.length + '）</button>'
@@ -25187,7 +25187,7 @@ function renderHumor(){
   v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* v5.82.53: same pairing for the ユーモア speaker grid. */
   v.querySelectorAll('.spkgrid .imgholder').forEach((span, k)=>{ const w = (out.spkWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
-  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=>{ const nm = (out.actNames || [])[k]; if(nm) window.open('https://missav.ws/actresses/' + encodeURIComponent(nm), '_blank'); }); } }); /* v5.82.92: tap a photo to open her missav actress page (replaces the v5.82.86 enlarge viewer, his call) */
+  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=>{ const nm = (out.actNames || [])[k]; if(!nm) return; const target = 'https://missav.ws/actresses/' + encodeURIComponent(nm); location.href = 'brave://open-url?url=' + encodeURIComponent(target); setTimeout(()=>{ if(document.visibilityState === 'visible') window.open(target, '_blank'); }, 1200); }); } }); /* v5.82.93: tap a photo to open her missav page in the Brave app (brave:// scheme, his call); falls back to a normal browser open if Brave does not take over */
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -29451,7 +29451,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.92';
+const APP_VERSION = '5.82.93';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
