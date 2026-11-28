@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.87">
+<meta name="app-version" content="5.82.88">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -17249,6 +17249,7 @@ bellTab = f.bellTab || 'notifs';
 notifOpen = f.openKeys || {};
 showView('settings');
 openSettingsPanel('reqnotif');
+if(f.scroll){ window.scrollTo(0, f.scroll); setTimeout(()=>{ if(view==='settings' && settingsPanel==='reqnotif') window.scrollTo(0, f.scroll); }, 380); }
 }
 /* v2.23: the detail tabs are a scroll-snap pager, not a re-render switch.
    All three panels are always in the DOM side by side; setTab smooth-
@@ -22990,7 +22991,7 @@ let reqNotifReturn = null;
    openDetail consumes the armed frame as the detail stack's
    bottom, so ‹ 前へ from the person returns here. */
 function armPanelOrigin(panelDs){
-  pendingPanelOrigin = { panel: 'reqnotif', bellTab: bellTab, ds: panelDs, openKeys: Object.assign({}, notifOpen) };
+  pendingPanelOrigin = { panel: 'reqnotif', bellTab: bellTab, ds: panelDs, openKeys: Object.assign({}, notifOpen), scroll: window.scrollY || 0 }; /* v5.82.88: keep the list's scroll so BACK returns to the same spot (his 2026-11-28 recording) */
 }
 /* v10.2–v27.2: NEW was a snapshot taken when the panel
    opened, because the render itself marked everything seen.
@@ -29446,7 +29447,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.87';
+const APP_VERSION = '5.82.88';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
