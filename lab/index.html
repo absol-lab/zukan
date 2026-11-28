@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.90">
+<meta name="app-version" content="5.82.91">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -28434,7 +28434,8 @@ async function syncDatasetRelay(kind, data){
   }
   /* A1: push only what the server lacks. A put can only be
      reached with a full download in hand (v14.0 rule 1). */
-  const needPut = remoteFull ? (JSON.stringify(merged) !== JSON.stringify(remoteFull)) : false;
+  const mergedStr = remoteFull ? JSON.stringify(merged) : null;
+  const needPut = remoteFull ? (mergedStr !== JSON.stringify(remoteFull)) : false;
   let stampAfter = stamp;
   let adjusted = false;
   if(needPut){
@@ -28450,7 +28451,7 @@ async function syncDatasetRelay(kind, data){
     if(!syncTotalsOk(merged, remoteFull)){
       adjusted = true;
     } else {
-    await relayCall('put', cfg.dataFile, JSON.stringify(merged));
+    await relayCall('put', cfg.dataFile, mergedStr);
     /* our own put moved the stamp — re-read it, so the next
        sync can take the B shortcut instead of re-downloading
        our own upload */
@@ -29451,7 +29452,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.90';
+const APP_VERSION = '5.82.91';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
