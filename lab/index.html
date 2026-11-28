@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.86">
+<meta name="app-version" content="5.82.87">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23016,6 +23016,10 @@ function toggleNotifDetail(key){
      un-reads. The history tab has followed this rule since
      v27.5 (toggleChangelogDetail). */
   if(notifOpen[key]){
+    if(key.indexOf('reqg:') === 0){
+      const rep = reqAllItems().find(x=> 'reqg:' + x.id === key);
+      if(rep) reqMarkUpdateGroupRead(rep);
+    } else
     if(key.indexOf('req:') === 0){
       const r = reqAllItems().find(x=> 'req:' + x.id === key);
       if(r) reqMarkOneRead(r);
@@ -23124,9 +23128,38 @@ function reqNotifJump(id){
   if(oid!=null){ reqMarkOneRead(r); switchDataset(other); armPanelOrigin(panelDs); openDetail(oid); return; }
   toast('この端末にはまだ届いていません');
 }
+/* v5.82.87 (his ask, 2026-11-28): consecutive 'update'
+   completions for the SAME artist collapse into one panel
+   row — the favorites loop writes one entry per batch, so a
+   single artist (Dubuffet) filled most of the panel. Display
+   only: zukan-requests.json keeps every entry. The group row
+   carries the newest stamp and the count, expands to each
+   entry's date + note, and can jump to the artist's page. */
+function reqUpdateGroupKey(r){ return (r.dataset || '') + '|' + (r.artist_id != null? 'id:' + String(r.artist_id): 'name:' + (r.name || '')); }
+function reqGroupUpdates(items){
+  const out = [];
+  for(const r of items){
+    const prev = out[out.length - 1];
+    if(r.kind === 'update' && r.status === 'registered' && prev && (prev._group || prev.kind === 'update') && prev.status === 'registered' && reqUpdateGroupKey(prev) === reqUpdateGroupKey(r)){
+      if(prev._group) prev._group.push(r);
+      else out[out.length - 1] = Object.assign({}, prev, { _group: [prev, r] });
+    } else out.push(r);
+  }
+  return out;
+}
+function reqMarkUpdateGroupRead(rep){
+  if(!rep) return;
+  const key = reqUpdateGroupKey(rep);
+  reqAllItems().filter(x => x.kind === 'update' && x.status === 'registered' && reqUpdateGroupKey(x) === key).forEach(x => reqMarkOneRead(x));
+}
+function reqNotifGroupJump(repId){
+  const rep = reqAllItems().find(x => x.id === repId);
+  reqMarkUpdateGroupRead(rep);
+  reqNotifJump(repId);
+}
 function renderRequestNotifs(targetId){
   const el = $(targetId || 'reqnotiflist'); if(!el) return;
-  const done = reqDoneForDS(DS);
+  const done = reqGroupUpdates(reqDoneForDS(DS));
   const readIds = new Set(reqSeenIdsLoad()[DS] || []);
   const doneRows = done.map(r => {
     const resolved = reqResolvedName(r);
@@ -23157,6 +23190,22 @@ function renderRequestNotifs(targetId){
     const pa = ((r.kind==='works' || r.kind==='collect' || r.kind==='update') && r.artist_id!=null)? artistById(r.artist_id): reqFindByName(DB.artists, resolved);
     const pth = pa? thumbOf(pa): null;
     const thumb = '<span class="nthumb">' + (pth? '<figure class="work"><div class="ph" data-work="'+escA(pa.id)+'">'+imgHTML(pth, IMG_SIZE.thumb)+'</div></figure>': '<span class="genini" style="display:flex; width:100%; height:100%;"><span class="genini-c" style="font-size:19px;">'+esc((Array.from(dispName||'')[0]||''))+'</span></span>') + '</span>';
+    if(r._group){
+      const members = r._group;
+      const gNew = members.some(m => !readIds.has(m.id));
+      const gkey = 'reqg:' + r.id;
+      const gopen = !!notifOpen[gkey];
+      let gdetail = '';
+      if(gopen){
+        let gd = members.map(m => '<div class="upat">' + esc(notifWhen(m.resolved_at)) + '</div>' + (m.note? '<div class="nnote">' + esc(m.note) + '</div>': '')).join('');
+        gd += '<button class="nmember" onclick="event.stopPropagation(); reqNotifGroupJump(\'' + escA(r.id) + '\')">作家ページを開く ›</button>';
+        gdetail = '<div class="ndetail">' + gd + '</div>';
+      }
+      const ghead = '<div class="nhead"><div class="nrow"><span class="nname">' + esc(dispName) + '</span><span class="nkind">追加</span><span class="upat">全' + members.length + '件</span></div>'
+        + '<div class="upat" style="margin-top:2px;">' + esc(notifWhen(r.resolved_at)) + '</div>'
+        + (gNew? '<span class="newtag">NEW</span>': '');
+      return { t: Date.parse(r.resolved_at||'')||0, html: '<div class="uprow tap nflex' + (gNew? ' hasnew': '') + '" onclick="toggleNotifDetail(\'' + gkey + '\')">' + thumb + ghead + '<span class="nexp' + (gopen? ' open': '') + '">›</span></div>' + gdetail + '</div>' };
+    }
     const head = '<div class="nhead"><div class="nrow"><span class="nname">'+esc(dispName)+'</span><span class="nkind'+(kindLabel==='登録'?' reg':'')+'">'+kindLabel+'</span></div>'
       + '<div class="upat" style="margin-top:2px;">'+esc(notifWhen(r.resolved_at))+'</div>'
       + (isNew? '<span class="newtag">NEW</span>': '');
@@ -29399,7 +29448,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.86';
+const APP_VERSION = '5.82.87';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
