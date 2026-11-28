@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.94">
+<meta name="app-version" content="5.82.95">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -25187,7 +25187,7 @@ function renderHumor(){
   v.querySelectorAll('.modelgrid .imgholder').forEach((span, k)=>{ const w = (out.modelWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
   /* v5.82.53: same pairing for the ユーモア speaker grid. */
   v.querySelectorAll('.spkgrid .imgholder').forEach((span, k)=>{ const w = (out.spkWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); });
-  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=>{ const nm = (out.actNames || [])[k]; if(!nm) return; const target = 'https://missav.ws/actresses/' + encodeURIComponent(nm); location.href = 'brave://open-url?url=' + encodeURIComponent(target) + '&private=true'; setTimeout(()=>{ if(document.visibilityState === 'visible') window.open(target, '_blank'); }, 1200); }); } }); /* v5.82.94: tap a photo to open her missav page in a Brave private tab (brave:// open-url with the private arg, his call); falls back to a normal browser open if Brave does not take over */
+  v.querySelectorAll('.actgrid .imgholder').forEach((span, k)=>{ const w = (out.actWiring || [])[k]; if(!w) return; span._work = w; if(imgObserver) imgObserver.observe(span); else hydrateImg(span, w); const ph = span.closest('.ph'); if(ph){ ph.style.cursor = 'pointer'; ph.addEventListener('click', ()=>{ const nm = (out.actNames || [])[k]; if(!nm) return; const target = 'https://missav.ws/ja/actresses/' + encodeURIComponent(nm); location.href = 'brave://open-url?url=' + encodeURIComponent(target) + '&private=true'; setTimeout(()=>{ if(document.visibilityState === 'visible') window.open(target, '_blank'); }, 1200); }); } }); /* v5.82.94: tap a photo to open her missav page in a Brave private tab (brave:// open-url with the private arg, his call); falls back to a normal browser open if Brave does not take over */
   /* the tab bar's fade + the dtabHighlight treatment: if the
      selected pill sits off the right edge, slide the row so it
      shows (a cross-reference jump can land on a late tab). */
@@ -29451,7 +29451,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.94';
+const APP_VERSION = '5.82.95';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
