@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.88">
+<meta name="app-version" content="5.82.89">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -18288,7 +18288,7 @@ worksHTML = '<div class="worksreq shelf">' + hlBtn +
    micro, grid glyphs included — so the two switchers can
    never drift apart again. */
 MODES.map(mo=>'<button class="'+(workMode===mo?'on':'')+'" onclick="setWorkMode(\''+mo+'\')" aria-label="'+modeLabel(mo)+'">'+modeIcon(mo)+'</button>').join('') +
-'</span>' + hlCountSlot + '</div></div>' + genreRow + highlightsHTML + worksHTML;
+'</span>' + hlCountSlot + '</div></div>' + collectBtnHTML(a, 'works') + genreRow + highlightsHTML + worksHTML; /* v5.82.89: the collect button sits under the shelf frame at the right end (his order, 2026-11-28) — .collectreq is right-aligned */
 /* v5.57.0: the series chip row rides at the very top of the
    works tab, above the count / sort / display shelf. */
 if(wgArr.length){
@@ -18357,7 +18357,7 @@ function refreshWorksPanel(){
   const panel = (a && v)? v.querySelector('[data-dtab="works"]'): null;
   if(!a || !panel || view !== 'detail'){ renderDetail(); return; }
   const ws = displayWorks(a);
-  panel.innerHTML = collectBtnHTML(a, 'works') + buildWorksPanelHTML(a, ws);
+  panel.innerHTML = buildWorksPanelHTML(a, ws);
   wireWorkTiles(panel, a, ws, workSeriesKeyOf(a));
 }
 
@@ -18947,7 +18947,7 @@ if(humorArr.length) humorHTML = humorArr.map(h=> '<div class="humorcard"><div cl
    (very top, before the first content block — his order
    2026-11-26: reachable without scrolling). One per tab. */
 html += '<div class="dpager" id="dpager">'
-+'<div class="dpage" data-dtab="works">'+collectBtnHTML(a, 'works')+worksHTML+'</div>'
++'<div class="dpage" data-dtab="works">'+worksHTML+'</div>'
 +'<div class="dpage" data-dtab="drawings">'+collectBtnHTML(a, 'drawings')+drawPanelBody+'</div>'
 +'<div class="dpage" data-dtab="process">'+collectBtnHTML(a, 'process')+processHTML+'</div>'
 +'<div class="dpage" data-dtab="relations">'+collectBtnHTML(a, 'relations')+relationsHTML+'</div>'
@@ -29447,7 +29447,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.88';
+const APP_VERSION = '5.82.89';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
