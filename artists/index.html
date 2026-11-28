@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.95">
+<meta name="app-version" content="5.82.96">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -341,6 +341,10 @@ html[lang="en"] .sortrow .seg button{font-size:11.5px; padding:5px 10px;} html[l
 .revbtn{flex:none; min-height:44px; background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--muted); font-size:12.5px; cursor:pointer; font-family:var(--sans); padding:0 11px; white-space:nowrap;}
 .revbtn.on{color:var(--accent); border-color:var(--accent);}
 .favfilter .favcnt{position:absolute; top:3px; right:6px; font-size:9.5px; color:var(--muted);}
+/* v5.82.96: inside the ★ filter, a 作家／作品 segment (the sortrow's
+   .seg mini pattern) and the favorite-works grid's artist line. */
+.favsegrow{margin:12px 0 0;}
+.favworks .fwartist{font-size:11.5px; color:var(--accent); margin-top:2px;}
 #vfav{font-size:17px; color:#cfd2e0;}
 #vfav.on{color:#e3a93c;}
 /* v32.13.1 (his 2026-11-16 device report): the modebar NEVER
@@ -17012,6 +17016,14 @@ function renderListBody(){
 listDirty = false; /* v27.7: the list DOM now matches data+state (see markListDirty) */
 listRenderedQuery = state.query;
 syncFavFilterBtn();
+if(favFilter && favTab === 'works'){
+  const b0 = $('listbody');
+  b0.innerHTML = favSegHTML() + favWorksHTML() + reqFootHTML();
+  wireFavWorkImages(b0);
+  queueEraName();
+  return;
+}
+const seg = favFilter? favSegHTML(): '';
 const arr = filteredArtists();
 const lmode = listModeOn();
 const body = $('listbody');
@@ -17025,7 +17037,7 @@ html = crossSectionHTML() + nearExtraHTML(new Set(), crossIds);
 if(!html) html = '<div class="empty">該当する項目がありません</div>';
 }
 else html = '<div class="empty">該当する項目がありません</div>';
-body.innerHTML = html + reqFootHTML();
+body.innerHTML = seg + html + reqFootHTML();
 wireListImages(body);
 return;
 }
@@ -17126,7 +17138,7 @@ const crossIds = new Set(crossMatches().slice(0, 24).map(a=>String(a.id)));
 html += crossSectionHTML();
 html += nearExtraHTML(shownIds, crossIds, arr);
 }
-body.innerHTML = html + reqFootHTML();
+body.innerHTML = seg + html + reqFootHTML();
 /* attach work objects for lazy hydration */
 wireListImages(body);
 /* v32.13.2: settle the sticky bar's name (and the duplicate-
@@ -22409,6 +22421,62 @@ function syncFavFilterBtn(){
   b.classList.toggle('on', favFilter);
   b.innerHTML = '★' + (n? '<span class="favcnt">'+n+'</span>': '');
 }
+/* v5.82.96 (his ask, 2026-11-28): favorite WORKS live inside the
+   existing ★ button — with the filter on, a 作家／作品 segment
+   (the sortrow's .seg mini pattern) switches the list between
+   favorite people (the original behaviour) and a card grid of
+   favorite works. Work favorites were already recorded by the
+   viewer's ☆ (setFavWork) and Drive-mirrored; this is their
+   first reading surface. Cards follow the works-tab card form
+   (figure.work: plate + caption) plus the artist's name, and a
+   tap opens the viewer on that work (openWorksViewer). */
+let favTab = 'people';
+let FAVWORKS_RENDERED = [];
+function setFavTab(t){ favTab = t; renderListKeepScroll(()=>{ renderListBody(); }); }
+function favSegHTML(){
+  return '<div class="favsegrow"><span class="seg mini" role="group" aria-label="お気に入りの種類">'
+    + '<button class="'+(favTab==='people'? 'on': '')+'" onclick="setFavTab(\'people\')">作家</button>'
+    + '<button class="'+(favTab==='works'? 'on': '')+'" onclick="setFavTab(\'works\')">作品</button>'
+    + '</span></div>';
+}
+function favWorksResolved(){
+  const m = favsLoad().works; const out = [];
+  Object.keys(m).forEach(k=>{
+    const e = m[k]; if(!e || !e.fav) return;
+    if(k.indexOf(DS+':') !== 0) return;
+    const rest = k.slice(DS.length + 1); const bar = rest.indexOf('|'); if(bar < 0) return;
+    const aid = rest.slice(0, bar);
+    const cap = (e.caption != null)? e.caption: rest.slice(bar + 1);
+    const a = artistById(aid); if(!a) return;
+    const w = worksOf(a).find(x=> (x.caption || '') === cap); if(!w) return;
+    out.push({ a: a, w: w, at: e.at || '' });
+  });
+  out.sort((x, y)=> String(y.at).localeCompare(String(x.at)));
+  return out;
+}
+function favWorksHTML(){
+  const list = favWorksResolved();
+  FAVWORKS_RENDERED = list;
+  if(!list.length) return '<div class="empty">お気に入りの作品はまだありません。作品を開いて ☆ を押すと、ここに集まります</div>';
+  let html = '<div class="grid '+state.mode+' favworks">';
+  list.forEach((r, i)=>{
+    html += '<figure class="work" onclick="openFavWork('+i+')"><div class="ph" data-favw="'+i+'">'+imgHTML(r.w, IMG_SIZE.plate)+hiresBadgeHTML(r.w)+'</div><figcaption>'+videoBadgeHTML(r.w)+'<div class="sub">'+esc(cardCapText(r.w.caption))+'</div><div class="fwartist">'+esc(dispName(r.a))+'</div></figcaption></figure>';
+  });
+  html += '</div>';
+  return html;
+}
+function wireFavWorkImages(body){
+  body.querySelectorAll('[data-favw]').forEach(ph=>{
+    const r = FAVWORKS_RENDERED[+ph.getAttribute('data-favw')]; if(!r) return;
+    const span = ph.querySelector('.imgholder'); if(!span) return;
+    span._work = r.w;
+    if(imgObserver) imgObserver.observe(span); else hydrateImg(span, r.w);
+  });
+}
+function openFavWork(i){
+  const r = FAVWORKS_RENDERED[i]; if(!r) return;
+  openWorksViewer(r.a, r.w);
+}
 async function toggleFavPerson(){
   const a = artistById(state.detailId); if(!a) return;
   const okSave = await setFavPerson(a, !isFavPerson(DS, a.id));
@@ -22695,7 +22763,7 @@ function renderUpdateList(){
    it fails) the in-app fallback copy below renders instead, so
    the tab is never empty. Entries: { v:'29.1'|null, label,
    lines:[...] } — a null v shows the label as its chip. */
-const ROADMAP_FALLBACK = [{"v": null, "label": "お気に入りを最高水準に", "lines": ["★のお気に入り46人を、1人ずつ最高水準まで埋める作業が進行中。いまはフランシス・ベーコン。", "ベーコンは作品の数え直し中。財団のカタログ582点と照合し、写真がある作品だけを年代順に登録していく。", "ベーコンが終わったら、残りの★45人を仕上がりに近い順に進める。"]}, {"v": null, "label": "作家の解剖", "lines": ["解剖の記録があるのは全790人中522人。残り268人。", "収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]}, {"v": null, "label": "書籍ダイジェスト", "lines": ["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。デュシャン『デュシャンは語る』とベーコンの2冊（シルヴェスター対談／ドゥルーズ）が公開済み。", "ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]}, {"v": null, "label": "来歴と年代記", "lines": ["年代記（年代で見る作風と活動）は7人まで適用済み。★46人のうち残り39人が次の対象。", "来歴が薄い作家は、収集のたびに厚くしていく。"]}, {"v": null, "label": "ドローイングと画像候補", "lines": ["ドローイングは935点まで収録。", "登録候補の画像は確認待ちが残っている。作家本人のSNSから集める方法も検証済み。"]}, {"v": null, "label": "ユーモア", "lines": ["作家のユーモアは、書籍の中身を吸収するたびに、その作家分も省かず集めていく。今はデュシャン16件・ベーコン15件。", "作家を横断して読める「人間的魅力」ページ（ホーム右上の☺︎ボタン）のタブは18個。今回「女の口説き方」を追加した（性的魅力の隣。ステータスに頼らない前提で、雄弁さを核にした完全マニュアル——前提／雄弁さの基礎／接触と会話／距離の詰め方／ユーモア／誘いの設計／断られた時／長い弧）。"]}];
+const ROADMAP_FALLBACK = [{"v": null, "label": "お気に入りを最高水準に", "lines": ["★のお気に入り46人を、1人ずつ最高水準まで埋める作業が進行中。ベーコンはカンスト完了。いまはジャン・デュビュッフェ。", "デュビュッフェは作品890点を収録済み（本人の指示で作品は打ち切り）。いまはドローイングを集めている。", "デュビュッフェが終わったら、ヴィルヘルム・サスナルへ進む。"]}, {"v": null, "label": "作家の解剖", "lines": ["解剖の記録があるのは全831人中563人。残り268人。", "収集やリクエストのたびに、その作家は解剖を含む全項目を集め直す。"]}, {"v": null, "label": "書籍ダイジェスト", "lines": ["本の中身を辿る口語ダイジェストを、作家ページの書籍から図鑑の中で読めるようにした。デュシャン『デュシャンは語る』とベーコンの2冊（シルヴェスター対談／ドゥルーズ）が公開済み。", "ダイジェストの本文は公開リポジトリには置かず、Drive側の専用ファイルだけに置く。書籍の中身を吸収するたびに対象の本を広げる。"]}, {"v": null, "label": "来歴と年代記", "lines": ["年代記（年代で見る作風と活動）は7人まで適用済み。★46人のうち残り39人が次の対象。", "来歴が薄い作家は、収集のたびに厚くしていく。"]}, {"v": null, "label": "ドローイングと画像候補", "lines": ["ドローイングは980点まで収録。", "登録候補の画像は確認待ちが残っている。作家本人のSNSから集める方法も検証済み。"]}, {"v": null, "label": "ユーモア", "lines": ["作家のユーモアは、書籍の中身を吸収するたびに、その作家分も省かず集めていく。今はデュシャン16件・ベーコン27件。", "作家を横断して読める「人間的魅力」ページ（ホーム右上の☺︎ボタン）のタブは18個。今回「女の口説き方」を追加した（性的魅力の隣。ステータスに頼らない前提で、雄弁さを核にした完全マニュアル——前提／雄弁さの基礎／接触と会話／距離の詰め方／ユーモア／誘いの設計／断られた時／長い弧）。"]}];
 function roadmapEntries(){
   const r = (typeof guideData !== 'undefined' && guideData && Array.isArray(guideData.roadmap) && guideData.roadmap.length)? guideData.roadmap: null;
   return r || ROADMAP_FALLBACK;
@@ -29451,7 +29519,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.95';
+const APP_VERSION = '5.82.96';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
