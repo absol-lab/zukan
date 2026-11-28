@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcanum LAB">
 <meta name="theme-color" content="#171009">
-<meta name="app-version" content="5.82.83">
+<meta name="app-version" content="5.82.84">
 <link rel="apple-touch-icon" href="icon-encyclopedie.png">
 <link rel="apple-touch-startup-image" href="startup-dark.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="icon" type="image/png" href="icon.png">
@@ -23816,10 +23816,10 @@ function setActressMode(m){
   actressMode = m; storeSet('zlab.actressmode', m);
   const y = window.scrollY; renderHumor(); window.scrollTo(0, y);
 }
-let actressTab = storeGet('zlab.actresstab') || 'like';
-if(actressTab !== 'like' && actressTab !== 'new') actressTab = 'like';
+let actressTab = storeGet('zlab.actresstab.v2') || 'new';
+if(actressTab !== 'like' && actressTab !== 'new') actressTab = 'new';
 function setActressTab(t){
-  actressTab = t; storeSet('zlab.actresstab', t);
+  actressTab = t; storeSet('zlab.actresstab.v2', t);
   const y = window.scrollY; renderHumor(); window.scrollTo(0, y);
 }
 /* v5.82.83: the 未登録 tab is a candidate pool. The live
@@ -23870,8 +23870,8 @@ function renderCharmActress(){
   const items = actressTab === 'like'? likeItems: pool.items;
   let html = '<div class="modebar">' + MODES.map(mo=> '<button data-m="' + mo + '"' + (actressMode===mo? ' class="on"': '') + ' onclick="setActressMode(\'' + mo + '\')" aria-label="' + modeLabel(mo) + '">' + modeIcon(mo) + '</button>').join('') + '</div>' + '<div class="small" style="margin:2px 4px 10px">チェック＝好き。状態はこの端末にだけ保存されます（同期されません）。</div>';
   html += '<div class="wrrow"><div class="seg mini" role="group" aria-label="リスト切替">'
-    + '<button class="' + (actressTab === 'like'? 'on': '') + '" onclick="setActressTab(\'like\')">like（' + likeItems.length + '）</button>'
     + '<button class="' + (actressTab === 'new'? 'on': '') + '" onclick="setActressTab(\'new\')">未登録（' + pool.items.length + '）</button>'
+    + '<button class="' + (actressTab === 'like'? 'on': '') + '" onclick="setActressTab(\'like\')">like（' + likeItems.length + '）</button>'
     + '</div></div>';
   html += '<div class="grid ' + actressMode + ' actgrid">';
   items.forEach(m=>{
@@ -29399,7 +29399,7 @@ window.addEventListener('hashchange', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION = '5.82.83';
+const APP_VERSION = '5.82.84';
 function isEditing(){ return !!document.getElementById('ef_name'); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
